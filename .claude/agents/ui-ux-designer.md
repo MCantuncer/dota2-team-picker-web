@@ -50,8 +50,7 @@ A professional feel comes from consistency and restraint, not decoration.
 
 ## The draft screen (step 3)
 
-The agreed design is in the "Fast hero entry" doc (https://claude.ai/artifact/1MJV1aDhLHziNxgbXPqjNm).
-If you can't open it, the summary below is the source of truth:
+The agreed design, in short:
 
 - Two lists side by side: **My team** on the left and **Enemy** on the right, each with its own search box.
   Typing two or three letters and pressing Enter adds the top match. Tab switches between boxes.
