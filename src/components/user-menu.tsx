@@ -28,7 +28,9 @@ export async function UserMenu() {
       {profile?.avatar_url && (
         <Image src={profile.avatar_url} alt="" width={28} height={28} className="rounded-full" />
       )}
-      <span className="max-w-40 truncate text-zinc-200">{profile?.display_name ?? user.email}</span>
+      <Link href="/profile" className="max-w-40 truncate text-zinc-200 hover:text-white">
+        {profile?.display_name ?? user.email}
+      </Link>
       <form action="/auth/signout" method="post">
         <button type="submit" className="text-zinc-400 hover:text-zinc-100">
           Sign out

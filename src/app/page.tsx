@@ -12,7 +12,12 @@ export default async function Home() {
         weighed by counters, synergy, the current meta at your rank, and the heroes you play best.
       </p>
       {user ? (
-        <p className="text-zinc-300">You&apos;re signed in. The draft screen is coming next.</p>
+        <div className="flex flex-col gap-3">
+          <p className="text-zinc-300">You&apos;re signed in. The draft screen is coming next.</p>
+          <Link href="/profile" className="self-start rounded-md bg-red-700 px-4 py-2 font-semibold hover:bg-red-600">
+            Pick your favorite heroes
+          </Link>
+        </div>
       ) : (
         <div className="flex gap-3">
           <Link href="/login" className="rounded-md bg-red-700 px-4 py-2 font-semibold hover:bg-red-600">
