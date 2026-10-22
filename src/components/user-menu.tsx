@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { isAdmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /** Header corner: the signed-in user's name and a sign out button, or a log in link. */
@@ -27,6 +28,11 @@ export async function UserMenu() {
     <div className="flex items-center gap-3 text-sm">
       {profile?.avatar_url && (
         <Image src={profile.avatar_url} alt="" width={28} height={28} className="rounded-full" />
+      )}
+      {isAdmin(user.id) && (
+        <Link href="/admin/captain" className="text-zinc-400 hover:text-zinc-100">
+          Captain
+        </Link>
       )}
       <span className="max-w-40 truncate text-zinc-200">{profile?.display_name ?? user.email}</span>
       <form action="/auth/signout" method="post">
