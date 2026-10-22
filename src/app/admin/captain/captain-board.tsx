@@ -8,11 +8,17 @@ import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
 
-export interface Friend {
+/** A team member as the captain sees them: favorite positions, and heroes per position (0 = any). */
+export interface Member {
   id: string;
   name: string;
-  usualPosition: number | null;
-  favorites: number[];
+  positions: number[];
+  heroes: Record<number, number[]>;
+}
+
+export interface Invite {
+  id: string;
+  email: string;
 }
 
 type Slots = (string | null)[];
@@ -34,23 +40,25 @@ interface Note {
 }
 type Card = Suggestion & { notes: Note[] };
 
-/** Captain mode: one person enters the whole draft and gets picks to call for each friend's open position. */
+/** Captain mode: one person enters the whole draft and gets picks to call for each member's open position. */
 export function CaptainBoard({
-  userId,
-  initialFriends,
+  team,
+  initialMembers,
+  initialInvites,
   initialSlots,
   initialRank,
 }: {
-  userId: string;
-  initialFriends: Friend[];
+  team: { id: string; name: string };
+  initialMembers: Member[];
+  initialInvites: Invite[];
   initialSlots: Slots;
   initialRank: number | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [engine, setEngine] = useState<Engine | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"draft" | "friends">(initialFriends.length ? "draft" : "friends");
-  const [friends, setFriends] = useState(initialFriends);
+  const [tab, setTab] = useState<"draft" | "team">(initialMembers.length ? "draft" : "team");
+  const [members, setMembers] = useState(initialMembers);
   const [slots, setSlots] = useState<Slots>(initialSlots);
   const [rank, setRank] = useState<number | null>(initialRank);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -89,9 +97,9 @@ export function CaptainBoard({
     setSlots(nextSlots);
     setRank(nextRank);
     const { error } = await supabase
-      .from("captain_lineups")
-      .upsert({ owner_id: userId, slots: nextSlots, rank_bracket: nextRank });
-    setSaveError(error ? `Lineup not saved: ${error.message}` : null);
+      .from("team_lineups")
+      .upsert({ team_id: team.id, slots: nextSlots, rank_bracket: nextRank });
+    setSaveError(error ? `Current team not saved: ${error.message}` : null);
   };
 
   if (loadError) return <Shell><p className="text-red-400">{loadError}. Reload the page to try again.</p></Shell>;
@@ -101,7 +109,7 @@ export function CaptainBoard({
     <Shell
       tabs={
         <div className="flex gap-1" role="tablist">
-          {(["draft", "friends"] as const).map((t) => (
+          {(["draft", "team"] as const).map((t) => (
             <button
               key={t}
               role="tab"
@@ -111,7 +119,7 @@ export function CaptainBoard({
                 tab === t ? "bg-zinc-800 text-zinc-100 ring-zinc-500" : "text-zinc-400 ring-zinc-700 hover:text-zinc-100"
               }`}
             >
-              {t === "draft" ? "Draft" : "Friends"}
+              {t === "draft" ? "Draft" : "Team"}
             </button>
           ))}
         </div>
@@ -122,7 +130,7 @@ export function CaptainBoard({
         <DraftView
           engine={engine}
           search={search}
-          friends={friends}
+          members={members}
           slots={slots}
           rank={rank}
           draft={draft}
@@ -130,11 +138,12 @@ export function CaptainBoard({
           onLineup={saveLineup}
         />
       ) : (
-        <FriendsView
-          search={search}
+        <TeamView
           engine={engine}
-          friends={friends}
-          onFriends={setFriends}
+          team={team}
+          members={members}
+          initialInvites={initialInvites}
+          onMembers={setMembers}
           onError={setSaveError}
           onRemoved={(id) => saveLineup(slots.map((s) => (s === id ? null : s)), rank)}
         />
@@ -161,7 +170,7 @@ function Shell({ tabs, children }: { tabs?: React.ReactNode; children: React.Rea
 function DraftView({
   engine,
   search,
-  friends,
+  members,
   slots,
   rank,
   draft,
@@ -169,8 +178,8 @@ function DraftView({
   onLineup,
 }: {
   engine: Engine;
-  search: HeroSearch;
-  friends: Friend[];
+  search: HeroSearch<HeroInfo>;
+  members: Member[];
   slots: Slots;
   rank: number | null;
   draft: Draft;
@@ -179,13 +188,13 @@ function DraftView({
 }) {
   const enemyRef = useRef<HTMLInputElement>(null);
   const bansRef = useRef<HTMLInputElement>(null);
-  const friendById = (id: string | null) => friends.find((f) => f.id === id);
+  const memberById = (id: string | null) => members.find((m) => m.id === id);
   const taken = new Set([...draft.picks.filter((x): x is number => x != null), ...draft.enemies, ...draft.bans]);
   const name = (id: number) => engine.hero(id).name;
 
   const columns = useMemo(
-    () => suggestColumns(engine, friends, slots, rank, draft),
-    [engine, friends, slots, rank, draft],
+    () => suggestColumns(engine, members, slots, rank, draft),
+    [engine, members, slots, rank, draft],
   );
 
   const setPick = (i: number, id: number | null) => {
@@ -206,13 +215,13 @@ function DraftView({
         <section aria-label="Our team" className="rounded-lg border border-zinc-800 border-t-green-500 border-t-[3px] bg-zinc-900/60 p-3">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">Our team</h2>
           {draft.picks.map((pick, i) => {
-            const friend = friendById(slots[i] ?? null);
+            const member = memberById(slots[i] ?? null);
             return (
               <div key={i} className="grid grid-cols-[minmax(9rem,13rem)_1fr] items-center gap-3 border-t border-zinc-800 py-1.5 first-of-type:border-t-0">
                 <div className="flex min-w-0 items-baseline gap-2">
                   <span className="w-3 font-mono text-xs text-green-400">{i + 1}</span>
-                  <span className={`truncate font-semibold ${friend ? "" : "text-zinc-500"}`}>
-                    {friend?.name ?? "Not a friend"}
+                  <span className={`truncate font-semibold ${member ? "" : "text-zinc-500"}`}>
+                    {member?.name ?? "Not in team"}
                   </span>
                   <span className="text-xs text-zinc-500">{POSITION_NAMES[i]}</span>
                 </div>
@@ -280,18 +289,18 @@ function DraftView({
 
       <section aria-label="Suggestions" className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wider">Call these</h2>
-        {!friends.length ? (
-          <p className="text-sm text-zinc-500">Add your friends on the Friends tab, then put them in position slots under Lineup.</p>
+        {!members.length ? (
+          <p className="text-sm text-zinc-500">Invite your friends on the Team tab, then pick who plays under Current team.</p>
         ) : !columns.length ? (
           <p className="text-sm text-zinc-500">
-            {slots.some(Boolean) ? "Every friend has picked. Good luck!" : "Put your friends in position slots under Lineup to get suggestions."}
+            {slots.some(Boolean) ? "Everyone in the team has picked. Good luck!" : "Pick who plays which position under Current team to get suggestions."}
           </p>
         ) : (
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))]">
             {columns.map((col) => (
               <div key={col.position} className="flex min-w-0 flex-col gap-2">
                 <div className="font-semibold">
-                  {col.friend.name} <span className="font-mono text-xs text-zinc-500">pos {col.position}</span>
+                  {col.member.name} <span className="font-mono text-xs text-zinc-500">pos {col.position}</span>
                 </div>
                 {col.cards.map((card, n) => (
                   <SuggestionCard
@@ -309,24 +318,25 @@ function DraftView({
       </section>
 
       <section aria-label="Lineup" className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">Lineup</h2>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">Current team</h2>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
-          {slots.map((friendId, i) => (
+          {slots.map((memberId, i) => (
             <label key={i} className="flex flex-col gap-1 text-xs text-zinc-400">
               Pos {i + 1} · {POSITION_NAMES[i]}
               <select
                 id={`lineup-${i + 1}`}
-                value={friendId ?? ""}
+                value={memberId ?? ""}
                 onChange={(e) => {
                   const v = e.target.value || null;
                   onLineup(slots.map((s, j) => (j === i ? v : s === v ? null : s)), rank);
                 }}
                 className="rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 ring-1 ring-zinc-700"
               >
-                <option value="">Not a friend</option>
-                {friends.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
+                <option value="">Not in team</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {m.positions.length ? ` (${m.positions.join(", ")})` : ""}
                   </option>
                 ))}
               </select>
@@ -353,12 +363,17 @@ function DraftView({
           <button
             onClick={() => {
               const next: Slots = [null, null, null, null, null];
-              for (const f of friends) if (f.usualPosition && next[f.usualPosition - 1] == null) next[f.usualPosition - 1] = f.id;
+              // Members already chosen keep playing; each goes to their first favorite position that is free.
+              const playing = members.filter((m) => slots.includes(m.id));
+              for (const m of playing.length ? playing : members) {
+                const pos = m.positions.find((p) => next[p - 1] == null);
+                if (pos) next[pos - 1] = m.id;
+              }
               onLineup(next, rank);
             }}
             className="rounded-md px-3 py-1.5 text-sm font-semibold ring-1 ring-zinc-600 hover:bg-zinc-800"
           >
-            Fill from usual positions
+            Fill from favorite positions
           </button>
           <button
             onClick={() => {
@@ -375,14 +390,14 @@ function DraftView({
   );
 }
 
-/** One column of suggestions per friend who still has to pick. Each hero goes to the friend it scores highest for. */
-function suggestColumns(engine: Engine, friends: Friend[], slots: Slots, rank: number | null, draft: Draft) {
+/** One column of suggestions per member who still has to pick. Each hero goes to the member it scores highest for. */
+function suggestColumns(engine: Engine, members: Member[], slots: Slots, rank: number | null, draft: Draft) {
   const allies = draft.picks.flatMap((heroId, i) => (heroId != null ? [{ heroId, position: (i + 1) as Position }] : []));
-  const open = slots.flatMap((friendId, i) => {
-    const friend = friends.find((f) => f.id === friendId);
-    return friend && draft.picks[i] == null ? [{ friend, position: (i + 1) as Position }] : [];
+  const open = slots.flatMap((memberId, i) => {
+    const member = members.find((m) => m.id === memberId);
+    return member && draft.picks[i] == null ? [{ member, position: (i + 1) as Position }] : [];
   });
-  const lists = open.map(({ friend, position }) =>
+  const lists = open.map(({ member, position }) =>
     engine
       .suggest({
         myPosition: position,
@@ -390,7 +405,7 @@ function suggestColumns(engine: Engine, friends: Friend[], slots: Slots, rank: n
         enemies: draft.enemies,
         bans: draft.bans,
         rankBracket: (rank ?? undefined) as RankBracket | undefined,
-        favorites: friend.favorites,
+        favorites: [...(member.heroes[position] ?? []), ...(member.heroes[0] ?? [])],
         count: 12,
       })
       .map((s) => ({ ...s, notes: counterNotes(engine, s.heroId, draft) })),
@@ -458,123 +473,175 @@ function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: bo
   );
 }
 
-// ---------- friends ----------
+// ---------- team ----------
 
-function FriendsView({
-  search,
+const POSITION_SHORT = ["Carry", "Mid", "Off", "Soft sup", "Hard sup"];
+
+function TeamView({
   engine,
-  friends,
-  onFriends,
+  team,
+  members,
+  initialInvites,
+  onMembers,
   onError,
   onRemoved,
 }: {
-  search: HeroSearch;
   engine: Engine;
-  friends: Friend[];
-  onFriends: (f: Friend[]) => void;
+  team: { id: string; name: string };
+  members: Member[];
+  initialInvites: Invite[];
+  onMembers: (m: Member[]) => void;
   onError: (e: string | null) => void;
   onRemoved: (id: string) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const [newName, setNewName] = useState("");
+  const [teamName, setTeamName] = useState(team.name);
+  const [email, setEmail] = useState("");
+  const [invites, setInvites] = useState(initialInvites);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const addFriend = async () => {
-    const name = newName.trim();
-    if (!name) return;
-    const { data, error } = await supabase.from("friends").insert({ name }).select("id, name, usual_position").single();
-    if (error || !data) return onError(`Friend not added: ${error?.message}`);
+  const rename = async () => {
+    const name = teamName.trim();
+    if (!name || name === team.name) return;
+    const { error } = await supabase.from("teams").update({ name }).eq("id", team.id);
+    onError(error ? `Team name not saved: ${error.message}` : null);
+  };
+
+  const invite = async (address: string) => {
+    setSending(true);
+    setSent(null);
+    const { data, error } = await supabase.functions.invoke<Invite>("team-invite", { body: { teamId: team.id, email: address } });
+    setSending(false);
+    if (error || !data) {
+      const body = error && "context" in error ? await (error.context as Response).json().catch(() => null) : null;
+      return onError(`Invite not sent: ${body?.error ?? error?.message ?? "unknown error"}`);
+    }
     onError(null);
-    setNewName("");
-    onFriends([...friends, { id: data.id, name: data.name, usualPosition: data.usual_position, favorites: [] }]);
+    setEmail("");
+    setSent(data.email);
+    setInvites((cur) => (cur.some((i) => i.id === data.id) ? cur : [...cur, { id: data.id, email: data.email }]));
   };
 
-  const update = (id: string, change: Partial<Friend>) => onFriends(friends.map((f) => (f.id === id ? { ...f, ...change } : f)));
-
-  const setPosition = async (f: Friend, pos: number | null) => {
-    update(f.id, { usualPosition: pos });
-    const { error } = await supabase.from("friends").update({ usual_position: pos }).eq("id", f.id);
-    onError(error ? `Position not saved: ${error.message}` : null);
+  const cancel = async (i: Invite) => {
+    setInvites((cur) => cur.filter((x) => x.id !== i.id));
+    const { error } = await supabase.from("team_invites").delete().eq("id", i.id);
+    onError(error ? `Invite not cancelled: ${error.message}` : null);
   };
 
-  const addFavorites = async (f: Friend, ids: number[]) => {
-    const fresh = ids.filter((id) => !f.favorites.includes(id));
-    if (!fresh.length) return;
-    update(f.id, { favorites: [...f.favorites, ...fresh] });
-    const { error } = await supabase.from("friend_favorite_heroes").insert(fresh.map((hero_id) => ({ friend_id: f.id, hero_id })));
-    onError(error ? `Favorites not saved: ${error.message}` : null);
+  const copyLink = async (i: Invite) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/join/${i.id}`);
+      setCopied(i.id);
+    } catch {
+      onError("Could not copy the link.");
+    }
   };
 
-  const removeFavorite = async (f: Friend, id: number) => {
-    update(f.id, { favorites: f.favorites.filter((x) => x !== id) });
-    const { error } = await supabase.from("friend_favorite_heroes").delete().eq("friend_id", f.id).eq("hero_id", id);
-    onError(error ? `Favorite not removed: ${error.message}` : null);
-  };
-
-  const removeFriend = async (f: Friend) => {
-    onFriends(friends.filter((x) => x.id !== f.id));
-    onRemoved(f.id);
-    const { error } = await supabase.from("friends").delete().eq("id", f.id);
-    onError(error ? `Friend not removed: ${error.message}` : null);
+  const remove = async (m: Member) => {
+    onMembers(members.filter((x) => x.id !== m.id));
+    onRemoved(m.id);
+    const { error } = await supabase.from("team_members").delete().eq("team_id", team.id).eq("user_id", m.id);
+    onError(error ? `Member not removed: ${error.message}` : null);
   };
 
   return (
-    <div className="flex max-w-3xl flex-col gap-3">
-      <p className="text-sm text-zinc-400">
-        Add each friend once with their usual position and favorite heroes. Friends don&apos;t get an account or an
-        email. Favorites get a boost in their suggestions.
-      </p>
-      <div className="flex gap-2">
+    <div className="flex max-w-4xl flex-col gap-4">
+      <label className="flex max-w-sm flex-col gap-1 text-xs text-zinc-400">
+        Team name
         <input
-          id="new-friend"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addFriend()}
-          placeholder="Friend's name"
+          id="team-name"
+          value={teamName}
+          onChange={(e) => setTeamName(e.target.value)}
+          onBlur={rename}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
           maxLength={40}
-          className="flex-1 rounded-md bg-zinc-800 px-3 py-2 ring-1 ring-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="rounded-md bg-zinc-800 px-3 py-2 text-base text-zinc-100 ring-1 ring-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
-        <button onClick={addFriend} className="rounded-md bg-amber-500 px-4 py-2 font-semibold text-zinc-950 hover:bg-amber-400">
-          Add friend
-        </button>
-      </div>
-      {friends.map((f) => (
-        <article key={f.id} className="flex flex-col gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <strong className="mr-auto text-lg">{f.name}</strong>
-            <select
-              id={`position-${f.id}`}
-              aria-label={`${f.name}'s usual position`}
-              value={f.usualPosition ?? ""}
-              onChange={(e) => setPosition(f, e.target.value ? Number(e.target.value) : null)}
-              className="rounded-md bg-zinc-800 px-2 py-1.5 text-sm ring-1 ring-zinc-700"
-            >
-              <option value="">Any position</option>
-              {POSITION_NAMES.map((p, i) => (
-                <option key={p} value={i + 1}>
-                  {i + 1} {p}
-                </option>
-              ))}
-            </select>
-            <button onClick={() => removeFriend(f)} className="rounded-md px-2 py-1 text-xs ring-1 ring-zinc-700 hover:bg-zinc-800">
-              Remove
-            </button>
-          </div>
-          <HeroInput
-            id={`favorites-${f.id}`}
-            placeholder="Add favorite heroes, e.g. pudge lion cm"
-            search={search}
-            exclude={new Set(f.favorites)}
-            multi
-            onPick={(id) => addFavorites(f, [id])}
-            onPickMany={(ids) => addFavorites(f, ids)}
+      </label>
+
+      <section aria-label="Invite" className="flex flex-col gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider">Invite a friend</h2>
+        <p className="text-sm text-zinc-400">
+          They get an email with a link, pick a name and password, then their positions and heroes. Teams can have
+          any number of members; you choose who plays each game on the Draft tab.
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (email.trim()) invite(email.trim());
+          }}
+          className="flex gap-2"
+        >
+          <input
+            id="invite-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="friend@example.com"
+            autoComplete="off"
+            className="flex-1 rounded-md bg-zinc-800 px-3 py-2 ring-1 ring-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
-          <div className="flex flex-wrap gap-1.5">
-            {f.favorites.map((id) => (
-              <Chip key={id} label={engine.hero(id).name} onRemove={() => removeFavorite(f, id)} />
+          <button
+            type="submit"
+            disabled={sending}
+            className="rounded-md bg-amber-500 px-4 py-2 font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-60"
+          >
+            {sending ? "Sending…" : "Send invite"}
+          </button>
+        </form>
+        {sent && <p className="text-sm text-green-400">Invite sent to {sent}.</p>}
+        {invites.length > 0 && (
+          <ul className="flex flex-col divide-y divide-zinc-800 text-sm">
+            {invites.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center gap-2 py-1.5">
+                <span className="mr-auto truncate">{i.email}</span>
+                <span className="text-xs text-zinc-500">Waiting</span>
+                <button onClick={() => invite(i.email)} disabled={sending} className="rounded-md px-2 py-1 text-xs ring-1 ring-zinc-700 hover:bg-zinc-800">
+                  Resend
+                </button>
+                <button onClick={() => copyLink(i)} className="rounded-md px-2 py-1 text-xs ring-1 ring-zinc-700 hover:bg-zinc-800">
+                  {copied === i.id ? "Copied" : "Copy link"}
+                </button>
+                <button onClick={() => cancel(i)} className="rounded-md px-2 py-1 text-xs ring-1 ring-zinc-700 hover:bg-zinc-800">
+                  Cancel
+                </button>
+              </li>
             ))}
-          </div>
-        </article>
-      ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-label="Members" className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wider">
+          Members <span className="font-mono text-xs text-zinc-500">{members.length}</span>
+        </h2>
+        {!members.length && <p className="text-sm text-zinc-500">Nobody has joined yet.</p>}
+        {members.map((m) => (
+          <article key={m.id} className="flex flex-col gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <strong className="mr-auto text-lg">{m.name}</strong>
+              <button onClick={() => remove(m)} className="rounded-md px-2 py-1 text-xs ring-1 ring-zinc-700 hover:bg-zinc-800">
+                Remove
+              </button>
+            </div>
+            {!m.positions.length && <p className="text-sm text-zinc-500">Hasn&apos;t picked positions yet.</p>}
+            <dl className="grid gap-1.5 text-sm sm:grid-cols-[7rem_1fr]">
+              {m.positions.map((p) => (
+                <div key={p} className="contents">
+                  <dt className="text-zinc-400">
+                    <span className="font-mono text-green-400">{p}</span> {POSITION_SHORT[p - 1]}
+                  </dt>
+                  <dd className="text-zinc-200">
+                    {(m.heroes[p] ?? []).map((id) => engine.hero(id).name).join(", ") || <span className="text-zinc-500">No heroes yet</span>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
@@ -598,7 +665,7 @@ function HeroInput({
 }: {
   id: string;
   placeholder: string;
-  search: HeroSearch;
+  search: HeroSearch<HeroInfo>;
   exclude: Set<number>;
   multi?: boolean;
   onPick: (heroId: number) => void;

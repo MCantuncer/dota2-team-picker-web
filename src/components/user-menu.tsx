@@ -29,6 +29,9 @@ export async function UserMenu() {
       {profile?.avatar_url && (
         <Image src={profile.avatar_url} alt="" width={28} height={28} className="rounded-full" />
       )}
+      <Link href="/my-heroes" className="text-zinc-400 hover:text-zinc-100">
+        My heroes
+      </Link>
       {isAdmin(user.id) && (
         <Link href="/admin/captain" className="text-zinc-400 hover:text-zinc-100">
           Captain

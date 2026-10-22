@@ -1,4 +1,3 @@
-import type { HeroInfo } from "./engine/types";
 
 /** Nicknames players type, mapped to hero names as the engine data spells them. */
 const NICKNAMES: Record<string, string> = {
@@ -18,8 +17,14 @@ const NICKNAMES: Record<string, string> = {
 
 const normalize = (s: string) => s.toLowerCase().replace(/-/g, " ").replace(/[^a-z0-9 ]/g, "");
 
-interface Entry {
-  hero: HeroInfo;
+/** Anything with a hero id and its English name. */
+interface NamedHero {
+  id: number;
+  name: string;
+}
+
+interface Entry<H> {
+  hero: H;
   full: string;
   words: string[];
   initials: string;
@@ -30,10 +35,10 @@ interface Entry {
  * Finds heroes from two or three typed letters. Exact nicknames come first, then the start of the
  * name, its initials or a nickname, then the start of any word; ties go to the more picked hero.
  */
-export class HeroSearch {
-  private entries: Entry[];
+export class HeroSearch<H extends NamedHero = NamedHero> {
+  private entries: Entry<H>[];
 
-  constructor(heroes: HeroInfo[], private popularity: (id: number) => number) {
+  constructor(heroes: H[], private popularity: (id: number) => number = () => 0) {
     this.entries = heroes.map((hero) => {
       const words = normalize(hero.name).split(" ").filter(Boolean);
       return {
@@ -46,10 +51,10 @@ export class HeroSearch {
     });
   }
 
-  find(query: string, exclude: Set<number>, limit = 5): HeroInfo[] {
+  find(query: string, exclude: Set<number>, limit = 5): H[] {
     const q = normalize(query).replace(/ /g, "");
     if (!q) return [];
-    const hits: { tier: number; pop: number; hero: HeroInfo }[] = [];
+    const hits: { tier: number; pop: number; hero: H }[] = [];
     for (const e of this.entries) {
       if (exclude.has(e.hero.id)) continue;
       let tier: number | null = null;
