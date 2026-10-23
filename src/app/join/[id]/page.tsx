@@ -71,6 +71,15 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
   }
 
   if (invite.accepted) redirect("/my-heroes");
+  if (invite.expired) {
+    return (
+      <AuthCard title={title}>
+        <p className="text-zinc-400">
+          This invite has expired. Invites work for 7 days; ask {invite.captain_name ?? "your captain"} to send it again.
+        </p>
+      </AuthCard>
+    );
+  }
 
   const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
   // Invited users arrive signed in by the email link but without a password yet.
