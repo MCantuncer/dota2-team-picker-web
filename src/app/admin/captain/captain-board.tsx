@@ -530,6 +530,7 @@ function SuperTeamView({
   const known = draft.picks.filter((x) => x != null).length + draft.enemies.length;
   return (
     <div className="flex flex-col gap-2">
+      <p className="text-sm text-fg">{plan.gamePlan}</p>
       <p className="text-xs text-subtle">
         {known === 0
           ? "Planned from your lineup's hero pools, before seeing the enemy. It updates after every pick."
