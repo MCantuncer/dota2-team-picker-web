@@ -13,12 +13,12 @@ export interface HeroFace {
 }
 
 const POSITION_SHORT = ["Carry", "Mid", "Off", "Soft sup", "Hard sup"];
-/** Portraits shown per position before the "+N" button. One line at the board's width. */
-const COLLAPSED = 10;
+/** Heroes per position shown on a collapsed row; two when all five positions have to fit. */
+const preview = (positions: number) => (positions >= 5 ? 2 : 3);
 
 /**
- * The team's members as compact rows: who they are, which positions they play, and their heroes
- * per position as portraits. Long pools fold behind "+N"; removing someone sits in a menu with a confirm step.
+ * The team's members as slim rows: who they are, their rank, and their top heroes per position.
+ * Clicking a row opens their full pool; removing someone sits in a menu with a confirm step.
  */
 export function MemberList({
   members,
@@ -48,29 +48,59 @@ export function MemberList({
 }
 
 function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: number) => HeroFace; onRemove: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const panelId = useId();
   const total = m.positions.reduce((n, p) => n + (m.heroes[p]?.length ?? 0), 0);
   const rank = rankName(m.rankTier);
-  const foldable = m.positions.some((p) => (m.heroes[p]?.length ?? 0) > COLLAPSED);
 
   return (
-    <li className="flex flex-col gap-2.5 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.avatarUrl }} size={36} />
-        <div className="mr-auto min-w-0">
-          <div className="truncate font-heading text-lg font-semibold leading-tight text-fg">{m.name}</div>
-          <div className="truncate text-xs text-muted">
-            {rank ?? <span className="text-subtle">No Steam rank</span>}
-            {total > 0 && <span className="text-subtle"> · {total} heroes</span>}
-          </div>
-        </div>
-        <PositionPips positions={m.positions} />
+    <li>
+      <div className={`flex items-center gap-2 pr-2 transition-colors hover:bg-hover/50 ${open ? "bg-hover/30" : ""}`}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 text-subtle transition-transform ${open ? "rotate-90" : ""}`}>
+            <path d="m6 4 4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.avatarUrl }} size={28} />
+          <span className="flex min-w-0 flex-1 flex-col md:w-36 md:flex-none">
+            <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
+            <span className="truncate text-xs text-muted">{rank ?? <span className="text-subtle">No Steam rank</span>}</span>
+          </span>
+          <span className="hidden min-w-0 flex-1 items-center gap-3.5 overflow-hidden md:flex">
+            {!m.positions.length ? (
+              <span className="text-sm text-subtle">No positions yet</span>
+            ) : total === 0 ? (
+              <span className="text-sm text-subtle">
+                Plays <span className="tabular-nums text-muted">{m.positions.join(" ")}</span>, no heroes yet
+              </span>
+            ) : (
+              m.positions.map((p) => (
+                <span key={p} className="flex shrink-0 items-center gap-1" title={POSITION_SHORT[p - 1]}>
+                  <span className="mr-0.5 text-sm font-semibold tabular-nums text-radiant">{p}</span>
+                  {(m.heroes[p] ?? []).length === 0 ? (
+                    <span className="text-xs text-subtle">Any</span>
+                  ) : (
+                    (m.heroes[p] ?? []).slice(0, preview(m.positions.length)).map((id) => <Portrait key={id} face={hero(id)} small />)
+                  )}
+                </span>
+              ))
+            )}
+          </span>
+          <span className="ml-auto shrink-0 font-mono text-xs text-subtle md:hidden">
+            {m.positions.length ? `Pos ${m.positions.join(" ")}` : "No positions"}
+          </span>
+        </button>
         <MemberMenu name={m.name} onRemove={() => setConfirming(true)} />
       </div>
 
       {confirming && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md bg-dire/10 px-3 py-2 text-sm ring-1 ring-dire-strong">
+        <div role="alert" className="mx-3 mb-2 flex flex-wrap items-center gap-2 rounded-md bg-dire/10 px-3 py-2 text-sm ring-1 ring-dire-strong">
           <span className="mr-auto">
             Remove <strong>{m.name}</strong> from the team? They&apos;ll need a new invite to come back.
           </span>
@@ -83,88 +113,45 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
         </div>
       )}
 
-      {!m.positions.length ? (
-        <p className="text-sm text-subtle">Hasn&apos;t picked positions or heroes yet. They set these on My heroes.</p>
-      ) : total === 0 ? (
-        <p className="text-sm text-subtle">No heroes picked yet, so the draft suggests any hero for their positions.</p>
-      ) : (
-        <dl className="flex flex-col gap-1.5">
-          {m.positions.map((p) => {
-            const ids = m.heroes[p] ?? [];
-            const shown = expanded ? ids : ids.slice(0, COLLAPSED);
-            return (
-              <div key={p} className="flex items-start gap-3">
-                <dt className="flex h-7 w-20 shrink-0 items-center gap-1.5 text-sm text-muted">
-                  <span className="font-semibold tabular-nums text-radiant">{p}</span>
-                  {POSITION_SHORT[p - 1]}
-                </dt>
-                <dd className="flex min-w-0 flex-wrap gap-1">
-                  {ids.length === 0 && <span className="flex h-7 items-center text-sm text-subtle">Any hero</span>}
-                  {shown.map((id) => (
-                    <Portrait key={id} face={hero(id)} record={m.personal[id]} />
-                  ))}
-                  {!expanded && ids.length > COLLAPSED && (
-                    <button
-                      type="button"
-                      onClick={() => setExpanded(true)}
-                      aria-expanded={false}
-                      aria-label={`Show all ${ids.length} ${POSITION_SHORT[p - 1]} heroes for ${m.name}`}
-                      className="flex h-7 min-w-12 items-center justify-center rounded-sm bg-raised px-1.5 font-mono text-xs text-muted ring-1 ring-line-strong hover:bg-hover hover:text-fg"
-                    >
-                      +{ids.length - COLLAPSED}
-                    </button>
-                  )}
-                </dd>
-              </div>
-            );
-          })}
-          {expanded && foldable && (
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              aria-expanded
-              className="link ml-23 self-start text-xs"
-            >
-              Show less
-            </button>
-          )}
-        </dl>
-      )}
+      <div id={panelId} hidden={!open} className="border-t border-line bg-bg/40 px-4 py-3 sm:pl-12">
+        {!m.positions.length ? (
+          <p className="text-sm text-subtle">Hasn&apos;t picked positions or heroes yet. They set these on My heroes.</p>
+        ) : total === 0 ? (
+          <p className="text-sm text-subtle">No heroes picked yet, so the draft suggests any hero for their positions.</p>
+        ) : (
+          <dl className="flex flex-col gap-1.5">
+            {m.positions.map((p) => {
+              const ids = m.heroes[p] ?? [];
+              return (
+                <div key={p} className="flex items-start gap-3">
+                  <dt className="flex h-7 w-20 shrink-0 items-center gap-1.5 text-sm text-muted">
+                    <span className="font-semibold tabular-nums text-radiant">{p}</span>
+                    {POSITION_SHORT[p - 1]}
+                  </dt>
+                  <dd className="flex min-w-0 flex-wrap gap-1">
+                    {ids.length === 0 && <span className="flex h-7 items-center text-sm text-subtle">Any hero</span>}
+                    {ids.map((id) => (
+                      <Portrait key={id} face={hero(id)} record={m.personal[id]} />
+                    ))}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        )}
+      </div>
     </li>
   );
 }
 
-/** The five positions as small squares, lit for the ones the member plays. */
-function PositionPips({ positions }: { positions: number[] }) {
-  if (!positions.length) return null;
-  return (
-    <div role="img" aria-label={`Plays position ${positions.join(", ")}`} className="hidden gap-0.5 sm:flex">
-      {[1, 2, 3, 4, 5].map((p) => {
-        const on = positions.includes(p);
-        return (
-          <span
-            key={p}
-            aria-hidden
-            className={`flex h-5 w-5 items-center justify-center rounded-sm font-mono text-[11px] ${
-              on ? "bg-radiant/15 text-radiant ring-1 ring-radiant-strong" : "text-subtle/60 ring-1 ring-line"
-            }`}
-          >
-            {p}
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
 /** A hero portrait at the client's 16:9 ratio, named on hover, with the member's record when known. */
-function Portrait({ face, record }: { face: HeroFace; record?: { games: number; wins: number } }) {
+function Portrait({ face, record, small }: { face: HeroFace; record?: { games: number; wins: number }; small?: boolean }) {
   const label = record?.games
     ? `${face.name}: ${record.games} games, ${((record.wins / record.games) * 100).toFixed(1)}% won`
     : face.name;
   if (!face.image) {
     return (
-      <span title={label} className="flex h-7 items-center rounded-sm bg-raised px-2 text-xs text-fg ring-1 ring-line-strong">
+      <span title={label} className={`flex items-center rounded-sm bg-raised px-2 text-xs text-fg ring-1 ring-line-strong ${small ? "h-5" : "h-7"}`}>
         {face.name}
       </span>
     );
@@ -177,7 +164,7 @@ function Portrait({ face, record }: { face: HeroFace; record?: { games: number; 
       width={48}
       height={27}
       unoptimized
-      className="h-7 w-auto rounded-sm bg-raised object-cover ring-1 ring-black/40"
+      className={`${small ? "h-5" : "h-7"} w-auto rounded-sm bg-raised object-cover ring-1 ring-black/40`}
     />
   );
 }
