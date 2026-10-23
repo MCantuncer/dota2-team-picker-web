@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { rankName } from "@/lib/rank";
 import { createClient } from "@/lib/supabase/server";
-import { FavoritePicker } from "./favorite-picker";
 import { NameForm } from "./name-form";
 import { SyncButton } from "./sync-button";
 
@@ -20,9 +20,8 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/profile");
 
-  const [{ data: profile }, { data: favorites }, heroes] = await Promise.all([
+  const [{ data: profile }, heroes] = await Promise.all([
     supabase.from("profiles").select("display_name, steam_id, rank_tier, hero_stats, synced_at").eq("id", user.id).single(),
-    supabase.from("favorite_heroes").select("hero_id").eq("user_id", user.id),
     getHeroes(),
   ]);
 
@@ -76,16 +75,24 @@ export default async function ProfilePage() {
           </>
         ) : (
           <p className="max-w-prose text-sm text-zinc-400">
-            Email accounts get suggestions from all ranks. Sign in with Steam instead to have suggestions tuned to
-            your rank and the heroes you win with.
+            Email accounts get suggestions from all ranks.{" "}
+            <Link href="/my-heroes" className="text-red-400 hover:underline">
+              Link your Steam account
+            </Link>{" "}
+            to have suggestions tuned to your rank and the heroes you win with.
           </p>
         )}
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Favorite heroes</h2>
-        <p className="text-sm text-zinc-400">Suggestions lean toward heroes you like to play.</p>
-        <FavoritePicker heroes={heroes} favorites={(favorites ?? []).map((f) => f.hero_id)} />
+        <h2 className="text-lg font-semibold">Positions and heroes</h2>
+        <p className="text-sm text-zinc-400">
+          Suggestions lean toward the heroes you pick for each position on{" "}
+          <Link href="/my-heroes" className="text-red-400 hover:underline">
+            My heroes
+          </Link>
+          .
+        </p>
       </section>
     </main>
   );

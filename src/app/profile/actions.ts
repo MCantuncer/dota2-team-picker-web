@@ -12,14 +12,6 @@ async function signedIn() {
   return { supabase, user };
 }
 
-export async function setFavorite(heroId: number, favorite: boolean) {
-  const { supabase, user } = await signedIn();
-  const { error } = favorite
-    ? await supabase.from("favorite_heroes").upsert({ user_id: user.id, hero_id: heroId })
-    : await supabase.from("favorite_heroes").delete().eq("user_id", user.id).eq("hero_id", heroId);
-  if (error) throw new Error(error.message);
-}
-
 export async function saveName(_prev: string | null, form: FormData): Promise<string | null> {
   const name = String(form.get("name") ?? "").trim().slice(0, 40);
   if (!name) return "Name cannot be empty.";
