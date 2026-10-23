@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HARD_COUNTERS } from "@/lib/hard-counters";
 import { HeroSearch } from "@/lib/hero-search";
@@ -7,6 +8,7 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
+import { TeamPicker, type TeamRef } from "./team-picker";
 
 /** A team member as the captain sees them: favorite positions, and heroes per position (0 = any). */
 export interface Member {
@@ -31,7 +33,6 @@ interface Draft {
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const EMPTY_DRAFT: Draft = { picks: [null, null, null, null, null], enemies: [], bans: [] };
-const DRAFT_KEY = "captain-draft";
 const PER_FRIEND = 4;
 
 interface Note {
@@ -43,12 +44,16 @@ type Card = Suggestion & { notes: Note[] };
 /** Captain mode: one person enters the whole draft and gets picks to call for each member's open position. */
 export function CaptainBoard({
   team,
+  teams,
+  ownerId,
   initialMembers,
   initialInvites,
   initialSlots,
   initialRank,
 }: {
-  team: { id: string; name: string };
+  team: TeamRef;
+  teams: TeamRef[];
+  ownerId: string;
   initialMembers: Member[];
   initialInvites: Invite[];
   initialSlots: Slots;
@@ -63,12 +68,14 @@ export function CaptainBoard({
   const [rank, setRank] = useState<number | null>(initialRank);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Each team keeps its own draft in this browser.
+  const draftKey = `captain-draft-${team.id}`;
 
   useEffect(() => {
     loadSnapshot()
       .then((s) => {
         try {
-          const saved = localStorage.getItem(DRAFT_KEY);
+          const saved = localStorage.getItem(draftKey);
           if (saved) setDraft(JSON.parse(saved));
         } catch {
           // A fresh draft is fine.
@@ -76,12 +83,12 @@ export function CaptainBoard({
         setEngine(new Engine(s));
       })
       .catch((e: Error) => setLoadError(e.message));
-  }, []);
+  }, [draftKey]);
 
   const updateDraft = (next: Draft) => {
     setDraft(next);
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+      localStorage.setItem(draftKey, JSON.stringify(next));
     } catch {
       // Not saving the draft in this browser is fine.
     }
@@ -107,6 +114,7 @@ export function CaptainBoard({
 
   return (
     <Shell
+      picker={<TeamPicker teams={teams} current={team.id} ownerId={ownerId} />}
       tabs={
         <div className="flex gap-1" role="tablist">
           {(["draft", "team"] as const).map((t) => (
@@ -152,12 +160,13 @@ export function CaptainBoard({
   );
 }
 
-function Shell({ tabs, children }: { tabs?: React.ReactNode; children: React.ReactNode }) {
+function Shell({ picker, tabs, children }: { picker?: React.ReactNode; tabs?: React.ReactNode; children: React.ReactNode }) {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6">
       <div className="flex flex-wrap items-center gap-4 border-b border-zinc-800 pb-3">
         <h1 className="text-2xl font-bold tracking-tight">Captain mode</h1>
         <span className="font-mono text-xs text-zinc-500">admin</span>
+        {picker}
         <div className="ml-auto">{tabs}</div>
       </div>
       {children}
@@ -495,6 +504,7 @@ function TeamView({
   onRemoved: (id: string) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [teamName, setTeamName] = useState(team.name);
   const [email, setEmail] = useState("");
   const [invites, setInvites] = useState(initialInvites);
@@ -507,6 +517,8 @@ function TeamView({
     if (!name || name === team.name) return;
     const { error } = await supabase.from("teams").update({ name }).eq("id", team.id);
     onError(error ? `Team name not saved: ${error.message}` : null);
+    // Show the new name in the team picker.
+    if (!error) router.refresh();
   };
 
   const invite = async (address: string) => {
