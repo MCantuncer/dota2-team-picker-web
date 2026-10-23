@@ -21,15 +21,15 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
   if (!invite) {
     return (
       <AuthCard title="Invite not found">
-        <p className="text-zinc-400">This invite link doesn&apos;t work anymore. Ask your captain to send a new one.</p>
+        <p className="text-muted">This invite link doesn&apos;t work anymore. Ask your captain to send a new one.</p>
       </AuthCard>
     );
   }
 
   const title = `Join ${invite.team_name}`;
   const intro = (
-    <p className="text-zinc-400">
-      {invite.captain_name ?? "Your captain"} invited <span className="text-zinc-200">{invite.email}</span> to
+    <p className="text-muted">
+      {invite.captain_name ?? "Your captain"} invited <span className="text-fg">{invite.email}</span> to
       their team. They&apos;ll call heroes for you in the draft based on the positions and heroes you pick next.
     </p>
   );
@@ -39,13 +39,13 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
     return (
       <AuthCard title={title}>
         {intro}
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted">
           Open the link in your invite email, or{" "}
-          <Link href={`/signup?next=${next}`} className="text-red-400 hover:underline">
+          <Link href={`/signup?next=${next}`} className="link">
             sign up
           </Link>{" "}
           or{" "}
-          <Link href={`/login?next=${next}`} className="text-red-400 hover:underline">
+          <Link href={`/login?next=${next}`} className="link">
             log in
           </Link>{" "}
           with {invite.email}.
@@ -58,11 +58,11 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
     return (
       <AuthCard title={title}>
         {intro}
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted">
           You&apos;re signed in as {user.email}. Sign out and open the link again with {invite.email}.
         </p>
         <form action="/auth/signout" method="post">
-          <button type="submit" className="rounded-md px-4 py-2 font-semibold ring-1 ring-zinc-600 hover:bg-zinc-800">
+          <button type="submit" className="btn btn-secondary">
             Sign out
           </button>
         </form>
@@ -74,7 +74,7 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
   if (invite.expired) {
     return (
       <AuthCard title={title}>
-        <p className="text-zinc-400">
+        <p className="text-muted">
           This invite has expired. Invites work for 7 days; ask {invite.captain_name ?? "your captain"} to send it again.
         </p>
       </AuthCard>

@@ -12,12 +12,12 @@ export function NameForm({ name }: { name: string }) {
         defaultValue={name}
         maxLength={40}
         required
-        className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 outline-none focus:border-red-600"
+        className="field"
       />
-      <button type="submit" disabled={pending} className="rounded-md px-3 py-1.5 text-sm ring-1 ring-zinc-600 hover:bg-zinc-800">
+      <button type="submit" disabled={pending} className="btn btn-secondary">
         {pending ? "Saving…" : "Save"}
       </button>
-      {error && <span className="text-sm text-red-400">{error}</span>}
+      {error && <span className="text-sm text-dire">{error}</span>}
     </form>
   );
 }
