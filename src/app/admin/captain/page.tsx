@@ -24,7 +24,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
   const team = teams.find((t) => t.id === wanted) ?? teams[0]!;
 
   const [{ data: members }, { data: invites }, { data: lineup }] = await Promise.all([
-    supabase.from("team_members").select("user_id, profiles(display_name)").eq("team_id", team.id).order("joined_at"),
+    supabase.from("team_members").select("user_id, profiles(display_name, rank_tier, hero_stats)").eq("team_id", team.id).order("joined_at"),
     supabase.from("team_invites").select("id, email, created_at").eq("team_id", team.id).is("accepted_at", null).order("created_at"),
     supabase.from("team_lineups").select("slots, rank_bracket").eq("team_id", team.id).maybeSingle(),
   ]);
@@ -37,12 +37,19 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
   const initialMembers: Member[] = (members ?? []).map((m) => {
     const heroes: Record<number, number[]> = {};
     for (const f of favorites ?? []) if (f.user_id === m.user_id) (heroes[f.position] ??= []).push(f.hero_id);
-    const profile = m.profiles as unknown as { display_name: string | null } | null;
+    const profile = m.profiles as unknown as {
+      display_name: string | null;
+      rank_tier: number | null;
+      hero_stats: Member["personal"] | null;
+    } | null;
     return {
       id: m.user_id,
       name: profile?.display_name ?? "Unnamed",
       positions: (positions ?? []).filter((p) => p.user_id === m.user_id).map((p) => p.position).sort(),
       heroes,
+      // rank_tier is medal and star (e.g. 54 = Legend 4); the engine uses the medal.
+      rank: profile?.rank_tier ? (Math.floor(profile.rank_tier / 10) as Member["rank"]) : null,
+      personal: profile?.hero_stats ?? {},
     };
   });
   const initialInvites: Invite[] = (invites ?? []).map((i) => ({ id: i.id, email: i.email }));

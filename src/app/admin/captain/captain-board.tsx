@@ -4,18 +4,24 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HARD_COUNTERS } from "@/lib/hard-counters";
 import { HeroSearch } from "@/lib/hero-search";
+import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
-import type { HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
+import type { GamesWins, HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
 import { TeamPicker, type TeamRef } from "./team-picker";
 
-/** A team member as the captain sees them: favorite positions, and heroes per position (0 = any). */
+/**
+ * A team member as the captain sees them: favorite positions, heroes per position (0 = any),
+ * and their rank and record per hero when their Steam account is linked.
+ */
 export interface Member {
   id: string;
   name: string;
   positions: number[];
   heroes: Record<number, number[]>;
+  rank: RankBracket | null;
+  personal: Record<number, GamesWins>;
 }
 
 export interface Invite {
@@ -34,6 +40,8 @@ const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const EMPTY_DRAFT: Draft = { picks: [null, null, null, null, null], enemies: [], bans: [] };
 const PER_FRIEND = 4;
+const VIEW_KEY = "captain-suggestion-view";
+type View = "players" | "wcst";
 
 interface Note {
   kind: "warn" | "bad" | "good";
@@ -197,13 +205,33 @@ function DraftView({
 }) {
   const enemyRef = useRef<HTMLInputElement>(null);
   const bansRef = useRef<HTMLInputElement>(null);
+  // Only rendered in the browser, after the hero data loads, so reading storage here is safe.
+  const [view, setView] = useState<View>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "wcst" ? "wcst" : "players";
+    } catch {
+      return "players";
+    }
+  });
+  const changeView = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      // Not remembering the view is fine.
+    }
+  };
   const memberById = (id: string | null) => members.find((m) => m.id === id);
   const taken = new Set([...draft.picks.filter((x): x is number => x != null), ...draft.enemies, ...draft.bans]);
   const name = (id: number) => engine.hero(id).name;
 
   const columns = useMemo(
-    () => suggestColumns(engine, members, slots, rank, draft),
-    [engine, members, slots, rank, draft],
+    () => (view === "players" ? suggestColumns(engine, members, slots, rank, draft) : []),
+    [view, engine, members, slots, rank, draft],
+  );
+  const plan = useMemo(
+    () => (view === "wcst" ? superTeam(engine, members, slots, rank, draft) : null),
+    [view, engine, members, slots, rank, draft],
   );
 
   const setPick = (i: number, id: number | null) => {
@@ -297,9 +325,38 @@ function DraftView({
       </div>
 
       <section aria-label="Suggestions" className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wider">Call these</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider">{view === "players" ? "Call these" : "Super team"}</h2>
+          <div className="flex gap-1" role="tablist" aria-label="Suggestion view">
+            {(["players", "wcst"] as const).map((v) => (
+              <button
+                key={v}
+                role="tab"
+                aria-selected={view === v}
+                onClick={() => changeView(v)}
+                title={v === "wcst" ? "Wombo-Combo Super Team: the best five heroes for your lineup, re-planned after every pick" : undefined}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ${
+                  view === v ? "bg-zinc-800 text-zinc-100 ring-zinc-500" : "text-zinc-400 ring-zinc-700 hover:text-zinc-100"
+                }`}
+              >
+                {v === "players" ? "Per player" : "WCST"}
+              </button>
+            ))}
+          </div>
+        </div>
         {!members.length ? (
           <p className="text-sm text-zinc-500">Invite your friends on the Team tab, then pick who plays under Current team.</p>
+        ) : view === "wcst" ? (
+          plan && (
+            <SuperTeamView
+              engine={engine}
+              plan={plan}
+              members={members}
+              draft={draft}
+              onPicked={(slot) => setPick(slot.position - 1, slot.heroId)}
+              onBanned={(slot) => onDraft({ ...draft, bans: [...draft.bans, slot.heroId] })}
+            />
+          )
         ) : !columns.length ? (
           <p className="text-sm text-zinc-500">
             {slots.some(Boolean) ? "Everyone in the team has picked. Good luck!" : "Pick who plays which position under Current team to get suggestions."}
@@ -415,6 +472,7 @@ function suggestColumns(engine: Engine, members: Member[], slots: Slots, rank: n
         bans: draft.bans,
         rankBracket: (rank ?? undefined) as RankBracket | undefined,
         favorites: [...(member.heroes[position] ?? []), ...(member.heroes[0] ?? [])],
+        personal: member.personal,
         count: 12,
       })
       .map((s) => ({ ...s, notes: counterNotes(engine, s.heroId, draft) })),
@@ -430,6 +488,149 @@ function suggestColumns(engine: Engine, members: Member[], slots: Slots, rank: n
     ...o,
     cards: lists[col]!.filter((s) => best.get(s.heroId)!.col === col).slice(0, PER_FRIEND) as Card[],
   }));
+}
+
+// ---------- super team ----------
+
+/**
+ * WCST (Wombo-Combo Super Team): the best five heroes for the current lineup, built from each
+ * player's pool. Picked heroes stay; the open slots are re-planned after every pick.
+ */
+function superTeam(engine: Engine, members: Member[], slots: Slots, rank: number | null, draft: Draft): TeamPlan {
+  const planSlots: PlanSlot[] = slots.map((memberId, i) => {
+    const member = members.find((m) => m.id === memberId);
+    return {
+      position: (i + 1) as Position,
+      playerId: member?.id,
+      heroId: draft.picks[i] ?? undefined,
+      favorites: member ? [...(member.heroes[i + 1] ?? []), ...(member.heroes[0] ?? [])] : [],
+      personal: member?.personal,
+      // The party rank decides the games we play in; a player's own rank is the fallback.
+      rankBracket: rank == null ? (member?.rank ?? undefined) : undefined,
+    };
+  });
+  return planTeam(engine, {
+    slots: planSlots,
+    enemies: draft.enemies,
+    bans: draft.bans,
+    rankBracket: (rank ?? undefined) as RankBracket | undefined,
+  });
+}
+
+function SuperTeamView({
+  engine,
+  plan,
+  members,
+  draft,
+  onPicked,
+  onBanned,
+}: {
+  engine: Engine;
+  plan: TeamPlan;
+  members: Member[];
+  draft: Draft;
+  onPicked: (slot: PlannedSlot) => void;
+  onBanned: (slot: PlannedSlot) => void;
+}) {
+  const known = draft.picks.filter((x) => x != null).length + draft.enemies.length;
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-zinc-500">
+        {known === 0
+          ? "Planned from your lineup's hero pools, before seeing the enemy. It updates after every pick."
+          : `Re-planned with ${known} of 10 heroes known.`}
+      </p>
+      <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))]">
+        {plan.slots.map((slot) => (
+          <PlanCard
+            key={slot.position}
+            slot={slot}
+            player={members.find((m) => m.id === slot.playerId)?.name}
+            notes={slot.locked ? [] : counterNotes(engine, slot.heroId, draft)}
+            onPicked={() => onPicked(slot)}
+            onBanned={() => onBanned(slot)}
+          />
+        ))}
+      </div>
+      {plan.missing.length > 0 && (
+        <p className="text-sm text-zinc-400">
+          Team still lacks: <span className="text-zinc-200">{plan.missing.join(", ")}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PlanCard({
+  slot,
+  player,
+  notes,
+  onPicked,
+  onBanned,
+}: {
+  slot: PlannedSlot;
+  player: string | undefined;
+  notes: Note[];
+  onPicked: () => void;
+  onBanned: () => void;
+}) {
+  const tone = { warn: "bg-amber-950/60 text-amber-300", bad: "bg-red-950/60 text-red-300", good: "bg-green-950/60 text-green-300" };
+  return (
+    <article
+      className={`flex flex-col gap-1.5 rounded-lg border p-2.5 ${
+        slot.locked ? "border-green-700/70 bg-green-950/20" : "border-zinc-800 bg-zinc-900"
+      }`}
+    >
+      <div className="flex items-baseline gap-2 text-xs">
+        <span className="font-mono text-green-400">{slot.position}</span>
+        <span className="text-zinc-500">{POSITION_NAMES[slot.position - 1]}</span>
+        <span className={`ml-auto truncate font-semibold ${player ? "text-zinc-200" : "text-zinc-500"}`}>{player ?? "No player"}</span>
+      </div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-lg font-bold leading-tight">{slot.name}</span>
+        {slot.locked ? (
+          <span className="text-xs font-semibold text-green-400">Picked</span>
+        ) : (
+          player && !slot.inPool && <span className="whitespace-nowrap text-xs text-zinc-500" title="Not one of this player's heroes for this position">Outside pool</span>
+        )}
+      </div>
+      {!slot.locked && (
+        <>
+          <ul className="flex flex-col gap-0.5 text-[13px] text-zinc-300">
+            {slot.reasons.slice(0, 2).map((r) => (
+              <li key={r}>· {r}</li>
+            ))}
+          </ul>
+          {notes.map((n) => (
+            <p key={n.text} className={`rounded px-1.5 py-0.5 text-xs ${tone[n.kind]}`}>
+              {n.text}
+            </p>
+          ))}
+          {slot.alternatives.length > 0 && (
+            <p className="text-xs text-zinc-500">
+              Backups:{" "}
+              {slot.alternatives.map((a, i) => (
+                <span key={a.heroId}>
+                  {i > 0 && ", "}
+                  <span className="text-zinc-300">{a.name}</span>
+                  {player && !a.inPool && <span title="Outside pool">*</span>}{" "}
+                  <span className="font-mono tabular-nums">{a.scoreDelta.toFixed(1).replace("-", "−")}</span>
+                </span>
+              ))}
+            </p>
+          )}
+          <div className="flex gap-1.5 pt-0.5">
+            <button onClick={onPicked} className="rounded-md bg-amber-500 px-2.5 py-1 text-xs font-semibold text-zinc-950 hover:bg-amber-400">
+              Picked
+            </button>
+            <button onClick={onBanned} className="rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-zinc-700 hover:bg-zinc-800">
+              Banned
+            </button>
+          </div>
+        </>
+      )}
+    </article>
+  );
 }
 
 function counterNotes(engine: Engine, heroId: number, draft: Draft): Note[] {
