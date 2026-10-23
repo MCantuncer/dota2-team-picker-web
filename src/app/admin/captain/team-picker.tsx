@@ -47,12 +47,12 @@ export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; curr
             placeholder="Team name, e.g. Office stack"
             maxLength={40}
             autoFocus
-            className="rounded-md bg-zinc-800 px-3 py-1.5 text-sm ring-1 ring-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="field w-64"
           />
-          <button type="submit" className="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400">
+          <button type="submit" className="btn btn-primary">
             Create
           </button>
-          <button type="button" onClick={() => setAdding(false)} className="rounded-md px-3 py-1.5 text-sm ring-1 ring-zinc-700 hover:bg-zinc-800">
+          <button type="button" onClick={() => setAdding(false)} className="btn btn-ghost">
             Cancel
           </button>
         </form>
@@ -63,7 +63,7 @@ export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; curr
             aria-label="Team"
             value={current}
             onChange={(e) => open(e.target.value)}
-            className="rounded-md bg-zinc-800 px-2 py-1.5 text-sm font-semibold text-zinc-100 ring-1 ring-zinc-700"
+            className="field min-w-48 font-semibold"
           >
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -71,12 +71,15 @@ export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; curr
               </option>
             ))}
           </select>
-          <button onClick={() => setAdding(true)} className="rounded-md px-3 py-1.5 text-sm ring-1 ring-zinc-700 hover:bg-zinc-800">
-            + New team
+          <button onClick={() => setAdding(true)} className="btn btn-secondary">
+            <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            New team
           </button>
         </>
       )}
-      {error && <span className="text-sm text-red-400">{error}</span>}
+      {error && <span className="text-sm text-dire">{error}</span>}
     </div>
   );
 }

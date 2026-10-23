@@ -35,11 +35,11 @@ export default async function ProfilePage() {
     .slice(0, 5);
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10">
+    <main className="page flex flex-col gap-10 py-10">
       <section className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold">Your profile</h1>
+        <h1 className="page-title">Your profile</h1>
         <NameForm name={profile?.display_name ?? ""} />
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-subtle">
           {isSteam ? "Signed in with Steam." : `Signed in with ${user.email}.`}
         </p>
       </section>
@@ -48,17 +48,17 @@ export default async function ProfilePage() {
         <h2 className="text-lg font-semibold">Rank</h2>
         {isSteam ? (
           <>
-            <p className="text-3xl font-bold text-red-400">{rank ?? "Unknown"}</p>
+            <p className="font-heading text-4xl font-bold uppercase tracking-wide text-accent">{rank ?? "Unknown"}</p>
             {!rank && (
-              <p className="max-w-prose text-sm text-zinc-400">
+              <p className="max-w-prose text-sm text-muted">
                 OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
                 <em>Expose Public Match Data</em>, play a match, then refresh.
               </p>
             )}
             {stats.length > 0 && (
-              <ul className="flex flex-wrap gap-3 text-sm text-zinc-300">
+              <ul className="flex flex-wrap gap-3 text-sm text-fg/90">
                 {stats.map((s) => (
-                  <li key={s.hero!.id} className="rounded-md bg-zinc-900 px-3 py-1.5">
+                  <li key={s.hero!.id} className="rounded-md bg-surface px-3 py-1.5">
                     {s.hero!.name}: {s.games} games, {Math.round((100 * s.wins) / s.games)}% won
                   </li>
                 ))}
@@ -67,16 +67,16 @@ export default async function ProfilePage() {
             <div className="flex items-center gap-3">
               <SyncButton />
               {profile?.synced_at && (
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-subtle">
                   Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
                 </span>
               )}
             </div>
           </>
         ) : (
-          <p className="max-w-prose text-sm text-zinc-400">
+          <p className="max-w-prose text-sm text-muted">
             Email accounts get suggestions from all ranks.{" "}
-            <Link href="/my-heroes" className="text-red-400 hover:underline">
+            <Link href="/my-heroes" className="link">
               Link your Steam account
             </Link>{" "}
             to have suggestions tuned to your rank and the heroes you win with.
@@ -86,9 +86,9 @@ export default async function ProfilePage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Positions and heroes</h2>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted">
           Suggestions lean toward the heroes you pick for each position on{" "}
-          <Link href="/my-heroes" className="text-red-400 hover:underline">
+          <Link href="/my-heroes" className="link">
             My heroes
           </Link>
           .

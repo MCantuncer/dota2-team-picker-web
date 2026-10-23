@@ -19,17 +19,17 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <AuthCard title="Log in">
-      {errorText && <p className="rounded-md bg-red-950/60 p-3 text-sm text-red-300">{errorText}</p>}
+      {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
       <SteamButton next={nextPath} />
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-subtle">
         Steam accounts get rank-based suggestions. Turn on <em>Expose Public Match Data</em> in Dota 2 so we can
         read it.
       </p>
       <Divider />
       <AuthForm action={logIn} submitLabel="Log in with email" next={nextPath} />
-      <p className="text-center text-sm text-zinc-400">
+      <p className="text-center text-sm text-muted">
         No account?{" "}
-        <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="text-red-400 hover:underline">
+        <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="link">
           Sign up with email
         </Link>
       </p>
