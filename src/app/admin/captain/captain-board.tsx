@@ -9,6 +9,7 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { GamesWins, HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
+import { MemberList } from "./member-list";
 import { TeamPicker, type TeamRef } from "./team-picker";
 
 /**
@@ -21,6 +22,9 @@ export interface Member {
   positions: number[];
   heroes: Record<number, number[]>;
   rank: RankBracket | null;
+  /** OpenDota rank tier with stars (54 = Legend 4), for display. */
+  rankTier: number | null;
+  avatarUrl: string | null;
   personal: Record<number, GamesWins>;
 }
 
@@ -58,6 +62,7 @@ export function CaptainBoard({
   initialInvites,
   initialSlots,
   initialRank,
+  portraits,
 }: {
   team: TeamRef;
   teams: TeamRef[];
@@ -65,6 +70,8 @@ export function CaptainBoard({
   initialMembers: Member[];
   initialInvites: Invite[];
   initialSlots: Slots;
+  /** Hero portrait URLs by hero id. */
+  portraits: Record<number, string>;
   initialRank: number | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -157,6 +164,7 @@ export function CaptainBoard({
           team={team}
           members={members}
           initialInvites={initialInvites}
+          portraits={portraits}
           onMembers={setMembers}
           onError={setSaveError}
           onRemoved={(id) => saveLineup(slots.map((s) => (s === id ? null : s)), rank)}
@@ -681,13 +689,13 @@ function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: bo
 
 // ---------- team ----------
 
-const POSITION_SHORT = ["Carry", "Mid", "Off", "Soft sup", "Hard sup"];
 
 function TeamView({
   engine,
   team,
   members,
   initialInvites,
+  portraits,
   onMembers,
   onError,
   onRemoved,
@@ -696,6 +704,7 @@ function TeamView({
   team: { id: string; name: string };
   members: Member[];
   initialInvites: Invite[];
+  portraits: Record<number, string>;
   onMembers: (m: Member[]) => void;
   onError: (e: string | null) => void;
   onRemoved: (id: string) => void;
@@ -822,35 +831,7 @@ function TeamView({
         )}
       </section>
 
-      <section aria-label="Members" className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wider">
-          Members <span className="font-mono text-xs text-subtle">{members.length}</span>
-        </h2>
-        {!members.length && <p className="text-sm text-subtle">Nobody has joined yet.</p>}
-        {members.map((m) => (
-          <article key={m.id} className="flex flex-col gap-2 card p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <strong className="mr-auto text-lg">{m.name}</strong>
-              <button onClick={() => remove(m)} className="btn btn-secondary btn-sm">
-                Remove
-              </button>
-            </div>
-            {!m.positions.length && <p className="text-sm text-subtle">Hasn&apos;t picked positions yet.</p>}
-            <dl className="grid gap-1.5 text-sm sm:grid-cols-[7rem_1fr]">
-              {m.positions.map((p) => (
-                <div key={p} className="contents">
-                  <dt className="text-muted">
-                    <span className="font-mono text-radiant">{p}</span> {POSITION_SHORT[p - 1]}
-                  </dt>
-                  <dd className="text-fg">
-                    {(m.heroes[p] ?? []).map((id) => engine.hero(id).name).join(", ") || <span className="text-subtle">No heroes yet</span>}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </article>
-        ))}
-      </section>
+      <MemberList members={members} hero={(id) => ({ name: engine.hero(id).name, image: portraits[id] })} onRemove={remove} />
     </div>
   );
 }
