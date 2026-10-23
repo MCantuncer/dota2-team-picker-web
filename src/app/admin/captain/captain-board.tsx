@@ -62,7 +62,7 @@ export function CaptainBoard({
   initialInvites,
   initialSlots,
   initialRank,
-  portraits,
+  icons,
 }: {
   team: TeamRef;
   teams: TeamRef[];
@@ -70,8 +70,8 @@ export function CaptainBoard({
   initialMembers: Member[];
   initialInvites: Invite[];
   initialSlots: Slots;
-  /** Hero portrait URLs by hero id. */
-  portraits: Record<number, string>;
+  /** Hero icon URLs by hero id. */
+  icons: Record<number, string>;
   initialRank: number | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -164,7 +164,7 @@ export function CaptainBoard({
           team={team}
           members={members}
           initialInvites={initialInvites}
-          portraits={portraits}
+          icons={icons}
           onMembers={setMembers}
           onError={setSaveError}
           onRemoved={(id) => saveLineup(slots.map((s) => (s === id ? null : s)), rank)}
@@ -695,7 +695,7 @@ function TeamView({
   team,
   members,
   initialInvites,
-  portraits,
+  icons,
   onMembers,
   onError,
   onRemoved,
@@ -704,7 +704,7 @@ function TeamView({
   team: { id: string; name: string };
   members: Member[];
   initialInvites: Invite[];
-  portraits: Record<number, string>;
+  icons: Record<number, string>;
   onMembers: (m: Member[]) => void;
   onError: (e: string | null) => void;
   onRemoved: (id: string) => void;
@@ -831,7 +831,7 @@ function TeamView({
         )}
       </section>
 
-      <MemberList members={members} hero={(id) => ({ name: engine.hero(id).name, image: portraits[id] })} onRemove={remove} />
+      <MemberList members={members} hero={(id) => ({ name: engine.hero(id).name, icon: icons[id] })} onRemove={remove} />
     </div>
   );
 }

@@ -6,15 +6,15 @@ import { Avatar } from "@/components/account-menu";
 import { rankName } from "@/lib/rank";
 import type { Member } from "./captain-board";
 
-/** Hero name and portrait URL; the portrait is missing when the hero list couldn't be loaded. */
+/** Hero name and icon URL; the icon is missing when the hero list couldn't be loaded. */
 export interface HeroFace {
   name: string;
-  image?: string;
+  icon?: string;
 }
 
 const POSITION_SHORT = ["Carry", "Mid", "Off", "Soft sup", "Hard sup"];
-/** Heroes per position shown on a collapsed row; two when all five positions have to fit. */
-const preview = (positions: number) => (positions >= 5 ? 2 : 3);
+/** Heroes per position shown on a collapsed row. */
+const PREVIEW = 3;
 
 /**
  * The team's members as slim rows: who they are, their rank, and their top heroes per position.
@@ -72,7 +72,7 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
             <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
             <span className="truncate text-xs text-muted">{rank ?? <span className="text-subtle">No Steam rank</span>}</span>
           </span>
-          <span className="hidden min-w-0 flex-1 items-center gap-3.5 overflow-hidden md:flex">
+          <span className="hidden min-w-0 flex-1 items-center gap-4 overflow-hidden md:flex">
             {!m.positions.length ? (
               <span className="text-sm text-subtle">No positions yet</span>
             ) : total === 0 ? (
@@ -81,12 +81,12 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
               </span>
             ) : (
               m.positions.map((p) => (
-                <span key={p} className="flex shrink-0 items-center gap-1" title={POSITION_SHORT[p - 1]}>
-                  <span className="mr-0.5 text-sm font-semibold tabular-nums text-radiant">{p}</span>
+                <span key={p} className="flex shrink-0 items-center gap-0.5" title={POSITION_SHORT[p - 1]}>
+                  <span className="mr-1 text-sm font-semibold tabular-nums text-radiant">{p}</span>
                   {(m.heroes[p] ?? []).length === 0 ? (
                     <span className="text-xs text-subtle">Any</span>
                   ) : (
-                    (m.heroes[p] ?? []).slice(0, preview(m.positions.length)).map((id) => <Portrait key={id} face={hero(id)} small />)
+                    (m.heroes[p] ?? []).slice(0, PREVIEW).map((id) => <HeroIcon key={id} face={hero(id)} />)
                   )}
                 </span>
               ))
@@ -123,15 +123,15 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
             {m.positions.map((p) => {
               const ids = m.heroes[p] ?? [];
               return (
-                <div key={p} className="flex items-start gap-3">
-                  <dt className="flex h-7 w-20 shrink-0 items-center gap-1.5 text-sm text-muted">
+                <div key={p} className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
+                  <dt className="flex shrink-0 items-center gap-1.5 text-sm text-muted sm:h-7 sm:w-20">
                     <span className="font-semibold tabular-nums text-radiant">{p}</span>
                     {POSITION_SHORT[p - 1]}
                   </dt>
                   <dd className="flex min-w-0 flex-wrap gap-1">
                     {ids.length === 0 && <span className="flex h-7 items-center text-sm text-subtle">Any hero</span>}
                     {ids.map((id) => (
-                      <Portrait key={id} face={hero(id)} record={m.personal[id]} />
+                      <HeroChip key={id} face={hero(id)} record={m.personal[id]} />
                     ))}
                   </dd>
                 </div>
@@ -144,28 +144,32 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
   );
 }
 
-/** A hero portrait at the client's 16:9 ratio, named on hover, with the member's record when known. */
-function Portrait({ face, record, small }: { face: HeroFace; record?: { games: number; wins: number }; small?: boolean }) {
-  const label = record?.games
-    ? `${face.name}: ${record.games} games, ${((record.wins / record.games) * 100).toFixed(1)}% won`
-    : face.name;
-  if (!face.image) {
-    return (
-      <span title={label} className={`flex items-center rounded-sm bg-raised px-2 text-xs text-fg ring-1 ring-line-strong ${small ? "h-5" : "h-7"}`}>
-        {face.name}
-      </span>
-    );
-  }
+/** A hero's square icon, named on hover. Falls back to the name when there's no icon. */
+function HeroIcon({ face, decorative }: { face: HeroFace; decorative?: boolean }) {
+  if (!face.icon) return <span className="text-xs text-fg">{face.name}</span>;
   return (
     <Image
-      src={face.image}
-      alt={face.name}
-      title={label}
-      width={48}
-      height={27}
+      src={face.icon}
+      alt={decorative ? "" : face.name}
+      title={decorative ? undefined : face.name}
+      width={24}
+      height={24}
       unoptimized
-      className={`${small ? "h-5" : "h-7"} w-auto rounded-sm bg-raised object-cover ring-1 ring-black/40`}
+      className="h-6 w-6 shrink-0 rounded-sm bg-raised"
     />
+  );
+}
+
+/** Icon and name, with the member's record on this hero on hover when known. */
+function HeroChip({ face, record }: { face: HeroFace; record?: { games: number; wins: number } }) {
+  const title = record?.games
+    ? `${face.name}: ${record.games} games, ${((record.wins / record.games) * 100).toFixed(1)}% won`
+    : face.name;
+  return (
+    <span title={title} className="flex h-7 items-center gap-1.5 rounded bg-raised py-0.5 pl-0.5 pr-2 text-sm text-fg ring-1 ring-line-strong">
+      {face.icon && <HeroIcon face={face} decorative />}
+      {face.name}
+    </span>
   );
 }
 

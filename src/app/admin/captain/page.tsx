@@ -31,7 +31,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
     supabase.from("team_members").select("user_id, profiles(display_name, avatar_url, rank_tier, hero_stats)").eq("team_id", team.id).order("joined_at"),
     supabase.from("team_invites").select("id, email, created_at").eq("team_id", team.id).is("accepted_at", null).order("created_at"),
     supabase.from("team_lineups").select("slots, rank_bracket").eq("team_id", team.id).maybeSingle(),
-    // Portraits are decoration: if OpenDota is down the member list falls back to hero names.
+    // Hero icons are decoration: if OpenDota is down the member list falls back to hero names.
     getHeroes().catch(() => []),
   ]);
   const ids = (members ?? []).map((m) => m.user_id);
@@ -61,7 +61,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
       personal: profile?.hero_stats ?? {},
     };
   });
-  const portraits = Object.fromEntries(heroes.map((h) => [h.id, h.image]));
+  const icons = Object.fromEntries(heroes.map((h) => [h.id, h.icon]));
   const initialInvites: Invite[] = (invites ?? []).map((i) => ({ id: i.id, email: i.email }));
 
   return (
@@ -74,7 +74,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
       initialInvites={initialInvites}
       initialSlots={lineup?.slots ?? [null, null, null, null, null]}
       initialRank={lineup?.rank_bracket ?? null}
-      portraits={portraits}
+      icons={icons}
     />
   );
 }
