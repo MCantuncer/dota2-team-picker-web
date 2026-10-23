@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Avatar } from "@/components/account-menu";
+import { RankMedal } from "@/components/rank-medal";
+import { SteamLogo } from "@/components/steam-button";
 import { rankName } from "@/lib/rank";
 import type { Member } from "./captain-board";
 
@@ -62,17 +64,34 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls={panelId}
-          className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+          className="flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
         >
           <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 text-subtle transition-transform ${open ? "rotate-90" : ""}`}>
             <path d="m6 4 4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.avatarUrl }} size={28} />
-          <span className="flex min-w-0 flex-1 flex-col md:w-36 md:flex-none">
+          <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.steamName }} size={32} />
+          <span className="flex min-w-0 flex-1 flex-col md:w-32 md:flex-none">
             <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
-            <span className="truncate text-xs text-muted">{rank ?? <span className="text-subtle">No Steam rank</span>}</span>
+            {m.steamName ? (
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam account">
+                <SteamLogo className="h-3 w-3 shrink-0" />
+                <span className="truncate">{m.steamName}</span>
+              </span>
+            ) : (
+              <span className="text-xs text-subtle">No Steam linked</span>
+            )}
           </span>
-          <span className="hidden min-w-0 flex-1 items-center gap-4 overflow-hidden md:flex">
+          <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted sm:w-26">
+            {m.rankTier && rank ? (
+              <>
+                <RankMedal rankTier={m.rankTier} size={30} />
+                <span className="max-sm:hidden">{rank}</span>
+              </>
+            ) : (
+              <span className="text-subtle max-sm:hidden">No rank</span>
+            )}
+          </span>
+          <span className="hidden min-w-0 flex-1 items-center gap-3 overflow-hidden md:flex">
             {!m.positions.length ? (
               <span className="text-sm text-subtle">No positions yet</span>
             ) : total === 0 ? (
@@ -82,7 +101,7 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
             ) : (
               m.positions.map((p) => (
                 <span key={p} className="flex shrink-0 items-center gap-0.5" title={POSITION_SHORT[p - 1]}>
-                  <span className="mr-1 text-sm font-semibold tabular-nums text-radiant">{p}</span>
+                  <span className="mr-0.5 text-sm font-semibold tabular-nums text-radiant">{p}</span>
                   {(m.heroes[p] ?? []).length === 0 ? (
                     <span className="text-xs text-subtle">Any</span>
                   ) : (

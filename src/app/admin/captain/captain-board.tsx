@@ -25,6 +25,8 @@ export interface Member {
   /** OpenDota rank tier with stars (54 = Legend 4), for display. */
   rankTier: number | null;
   avatarUrl: string | null;
+  /** Steam nickname when their Steam account is linked. */
+  steamName: string | null;
   personal: Record<number, GamesWins>;
 }
 

@@ -28,7 +28,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
   const team = teams.find((t) => t.id === wanted) ?? teams[0]!;
 
   const [{ data: members }, { data: invites }, { data: lineup }, heroes] = await Promise.all([
-    supabase.from("team_members").select("user_id, profiles(display_name, avatar_url, rank_tier, hero_stats)").eq("team_id", team.id).order("joined_at"),
+    supabase.from("team_members").select("user_id, profiles(display_name, steam_id, steam_name, avatar_url, rank_tier, hero_stats)").eq("team_id", team.id).order("joined_at"),
     supabase.from("team_invites").select("id, email, created_at").eq("team_id", team.id).is("accepted_at", null).order("created_at"),
     supabase.from("team_lineups").select("slots, rank_bracket").eq("team_id", team.id).maybeSingle(),
     // Hero icons are decoration: if OpenDota is down the member list falls back to hero names.
@@ -45,6 +45,8 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
     for (const f of favorites ?? []) if (f.user_id === m.user_id) (heroes[f.position] ??= []).push(f.hero_id);
     const profile = m.profiles as unknown as {
       display_name: string | null;
+      steam_id: string | null;
+      steam_name: string | null;
       avatar_url: string | null;
       rank_tier: number | null;
       hero_stats: Member["personal"] | null;
@@ -57,6 +59,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
       // rank_tier is medal and star (e.g. 54 = Legend 4); the engine uses the medal.
       rank: profile?.rank_tier ? (Math.floor(profile.rank_tier / 10) as Member["rank"]) : null,
       rankTier: profile?.rank_tier ?? null,
+      steamName: profile?.steam_id ? (profile.steam_name ?? "Steam linked") : null,
       avatarUrl: profile?.avatar_url?.startsWith(STEAM_AVATAR) ? profile.avatar_url : null,
       personal: profile?.hero_stats ?? {},
     };
