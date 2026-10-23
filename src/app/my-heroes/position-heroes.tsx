@@ -88,49 +88,49 @@ export function PositionHeroes({
             <div
               key={p.n}
               className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
-                isActive ? "border-amber-500/70 bg-zinc-900" : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-600"
+                isActive ? "border-warn/70 bg-surface" : "border-line bg-surface hover:border-line-hover"
               }`}
             >
               <button onClick={() => setActive(p.n)} className="flex flex-1 items-center gap-3 text-left" aria-current={isActive}>
                 <span
                   className={`grid size-8 place-items-center rounded-md font-mono text-sm font-bold ${
-                    isPlayed ? "bg-green-600/20 text-green-300 ring-1 ring-green-600" : "bg-zinc-800 text-zinc-500"
+                    isPlayed ? "bg-radiant/15 text-radiant ring-1 ring-radiant-strong" : "bg-raised text-subtle"
                   }`}
                 >
                   {p.n}
                 </span>
                 <span className="flex flex-col leading-tight">
-                  <span className={`font-semibold ${isPlayed ? "" : "text-zinc-400"}`}>{p.name}</span>
-                  <span className="text-xs tabular-nums text-zinc-500">
+                  <span className={`font-semibold ${isPlayed ? "" : "text-muted"}`}>{p.name}</span>
+                  <span className="text-xs tabular-nums text-subtle">
                     {count ? `${count} hero${count === 1 ? "" : "es"}` : p.lane}
                   </span>
                 </span>
               </button>
-              <label className="flex items-center gap-1.5 text-xs text-zinc-400" title={`I play ${p.name}`}>
+              <label className="flex items-center gap-1.5 text-xs text-muted" title={`I play ${p.name}`}>
                 <input
                   type="checkbox"
                   checked={isPlayed}
                   onChange={(e) => setPosition(p.n, e.target.checked)}
-                  className="size-4 accent-green-600"
+                  className="size-4 accent-radiant-strong"
                 />
                 Play
               </label>
             </div>
           );
         })}
-        <p className="px-1 pt-1 text-xs text-zinc-500">Tick the positions you play. Your captain still picks your position each game.</p>
+        <p className="px-1 pt-1 text-xs text-subtle">Tick the positions you play. Your captain still picks your position each game.</p>
       </nav>
 
-      <section aria-label={`${pos.name} heroes`} className="flex min-w-0 flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
+      <section aria-label={`${pos.name} heroes`} className="flex min-w-0 flex-col gap-3 card/70 p-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <h2 className="text-lg font-bold">
-            <span className="font-mono text-green-400">{pos.n}</span> {pos.name} heroes
+            <span className="font-mono text-radiant">{pos.n}</span> {pos.name} heroes
           </h2>
-          <span className="text-sm text-zinc-500">Your best heroes first. Five to ten is plenty.</span>
+          <span className="text-sm text-subtle">Your best heroes first. Five to ten is plenty.</span>
         </div>
 
         <div className="flex min-h-12 flex-wrap gap-2">
-          {chosen.length === 0 && <p className="self-center text-sm text-zinc-500">No heroes yet. Search or click portraits below.</p>}
+          {chosen.length === 0 && <p className="self-center text-sm text-subtle">No heroes yet. Search or click portraits below.</p>}
           {chosen.map((id) => {
             const h = byId.get(id);
             if (!h) return null;
@@ -139,11 +139,11 @@ export function PositionHeroes({
                 key={id}
                 onClick={() => toggleHero(id)}
                 title={`Remove ${h.name}`}
-                className="flex items-center gap-2 rounded-md bg-zinc-800 py-1 pl-1 pr-2.5 text-sm ring-1 ring-green-700 hover:ring-red-500"
+                className="flex items-center gap-2 rounded-md bg-raised py-1 pl-1 pr-2.5 text-sm ring-1 ring-radiant-strong hover:ring-dire"
               >
                 <Image src={h.image} alt="" width={48} height={27} unoptimized className="rounded-sm" />
                 {h.name}
-                <span aria-hidden className="text-zinc-500">
+                <span aria-hidden className="text-subtle">
                   ×
                 </span>
               </button>
@@ -166,22 +166,22 @@ export function PositionHeroes({
             placeholder="Search, e.g. am, wk, cm"
             aria-label="Search heroes"
             autoFocus
-            className="w-full max-w-xs rounded-md bg-zinc-800 px-3 py-2 ring-1 ring-zinc-700 outline-none focus:ring-2 focus:ring-amber-500"
+            className="field w-full max-w-xs"
           />
           {matches?.[0] && (
-            <span className="text-xs text-zinc-500">
-              <kbd className="rounded border border-zinc-700 px-1 font-mono">Enter</kbd> adds {matches[0].name}
+            <span className="text-xs text-subtle">
+              <kbd className="kbd">Enter</kbd> adds {matches[0].name}
             </span>
           )}
         </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-dire">{error}</p>}
 
         {ATTRS.map((attr) => {
           const list = heroes.filter((h) => h.primaryAttr === attr.key && (!matchIds || matchIds.has(h.id)));
           if (!list.length) return null;
           return (
             <div key={attr.key} className="flex flex-col gap-1.5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{attr.name}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">{attr.name}</h3>
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
                 {list.map((h) => {
                   const on = chosen.includes(h.id);
@@ -192,12 +192,12 @@ export function PositionHeroes({
                         aria-pressed={on}
                         title={h.name}
                         className={`relative block w-full overflow-hidden rounded ring-2 ${
-                          on ? "ring-green-500" : "opacity-60 ring-transparent hover:opacity-100"
+                          on ? "ring-radiant" : "opacity-60 ring-transparent hover:opacity-100"
                         }`}
                       >
-                        <Image src={h.image} alt={h.name} width={128} height={72} unoptimized className="aspect-video w-full bg-zinc-800 object-cover" />
+                        <Image src={h.image} alt={h.name} width={128} height={72} unoptimized className="aspect-video w-full bg-raised object-cover" />
                         {on && (
-                          <span className="absolute right-0.5 top-0.5 rounded-sm bg-green-600 px-1 font-mono text-[10px] font-bold">
+                          <span className="absolute right-0.5 top-0.5 rounded-sm bg-radiant-strong px-1 font-mono text-[10px] font-bold">
                             {chosen.indexOf(h.id) + 1}
                           </span>
                         )}

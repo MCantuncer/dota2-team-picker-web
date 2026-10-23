@@ -23,22 +23,22 @@ export function SteamLink({ linked, result }: { linked: boolean; result?: string
   }
 
   return (
-    <section className="flex flex-wrap items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+    <section className="flex flex-wrap items-center gap-3 card px-4 py-3">
       <div className="mr-auto flex flex-col">
         <span className="font-semibold">Steam account</span>
-        <span className="text-sm text-zinc-400">
+        <span className="text-sm text-muted">
           {linked
             ? "Linked. Your rank and hero record count in suggestions, and you can sign in with Steam."
             : "Optional. Linking adds your rank and hero record to suggestions."}
         </span>
-        {result && <span className="text-sm text-zinc-300">{result}</span>}
-        {error && <span className="text-sm text-red-400">{error}</span>}
+        {result && <span className="text-sm text-fg/90">{result}</span>}
+        {error && <span className="text-sm text-dire">{error}</span>}
       </div>
       {!linked && (
         <button
           onClick={link}
           disabled={pending}
-          className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white disabled:opacity-60"
+          className="btn btn-secondary"
         >
           {pending ? "Opening Steam…" : "Link Steam account"}
         </button>

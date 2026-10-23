@@ -14,14 +14,14 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
   return (
     <AuthCard title="Sign up">
       <SteamButton next={nextPath} />
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-subtle">
         Signing in with Steam needs no sign up and adds your rank to suggestions.
       </p>
       <Divider />
       <AuthForm action={signUp} submitLabel="Sign up with email" next={nextPath} askName />
-      <p className="text-center text-sm text-zinc-400">
+      <p className="text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="text-red-400 hover:underline">
+        <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="link">
           Log in
         </Link>
       </p>

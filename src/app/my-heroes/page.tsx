@@ -36,10 +36,10 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   const steamResult = typeof steam === "string" ? STEAM_RESULTS[steam] : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6">
+    <main className="page flex flex-1 flex-col gap-5 py-8">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">{welcome ? "Welcome to the team" : "My positions and heroes"}</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="page-title">{welcome ? "Welcome to the team" : "My positions and heroes"}</h1>
+        <p className="text-sm text-muted">
           Pick the positions you play, then your heroes for each one.{" "}
           {teamNames.length > 0 && <>Your captain in {teamNames.join(", ")} drafts from this list. </>}
           Changes save right away.
