@@ -24,11 +24,13 @@ jobs:
         with:
           repository: MCantuncer/dota2-team-picker
           path: backend
+      # Move it out of the workspace so the site's build and lint don't pick up its files.
+      - run: mv backend "$RUNNER_TEMP/backend"
       - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
           version: 2.122.0
       - name: Start local Supabase (auth, API, database)
-        working-directory: backend/services/accounts
+        working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
           supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
           # Point the site and tests at the throwaway stack; nothing here reaches a real project.
