@@ -80,6 +80,13 @@ review. The PR template has the checklist.
   and anything surprising about it.
 - No commented-out code and no stray `console.log`.
 
+### Writing
+
+These apply to code comments, docs, commit messages, PR descriptions and anything users read.
+
+- Write plain, short sentences in the product's words.
+- Never use the em dash character. Use a comma, colon, period or parentheses instead.
+
 ### Styling and accessibility
 
 - Use the design system's tokens and classes from `globals.css` (`bg-surface`, `text-muted`, `btn`, `page`), never
