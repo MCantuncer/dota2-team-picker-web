@@ -9,6 +9,14 @@ export const POSITIONS: readonly Position[] = [1, 2, 3, 4, 5];
  */
 export type RankBracket = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
+/**
+ * Matchups and synergy are also counted per rank group, two medals each:
+ * 1 Herald-Guardian, 2 Crusader-Archon, 3 Legend-Ancient, 4 Divine-Immortal.
+ */
+export type RankGroup = 1 | 2 | 3 | 4;
+export const rankGroup = (bracket: RankBracket): RankGroup => Math.ceil(bracket / 2) as RankGroup;
+export const RANK_GROUP_BRACKETS: Record<RankGroup, RankBracket[]> = { 1: [1, 2], 2: [3, 4], 3: [5, 6], 4: [7, 8] };
+
 export interface GamesWins {
   games: number;
   wins: number;
@@ -35,10 +43,15 @@ export interface Snapshot {
   matchups: Record<string, Record<string, GamesWins>>;
   /** synergy["a-b"] with a < b: games where a and b were on the same team, and wins. */
   synergy: Record<string, GamesWins>;
+  /** The same counts split by rank group (from each match's average rank), keyed by RankGroup. */
+  rankMatchups?: Record<string, Record<string, Record<string, GamesWins>>>;
+  rankSynergy?: Record<string, Record<string, GamesWins>>;
   /** Games per lane role (1 safe, 2 mid, 3 off, 4 jungle). */
   laneRoles: Record<string, Partial<Record<"1" | "2" | "3" | "4", number>>>;
   /** When lane roles were last downloaded; they are refreshed weekly. */
   laneRolesAt?: string;
+  /** The patch the counts are for, from OpenDota's patch list. */
+  patch?: { name: string; startedAt: string };
   /** Highest public match id already counted, so daily runs only add new matches. */
   lastPublicMatchId?: number;
 }
