@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { isAdmin } from "@/lib/admin";
 import { getHeroes } from "@/lib/heroes";
 import { createClient } from "@/lib/supabase/server";
+import { canCaptain, getUserType } from "@/lib/user-type";
 import { CaptainBoard, type Invite, type Member } from "./captain-board";
 
 /** Only Steam avatars are shown; anything else in avatar_url is ignored. */
@@ -16,7 +16,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || !isAdmin(user.id)) notFound();
+  if (!user || !canCaptain(await getUserType(user.id))) notFound();
 
   // A captain can have several teams (friend groups); the first visit creates one.
   let { data: teams } = await supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at");
