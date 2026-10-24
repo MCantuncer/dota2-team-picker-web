@@ -36,10 +36,12 @@ npm run test:watch
 npm run typecheck      # route types + tsc
 npm run lint
 npm run check:engine   # engine copy still matches the backend's main branch
+npm run test:e2e       # Playwright browser tests, see e2e/README.md
 ```
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
-full pages are covered by browser tests instead, as the Next.js docs recommend.
+full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,
+profile, private-page redirects and Captain mode, with automatic accessibility checks on every page.
 
 CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
 engine copy check, dependency review (fails on a new package with a known high or critical

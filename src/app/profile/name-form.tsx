@@ -9,6 +9,7 @@ export function NameForm({ name }: { name: string }) {
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input
         name="name"
+        aria-label="Display name"
         defaultValue={name}
         maxLength={40}
         required
