@@ -42,7 +42,7 @@ export default async function FriendsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="page-title">Friends</h1>
         <p className="text-sm text-muted">
-          Add the people you play with. Soon you&apos;ll be able to invite friends to a party and draft together.
+          Add the people you play with, then invite them to a party.
         </p>
       </div>
       <FriendsBoard
