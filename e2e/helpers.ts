@@ -40,7 +40,8 @@ export async function signUp(page: Page, email: string, name: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign up with email" }).click();
-  await expect(page).toHaveURL(/\/profile$/);
+  // Match the path, not the whole URL: "/signup?next=/profile" also ends in "/profile".
+  await expect(page).toHaveURL((url) => url.pathname === "/profile");
 }
 
 export async function logIn(page: Page, email: string, next = "/profile") {
@@ -48,5 +49,5 @@ export async function logIn(page: Page, email: string, next = "/profile") {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Log in with email" }).click();
-  await expect(page).toHaveURL(new RegExp(`${next}$`));
+  await expect(page).toHaveURL((url) => url.pathname === next);
 }
