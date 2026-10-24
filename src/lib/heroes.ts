@@ -4,6 +4,8 @@ export interface Hero {
   id: number;
   name: string;
   image: string;
+  /** Small square icon, for lists. */
+  icon: string;
   primaryAttr: string;
   roles: string[];
 }
@@ -12,6 +14,7 @@ interface HeroConstant {
   id: number;
   localized_name: string;
   img: string;
+  icon: string;
   primary_attr: string;
   roles: string[];
 }
@@ -28,6 +31,7 @@ export async function getHeroes(): Promise<Hero[]> {
       id: h.id,
       name: h.localized_name,
       image: CDN + h.img.replace(/\?$/, ""),
+      icon: CDN + h.icon.replace(/\?$/, ""),
       primaryAttr: h.primary_attr,
       roles: h.roles,
     }))

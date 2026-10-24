@@ -28,6 +28,23 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
+## Tests
+
+```sh
+npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
+npm run test:watch
+npm run typecheck      # route types + tsc
+npm run lint
+npm run check:engine   # engine copy still matches the backend's main branch
+```
+
+Unit tests cover helpers and client components with React Testing Library. Async Server Components and
+full pages are covered by browser tests instead, as the Next.js docs recommend.
+
+CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
+engine copy check, dependency review (fails on a new package with a known high or critical
+vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
+
 ## Deploy on Vercel (free)
 
 1. On [vercel.com/new](https://vercel.com/new), import this repository. Vercel detects Next.js.

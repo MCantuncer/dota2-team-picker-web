@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { isActive, type NavItem } from "./primary-nav";
+import { isActive, NavBadge, type NavItem } from "./primary-nav";
 
 export interface Account {
   name: string;
@@ -174,6 +174,7 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
                 className={`${itemClass} text-fg aria-[current=page]:text-accent`}
               >
                 {item.label}
+                <NavBadge count={item.badge} />
               </Link>
             ))}
           </div>
