@@ -6,6 +6,19 @@ import { usePathname } from "next/navigation";
 export interface NavItem {
   href: string;
   label: string;
+  /** Things waiting there, such as friend requests; shown as a count. */
+  badge?: number;
+}
+
+/** The count after a nav label. */
+export function NavBadge({ count }: { count?: number }) {
+  if (!count) return null;
+  return (
+    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-px font-sans text-[11px] font-bold tabular-nums text-on-accent">
+      {count}
+      <span className="sr-only"> waiting</span>
+    </span>
+  );
 }
 
 /** True when `pathname` is `href` or a page under it. */
@@ -33,6 +46,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
                 }`}
               >
                 {item.label}
+                <NavBadge count={item.badge} />
               </Link>
               {active && <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-accent" />}
             </li>

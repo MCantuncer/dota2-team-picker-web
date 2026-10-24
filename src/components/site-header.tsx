@@ -53,13 +53,20 @@ async function HeaderSession() {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, avatar_url, steam_id, rank_tier")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { count: requests }] = await Promise.all([
+    supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier").eq("id", user.id).single(),
+    // Friend requests waiting for this user.
+    supabase
+      .from("friendships")
+      .select("requester_id", { count: "exact", head: true })
+      .eq("addressee_id", user.id)
+      .eq("status", "pending"),
+  ]);
 
-  const nav: NavItem[] = [{ href: "/my-heroes", label: "My heroes" }];
+  const nav: NavItem[] = [
+    { href: "/my-heroes", label: "My heroes" },
+    { href: "/friends", label: "Friends", badge: requests ?? 0 },
+  ];
   if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain" });
 
   const steamLinked = Boolean(profile?.steam_id);
