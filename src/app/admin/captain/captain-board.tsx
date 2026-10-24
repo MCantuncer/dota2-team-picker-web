@@ -127,7 +127,8 @@ export function CaptainBoard({
     setRank(nextRank);
     const { error } = await supabase
       .from("team_lineups")
-      .upsert({ team_id: team.id, slots: nextSlots, rank_bracket: nextRank });
+      // Empty slots are null; the generated types can't express null elements in a uuid[] column.
+      .upsert({ team_id: team.id, slots: nextSlots as string[], rank_bracket: nextRank });
     setSaveError(error ? `Current team not saved: ${error.message}` : null);
   };
 

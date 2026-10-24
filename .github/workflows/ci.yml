@@ -52,8 +52,8 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  engine-sync:
-    name: Engine copy matches backend
+  backend-sync:
+    name: Backend copies match
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: npm run check:engine
+      - run: npm run check:backend
 
   dependency-review:
     name: Dependency review
