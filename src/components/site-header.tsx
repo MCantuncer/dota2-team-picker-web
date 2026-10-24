@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { rankName } from "@/lib/rank";
 import { createClient } from "@/lib/supabase/server";
-import { canCaptain, type UserType } from "@/lib/user-type";
+import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
 import { LogoMark } from "./logo";
 import { PrimaryNav, type NavItem } from "./primary-nav";
@@ -54,7 +54,7 @@ async function HeaderSession() {
   }
 
   const [{ data: profile }, { count: requests }] = await Promise.all([
-    supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier, user_type").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier").eq("id", user.id).single(),
     // Friend requests waiting for this user.
     supabase
       .from("friendships")
@@ -67,7 +67,7 @@ async function HeaderSession() {
     { href: "/my-heroes", label: "My heroes" },
     { href: "/friends", label: "Friends", badge: requests ?? 0 },
   ];
-  if (canCaptain((profile?.user_type as UserType | undefined) ?? "user")) nav.push({ href: "/admin/captain", label: "Captain" });
+  if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain" });
 
   const steamLinked = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);

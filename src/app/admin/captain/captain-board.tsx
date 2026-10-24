@@ -18,6 +18,8 @@ import { TeamPicker, type TeamRef } from "./team-picker";
  */
 export interface Member {
   id: string;
+  /** Co-captains can run this team's draft and invites; only the owner sets this. */
+  role: "player" | "co_captain";
   name: string;
   positions: number[];
   heroes: Record<number, number[]>;
@@ -59,7 +61,8 @@ type Card = Suggestion & { notes: Note[] };
 export function CaptainBoard({
   team,
   teams,
-  ownerId,
+  userId,
+  canCreateTeams,
   initialMembers,
   initialInvites,
   initialSlots,
@@ -68,7 +71,9 @@ export function CaptainBoard({
 }: {
   team: TeamRef;
   teams: TeamRef[];
-  ownerId: string;
+  userId: string;
+  /** Captains and admins can start teams; co-captains only run the ones they were given. */
+  canCreateTeams: boolean;
   initialMembers: Member[];
   initialInvites: Invite[];
   initialSlots: Slots;
@@ -131,7 +136,7 @@ export function CaptainBoard({
 
   return (
     <Shell
-      picker={<TeamPicker teams={teams} current={team.id} ownerId={ownerId} />}
+      picker={<TeamPicker teams={teams} current={team.id} userId={userId} canCreate={canCreateTeams} />}
       tabs={
         <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist">
           {(["draft", "team"] as const).map((t) => (
@@ -703,7 +708,7 @@ function TeamView({
   onRemoved,
 }: {
   engine: Engine;
-  team: { id: string; name: string };
+  team: TeamRef;
   members: Member[];
   initialInvites: Invite[];
   icons: Record<number, string>;
@@ -766,6 +771,13 @@ function TeamView({
     onError(error ? `Member not removed: ${error.message}` : null);
   };
 
+  const setRole = async (m: Member, role: Member["role"]) => {
+    onMembers(members.map((x) => (x.id === m.id ? { ...x, role } : x)));
+    const { error } = await supabase.from("team_members").update({ role }).eq("team_id", team.id).eq("user_id", m.id);
+    if (error) onMembers(members);
+    onError(error ? `Role not changed: ${error.message}` : null);
+  };
+
   return (
     <div className="flex max-w-4xl flex-col gap-4">
       <label className="flex max-w-sm flex-col gap-1 text-xs text-muted">
@@ -776,6 +788,8 @@ function TeamView({
           onChange={(e) => setTeamName(e.target.value)}
           onBlur={rename}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          readOnly={!team.owned}
+          title={team.owned ? undefined : "Only the team's owner can rename it"}
           maxLength={40}
           className="field"
         />
@@ -833,7 +847,13 @@ function TeamView({
         )}
       </section>
 
-      <MemberList members={members} hero={(id) => ({ name: engine.hero(id).name, icon: icons[id] })} onRemove={remove} />
+      <MemberList
+        members={members}
+        hero={(id) => ({ name: engine.hero(id).name, icon: icons[id] })}
+        isOwner={team.owned}
+        onRemove={remove}
+        onRole={setRole}
+      />
     </div>
   );
 }

@@ -21,15 +21,20 @@ const PREVIEW = 3;
 /**
  * The team's members as slim rows: who they are, their rank, and their top heroes per position.
  * Clicking a row opens their full pool; removing someone sits in a menu with a confirm step.
+ * The team's owner can also make a member co-captain; a co-captain can only remove players.
  */
 export function MemberList({
   members,
   hero,
+  isOwner,
   onRemove,
+  onRole,
 }: {
   members: Member[];
   hero: (id: number) => HeroFace;
+  isOwner: boolean;
   onRemove: (m: Member) => void;
+  onRole: (m: Member, role: Member["role"]) => void;
 }) {
   return (
     <section aria-labelledby="members-heading" className="flex flex-col gap-2">
@@ -39,7 +44,14 @@ export function MemberList({
       {members.length ? (
         <ul className="card divide-y divide-line">
           {members.map((m) => (
-            <MemberRow key={m.id} member={m} hero={hero} onRemove={() => onRemove(m)} />
+            <MemberRow
+              key={m.id}
+              member={m}
+              hero={hero}
+              canRemove={isOwner || m.role === "player"}
+              onRemove={() => onRemove(m)}
+              onRole={isOwner ? (role) => onRole(m, role) : undefined}
+            />
           ))}
         </ul>
       ) : (
@@ -49,7 +61,20 @@ export function MemberList({
   );
 }
 
-function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: number) => HeroFace; onRemove: () => void }) {
+function MemberRow({
+  member: m,
+  hero,
+  canRemove,
+  onRemove,
+  onRole,
+}: {
+  member: Member;
+  hero: (id: number) => HeroFace;
+  canRemove: boolean;
+  onRemove: () => void;
+  /** Only for the team's owner. */
+  onRole?: (role: Member["role"]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const panelId = useId();
@@ -71,7 +96,14 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
           </svg>
           <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.steamName }} size={32} />
           <span className="flex min-w-0 flex-1 flex-col md:w-32 md:flex-none">
-            <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
+              {m.role === "co_captain" && (
+                <span className="shrink-0 rounded bg-accent/15 px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide text-accent ring-1 ring-accent/40">
+                  Co-captain
+                </span>
+              )}
+            </span>
             {m.steamName ? (
               <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam account">
                 <SteamLogo className="h-3 w-3 shrink-0" />
@@ -115,7 +147,14 @@ function MemberRow({ member: m, hero, onRemove }: { member: Member; hero: (id: n
             {m.positions.length ? `Pos ${m.positions.join(" ")}` : "No positions"}
           </span>
         </button>
-        <MemberMenu name={m.name} onRemove={() => setConfirming(true)} />
+        {(canRemove || onRole) && (
+          <MemberMenu
+            name={m.name}
+            role={m.role}
+            onRemove={canRemove ? () => setConfirming(true) : undefined}
+            onRole={onRole}
+          />
+        )}
       </div>
 
       {confirming && (
@@ -193,16 +232,26 @@ function HeroChip({ face, record }: { face: HeroFace; record?: { games: number; 
 }
 
 /** The "more" button on a member row (the WAI-ARIA menu button pattern). */
-function MemberMenu({ name, onRemove }: { name: string; onRemove: () => void }) {
+function MemberMenu({
+  name,
+  role,
+  onRemove,
+  onRole,
+}: {
+  name: string;
+  role: Member["role"];
+  onRemove?: () => void;
+  onRole?: (role: Member["role"]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const itemRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    itemRef.current?.focus();
+    menuRef.current?.querySelector<HTMLButtonElement>("[role=menuitem]")?.focus();
     const onPointer = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -211,10 +260,15 @@ function MemberMenu({ name, onRemove }: { name: string; onRemove: () => void }) 
   }, [open]);
 
   const onMenuKey = (e: KeyboardEvent) => {
+    const items = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]") ?? [])];
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
     if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
       buttonRef.current?.focus();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      items.at((at + (e.key === "ArrowDown" ? 1 : -1)) % items.length)?.focus();
     } else if (e.key === "Tab") {
       setOpen(false);
     }
@@ -245,6 +299,7 @@ function MemberMenu({ name, onRemove }: { name: string; onRemove: () => void }) 
         </svg>
       </button>
       <div
+        ref={menuRef}
         id={menuId}
         role="menu"
         aria-label={`Actions for ${name}`}
@@ -252,18 +307,32 @@ function MemberMenu({ name, onRemove }: { name: string; onRemove: () => void }) 
         onKeyDown={onMenuKey}
         className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-line-strong bg-surface p-1 shadow-xl shadow-black/40"
       >
-        <button
-          ref={itemRef}
-          type="button"
-          role="menuitem"
-          onClick={() => {
-            setOpen(false);
-            onRemove();
-          }}
-          className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
-        >
-          Remove from team
-        </button>
+        {onRole && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onRole(role === "co_captain" ? "player" : "co_captain");
+            }}
+            className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-fg outline-none hover:bg-hover focus-visible:bg-hover"
+          >
+            {role === "co_captain" ? "Make player" : "Make co-captain"}
+          </button>
+        )}
+        {onRemove && (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onRemove();
+            }}
+            className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
+          >
+            Remove from team
+          </button>
+        )}
       </div>
     </div>
   );
