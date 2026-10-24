@@ -7,10 +7,23 @@ import { createClient } from "@/lib/supabase/client";
 export interface TeamRef {
   id: string;
   name: string;
+  /** False for a team where you are a co-captain. */
+  owned: boolean;
 }
 
-/** Switch between the captain's teams (friend groups), or start a new one. */
-export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; current: string; ownerId: string }) {
+/** Switch between your teams (friend groups) and the ones you co-captain, or start a new one. */
+export function TeamPicker({
+  teams,
+  current,
+  userId,
+  canCreate,
+}: {
+  teams: TeamRef[];
+  current: string;
+  userId: string;
+  /** Only captains and admins can start teams. */
+  canCreate: boolean;
+}) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [adding, setAdding] = useState(false);
@@ -22,7 +35,7 @@ export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; curr
   const create = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const { data, error } = await supabase.from("teams").insert({ owner_id: ownerId, name: trimmed }).select("id").single();
+    const { data, error } = await supabase.from("teams").insert({ owner_id: userId, name: trimmed }).select("id").single();
     if (error || !data) return setError(`Team not created: ${error?.message}`);
     setAdding(false);
     setName("");
@@ -67,16 +80,18 @@ export function TeamPicker({ teams, current, ownerId }: { teams: TeamRef[]; curr
           >
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name}
+                {t.owned ? t.name : `${t.name} (co-captain)`}
               </option>
             ))}
           </select>
-          <button onClick={() => setAdding(true)} className="btn btn-secondary">
-            <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            New team
-          </button>
+          {canCreate && (
+            <button onClick={() => setAdding(true)} className="btn btn-secondary">
+              <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              New team
+            </button>
+          )}
         </>
       )}
       {error && <span className="text-sm text-dire">{error}</span>}

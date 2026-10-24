@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { rankName } from "@/lib/rank";
 import { createClient } from "@/lib/supabase/server";
-import { canCaptain, type UserType } from "@/lib/user-type";
+import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
 import { LogoMark } from "./logo";
 import { PrimaryNav, type NavItem } from "./primary-nav";
@@ -55,12 +55,12 @@ async function HeaderSession() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url, steam_id, rank_tier, user_type")
+    .select("display_name, avatar_url, steam_id, rank_tier")
     .eq("id", user.id)
     .single();
 
   const nav: NavItem[] = [{ href: "/my-heroes", label: "My heroes" }];
-  if (canCaptain((profile?.user_type as UserType | undefined) ?? "user")) nav.push({ href: "/admin/captain", label: "Captain" });
+  if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain" });
 
   const steamLinked = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);
