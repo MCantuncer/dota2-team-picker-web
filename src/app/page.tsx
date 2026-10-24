@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SteamButton } from "@/components/steam-button";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { getUser } from "@/lib/supabase/server";
-import { canCaptain, getUserType } from "@/lib/user-type";
+import { canOpenCaptainMode } from "@/lib/user-type";
 
 /**
  * A real engine result, kept static so the landing page loads instantly: Legend bracket, you play mid,
@@ -71,7 +71,7 @@ export default async function Home() {
                 <Link href="/my-heroes" className="btn btn-primary btn-lg">
                   Set up my heroes
                 </Link>
-                {canCaptain(await getUserType(user.id)) && (
+                {(await canOpenCaptainMode(user.id)) && (
                   <Link href="/admin/captain" className="btn btn-secondary btn-lg">
                     Open captain mode
                   </Link>
