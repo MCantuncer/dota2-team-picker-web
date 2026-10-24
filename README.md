@@ -11,6 +11,9 @@ README.
 
 Built with Next.js (App Router), Tailwind CSS and Supabase Auth.
 
+All UI work follows the [design system](docs/design-system.md): tokens and shared classes in
+`src/app/globals.css`, rules for using them in the doc.
+
 ## Pages
 
 | Path            | What it does                                                               |

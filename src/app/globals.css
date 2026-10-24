@@ -5,6 +5,9 @@
  * cool blue-black slates for surfaces, Radiant green and Dire red for the two
  * teams, and a muted gold as the single accent (focus and the primary action).
  * Every color in the app comes from here; components never use raw hex values.
+ *
+ * This file is the code side of the site's design system. The rules for using
+ * it (what each token and class is for) are in docs/design-system.md.
  */
 :root {
   --bg: #0c0f14;
@@ -21,6 +24,7 @@
 
   --accent: #c9a45c;
   --accent-hover: #d9b670;
+  --accent-bright: #e6c684;
   --accent-deep: #9c7b3a;
   --on-accent: #17130a;
 
@@ -29,6 +33,37 @@
   --dire: #e5654d;
   --dire-strong: #b33a26;
   --warn: #f0a04b;
+
+  /* 12% washes of a signal colour over --surface: selected cards, team columns, the Gamble bar. */
+  --accent-tint: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --radiant-tint: color-mix(in srgb, var(--radiant) 12%, var(--surface));
+  --dire-tint: color-mix(in srgb, var(--dire) 12%, var(--surface));
+  --warn-tint: color-mix(in srgb, var(--warn) 12%, var(--surface));
+
+  --hover-strong: #2b3341;
+  /* Solid fill for the commit step of an action that can't be undone. */
+  --danger: #c4452f;
+  --danger-hover: #d14f38;
+  /* Text on --danger and --steam. */
+  --on-strong: #ffffff;
+  /* Ban slash and outline on greyed portraits. Non-text only (3.4:1 on --bg). */
+  --ban: #5f6875;
+
+  /* Attribute glyphs only (12px), never text or fills. */
+  --attr-str: #c77b5e;
+  --attr-agi: #8fae6a;
+  --attr-int: #6ba3d6;
+  --attr-uni: #b48ad8;
+
+  /* Rank badge ramp, Herald (0) to Immortal (7): slate to gold. */
+  --rank-0: #7f8896;
+  --rank-1: #8f96a0;
+  --rank-2: #9fa3a6;
+  --rank-3: #b0ab9c;
+  --rank-4: #c0ad84;
+  --rank-5: #c9a45c;
+  --rank-6: #d9b670;
+  --rank-7: #e6c684;
 
   /* Steam's own button colors, for the Steam sign-in button only. */
   --steam: #171a21;
@@ -48,6 +83,8 @@
   --color-subtle: var(--subtle);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-tint: var(--accent-tint);
   --color-accent-deep: var(--accent-deep);
   --color-on-accent: var(--on-accent);
   --color-radiant: var(--radiant);
@@ -55,6 +92,26 @@
   --color-dire: var(--dire);
   --color-dire-strong: var(--dire-strong);
   --color-warn: var(--warn);
+  --color-radiant-tint: var(--radiant-tint);
+  --color-dire-tint: var(--dire-tint);
+  --color-warn-tint: var(--warn-tint);
+  --color-hover-strong: var(--hover-strong);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-on-strong: var(--on-strong);
+  --color-ban: var(--ban);
+  --color-attr-str: var(--attr-str);
+  --color-attr-agi: var(--attr-agi);
+  --color-attr-int: var(--attr-int);
+  --color-attr-uni: var(--attr-uni);
+  --color-rank-0: var(--rank-0);
+  --color-rank-1: var(--rank-1);
+  --color-rank-2: var(--rank-2);
+  --color-rank-3: var(--rank-3);
+  --color-rank-4: var(--rank-4);
+  --color-rank-5: var(--rank-5);
+  --color-rank-6: var(--rank-6);
+  --color-rank-7: var(--rank-7);
   --color-steam: var(--steam);
   --color-steam-hover: var(--steam-hover);
   --font-sans: var(--font-geist-sans);
@@ -103,8 +160,8 @@ body {
 }
 
 /*
- * Shared controls. One height (36px, 32px for .btn-sm) and one horizontal padding
- * so buttons, inputs and selects line up wherever they sit next to each other.
+ * Shared controls. Three heights (32 sm, 36 default, 44 lg) shared by buttons and
+ * fields, so controls line up wherever they sit next to each other.
  */
 @layer components {
   .btn {
@@ -115,7 +172,7 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 0.375rem;
-    padding-inline: 0.875rem;
+    padding-inline: 1rem;
     font-family: var(--font-display), var(--font-geist-sans), sans-serif;
     font-size: 0.9375rem;
     line-height: 1;
@@ -132,7 +189,7 @@ body {
   }
   .btn-lg {
     height: 2.75rem;
-    padding-inline: 1.5rem;
+    padding-inline: 1.25rem;
     font-size: 1rem;
   }
   .btn-sm {
@@ -147,7 +204,7 @@ body {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 0 0 1px var(--accent-deep), 0 1px 2px rgb(0 0 0 / 0.4);
   }
   .btn-primary:not(:disabled):hover {
-    background: linear-gradient(to bottom, #e6c684, var(--accent-hover) 55%, var(--accent));
+    background: linear-gradient(to bottom, var(--accent-bright), var(--accent-hover) 55%, var(--accent));
   }
   .btn-secondary {
     background: linear-gradient(to bottom, var(--hover), var(--raised));
@@ -155,7 +212,7 @@ body {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 0 0 1px var(--line-strong);
   }
   .btn-secondary:not(:disabled):hover {
-    background: linear-gradient(to bottom, #2b3341, var(--hover));
+    background: linear-gradient(to bottom, var(--hover-strong), var(--hover));
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), inset 0 0 0 1px var(--line-hover);
   }
   .btn-ghost {
@@ -165,14 +222,35 @@ body {
     background: var(--raised);
     color: var(--fg);
   }
+  /* A square ghost button holding one 16px icon. Give it an aria-label. */
+  .btn-icon {
+    width: 2.25rem;
+    padding-inline: 0;
+    color: var(--muted);
+  }
+  .btn-icon.btn-sm {
+    width: 2rem;
+  }
+  .btn-icon:not(:disabled):hover {
+    background: var(--raised);
+    color: var(--fg);
+  }
   /* For the confirm step of an action that can't be undone, such as removing a member. */
   .btn-danger {
-    background: linear-gradient(to bottom, #c4452f, var(--dire-strong));
-    color: #fff;
+    background: linear-gradient(to bottom, var(--danger), var(--dire-strong));
+    color: var(--on-strong);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 0 0 1px var(--dire-strong), 0 1px 2px rgb(0 0 0 / 0.4);
   }
   .btn-danger:not(:disabled):hover {
-    background: linear-gradient(to bottom, #d14f38, #c4452f);
+    background: linear-gradient(to bottom, var(--danger-hover), var(--danger));
+  }
+  /* A destructive action that is not the final commit, such as Remove in a row menu. */
+  .btn-danger-quiet {
+    color: var(--dire);
+    box-shadow: inset 0 0 0 1px var(--dire-strong);
+  }
+  .btn-danger-quiet:not(:disabled):hover {
+    background: var(--dire-tint);
   }
 
   .field {
@@ -186,6 +264,10 @@ body {
     box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: box-shadow 120ms;
   }
+  .field-lg {
+    height: 2.75rem;
+    font-size: 1rem;
+  }
   .field::placeholder {
     color: var(--subtle);
   }
@@ -195,6 +277,9 @@ body {
   .field:focus-visible {
     outline: none;
     box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .field[aria-invalid="true"] {
+    box-shadow: inset 0 0 0 1px var(--dire);
   }
   select.field {
     appearance: none;
@@ -209,7 +294,6 @@ body {
     background: var(--surface);
   }
 
-  /* A panel: slightly lit at the top edge and darker toward the bottom. */
   .link {
     color: var(--accent);
     text-underline-offset: 3px;
@@ -219,6 +303,7 @@ body {
     text-decoration: underline;
   }
 
+  /* A panel: slightly lit at the top edge and darker toward the bottom. */
   .card {
     border-radius: 0.5rem;
     border: 1px solid var(--line);
@@ -245,6 +330,36 @@ body {
     color: var(--muted);
   }
 
+  /* Panel and column headings ("My team", "Members 4"). */
+  .section-title {
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  /* Scores, win rates and counts. Signed values use a real minus sign (U+2212). */
+  .num {
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The smallest text on the site: key hints, position digits, badges, "+N". */
+  .micro {
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
   .kbd {
     display: inline-flex;
     min-width: 1.25rem;
@@ -253,10 +368,90 @@ body {
     justify-content: center;
     border-radius: 0.25rem;
     padding-inline: 0.25rem;
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
     font-size: 0.6875rem;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     color: var(--muted);
     background: var(--raised);
     box-shadow: inset 0 -1px 0 var(--line-strong), inset 0 0 0 1px var(--line-strong);
+  }
+
+  /* Small label on a slate fill: position badges, "Captain", "Best". */
+  .chip {
+    display: inline-flex;
+    height: 1.25rem;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.25rem;
+    padding-inline: 0.375rem;
+    background: var(--raised);
+    color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .chip-accent {
+    background: var(--accent-tint);
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent-deep);
+  }
+
+  /* Segmented control (tabs such as Draft / Team). Mark the chosen item aria-selected or aria-pressed. */
+  .seg {
+    display: inline-flex;
+    height: 2rem;
+    gap: 0.125rem;
+    border-radius: 0.375rem;
+    padding: 0.125rem;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .seg-item {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.25rem;
+    padding-inline: 0.75rem;
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color 120ms, color 120ms;
+  }
+  .seg-item:hover {
+    color: var(--fg);
+  }
+  .seg-item[aria-selected="true"],
+  .seg-item[aria-pressed="true"] {
+    background: var(--raised);
+    color: var(--fg);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  /*
+   * A page or panel message. The coloured left edge and the icon carry the meaning;
+   * the text stays --fg. Pick one of the four variants.
+   */
+  .notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--raised);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--fg);
+    box-shadow: inset 3px 0 0 var(--line-hover);
+  }
+  .notice-error {
+    box-shadow: inset 3px 0 0 var(--dire);
+  }
+  .notice-warn {
+    box-shadow: inset 3px 0 0 var(--warn);
+  }
+  .notice-done {
+    box-shadow: inset 3px 0 0 var(--radiant);
   }
 }
