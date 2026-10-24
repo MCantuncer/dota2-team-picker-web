@@ -14,6 +14,6 @@
 - [ ] Every Supabase call and `fetch` checks its error and shows the user a plain message
 - [ ] Input from forms, URLs and `localStorage` is validated where it enters
 - [ ] New logic and client components have unit tests; new pages or flows have an e2e test
-- [ ] Uses design system tokens; works by keyboard and at phone width
+- [ ] UI follows `docs/design-system.md` and its checklist; works by keyboard and at phone width
 - [ ] No secrets, no commented-out code, no stray `console.log`, no em dashes
 - [ ] Follows [CONTRIBUTING.md](https://github.com/MCantuncer/dota2-team-picker-web/blob/main/CONTRIBUTING.md)

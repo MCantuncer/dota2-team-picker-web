@@ -89,8 +89,10 @@ These apply to code comments, docs, commit messages, PR descriptions and anythin
 
 ### Styling and accessibility
 
-- Use the design system's tokens and classes from `globals.css` (`bg-surface`, `text-muted`, `btn`, `page`), never
-  raw colours or one-off pixel values.
+- All UI work follows the design system in `docs/design-system.md`: read it before building or changing a screen,
+  use only its tokens and shared classes from `globals.css` (`bg-surface`, `text-muted`, `btn`, `page`), never raw
+  colours or one-off pixel values, and fill its checklist. A new token or class goes into `globals.css`, the doc and
+  the [Design System artifact](https://claude.ai/artifact/SS5UPqgKyMUEyUr79g6t1m) together.
 - Every control works by keyboard and has an accessible name. Use real elements (`button`, `a`, `label`) before ARIA.
   The e2e tests run axe on every page and fail on violations.
 - Check every layout at phone width.
