@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
 import { LogoMark } from "./logo";
+import { PartyInvitePopup } from "./party-invite-popup";
 import { PrimaryNav, type NavItem } from "./primary-nav";
 
 /** The bar at the top of every page: brand, main sections, and the account menu. */
@@ -65,6 +66,7 @@ async function HeaderSession() {
 
   const nav: NavItem[] = [
     { href: "/my-heroes", label: "My heroes" },
+    { href: "/party", label: "Party" },
     { href: "/friends", label: "Friends", badge: requests ?? 0 },
   ];
   if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain" });
@@ -84,6 +86,7 @@ async function HeaderSession() {
       <div className="ml-auto flex items-center">
         <AccountMenu account={account} nav={nav} />
       </div>
+      <PartyInvitePopup userId={user.id} />
     </>
   );
 }
