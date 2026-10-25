@@ -35,16 +35,20 @@ npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
 npm run test:watch
 npm run typecheck      # route types + tsc
 npm run lint
-npm run check:engine   # engine copy still matches the backend's main branch
+npm run check:backend  # engine and database type copies still match the backend's main branch
 npm run test:e2e       # Playwright browser tests, see e2e/README.md
 ```
+
+`src/lib/supabase/database.types.ts` is the backend's generated database types, copied as is. The Supabase
+clients use it, so a query on a missing table or column fails the type check. When the backend changes its
+schema, copy `services/accounts/supabase/database.types.ts` again, keeping the first "Copied from" line.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
 full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,
 profile, private-page redirects and Captain mode, with automatic accessibility checks on every page.
 
 CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
-engine copy check, dependency review (fails on a new package with a known high or critical
+backend copy check, dependency review (fails on a new package with a known high or critical
 vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
 
 ## Deploy on Vercel (free)

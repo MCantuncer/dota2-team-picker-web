@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
 import { expect, type Page } from "@playwright/test";
+import type { Database } from "../src/lib/supabase/database.types";
 
 /** Fails on accessibility problems axe rates serious or critical (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page) {
@@ -22,7 +23,7 @@ function admin() {
   const key = process.env.E2E_SUPABASE_SECRET_KEY;
   if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL and E2E_SUPABASE_SECRET_KEY must point at the local stack");
   if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(url)) throw new Error("E2E tests only run against a local Supabase");
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient<Database>(url, key, { auth: { persistSession: false } });
 }
 
 export async function setUserType(email: string, type: "user" | "captain" | "admin") {

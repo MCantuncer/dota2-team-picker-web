@@ -52,7 +52,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   let steamAccount: SteamAccount | null = null;
   if (profile?.steam_id) {
     const heroById = new Map(heroes.map((h) => [h.id, h]));
-    const stats = Object.entries((profile.hero_stats ?? {}) as Record<string, GamesWins>);
+    const stats = Object.entries((profile.hero_stats ?? {}) as unknown as Record<string, GamesWins>);
     steamAccount = {
       steamId: profile.steam_id,
       accountId: Number(BigInt(profile.steam_id) - STEAM_ID_BASE),

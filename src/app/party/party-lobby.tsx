@@ -123,7 +123,8 @@ export function PartyLobby({
               member={m}
               isLeader={m.id === party.leaderId}
               isMe={m.id === userId}
-              onPosition={(want) => run("Position not saved", () => supabase.rpc("set_party_position", { want }))}
+              // null means "any position"; the generated types can't mark a function argument nullable.
+              onPosition={(want) => run("Position not saved", () => supabase.rpc("set_party_position", { want: want as number }))}
               onRemove={
                 isLeader && m.id !== userId
                   ? () => run("Could not remove", () => supabase.rpc("remove_from_party", { target: m.id }))

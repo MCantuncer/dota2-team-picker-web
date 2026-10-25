@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "./database.types";
 import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 
 /** Pages that need a signed-in user. Others are open to everyone. */
@@ -13,7 +14,7 @@ const PRIVATE_PATHS = ["/profile", "/my-heroes", "/friends", "/party"];
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+  const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet) {
