@@ -51,6 +51,9 @@ CI runs on every pull request and on `main`: lint, type check, unit tests with c
 backend copy check, dependency review (fails on a new package with a known high or critical
 vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
 
+Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): it holds the code standards and the
+checklist every change follows.
+
 ## Deploy on Vercel (free)
 
 1. On [vercel.com/new](https://vercel.com/new), import this repository. Vercel detects Next.js.
