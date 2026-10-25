@@ -9,7 +9,7 @@ Where a tool can check a rule, CI checks it; the rest is on the author and the r
 npm run lint
 npm run typecheck
 npm test
-npm run check:engine
+npm run check:backend
 npm run test:e2e     # when you change a page or a flow, see e2e/README.md
 ```
 
@@ -63,8 +63,8 @@ review. The PR template has the checklist.
   past that, split it by responsibility, next to the page that uses it, or in `src/components` once two pages share
   it.
 - One source of truth for shared values (position names, rank names, limits). Import them; don't copy them.
-- `src/lib/engine` is a copy of the backend engine. Never edit it here: change the backend, then sync the copy.
-  `npm run check:engine` fails on any drift.
+- `src/lib/engine` and `src/lib/supabase/database.types.ts` are copies from the backend. Never edit them here: change
+  the backend, then sync the copy. `npm run check:backend` fails on any drift.
 
 ### Naming
 
