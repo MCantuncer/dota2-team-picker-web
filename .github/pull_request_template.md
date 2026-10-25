@@ -10,7 +10,7 @@
 
 - [ ] One purpose, under about 400 changed lines (not counting generated files)
 - [ ] Self-reviewed the whole diff and fixed what I found
-- [ ] Lint, type check, unit tests and engine check pass locally; e2e run for page or flow changes
+- [ ] Lint, type check, unit tests and backend copy check pass locally; e2e run for page or flow changes
 - [ ] Every Supabase call and `fetch` checks its error and shows the user a plain message
 - [ ] Input from forms, URLs and `localStorage` is validated where it enters
 - [ ] New logic and client components have unit tests; new pages or flows have an e2e test
