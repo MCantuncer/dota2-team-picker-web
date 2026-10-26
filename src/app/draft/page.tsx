@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { GamesWins, Position, RankBracket } from "@/lib/engine/types";
 import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
+import { toHeroPool, type HeroPool } from "@/lib/party-plan";
 import { createClient } from "@/lib/supabase/server";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
 
@@ -40,14 +41,20 @@ export default async function DraftPage() {
     const found = toParty(partyRows);
     if (found) {
       const me = found.members.find((m) => m.id === user.id);
+      // Only the leader can read the party's favorite heroes, for the team plan.
+      let pool: HeroPool | null = null;
+      if (found.leaderId === user.id) {
+        const { data: poolRows, error: poolError } = await supabase.rpc("party_hero_pool");
+        if (poolError) throw new Error(`Could not load your party's heroes: ${poolError.message}`);
+        pool = toHeroPool(poolRows);
+      }
       party = {
         id: found.id,
         userId: user.id,
         names: Object.fromEntries(found.members.map((m) => [m.id, m.name])),
         myPosition: me?.position ? (me.position as Position) : null,
         members: found.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null })),
-        // The leader's hero pool comes with the backend's party_hero_pool (backend #45).
-        pool: null,
+        pool,
       };
     }
 

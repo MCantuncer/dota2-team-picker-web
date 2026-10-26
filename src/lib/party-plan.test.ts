@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toPlanSlots } from "./party-plan";
+import { toHeroPool, toPlanSlots } from "./party-plan";
 
 describe("toPlanSlots", () => {
   const pool = { a: { 1: [10], 0: [11] }, b: { 5: [20] }, c: { 0: [30, 31] } };
@@ -40,5 +40,18 @@ describe("toPlanSlots", () => {
     expect(slots.map((s) => s.playerId)).toEqual(["a", "c", "b", undefined, undefined]);
     expect(slots.map((s) => s.heroId)).toEqual([7, 8, undefined, undefined, undefined]);
     expect(slots[1]!.favorites).toEqual([30, 31]);
+  });
+});
+
+describe("toHeroPool", () => {
+  it("groups heroes by player and position, keeping their order", () => {
+    expect(
+      toHeroPool([
+        { user_id: "a", position: 1, hero_id: 10 },
+        { user_id: "a", position: 1, hero_id: 12 },
+        { user_id: "a", position: 0, hero_id: 11 },
+        { user_id: "b", position: 5, hero_id: 20 },
+      ]),
+    ).toEqual({ a: { 1: [10, 12], 0: [11] }, b: { 5: [20] } });
   });
 });

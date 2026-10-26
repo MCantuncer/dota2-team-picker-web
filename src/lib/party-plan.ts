@@ -11,6 +11,13 @@ export interface PlanMember {
 /** Favorite heroes per member, then per position; 0 holds heroes for any position. */
 export type HeroPool = Record<string, Record<number, number[]>>;
 
+/** Builds the pool from `party_hero_pool` rows, which come ordered by player, position and when added. */
+export function toHeroPool(rows: { user_id: string; position: number; hero_id: number }[]): HeroPool {
+  const pool: HeroPool = {};
+  for (const r of rows) ((pool[r.user_id] ??= {})[r.position] ??= []).push(r.hero_id);
+  return pool;
+}
+
 /**
  * The five slots for the leader's team plan: each position gets the member who chose it in the
  * lobby (members without one fill the positions nobody chose, in order) and the ally already
