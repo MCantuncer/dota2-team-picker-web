@@ -5,7 +5,8 @@
 //   node scripts/check-backend-sync.mjs           Check the copies match the pinned commit (CI).
 //   node scripts/check-backend-sync.mjs --latest  Report how far the copies are behind backend main.
 //   node scripts/check-backend-sync.mjs --update  Copy the files from backend main and pin its commit.
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -34,6 +35,20 @@ if (!/^[0-9a-f]{40}$/.test(pinned)) throw new Error(`${PIN_FILE} must hold a ful
 const ref = mode === "--check" ? pinned : await mainCommit();
 console.log(`Comparing with backend ${mode === "--check" ? "pinned commit" : "main"} ${ref.slice(0, 7)}\n`);
 
+// Fetch that one commit with git, which checks every file against its hash, and read the files from it.
+const gitDir = await mkdtemp(join(tmpdir(), "backend-"));
+await run("git", ["init", "--bare", "--quiet", gitDir]);
+await run("git", ["--git-dir", gitDir, "fetch", "--quiet", "--depth", "1", `https://github.com/${REPO}.git`, ref]);
+
+/** The file's content at the backend commit, or null when it doesn't exist there. */
+async function backendFile(path) {
+  try {
+    return (await run("git", ["--git-dir", gitDir, "show", `${ref}:${path}`], { maxBuffer: 16 * 1024 * 1024 })).stdout;
+  } catch {
+    return null;
+  }
+}
+
 let drift = 0;
 for (const { dir, from } of COPIES) {
   for (const name of (await readdir(dir)).filter((f) => /^[\w.-]+\.ts$/.test(f)).sort()) {
@@ -41,15 +56,13 @@ for (const { dir, from } of COPIES) {
     const local = await readFile(path, "utf8");
     const header = local.match(HEADER)?.[0];
     if (!header) continue;
-    const res = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/${from}/${name}`);
-    if (res.status === 404) {
+    const remote = await backendFile(`${from}/${name}`);
+    if (remote === null) {
       // A copy of a file that a backend PR adds: that PR has to be merged first.
       console.log(`missing  ${path}  (${from}/${name} is not in that backend commit, merge the backend PR first)`);
       drift++;
       continue;
     }
-    if (!res.ok) throw new Error(`Could not fetch ${from}/${name} from the backend: HTTP ${res.status}`);
-    const remote = await res.text();
     if (remote === local.slice(header.length)) {
       console.log(`ok       ${path}`);
     } else if (mode === "--update") {
@@ -61,6 +74,8 @@ for (const { dir, from } of COPIES) {
     }
   }
 }
+
+await rm(gitDir, { recursive: true, force: true });
 
 if (mode === "--update" && !drift) {
   await writeFile(PIN_FILE, `${ref}\n`);
