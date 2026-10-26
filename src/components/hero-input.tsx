@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Kbd } from "@/components/kbd";
-import type { HeroInfo } from "@/lib/engine/types";
+import { splitPosition } from "@/lib/draft";
+import type { HeroInfo, Position } from "@/lib/engine/types";
 import type { HeroSearch } from "@/lib/hero-search";
 
 /**
  * Hero search box: Enter adds the top match, arrows choose another, Esc clears, Backspace on an empty
- * box undoes the last add. With `multi`, Enter adds every name typed, separated by spaces.
+ * box undoes the last add. With `multi`, Enter adds every name typed, separated by spaces. With
+ * `withPosition`, a trailing digit sets the position (`cm5`).
  */
 export function HeroInput({
   id,
@@ -15,6 +17,7 @@ export function HeroInput({
   search,
   exclude,
   multi,
+  withPosition,
   onPick,
   onPickMany,
   onUndo,
@@ -25,7 +28,8 @@ export function HeroInput({
   search: HeroSearch<HeroInfo>;
   exclude: Set<number>;
   multi?: boolean;
-  onPick: (heroId: number) => void;
+  withPosition?: boolean;
+  onPick: (heroId: number, position: Position | null) => void;
   onPickMany?: (heroIds: number[]) => void;
   onUndo?: () => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
@@ -33,11 +37,12 @@ export function HeroInput({
   const [value, setValue] = useState("");
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
-  const lastWord = multi ? (value.trimEnd().split(/\s+/).at(-1) ?? "") : value;
+  const typed = withPosition ? splitPosition(value) : { query: value, position: null };
+  const lastWord = multi ? (value.trimEnd().split(/\s+/).at(-1) ?? "") : typed.query;
   const results: HeroInfo[] = search.find(lastWord, exclude);
 
   const choose = (hero: HeroInfo) => {
-    onPick(hero.id);
+    onPick(hero.id, typed.position);
     setValue(multi ? value.trimEnd().split(/\s+/).slice(0, -1).map((w) => w + " ").join("") : "");
     setActive(0);
   };

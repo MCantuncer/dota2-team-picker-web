@@ -65,6 +65,7 @@ async function HeaderSession() {
   ]);
 
   const nav: NavItem[] = [
+    { href: "/draft", label: "Draft" },
     { href: "/my-heroes", label: "My heroes" },
     { href: "/party", label: "Party" },
     { href: "/friends", label: "Friends", badge: requests ?? 0 },
