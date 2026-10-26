@@ -52,3 +52,48 @@ export function splitPosition(text: string): { query: string; position: Position
   if (!match || !match[1]) return { query: text.trim(), position: null };
   return { query: match[1], position: Number(match[2]) as Position };
 }
+
+/** One row of a party draft's `draft_actions` table. */
+export interface ActionRow {
+  id: number;
+  actor_id: string;
+  kind: string;
+  hero_id: number;
+  position: number | null;
+}
+
+const KINDS = new Set(["ally", "enemy", "ban", "remove"]);
+
+/** A row as a draft action, or null for a kind or position the screen does not know. */
+export function toAction(row: ActionRow): DraftAction | null {
+  if (!KINDS.has(row.kind) || !(row.hero_id > 0)) return null;
+  const position = row.position !== null && row.position >= 1 && row.position <= 5 ? (row.position as Position) : null;
+  return { kind: row.kind as DraftAction["kind"], heroId: row.hero_id, position };
+}
+
+/** Rows from a fresh load and from live updates together, each once, oldest first. */
+export function mergeRows(rows: ActionRow[], added: ActionRow[]): ActionRow[] {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  for (const r of added) byId.set(r.id, r);
+  return [...byId.values()].sort((a, b) => a.id - b.id);
+}
+
+/** Who entered each hero still in the draft: the actor of its latest action. */
+export function actorsOf(rows: ActionRow[]): Map<number, string> {
+  const actors = new Map<number, string>();
+  for (const r of rows) {
+    if (r.kind === "remove") actors.delete(r.hero_id);
+    else actors.set(r.hero_id, r.actor_id);
+  }
+  return actors;
+}
+
+/** The hero of `userId`'s latest entry that is still in the draft as entered, for Undo. */
+export function lastEntryBy(rows: ActionRow[], draft: DraftEntry[], userId: string): number | null {
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i]!;
+    if (r.actor_id !== userId || r.kind === "remove") continue;
+    if (draft.some((e) => e.heroId === r.hero_id && e.kind === r.kind)) return r.hero_id;
+  }
+  return null;
+}

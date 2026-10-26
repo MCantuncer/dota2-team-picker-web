@@ -11,6 +11,7 @@ import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { usePartyDraft } from "./use-party-draft";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -19,6 +20,16 @@ export interface Player {
   positions: Position[];
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
+}
+
+/** The signed-in player's party, when they are in one: its draft is shared by everyone in it. */
+export interface PartyInfo {
+  id: string;
+  userId: string;
+  /** Display names by user id, to show who entered each hero. */
+  names: Record<string, string>;
+  /** The position the player chose in the party lobby. */
+  myPosition: Position | null;
 }
 
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
@@ -55,26 +66,41 @@ const isDraft = (v: unknown): v is DraftEntry[] =>
       Number.isInteger(e?.heroId) && ["ally", "enemy", "ban"].includes(e?.kind) && (e?.position === null || isPosition(e?.position)),
   );
 
-/** One player's draft: both teams and bans typed in as they happen, and 8 heroes for your position. */
-export function DraftBoard({ player, portraits, signedIn }: { player: Player; portraits: Record<number, string>; signedIn: boolean }) {
+/**
+ * One player's draft: both teams and bans typed in as they happen, and 8 heroes for your position.
+ * In a party, the draft is shared live with the party and each player gets picks for their own position.
+ */
+export function DraftBoard({
+  player,
+  portraits,
+  signedIn,
+  party,
+}: {
+  player: Player;
+  portraits: Record<number, string>;
+  signedIn: boolean;
+  party: PartyInfo | null;
+}) {
   const [engine, setEngine] = useState<Engine | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<DraftEntry[]>([]);
+  const [soloDraft, setSoloDraft] = useState<DraftEntry[]>([]);
   const [history, setHistory] = useState<DraftEntry[][]>([]);
-  const [myPosition, setMyPosition] = useState<Position>(player.positions[0] ?? 1);
+  const [myPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
+  const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
+  const draft = party ? shared.draft : soloDraft;
   const [rank, setRank] = useState<RankBracket | null>(player.rank);
   const allyRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadSnapshot()
       .then((s) => {
-        setDraft(readStorage(DRAFT_KEY, isDraft) ?? []);
+        setSoloDraft(readStorage(DRAFT_KEY, isDraft) ?? []);
         const saved = readStorage(POSITION_KEY, isPosition);
-        if (saved) setMyPosition(saved);
+        if (saved && !party?.myPosition) setMyPosition(saved);
         setEngine(new Engine(s));
       })
       .catch((e: Error) => setLoadError(e.message));
-  }, []);
+  }, [party?.myPosition]);
 
   const search = useMemo(() => {
     if (!engine) return null;
@@ -107,18 +133,37 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
   const chance = engine ? teamWinChance(engine, allyIds, enemies, bracket) : null;
 
   const change = (next: DraftEntry[]) => {
-    if (next === draft) return;
-    setHistory((h) => [...h.slice(-49), draft]);
-    setDraft(next);
+    if (next === soloDraft) return;
+    setHistory((h) => [...h.slice(-49), soloDraft]);
+    setSoloDraft(next);
     writeStorage(DRAFT_KEY, next);
   };
-  const act = (...actions: DraftAction[]) => change(actions.reduce(applyAction, draft));
+  const act = (...actions: DraftAction[]) => {
+    if (party) void shared.act(actions);
+    else change(actions.reduce(applyAction, soloDraft));
+  };
+  // In a party, Undo takes back your own latest entry; the rest of the party keeps theirs.
+  const canUndo = party ? shared.lastMine !== null : history.length > 0;
   const undo = () => {
+    if (party) {
+      if (shared.lastMine !== null) act({ kind: "remove", heroId: shared.lastMine });
+      return;
+    }
     const prev = history.at(-1);
     if (!prev) return;
     setHistory((h) => h.slice(0, -1));
-    setDraft(prev);
+    setSoloDraft(prev);
     writeStorage(DRAFT_KEY, prev);
+  };
+  const startOver = () => {
+    if (party) void shared.newDraft();
+    else change([]);
+  };
+  /** Who entered a hero in the party draft. */
+  const enteredBy = (heroId: number) => {
+    const actor = party ? shared.actors.get(heroId) : undefined;
+    if (!party || !actor) return undefined;
+    return actor === party.userId ? "You" : (party.names[actor] ?? "Left the party");
   };
   const choosePosition = (p: Position) => {
     setMyPosition(p);
@@ -127,6 +172,13 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
 
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
+  if (party && !shared.ready) {
+    return shared.error ? (
+      <p className="notice notice-error">{shared.error}. Reload the page to try again.</p>
+    ) : (
+      <p className="text-sm text-muted">Opening your party&apos;s draft…</p>
+    );
+  }
 
   const taken = new Set(draft.map((e) => e.heroId));
   const hero = (id: number) => engine.hero(id);
@@ -140,6 +192,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
     <>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-line pb-4">
         <h1 className="page-title">Draft</h1>
+        {party && <span className="chip chip-accent micro">Party</span>}
         <div className="flex items-center gap-2">
           <span className="label-caps" id="my-position">
             I play
@@ -168,12 +221,12 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           </select>
         </label>
         <div className="ml-auto flex gap-2">
-          <button onClick={undo} disabled={!history.length} className="btn btn-ghost btn-sm">
+          <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
             Undo
           </button>
           <button
             onClick={() => {
-              change([]);
+              startOver();
               allyRef.current?.focus();
             }}
             disabled={!draft.length}
@@ -196,7 +249,14 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
             to use your own heroes and rank.
           </>
         )}
+        {party && " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you."}
       </p>
+
+      {party && shared.error && (
+        <p role="alert" className="notice notice-error text-sm">
+          {shared.error}
+        </p>
+      )}
 
       {chance !== null && <WinBar chance={chance} />}
 
@@ -216,7 +276,13 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           )}
           <Slots>
             {allies.map((e) => (
-              <Slot key={e.heroId} hero={hero(e.heroId)} portrait={portraits[e.heroId]} onRemove={() => act({ kind: "remove", heroId: e.heroId })}>
+              <Slot
+                key={e.heroId}
+                hero={hero(e.heroId)}
+                portrait={portraits[e.heroId]}
+                by={enteredBy(e.heroId)}
+                onRemove={() => act({ kind: "remove", heroId: e.heroId })}
+              >
                 <button
                   onClick={() => act({ kind: "ally", heroId: e.heroId, position: e.position === 5 ? null : (((e.position ?? 0) + 1) as Position) })}
                   aria-label={`${hero(e.heroId).name} position: ${e.position ?? "not set"}. Change`}
@@ -242,7 +308,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           )}
           <Slots>
             {enemies.map((id) => (
-              <Slot key={id} hero={hero(id)} portrait={portraits[id]} onRemove={() => act({ kind: "remove", heroId: id })} />
+              <Slot key={id} hero={hero(id)} portrait={portraits[id]} by={enteredBy(id)} onRemove={() => act({ kind: "remove", heroId: id })} />
             ))}
           </Slots>
         </TeamPanel>
@@ -349,11 +415,27 @@ function Slots({ children }: { children: React.ReactNode[] }) {
   );
 }
 
-function Slot({ hero, portrait, onRemove, children }: { hero: HeroInfo; portrait?: string; onRemove: () => void; children?: React.ReactNode }) {
+function Slot({
+  hero,
+  portrait,
+  by,
+  onRemove,
+  children,
+}: {
+  hero: HeroInfo;
+  portrait?: string;
+  /** Who entered the hero, in a party draft. */
+  by?: string;
+  onRemove: () => void;
+  children?: React.ReactNode;
+}) {
   return (
     <li className="flex items-center gap-3 rounded-md bg-raised p-1 pr-2">
       <Portrait hero={hero} src={portrait} size="strip" />
-      <span className="font-heading text-base font-semibold">{hero.name}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="font-heading text-base font-semibold">{hero.name}</span>
+        {by && <span className="micro text-subtle">Entered by {by}</span>}
+      </span>
       <span className="ml-auto flex items-center gap-2">
         {children}
         <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className="btn btn-icon btn-sm text-muted">
