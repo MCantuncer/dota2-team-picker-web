@@ -45,6 +45,9 @@ export default async function DraftPage() {
         userId: user.id,
         names: Object.fromEntries(found.members.map((m) => [m.id, m.name])),
         myPosition: me?.position ? (me.position as Position) : null,
+        members: found.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null })),
+        // The leader's hero pool comes with the backend's party_hero_pool (backend #45).
+        pool: null,
       };
     }
 
