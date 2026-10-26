@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, heroesOf, replay, splitPosition, type DraftAction } from "./draft";
+import { actorsOf, applyAction, heroesOf, lastEntryBy, mergeRows, replay, splitPosition, toAction, type ActionRow, type DraftAction } from "./draft";
 
 describe("applyAction", () => {
   it("adds picks and bans in order", () => {
@@ -65,5 +65,38 @@ describe("splitPosition", () => {
     expect(splitPosition("cm")).toEqual({ query: "cm", position: null });
     expect(splitPosition("cm7")).toEqual({ query: "cm7", position: null });
     expect(splitPosition("5")).toEqual({ query: "5", position: null });
+  });
+});
+
+describe("party draft rows", () => {
+  const row = (id: number, actor: string, kind: string, hero: number, position: number | null = null): ActionRow => ({
+    id,
+    actor_id: actor,
+    kind,
+    hero_id: hero,
+    position,
+  });
+
+  it("reads rows as actions and skips unknown ones", () => {
+    expect(toAction(row(1, "a", "ally", 5, 3))).toEqual({ kind: "ally", heroId: 5, position: 3 });
+    expect(toAction(row(2, "a", "enemy", 6, 9))).toEqual({ kind: "enemy", heroId: 6, position: null });
+    expect(toAction(row(3, "a", "swap", 6))).toBeNull();
+  });
+
+  it("merges a load and live updates once each, in id order", () => {
+    const merged = mergeRows([row(2, "a", "ban", 1), row(1, "a", "ban", 2)], [row(2, "a", "ban", 1), row(3, "b", "enemy", 4)]);
+    expect(merged.map((r) => r.id)).toEqual([1, 2, 3]);
+  });
+
+  it("knows who entered each hero and what to undo", () => {
+    const rows = [row(1, "a", "ally", 5), row(2, "b", "enemy", 6), row(3, "a", "ban", 7), row(4, "b", "remove", 7)];
+    const draft = replay(rows.map(toAction).filter((a) => a !== null));
+    expect([...actorsOf(rows)]).toEqual([
+      [5, "a"],
+      [6, "b"],
+    ]);
+    // a's ban was taken out by b, so a's Undo takes back the ally pick.
+    expect(lastEntryBy(rows, draft, "a")).toBe(5);
+    expect(lastEntryBy(rows, draft, "c")).toBeNull();
   });
 });
