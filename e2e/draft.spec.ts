@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
-import { expectAccessible } from "./helpers";
+import { expectAccessible, signUp, uniqueEmail } from "./helpers";
 
 test("the draft screen suggests heroes as both teams fill in", async ({ page }) => {
   await page.goto("/draft");
@@ -48,4 +48,32 @@ test("the draft screen shows the win chance once a checked model exists", async 
   await expect(page.getByRole("region", { name: "Win chance" })).toContainText(/\d+\.\d%/);
   await expect(page.getByTitle("Change in your team's win chance")).toHaveCount(8);
   await expectAccessible(page);
+});
+
+test("in a party the draft is kept for the whole party", async ({ page }) => {
+  await signUp(page, uniqueEmail("party-draft"), "Earthshaker");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await expect(page.getByRole("main").getByText("Party", { exact: true })).toBeVisible();
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("cm5");
+  await ally.press("Enter");
+  const team = page.getByRole("region", { name: "My team" });
+  await expect(team.getByText("Entered by You")).toBeVisible();
+
+  // The draft lives in the database, so a reload (or a teammate's screen) shows it too.
+  await page.reload();
+  await expect(team.getByText("Crystal Maiden")).toBeVisible();
+  await expectAccessible(page);
+
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(team.getByText("Crystal Maiden")).toHaveCount(0);
+  await ally.fill("pudge");
+  await ally.press("Enter");
+  await expect(team.getByText("Pudge")).toBeVisible();
+  await page.getByRole("button", { name: "New draft" }).click();
+  await expect(team.getByText("Pudge")).toHaveCount(0);
 });
