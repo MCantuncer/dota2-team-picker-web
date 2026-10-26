@@ -8,15 +8,21 @@ on:
 permissions:
   contents: read
 
+# A newer push makes the running check out of date, so stop it rather than queue behind it.
 concurrency:
   group: e2e-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   e2e:
     name: Browser tests (Playwright + axe)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # The local Supabase stack's fixed URL and public key (the same on every machine, nothing secret), so the
+      # site can build before the stack is up. The wait step checks they still match.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
     steps:
       - uses: actions/checkout@v5
       # The database schema lives in the backend repo. Test against the commit the site's copies are pinned to.
@@ -32,24 +38,43 @@ jobs:
       - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
         with:
           version: 2.122.0
-      - name: Start local Supabase (auth, API, database)
+      # Starting Supabase (mostly pulling its Docker images) is the slowest step, so run it in the background
+      # while the site installs and builds, and wait for it just before the tests.
+      - name: Start local Supabase in the background
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
-          supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
-          # Point the site and tests at the throwaway stack; nothing here reaches a real project.
-          eval "$(supabase status -o env)"
-          {
-            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
-            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
-            echo "E2E_SUPABASE_SECRET_KEY=$SECRET_KEY"
-          } >> "$GITHUB_ENV"
+          (
+            if supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
+            then echo 0 > "$RUNNER_TEMP/supabase.exit"; else echo 1 > "$RUNNER_TEMP/supabase.exit"; fi
+          ) > "$RUNNER_TEMP/supabase.log" 2>&1 &
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # Headless runs only need Chromium's headless shell, and the runner image already has its system
+      # libraries, so skip --with-deps (its apt step was most of this job's time). Cache the browser
+      # per Playwright version.
+      - id: playwright
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-shell
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx playwright install --only-shell chromium
       - run: npm run build
+      - name: Wait for local Supabase
+        working-directory: ${{ runner.temp }}/backend/services/accounts
+        run: |
+          timeout 300 bash -c 'until [ -f "$RUNNER_TEMP/supabase.exit" ]; do sleep 2; done'
+          cat "$RUNNER_TEMP/supabase.log"
+          [ "$(cat "$RUNNER_TEMP/supabase.exit")" = 0 ]
+          eval "$(supabase status -o env)"
+          # The build already used the local stack's well-known URL and publishable key; make sure they match.
+          [ "$API_URL" = "$NEXT_PUBLIC_SUPABASE_URL" ] && [ "$PUBLISHABLE_KEY" = "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]
+          echo "E2E_SUPABASE_SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
