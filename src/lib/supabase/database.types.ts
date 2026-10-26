@@ -1,6 +1,5 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/accounts/supabase/database.types.ts). Keep in sync.
 
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
