@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GamePlanPanel } from "@/components/game-plan-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
+import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
@@ -165,6 +167,7 @@ export function CaptainBoard({
           slots={slots}
           rank={rank}
           draft={draft}
+          icons={icons}
           onDraft={updateDraft}
           onLineup={saveLineup}
         />
@@ -206,6 +209,7 @@ function DraftView({
   slots,
   rank,
   draft,
+  icons,
   onDraft,
   onLineup,
 }: {
@@ -215,6 +219,7 @@ function DraftView({
   slots: Slots;
   rank: number | null;
   draft: Draft;
+  icons: Record<number, string>;
   onDraft: (d: Draft) => void;
   onLineup: (slots: Slots, rank: number | null) => void;
 }) {
@@ -247,6 +252,12 @@ function DraftView({
   const plan = useMemo(
     () => (view === "wcst" ? superTeam(engine, members, slots, rank, draft) : null),
     [view, engine, members, slots, rank, draft],
+  );
+
+  const gamePlan = useMemo(
+    // The lineup's rank is a bracket (1-8) whenever it is set.
+    () => finishedDraftPlan(engine, draft.picks, draft.enemies, (rank ?? undefined) as RankBracket | undefined),
+    [engine, draft, rank],
   );
 
   const setPick = (i: number, id: number | null) => {
@@ -339,7 +350,17 @@ function DraftView({
         </section>
       </div>
 
-      <section aria-label="Suggestions" className="flex flex-col gap-2">
+      {gamePlan && (
+        <GamePlanPanel
+          plan={gamePlan}
+          heroName={name}
+          icons={icons}
+          playerNames={slots.map((id) => memberById(id)?.name ?? null)}
+        />
+      )}
+
+      {/* Once all ten heroes are in, the game plan replaces the suggestions. */}
+      <section aria-label="Suggestions" hidden={gamePlan !== null} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider">{view === "players" ? "Call these" : "Super team"}</h2>
           <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist" aria-label="Suggestion view">
