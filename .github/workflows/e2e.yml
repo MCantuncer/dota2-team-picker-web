@@ -19,10 +19,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-      # The database schema lives in the backend repo; test against its main branch.
+      # The database schema lives in the backend repo. Test against the commit the site's copies are pinned to.
+      - id: backend
+        run: echo "ref=$(cat backend-ref.txt)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
         with:
           repository: MCantuncer/dota2-team-picker
+          ref: ${{ steps.backend.outputs.ref }}
           path: backend
       # Move it out of the workspace so the site's build and lint don't pick up its files.
       - run: mv backend "$RUNNER_TEMP/backend"
