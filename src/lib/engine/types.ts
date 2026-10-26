@@ -53,6 +53,20 @@ export interface Snapshot {
   /** Games per position [pos 1, ..., pos 5] in the last week, from STRATZ. */
   positions?: Record<string, number[]>;
   positionsAt?: string;
+  /**
+   * Games and wins per hero by when its team picked it: [1st or 2nd pick, 3rd, 4th or 5th].
+   * Counted from the saved ranked games of this patch.
+   */
+  pickPhase?: Record<string, { games: number[]; wins: number[] }>;
+  /**
+   * Turns a draft edge into a win chance: chance = 1 / (1 + e^-(a + b * edge)), fitted on saved
+   * ranked games for each number of heroes known. Only present when its calibration check passed.
+   */
+  winModel?: {
+    fittedAt: string;
+    games: number;
+    byKnown: Record<string, { a: number; b: number }>;
+  };
   /** The patch the counts are for, from OpenDota's patch list. */
   patch?: { name: string; startedAt: string };
   /** Highest public match id already counted, so daily runs only add new matches. */
