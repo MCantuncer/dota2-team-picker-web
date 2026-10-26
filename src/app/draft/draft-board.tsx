@@ -10,6 +10,7 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { HeroSearch } from "@/lib/hero-search";
+import { pickGain, teamWinChance } from "@/lib/win";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -100,6 +101,10 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           count: 8,
         })
       : [];
+
+  const allyIds = allies.map((e) => e.heroId);
+  const bracket = rank ?? undefined;
+  const chance = engine ? teamWinChance(engine, allyIds, enemies, bracket) : null;
 
   const change = (next: DraftEntry[]) => {
     if (next === draft) return;
@@ -193,6 +198,8 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
         )}
       </p>
 
+      {chance !== null && <WinBar chance={chance} />}
+
       <div className="grid gap-4 md:grid-cols-2">
         <TeamPanel title="My team" side="radiant" count={allies.length}>
           {allies.length < TEAM_SIZE && (
@@ -284,6 +291,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
                 suggestion={s}
                 portrait={portraits[s.heroId]}
                 best={i === 0}
+                gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
                 onPicked={() => act({ kind: "ally", heroId: s.heroId, position: myPosition })}
                 onBanned={() => act({ kind: "ban", heroId: s.heroId })}
               />
@@ -292,6 +300,26 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
         )}
       </section>
     </>
+  );
+}
+
+/** My team's win chance against the enemy's as one split bar. Shown only with a checked model. */
+function WinBar({ chance }: { chance: number }) {
+  const pct = (chance * 100).toFixed(1);
+  return (
+    <section aria-label="Win chance" className="card flex flex-col gap-2 p-3">
+      <div className="flex items-center justify-between text-sm">
+        <span>
+          <span className="label-caps">Win chance</span> <span className="num text-radiant">{pct}%</span>
+        </span>
+        <span>
+          <span className="label-caps">Enemy</span> <span className="num text-dire">{(100 - chance * 100).toFixed(1)}%</span>
+        </span>
+      </div>
+      <div aria-hidden className="flex h-2 overflow-hidden rounded-xs bg-dire-strong">
+        <div className="bg-radiant-strong" style={{ width: `${pct}%` }} />
+      </div>
+    </section>
   );
 }
 
@@ -353,12 +381,15 @@ function SuggestionCard({
   suggestion: s,
   portrait,
   best,
+  gain,
   onPicked,
   onBanned,
 }: {
   suggestion: Suggestion;
   portrait?: string;
   best: boolean;
+  /** Change in my team's win chance, in points, when it is known. */
+  gain: number | null;
   onPicked: () => void;
   onBanned: () => void;
 }) {
@@ -373,6 +404,11 @@ function SuggestionCard({
             <span className="num text-muted" title="Score in win-rate points">
               {signed(s.score)}
             </span>
+            {gain !== null && (
+              <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`} title="Change in your team's win chance">
+                {signed(gain)}%
+              </span>
+            )}
             {best && <span className="chip chip-accent micro">Best</span>}
           </span>
         </div>
