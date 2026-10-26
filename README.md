@@ -38,13 +38,17 @@ npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
 npm run test:watch
 npm run typecheck      # route types + tsc
 npm run lint
-npm run check:backend  # engine and database type copies still match the backend's main branch
+npm run check:backend  # engine and database type copies match the pinned backend commit
+npm run sync:backend   # copy them from backend main again and pin its commit
 npm run test:e2e       # Playwright browser tests, see e2e/README.md
 ```
 
-`src/lib/supabase/database.types.ts` is the backend's generated database types, copied as is. The Supabase
-clients use it, so a query on a missing table or column fails the type check. When the backend changes its
-schema, copy `services/accounts/supabase/database.types.ts` again, keeping the first "Copied from" line.
+`src/lib/engine/` and `src/lib/supabase/database.types.ts` are copied from the backend repo, at the commit
+pinned in `backend-ref.txt`. The Supabase clients use the database types, so a query on a missing table or
+column fails the type check. PR checks and the browser tests use the pinned commit, so a backend change never
+turns an unrelated website PR red. To pick up backend changes, run `npm run sync:backend` in its own PR: it
+copies the files from backend main and updates the pin. The "Backend drift" workflow reports, without blocking
+anything, when backend main has moved on.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
 full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,

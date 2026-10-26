@@ -1,0 +1,25 @@
+name: Backend drift
+
+# Reports when backend main has moved on from the commit pinned in backend-ref.txt.
+# Informational only: PR checks compare with the pinned commit, so this never blocks a merge.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Copies behind backend main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node scripts/check-backend-sync.mjs --latest

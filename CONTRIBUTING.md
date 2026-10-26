@@ -64,7 +64,8 @@ review. The PR template has the checklist.
   it.
 - One source of truth for shared values (position names, rank names, limits). Import them; don't copy them.
 - `src/lib/engine` and `src/lib/supabase/database.types.ts` are copies from the backend. Never edit them here: change
-  the backend, then sync the copy. `npm run check:backend` fails on any drift.
+  the backend, then run `npm run sync:backend` in its own PR to copy it and update the pin in `backend-ref.txt`.
+  `npm run check:backend` fails if a copy doesn't match the pinned commit.
 
 ### Naming
 

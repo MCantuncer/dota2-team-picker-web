@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check:backend": "node scripts/check-backend-sync.mjs",
+    "sync:backend": "node scripts/check-backend-sync.mjs --update",
     "test:e2e": "playwright test"
   },
   "dependencies": {
