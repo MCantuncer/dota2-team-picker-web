@@ -20,6 +20,12 @@ for (const { dir, from } of COPIES) {
     const header = local.match(HEADER)?.[0];
     if (!header) continue;
     const res = await fetch(`${BACKEND}/${from}/${name}`);
+    if (res.status === 404) {
+      // A copy of a file that a backend PR adds: that PR has to be merged first.
+      console.log(`missing  ${dir}/${name}  (${from}/${name} is not on backend main yet, merge the backend PR first)`);
+      drift++;
+      continue;
+    }
     if (!res.ok) throw new Error(`Could not fetch ${from}/${name} from the backend: HTTP ${res.status}`);
     if ((await res.text()) === local.slice(header.length)) {
       console.log(`ok       ${dir}/${name}`);
@@ -30,6 +36,6 @@ for (const { dir, from } of COPIES) {
   }
 }
 if (drift) {
-  console.error(`\n${drift} copied file(s) differ from the backend's main branch.`);
+  console.error(`\n${drift} copied file(s) differ from or are missing on the backend's main branch.`);
   process.exit(1);
 }
