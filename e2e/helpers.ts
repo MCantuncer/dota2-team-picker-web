@@ -6,6 +6,7 @@ import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database } from "../src/lib/supabase/database.types";
 
 const BACKEND_REF = readFileSync("backend-ref.txt", "utf8").trim();
+if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("backend-ref.txt must hold a full commit SHA");
 /** The backend's committed hero data at the pinned commit. Older than the bucket's, but fixed, so tests repeat. */
 const HERO_DATA_FIXTURE = `https://raw.githubusercontent.com/MCantuncer/dota2-team-picker/${BACKEND_REF}/services/engine/data/snapshot.json`;
 
