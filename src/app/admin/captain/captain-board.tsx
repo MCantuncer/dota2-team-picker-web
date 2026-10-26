@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HARD_COUNTERS } from "@/lib/hard-counters";
 import { HeroSearch } from "@/lib/hero-search";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
@@ -645,19 +644,13 @@ function PlanCard({
   );
 }
 
+/** The engine's hard-counter notes for a hero, colored by where the counter stands in the draft. */
 function counterNotes(engine: Engine, heroId: number, draft: Draft): Note[] {
-  const hero = engine.hero(heroId).name;
-  const notes: Note[] = [];
-  for (const hc of HARD_COUNTERS) {
-    if (hc.hero !== hero) continue;
-    const counter = engine.heroes.find((h) => h.name === hc.counter);
-    if (!counter) continue;
-    if (draft.enemies.includes(counter.id)) notes.push({ kind: "bad", text: `Hard countered: ${counter.name} is on the enemy team` });
-    else if (draft.bans.includes(counter.id) || draft.picks.includes(counter.id))
-      notes.push({ kind: "good", text: `${counter.name} is out, safe to pick` });
-    else if (draft.enemies.length < 5) notes.push({ kind: "warn", text: `Gamble: ${counter.name} still available` });
-  }
-  return notes;
+  const allies = draft.picks.flatMap((id) => (id != null ? [{ heroId: id }] : []));
+  const kind = { enemy: "bad", open: "warn", out: "good" } as const;
+  return engine
+    .hardCounterNotes(heroId, { allies, enemies: draft.enemies, bans: draft.bans })
+    .map((n) => ({ kind: kind[n.status], text: n.text }));
 }
 
 function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: boolean; onPicked: () => void; onBanned: () => void }) {
