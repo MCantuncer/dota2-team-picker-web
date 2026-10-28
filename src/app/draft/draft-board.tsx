@@ -185,8 +185,9 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
       </div>
 
       <p className="text-xs text-subtle">
-        Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Add a digit for an ally&apos;s
-        position (<span className="text-muted">cm5</span>). <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
+        Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
+        (<span className="text-muted">pa sf</span>). Add a digit for an ally&apos;s position (<span className="text-muted">cm5</span>).
+        <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
         {!signedIn && (
           <>
             {" "}
@@ -210,7 +211,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
               search={search}
               exclude={taken}
               withPosition
-              onPick={(heroId, position) => act({ kind: "ally", heroId, position })}
+              onPick={(picked) => act(...picked.map((p) => ({ kind: "ally" as const, ...p })))}
               onUndo={() => undoLast("ally")}
             />
           )}
@@ -236,7 +237,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
               placeholder="Enemy pick"
               search={search}
               exclude={taken}
-              onPick={(heroId) => act({ kind: "enemy", heroId })}
+              onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "enemy" as const, heroId })))}
               onUndo={() => undoLast("enemy")}
             />
           )}
@@ -257,9 +258,7 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           placeholder="Bans, several at once: pa sf am"
           search={search}
           exclude={taken}
-          multi
-          onPick={(heroId) => act({ kind: "ban", heroId })}
-          onPickMany={(ids) => act(...ids.map((heroId) => ({ kind: "ban" as const, heroId })))}
+          onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "ban" as const, heroId })))}
           onUndo={() => undoLast("ban")}
         />
         {bans.length > 0 && (
