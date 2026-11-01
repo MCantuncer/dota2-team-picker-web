@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { getHeroes } from "@/lib/heroes";
 import { steamAvatar, toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
+import { latestSentPlan } from "@/lib/team-game-plan";
 import { PartyLobby, type Invitee } from "./party-lobby";
+import { TeamGamePlan } from "./team-game-plan";
 
 export const metadata: Metadata = { title: "Party · Dota 2 Team Picker" };
 
@@ -13,11 +16,15 @@ export default async function PartyPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: rows }, { data: friends }, { data: teammates }] = await Promise.all([
+  const [{ data: rows }, { data: friends }, { data: teammates }, heroes] = await Promise.all([
     supabase.rpc("party_view"),
     supabase.rpc("my_friends"),
     supabase.rpc("friend_suggestions"),
+    // Hero icons are decoration: without them the game plan shows hero names only.
+    getHeroes().catch(() => []),
   ]);
+  // The game plan is extra: if it fails to load, the lobby still works.
+  const sentPlan = await latestSentPlan(supabase).catch(() => null);
 
   // Friends first, then people from your teams; the database checks again on every invite.
   const invitees: Invitee[] = [
@@ -37,6 +44,9 @@ export default async function PartyPage() {
     })),
   ];
 
+  const names = Object.fromEntries(invitees.map((i) => [i.id, i.name]));
+  const icons = Object.fromEntries(heroes.map((h) => [h.id, h.icon]));
+
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
       <div className="flex flex-col gap-1">
@@ -45,6 +55,7 @@ export default async function PartyPage() {
           Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site.
         </p>
       </div>
+      <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
       <PartyLobby userId={user.id} initialParty={toParty(rows)} invitees={invitees} />
     </main>
   );

@@ -14,6 +14,7 @@ import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { GamesWins, HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
 import { MemberList } from "./member-list";
+import { SendGamePlan } from "./send-game-plan";
 import { TeamPicker, type TeamRef } from "./team-picker";
 
 /**
@@ -168,6 +169,8 @@ export function CaptainBoard({
           rank={rank}
           draft={draft}
           icons={icons}
+          teamId={team.id}
+          userId={userId}
           onDraft={updateDraft}
           onLineup={saveLineup}
         />
@@ -210,6 +213,8 @@ function DraftView({
   rank,
   draft,
   icons,
+  teamId,
+  userId,
   onDraft,
   onLineup,
 }: {
@@ -220,6 +225,8 @@ function DraftView({
   rank: number | null;
   draft: Draft;
   icons: Record<number, string>;
+  teamId: string;
+  userId: string;
   onDraft: (d: Draft) => void;
   onLineup: (slots: Slots, rank: number | null) => void;
 }) {
@@ -356,6 +363,19 @@ function DraftView({
           heroName={name}
           icons={icons}
           playerNames={slots.map((id) => memberById(id)?.name ?? null)}
+          action={
+            <SendGamePlan
+              // A changed draft or lineup can be sent again.
+              key={JSON.stringify([draft, slots, rank])}
+              teamId={teamId}
+              userId={userId}
+              picks={draft.picks as number[]}
+              enemies={draft.enemies}
+              bans={draft.bans}
+              rank={rank}
+              players={slots}
+            />
+          }
         />
       )}
 
