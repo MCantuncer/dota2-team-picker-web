@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
 import { LogoMark } from "./logo";
+import { CaptainPrompt } from "./captain-prompt";
 import { PartyInvitePopup } from "./party-invite-popup";
 import { PrimaryNav, type NavItem } from "./primary-nav";
 
@@ -88,6 +89,7 @@ async function HeaderSession() {
         <AccountMenu account={account} nav={nav} />
       </div>
       <PartyInvitePopup userId={user.id} />
+      <CaptainPrompt userId={user.id} />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, signUp, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, signUp, test, uniqueEmail } from "./helpers";
 
 test("a party player can become draft captain and step down", async ({ page }) => {
   await signUp(page, uniqueEmail("party-captain"), "Lion");
@@ -17,4 +17,43 @@ test("a party player can become draft captain and step down", async ({ page }) =
   await captain.getByRole("button", { name: "Step down" }).click();
   await expect(captain.getByText("None yet. Anyone can enter the draft.")).toBeVisible();
   await expect(captain.getByRole("button", { name: "Become captain" })).toBeVisible();
+});
+
+// The e2e stack runs without Realtime, so each side reloads to see the other's change.
+test("a player asks the draft captain for the role and gets it on Yes", async ({ page, browser }) => {
+  const canEmail = uniqueEmail("captain-can");
+  const aliEmail = uniqueEmail("captain-ali");
+  await signUp(page, canEmail, "Can");
+  const aliContext = await browser.newContext();
+  const ali = await aliContext.newPage();
+  await signUp(ali, aliEmail, "Ali");
+  await befriend(canEmail, aliEmail);
+
+  // Can starts a party, invites Ali, and becomes draft captain.
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await page.getByRole("button", { name: "Invite", exact: true }).click();
+  await ali.goto("/party");
+  await ali.getByRole("alertdialog").getByRole("button", { name: "Join" }).click();
+  await expect(ali.getByRole("region", { name: "Players" }).getByText("Can")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Players" }).getByText("Ali")).toBeVisible();
+  await page.getByRole("region", { name: "Draft captain" }).getByRole("button", { name: "Become captain" }).click();
+
+  // Ali asks; Can gets the prompt and says Yes.
+  await expect(page.getByRole("region", { name: "Draft captain" }).getByText("You enter the draft for the party.")).toBeVisible();
+  await ali.reload();
+  const aliBar = ali.getByRole("region", { name: "Draft captain" });
+  await aliBar.getByRole("button", { name: "Ask Can" }).click();
+  await expect(aliBar.getByText(/Asked Can/)).toBeVisible();
+  await page.reload();
+  const prompt = page.getByRole("region", { name: "Draft captain request" });
+  await expect(prompt).toBeVisible();
+  await expectAccessible(page);
+  await prompt.getByRole("button", { name: "Give captain" }).click();
+  await expect(prompt).toBeHidden();
+
+  await ali.reload();
+  await expect(aliBar.getByText("You enter the draft for the party.")).toBeVisible();
+  await aliContext.close();
 });
