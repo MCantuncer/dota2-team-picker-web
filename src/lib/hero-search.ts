@@ -32,8 +32,38 @@ interface Entry<H> {
 }
 
 /**
+ * Edit distance where swapping two neighbouring letters counts as one edit, as most typing slips do.
+ * Stops early: anything above `max` is returned as `max + 1`.
+ */
+function typoDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const rows: number[][] = [Array.from({ length: b.length + 1 }, (_, j) => j)];
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let d = Math.min(rows[i - 1][j] + 1, row[j - 1] + 1, rows[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, rows[i - 2][j - 2] + 1);
+      row.push(d);
+    }
+    if (Math.min(...row) > max) return max + 1;
+    rows.push(row);
+  }
+  return rows[a.length][b.length];
+}
+
+/** Whether `typed` is the start of `name` with at most one slip (a wrong, missing, extra or swapped letter). */
+function startsWithTypo(name: string, typed: string): boolean {
+  return [-1, 0, 1].some((extra) => typoDistance(typed, name.slice(0, typed.length + extra), 1) <= 1);
+}
+
+/** Queries shorter than this never match with a typo: two letters with a slip could be almost any hero. */
+const MIN_TYPO_LENGTH = 3;
+
+/**
  * Finds heroes from two or three typed letters. Exact nicknames come first, then the start of the
  * name, its initials or a nickname, then the start of any word; ties go to the more picked hero.
+ * Only when nothing matches does one typing slip count (`meduas` finds Medusa).
  */
 export class HeroSearch<H extends NamedHero = NamedHero> {
   private entries: Entry<H>[];
@@ -68,7 +98,20 @@ export class HeroSearch<H extends NamedHero = NamedHero> {
       else if (e.words.some((w) => w.startsWith(q))) tier = 2;
       if (tier !== null) hits.push({ tier, pop: this.popularity(e.hero.id), hero: e.hero });
     }
+    if (!hits.length && q.length >= MIN_TYPO_LENGTH) {
+      for (const e of this.entries) {
+        if (exclude.has(e.hero.id)) continue;
+        if ([e.full, ...e.words, ...e.nicknames].some((name) => startsWithTypo(name, q)))
+          hits.push({ tier: 3, pop: this.popularity(e.hero.id), hero: e.hero });
+      }
+    }
     hits.sort((a, b) => a.tier - b.tier || b.pop - a.pop);
     return hits.slice(0, limit).map((h) => h.hero);
+  }
+
+  /** Whether the text is the start of a hero's full name, so `shadow fiend` is one hero and not two. */
+  isNameStart(query: string): boolean {
+    const q = normalize(query).replace(/ /g, "");
+    return q.length > 0 && this.entries.some((e) => e.full.startsWith(q));
   }
 }

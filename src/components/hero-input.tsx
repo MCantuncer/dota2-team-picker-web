@@ -2,63 +2,60 @@
 
 import { useState } from "react";
 import { Kbd } from "@/components/kbd";
-import { splitPosition } from "@/lib/draft";
+import { splitHeroes } from "@/lib/hero-entry";
 import type { HeroInfo, Position } from "@/lib/engine/types";
 import type { HeroSearch } from "@/lib/hero-search";
 
-/**
- * Hero search box: Enter adds the top match, arrows choose another, Esc clears, Backspace on an empty
- * box undoes the last add. With `multi`, Enter adds every name typed, separated by spaces. With
- * `withPosition`, a trailing digit sets the position (`cm5`).
- */
-export function HeroInput({
-  id,
-  placeholder,
-  search,
-  exclude,
-  multi,
-  withPosition,
-  onPick,
-  onPickMany,
-  onUndo,
-  inputRef,
-}: {
+/** A hero chosen in a search box, with the position typed after it (`cm5`) when positions are on. */
+export interface PickedHero {
+  heroId: number;
+  position: Position | null;
+}
+
+interface HeroInputProps {
   id: string;
   placeholder: string;
   search: HeroSearch<HeroInfo>;
   exclude: Set<number>;
-  multi?: boolean;
   withPosition?: boolean;
-  onPick: (heroId: number, position: Position | null) => void;
-  onPickMany?: (heroIds: number[]) => void;
+  onPick: (heroes: PickedHero[]) => void;
   onUndo?: () => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-}) {
+}
+
+/**
+ * Hero search box: Enter adds the top match, arrows choose another, Esc clears, Backspace on an empty
+ * box undoes the last add. Several heroes can go in at once, separated by spaces (`pa sf`); the list
+ * and the arrows apply to the last one. With `withPosition`, a digit after a hero sets its position (`cm5`).
+ */
+export function HeroInput({ id, placeholder, search, exclude, withPosition, onPick, onUndo, inputRef }: HeroInputProps) {
   const [value, setValue] = useState("");
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
-  const typed = withPosition ? splitPosition(value) : { query: value, position: null };
-  const lastWord = multi ? (value.trimEnd().split(/\s+/).at(-1) ?? "") : typed.query;
-  const results: HeroInfo[] = search.find(lastWord, exclude);
+  const typed = splitHeroes(value, Boolean(withPosition), (q) => search.isNameStart(q));
+  const results: HeroInfo[] = search.find(typed.at(-1)?.query ?? "", exclude);
 
-  const choose = (hero: HeroInfo) => {
-    onPick(hero.id, typed.position);
-    setValue(multi ? value.trimEnd().split(/\s+/).slice(0, -1).map((w) => w + " ").join("") : "");
+  /** Adds every typed hero: the top match for each, and the highlighted one (or `last`) for the last. */
+  const commit = (last?: HeroInfo) => {
+    const picked: PickedHero[] = [];
+    const taken = new Set(exclude);
+    typed.forEach((t, i) => {
+      const isLast = i === typed.length - 1;
+      const hero = isLast ? (last ?? results[active]) : search.find(t.query, taken, 1)[0];
+      if (!hero || taken.has(hero.id)) return;
+      taken.add(hero.id);
+      picked.push({ heroId: hero.id, position: t.position });
+    });
+    if (!picked.length) return;
+    onPick(picked);
+    setValue("");
     setActive(0);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (multi && onPickMany) {
-        const picked: number[] = [];
-        for (const word of value.trim().split(/\s+/).filter(Boolean)) {
-          const hit = search.find(word, new Set([...exclude, ...picked]), 1)[0];
-          if (hit) picked.push(hit.id);
-        }
-        if (picked.length) onPickMany(picked);
-        setValue("");
-      } else if (results[active]) choose(results[active]);
+      commit();
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setActive((a) => Math.min(a + 1, results.length - 1));
@@ -102,7 +99,7 @@ export function HeroInput({
               aria-selected={i === active}
               onMouseDown={(e) => {
                 e.preventDefault();
-                choose(h);
+                commit(h);
               }}
               className={`flex cursor-pointer justify-between rounded px-2 py-1 text-sm ${i === active ? "bg-hover" : ""}`}
             >

@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GamePlanPanel } from "@/components/game-plan-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
+import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
@@ -165,6 +167,7 @@ export function CaptainBoard({
           slots={slots}
           rank={rank}
           draft={draft}
+          icons={icons}
           onDraft={updateDraft}
           onLineup={saveLineup}
         />
@@ -206,6 +209,7 @@ function DraftView({
   slots,
   rank,
   draft,
+  icons,
   onDraft,
   onLineup,
 }: {
@@ -215,6 +219,7 @@ function DraftView({
   slots: Slots;
   rank: number | null;
   draft: Draft;
+  icons: Record<number, string>;
   onDraft: (d: Draft) => void;
   onLineup: (slots: Slots, rank: number | null) => void;
 }) {
@@ -247,6 +252,12 @@ function DraftView({
   const plan = useMemo(
     () => (view === "wcst" ? superTeam(engine, members, slots, rank, draft) : null),
     [view, engine, members, slots, rank, draft],
+  );
+
+  const gamePlan = useMemo(
+    // The lineup's rank is a bracket (1-8) whenever it is set.
+    () => finishedDraftPlan(engine, draft.picks, draft.enemies, (rank ?? undefined) as RankBracket | undefined),
+    [engine, draft, rank],
   );
 
   const setPick = (i: number, id: number | null) => {
@@ -285,8 +296,8 @@ function DraftView({
                     placeholder={`Pos ${i + 1} pick`}
                     search={search}
                     exclude={taken}
-                    onPick={(id) => {
-                      setPick(i, id);
+                    onPick={([first]) => {
+                      setPick(i, first.heroId);
                       enemyRef.current?.focus();
                     }}
                   />
@@ -307,7 +318,7 @@ function DraftView({
               placeholder="Enemy pick"
               search={search}
               exclude={taken}
-              onPick={(id) => onDraft({ ...draft, enemies: [...draft.enemies, id] })}
+              onPick={(picked) => onDraft({ ...draft, enemies: [...draft.enemies, ...picked.map((p) => p.heroId)].slice(0, 5) })}
               onUndo={() => onDraft({ ...draft, enemies: draft.enemies.slice(0, -1) })}
             />
           )}
@@ -326,9 +337,7 @@ function DraftView({
             placeholder="Bans, e.g. pa sf am"
             search={search}
             exclude={taken}
-            multi
-            onPick={(id) => onDraft({ ...draft, bans: draft.bans.includes(id) ? draft.bans : [...draft.bans, id] })}
-            onPickMany={(ids) => onDraft({ ...draft, bans: [...draft.bans, ...ids.filter((id) => !draft.bans.includes(id))] })}
+            onPick={(picked) => onDraft({ ...draft, bans: [...draft.bans, ...picked.map((p) => p.heroId).filter((id) => !draft.bans.includes(id))] })}
             onUndo={() => onDraft({ ...draft, bans: draft.bans.slice(0, -1) })}
           />
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -339,7 +348,17 @@ function DraftView({
         </section>
       </div>
 
-      <section aria-label="Suggestions" className="flex flex-col gap-2">
+      {gamePlan && (
+        <GamePlanPanel
+          plan={gamePlan}
+          heroName={name}
+          icons={icons}
+          playerNames={slots.map((id) => memberById(id)?.name ?? null)}
+        />
+      )}
+
+      {/* Once all ten heroes are in, the game plan replaces the suggestions. */}
+      <section aria-label="Suggestions" hidden={gamePlan !== null} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider">{view === "players" ? "Call these" : "Super team"}</h2>
           <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist" aria-label="Suggestion view">
