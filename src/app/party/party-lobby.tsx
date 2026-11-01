@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
 import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } from "@/lib/party";
 import { fetchPartyLink, type PartyLink } from "@/lib/party-link";
@@ -236,6 +237,7 @@ function MemberRow({
       )}
       {onRemove && (
         <button onClick={onRemove} aria-label={`Remove ${member.name}`} className="btn btn-ghost btn-sm">
+          <Icon name="trash" />
           Remove
         </button>
       )}

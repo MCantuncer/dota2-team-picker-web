@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Icon } from "@/components/icon";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Avatar } from "@/components/account-menu";
 import { RankMedal } from "@/components/rank-medal";
@@ -163,6 +164,7 @@ function MemberRow({
             Remove <strong>{m.name}</strong> from the team? They&apos;ll need a new invite to come back.
           </span>
           <button type="button" onClick={onRemove} className="btn btn-danger btn-sm">
+            <Icon name="trash" />
             Remove
           </button>
           <button type="button" autoFocus onClick={() => setConfirming(false)} className="btn btn-secondary btn-sm">

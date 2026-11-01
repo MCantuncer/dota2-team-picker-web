@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GamePlanPanel } from "@/components/game-plan-panel";
@@ -283,6 +284,7 @@ export function DraftBoard({
         </label>
         <div className="ml-auto flex gap-2">
           <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
+            <Icon name="undo" />
             Undo
           </button>
           <button
@@ -293,6 +295,7 @@ export function DraftBoard({
             disabled={!draft.length}
             className="btn btn-secondary btn-sm"
           >
+            <Icon name="plus" />
             New draft
           </button>
         </div>
@@ -644,9 +647,11 @@ function SuggestionCard({
       <div className="mt-auto flex gap-2 pt-1">
         {/* One gold button per region: only the Best card's Picked is primary. */}
         <button onClick={onPicked} className={`btn btn-sm ${best ? "btn-primary" : "btn-secondary"}`}>
+          <Icon name="check" />
           Picked
         </button>
         <button onClick={onBanned} className="btn btn-ghost btn-sm">
+          <Icon name="ban" />
           Banned
         </button>
       </div>
