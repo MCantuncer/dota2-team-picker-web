@@ -19,7 +19,6 @@ const plan: GamePlan = {
       heroId: 1,
       position: 1,
       job: "Farm and carry the late game.",
-      fallbacks: [],
       build: {
         timings: "around",
         start: [item(44, "Tango", 0)],
@@ -27,11 +26,12 @@ const plan: GamePlan = {
         core: [item(50, "Phase Boots", 9), item(116, "Black King Bar", 17, "Against Hero 8: buy it early")],
         situational: [],
       },
+      fallbacks: [],
     },
-    { heroId: 2, position: 2, job: "Win your lane.", fallbacks: [], build: null },
+    { heroId: 2, position: 2, job: "Win your lane.", build: null, fallbacks: [] },
   ],
   teamFallbacks: [],
-  story: { headline: "Win the fights around your item timings.", chapters: [] },
+  story: { headline: "", chapters: [] },
 };
 
 describe("GamePlanPanel", () => {
