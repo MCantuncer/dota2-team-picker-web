@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
-import { expectAccessible, signUp, uniqueEmail } from "./helpers";
+import { expectAccessible, savedSuggestions, signUp, uniqueEmail } from "./helpers";
 
 test("the draft screen suggests heroes as both teams fill in", async ({ page }) => {
   await page.goto("/draft");
@@ -76,4 +76,28 @@ test("in a party the draft is kept for the whole party", async ({ page }) => {
   await expect(team.getByText("Pudge")).toBeVisible();
   await page.getByRole("button", { name: "New draft" }).click();
   await expect(team.getByText("Pudge")).toHaveCount(0);
+});
+
+test("a party draft saves what each player was shown and ends with the after-game card", async ({ page }) => {
+  const email = uniqueEmail("after-game");
+  await signUp(page, email, "Lina");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await expect(page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li")).toHaveCount(8);
+  await expect.poll(async () => (await savedSuggestions(email)).map((r) => r.heroes.length)).toEqual([8]);
+
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  for (const pick of ["cm5", "lion4", "axe3", "sf2", "am1"]) {
+    await ally.fill(pick);
+    await ally.press("Enter");
+  }
+  const card = page.getByRole("region", { name: "After the game" });
+  await expect(card.getByRole("button", { name: "Find result" })).toBeVisible();
+  await card.getByLabel("Or paste the match ID").fill("not a match");
+  await card.getByRole("button", { name: "Check" }).click();
+  await expect(card.getByRole("status")).toHaveText(/A match ID is a number/);
+  await expectAccessible(page);
 });

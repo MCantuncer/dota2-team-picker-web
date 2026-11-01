@@ -17,6 +17,9 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
   const [loaded, setLoaded] = useState<{ draftId: string | null; rows: ActionRow[] }>({ draftId: null, rows: [] });
   const [pending, setPending] = useState<DraftAction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The match the draft became, once the after-game card found it.
+  const [result, setResult] = useState<{ draftId: string; matchId: number; won: boolean } | null>(null);
+  const [checking, setChecking] = useState(false);
 
   // The party's open draft, started now if there is none.
   const open = useCallback(async () => {
@@ -31,13 +34,14 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
 
   const load = useCallback(
     async (id: string) => {
-      const { data, error } = await supabase
-        .from("draft_actions")
-        .select("id, actor_id, kind, hero_id, position")
-        .eq("draft_id", id)
-        .order("id");
+      const [{ data, error }, { data: row, error: rowError }] = await Promise.all([
+        supabase.from("draft_actions").select("id, actor_id, kind, hero_id, position").eq("draft_id", id).order("id"),
+        supabase.from("party_drafts").select("match_id, won").eq("id", id).single(),
+      ]);
       if (error) return setError(`Party draft not loaded: ${error.message}`);
+      if (rowError) return setError(`Party draft not loaded: ${rowError.message}`);
       add(id, data);
+      if (row.match_id && row.won !== null) setResult({ draftId: id, matchId: row.match_id, won: row.won });
     },
     [supabase, add],
   );
@@ -99,6 +103,47 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
   const confirmed = useMemo(() => replay(rows.map(toAction).filter((a) => a !== null)), [rows]);
   const draft = useMemo(() => pending.reduce(applyAction, confirmed), [confirmed, pending]);
 
+  /**
+   * Saves the suggestions this player sees, so the after-game card and reports can compare them
+   * with the pick. A later call replaces the list.
+   */
+  const saveSuggestions = useCallback(
+    async (position: number, heroes: number[], scores: number[], chance: number | null) => {
+      if (!draftId || !heroes.length) return;
+      const { error } = await supabase.rpc("save_draft_suggestions", {
+        draft: draftId,
+        pos: position,
+        shown: heroes,
+        shown_scores: scores,
+        chance: chance ?? undefined,
+      });
+      if (error) setError(`Suggestions not saved: ${error.message}`);
+    },
+    [supabase, draftId],
+  );
+
+  /**
+   * Looks for the match the draft became: in the party's recent games, or the pasted match ID.
+   * Returns a message for the card when nothing was saved.
+   */
+  const findResult = async (matchId?: number): Promise<string | null> => {
+    if (!draftId) return null;
+    setChecking(true);
+    const { data, error } = await supabase.functions.invoke<{ matchId: number | null; won?: boolean }>("draft-result", {
+      body: { draftId, matchId },
+    });
+    setChecking(false);
+    if (error || !data) {
+      const body = error && "context" in error ? await (error.context as Response).json().catch(() => null) : null;
+      return body?.error ?? error?.message ?? "Could not check the result, try again";
+    }
+    if (data.matchId === null || data.won === undefined) {
+      return "No finished game found yet. Try again after the game, or paste the match ID.";
+    }
+    setResult({ draftId, matchId: data.matchId, won: data.won });
+    return null;
+  };
+
   const newDraft = async () => {
     if (!draftId) return;
     const { error } = await supabase.rpc("end_party_draft", { draft: draftId });
@@ -114,5 +159,9 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
     error,
     act,
     newDraft,
+    result: result?.draftId === draftId ? result : null,
+    checking,
+    saveSuggestions,
+    findResult,
   };
 }
