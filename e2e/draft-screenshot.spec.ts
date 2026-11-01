@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./helpers";
 
 // A real hero select screenshot (21:9, scaled to half size; names and chat blanked out). Radiant has
 // Crystal Maiden, Warlock, Juggernaut and Omniknight; Dire has Lion, Death Prophet, Bloodseeker and Tiny.
