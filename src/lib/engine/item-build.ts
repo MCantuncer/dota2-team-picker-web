@@ -1,5 +1,6 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/item-build.ts). Keep in sync.
-import type { HeroInfo, ItemInfo, ItemPhases, Position, Snapshot } from "./types";
+import { chooseTimingSlice, finishedItems } from "./item-timing-slice";
+import type { HeroInfo, ItemInfo, ItemPhases, Position, RankBracket, Snapshot } from "./types";
 
 /**
  * Item builds for one hero against one enemy lineup: the build players really buy on the hero,
@@ -97,6 +98,13 @@ const CONSUMABLES = new Set([
 /** Items under this cost are lane items (Bracer, Wand), not part of the core build, except boots. */
 const CORE_MIN_COST = 1500;
 const BOOTS = new Set(["phase_boots", "power_treads", "arcane_boots", "tranquil_boots", "boots", "travel_boots", "guardian_greaves", "boots_of_bearing"]);
+
+/** Whether an item can be part of a core build: boots, Aghanim's Shard, or any non-consumable from CORE_MIN_COST up. */
+export function isCoreItem(item: ItemInfo | undefined): boolean {
+  if (!item || CONSUMABLES.has(item.key)) return false;
+  return BOOTS.has(item.key) || item.key === "aghanims_shard" || item.cost >= CORE_MIN_COST;
+}
+
 /** Enemy heroes named in one reason, those with the most matching threats first. */
 const REASON_NAMES = 3;
 
@@ -115,11 +123,18 @@ export interface BuildItem {
   img: string;
   /** About when it is bought, in minutes. */
   minute: number;
+  /** After this minute a player is slower than most with this item. Not known yet for every item. */
+  lateMinute?: number;
   /** Why it is in the build or moved up, naming the enemy heroes it answers. Empty for the usual build. */
   reason?: string;
 }
 
 export interface ItemBuild {
+  /**
+   * Where the core items and minutes come from: STRATZ timings for the player's rank group ("rank")
+   * or every rank ("all"), or rough minutes from OpenDota's game phases ("around").
+   */
+  timings: "rank" | "all" | "around";
   start: BuildItem[];
   /** Small items bought in lane before the core, like Bracer or Magic Wand. */
   lane: BuildItem[];
@@ -141,10 +156,17 @@ function boughtAfterHorn(phases: ItemPhases): Map<string, { count: number; minut
 }
 
 /**
- * The build for `heroId` at `position` against `enemies` (hero ids). Returns null when the snapshot
- * has no item data for the hero.
+ * The build for `heroId` at `position` against `enemies` (hero ids). The core comes from STRATZ item
+ * timings for this position and rank when there are enough (see item-timing-slice.ts), else from
+ * OpenDota's item popularity. Returns null when the snapshot has no item data for the hero.
  */
-export function itemBuild(data: Snapshot, heroId: number, position: Position, enemies: number[]): ItemBuild | null {
+export function itemBuild(
+  data: Snapshot,
+  heroId: number,
+  position: Position,
+  enemies: number[],
+  rankBracket?: RankBracket,
+): ItemBuild | null {
   const phases = data.itemBuilds?.[heroId];
   const items = data.items;
   if (!phases || !items) return null;
@@ -170,15 +192,25 @@ export function itemBuild(data: Snapshot, heroId: number, position: Position, en
     .filter(([id, b]) => !parts.has(id) && !CONSUMABLES.has(items[id]?.key ?? "") && b.count >= top * MIN_POPULARITY)
     .sort((a, b) => b[1].count - a[1].count);
   const isBoots = (id: string) => BOOTS.has(items[id]?.key ?? "");
-  const isBig = (id: string) =>
-    isBoots(id) || items[id]?.key === "aghanims_shard" || (items[id]?.cost ?? 0) >= CORE_MIN_COST;
+  const isBig = (id: string) => isCoreItem(items[id]);
   // One pair of boots: the most bought.
   const boots = candidates.find(([id]) => isBoots(id))?.[0];
-  const core = candidates
-    .filter(([id]) => isBig(id) && (!isBoots(id) || id === boots))
-    .slice(0, CORE_ITEMS)
-    .map(([id, b]) => toItem(id, b.minute))
-    .sort((a, b) => a.minute - b.minute);
+  const chosen = chooseTimingSlice(data, heroId, position, rankBracket);
+  const timed = new Map(chosen?.slice.items.map(([id, minute, lateMinute]) => [String(id), { minute, lateMinute }]));
+  const core = chosen
+    ? [
+        // STRATZ keeps boots out of its item timings, so they still come from OpenDota.
+        ...(boots ? [toItem(boots, bought.get(boots)?.minute ?? PHASE_MINUTE.early)] : []),
+        ...finishedItems(chosen.slice, items)
+          .filter(([id]) => isBig(String(id)) && !isBoots(String(id)))
+          .slice(0, CORE_ITEMS - (boots ? 1 : 0))
+          .map(([id, minute, lateMinute]) => ({ ...toItem(String(id), minute), lateMinute })),
+      ].sort((a, b) => a.minute - b.minute)
+    : candidates
+        .filter(([id]) => isBig(id) && (!isBoots(id) || id === boots))
+        .slice(0, CORE_ITEMS)
+        .map(([id, b]) => toItem(id, b.minute))
+        .sort((a, b) => a.minute - b.minute);
   const lane = candidates
     .filter(([id]) => !isBig(id))
     .slice(0, LANE_ITEMS)
@@ -200,14 +232,22 @@ export function itemBuild(data: Snapshot, heroId: number, position: Position, en
     if (inCore > 1) {
       // Already in the build: buy it right after the first core item (usually boots).
       const [item] = core.splice(inCore, 1) as [BuildItem]; // inCore is a valid index.
-      core.splice(1, 0, { ...item, minute: core[1]?.minute ?? item.minute, reason: `${reason}: buy it early` });
+      const early: BuildItem = { ...item, minute: core[1]?.minute ?? item.minute, reason: `${reason}: buy it early` };
+      // Its usual slower-than-most minute no longer fits an item bought this early.
+      delete early.lateMinute;
+      core.splice(1, 0, early);
     } else if (inCore >= 0) {
       core[inCore] = { ...core[inCore]!, reason }; // inCore is a valid index.
     } else if (situational.length < SITUATIONAL_ITEMS && !situational.some((s) => s.itemId === Number(id))) {
-      situational.push(toItem(id, bought.get(id)?.minute ?? PHASE_MINUTE.mid, reason));
+      const timing = timed.get(id);
+      situational.push(
+        timing
+          ? { ...toItem(id, timing.minute, reason), lateMinute: timing.lateMinute }
+          : toItem(id, bought.get(id)?.minute ?? PHASE_MINUTE.mid, reason),
+      );
     }
   }
-  return { start, lane, core, situational };
+  return { timings: chosen?.source ?? "around", start, lane, core, situational };
 }
 
 /** "A", "A and B", "A, B and C". */

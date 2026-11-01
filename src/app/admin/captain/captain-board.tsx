@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
@@ -500,6 +501,7 @@ function DraftView({
             }}
             className="btn btn-secondary"
           >
+            <Icon name="plus" />
             New draft
           </button>
         </div>
@@ -674,9 +676,11 @@ function PlanCard({
           )}
           <div className="flex gap-1.5 pt-0.5">
             <button onClick={onPicked} className="btn btn-primary btn-sm">
+              <Icon name="check" />
               Picked
             </button>
             <button onClick={onBanned} className="btn btn-secondary btn-sm">
+              <Icon name="ban" />
               Banned
             </button>
           </div>
@@ -720,9 +724,11 @@ function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: bo
       ))}
       <div className="flex gap-1.5 pt-0.5">
         <button onClick={onPicked} className="btn btn-primary btn-sm">
+          <Icon name="check" />
           Picked
         </button>
         <button onClick={onBanned} className="btn btn-secondary btn-sm">
+          <Icon name="ban" />
           Banned
         </button>
       </div>
@@ -858,6 +864,7 @@ function TeamView({
             disabled={sending}
             className="btn btn-primary"
           >
+            <Icon name="send" />
             {sending ? "Sending…" : "Send invite"}
           </button>
         </form>
