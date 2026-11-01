@@ -64,6 +64,16 @@ export async function setUserType(email: string, type: "user" | "captain" | "adm
   if (updateError) throw updateError;
 }
 
+/** The suggestion lists saved for a user in party drafts. */
+export async function savedSuggestions(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  const { data, error: readError } = await db.from("draft_suggestions").select("position, heroes").eq("user_id", id!);
+  if (readError) throw readError;
+  return data;
+}
+
 export async function signUp(page: Page, email: string, name: string) {
   await page.goto("/signup?next=/profile");
   await page.getByLabel("Name").fill(name);

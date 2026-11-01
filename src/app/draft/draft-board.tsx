@@ -13,6 +13,7 @@ import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
 import { planTeam } from "@/lib/engine/plan";
 import { toPlanSlots, type HeroPool, type PlanMember } from "@/lib/party-plan";
+import { AfterGame } from "./after-game";
 import { PartyPlan } from "./party-plan";
 import { usePartyDraft } from "./use-party-draft";
 
@@ -139,6 +140,24 @@ export function DraftBoard({
   const allyIds = allies.map((e) => e.heroId);
   const bracket = rank ?? undefined;
   const chance = engine ? teamWinChance(engine, allyIds, enemies, bracket) : null;
+
+  // In a party, save the list this player sees once it settles, for the after-game card and
+  // reports. The list as a string, so a re-render with the same list saves nothing.
+  const shown =
+    party && suggestions.length
+      ? JSON.stringify({
+          heroes: suggestions.map((s) => s.heroId),
+          scores: suggestions.map((s) => Math.round(s.score * 100) / 100),
+          chance: chance === null ? null : Math.round(chance * 1000) / 1000,
+        })
+      : null;
+  const { saveSuggestions } = shared;
+  useEffect(() => {
+    if (!shown) return;
+    const { heroes, scores, chance } = JSON.parse(shown) as { heroes: number[]; scores: number[]; chance: number | null };
+    const timer = setTimeout(() => void saveSuggestions(myPosition, heroes, scores, chance), 1500);
+    return () => clearTimeout(timer);
+  }, [shown, myPosition, saveSuggestions]);
 
   const change = (next: DraftEntry[]) => {
     if (next === soloDraft) return;
@@ -410,6 +429,10 @@ export function DraftBoard({
           </ol>
         )}
       </section>
+
+      {party && allies.length === TEAM_SIZE && (
+        <AfterGame result={shared.result} checking={shared.checking} onFind={shared.findResult} />
+      )}
     </>
   );
 }
