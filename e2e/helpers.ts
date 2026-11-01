@@ -34,6 +34,9 @@ export const test = base.extend({
 
 /** Fails on accessibility problems axe rates serious or critical (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page) {
+  // Typing scrolls the page by a different amount each run, which can leave a button half under the
+  // sticky header; axe then reports it as too small. Check the page from the top so results are stable.
+  await page.evaluate(() => window.scrollTo(0, 0));
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   const blocking = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(blocking.map((v) => `${v.id}: ${v.help} (${v.nodes.length})`)).toEqual([]);

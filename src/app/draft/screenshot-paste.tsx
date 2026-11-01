@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 import { Kbd } from "@/components/kbd";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { loadReader, pixelsOf } from "@/lib/draft-reader/load";
 import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
 import type { HeroInfo } from "@/lib/engine/types";
+import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 
 const SIDE_KEY = "solo-draft-side";
 
@@ -18,15 +19,18 @@ interface ScreenshotPasteProps {
 type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" | "error"; text: string };
 
 /**
- * Fills the draft from a Dota screenshot: press PrtScn in Dota, come back and press Ctrl+V anywhere
- * on the page. Both teams come from the top bar and the bans from the hero grid. The image never
- * leaves the browser.
+ * Fills the draft from the Dota screen, two ways: Watch Dota shares the Dota window once and reads it
+ * every second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
+ * come from the top bar and the bans from the hero grid. Nothing leaves the browser.
  */
 export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPasteProps) {
   // The draft board renders only in the browser (after the hero data loads), so storage is there.
   const [side, setSide] = useState<Side>(savedSide);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const reader = useRef<Promise<DraftReader> | null>(null);
+  const watch = useWatchDota(heroes, portraits, (read) => onRead(read, side));
+  // Known only in the browser; the server renders without the button.
+  const watchable = useSyncExternalStore(noSubscribe, canWatch, () => false);
 
   const onPaste = useEffectEvent(async (e: ClipboardEvent) => {
     const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
@@ -65,7 +69,25 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
   };
 
   return (
-    <section aria-label="Read a screenshot" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle">
+    <section
+      aria-label="Read the Dota screen"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle"
+    >
+      {watchable &&
+        (watch.state === "off" || watch.state === "failed" ? (
+          <button onClick={watch.start} className="btn btn-secondary btn-sm">
+            Watch Dota
+          </button>
+        ) : (
+          <span className="flex items-center gap-2">
+            <span className={`chip micro ${watch.state === "on" ? "chip-accent" : ""}`}>
+              {WATCH_LABEL[watch.state]}
+            </span>
+            <button onClick={watch.stop} className="btn btn-ghost btn-sm">
+              Stop
+            </button>
+          </span>
+        ))}
       <span>
         Press <Kbd>PrtScn</Kbd> in Dota, then <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
       </span>
@@ -82,6 +104,16 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
         </span>
       </span>
       <span role="status" className="basis-full empty:hidden">
+        {watch.state === "black" && (
+          <span className="notice notice-warn text-xs">
+            The Dota window looks black. Switch Dota to Borderless Window in its video settings.
+          </span>
+        )}
+        {watch.state === "failed" && (
+          <span className="notice notice-error text-xs">
+            Couldn&apos;t keep reading the Dota window. Try Watch Dota again.
+          </span>
+        )}
         {status.kind === "reading" && <span className="text-muted">Reading the screenshot…</span>}
         {(status.kind === "done" || status.kind === "warn" || status.kind === "error") && (
           <span className={`notice notice-${status.kind} text-xs`}>{status.text}</span>
@@ -90,6 +122,14 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
     </section>
   );
 }
+
+const WATCH_LABEL: Record<Exclude<WatchState, "off" | "failed">, string> = {
+  starting: "Starting…",
+  on: "Watching Dota",
+  black: "Watching Dota",
+};
+
+const noSubscribe = () => () => {};
 
 function savedSide(): Side {
   try {

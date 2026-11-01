@@ -20,8 +20,13 @@ export async function pixelsOf(source: Blob): Promise<Pixels> {
  * because Steam's image server doesn't let other sites read its pixels.
  */
 export async function loadReader(heroes: HeroInfo[], portraits: Record<number, string>): Promise<DraftReader> {
+  return new DraftReader(await loadReaderHeroes(heroes, portraits));
+}
+
+/** Every hero with art, with its portrait's pixels, for a reader here or in a worker. */
+export async function loadReaderHeroes(heroes: HeroInfo[], portraits: Record<number, string>): Promise<ReaderHero[]> {
   const withArt = heroes.filter((h) => portraits[h.id]);
-  const loaded: ReaderHero[] = await Promise.all(
+  return Promise.all(
     withArt.map(async (h) => {
       const res = await fetch(`/_next/image?url=${encodeURIComponent(portraits[h.id])}&w=256&q=75`);
       if (!res.ok) throw new Error(`Hero art download failed (${res.status})`);
@@ -33,5 +38,4 @@ export async function loadReader(heroes: HeroInfo[], portraits: Record<number, s
       };
     }),
   );
-  return new DraftReader(loaded);
 }

@@ -17,3 +17,34 @@ export function readActions(read: DraftRead, mySide: Side, inDraft: Set<number>)
   ];
   return actions.filter((a) => !inDraft.has(a.heroId));
 }
+
+/**
+ * Turns a stream of live reads into what is safe to add. A hero counts once it shows in two reads in
+ * a row, so a portrait caught mid animation is skipped, and it is passed on only once, so a hero you
+ * remove by hand (a wrong read) is not put back a second later.
+ */
+export class LiveReads {
+  private last = new Set<string>();
+  private passed = new Set<number>();
+
+  next(read: DraftRead): DraftRead {
+    const keys = new Set<string>();
+    const keep = (key: string, heroId: number) => {
+      keys.add(key);
+      return this.last.has(key) && !this.passed.has(heroId);
+    };
+    const slots = (side: "radiant" | "dire") =>
+      read[side].map((s, i) =>
+        s.heroId !== null && keep(`${side}${i}:${s.heroId}`, s.heroId) ? s : { heroId: null, unsure: s.unsure },
+      );
+    const stable: DraftRead = {
+      radiant: slots("radiant"),
+      dire: slots("dire"),
+      bans: read.bans.filter((id) => keep(`ban:${id}`, id)),
+    };
+    this.last = keys;
+    for (const s of [...stable.radiant, ...stable.dire]) if (s.heroId !== null) this.passed.add(s.heroId);
+    for (const id of stable.bans) this.passed.add(id);
+    return stable;
+  }
+}
