@@ -30,3 +30,11 @@ test("login refuses other sites as the next page", async ({ page }) => {
   await page.goto("/login?next=//evil.example");
   await expect(page.locator('input[name="next"]')).toHaveValue("/");
 });
+
+test("a party invite link asks signed-out visitors to sign up or log in, then come back", async ({ page }) => {
+  await page.goto("/invite/0123456789abcdef");
+  await expect(page.getByRole("heading", { name: "Join a party" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/signup?next=%2Finvite%2F0123456789abcdef");
+  await expect(page.getByRole("link", { name: "log in" })).toHaveAttribute("href", "/login?next=%2Finvite%2F0123456789abcdef");
+  await expectAccessible(page);
+});
