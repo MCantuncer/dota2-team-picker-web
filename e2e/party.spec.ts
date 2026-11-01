@@ -44,7 +44,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await expect(page.getByRole("region", { name: "Draft captain" }).getByText("You enter the draft for the party.")).toBeVisible();
   await ali.reload();
   const aliBar = ali.getByRole("region", { name: "Draft captain" });
-  await aliBar.getByRole("button", { name: "Ask Can" }).click();
+  await aliBar.getByRole("button", { name: "Ask Can for captain" }).click();
   await expect(aliBar.getByText(/Asked Can/)).toBeVisible();
   await page.reload();
   const prompt = page.getByRole("region", { name: "Draft captain request" });

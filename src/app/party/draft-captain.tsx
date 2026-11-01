@@ -107,7 +107,7 @@ export function DraftCaptain({
       )}
       {canAsk && !waiting && (
         <button onClick={take} disabled={busy || waitLeft > 0} className="btn btn-secondary btn-sm">
-          {waitLeft > 0 ? `Ask again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the captain"}`}
+          {waitLeft > 0 ? `Ask again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the captain"} for captain`}
         </button>
       )}
     </section>
