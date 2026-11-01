@@ -4,13 +4,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HeroInput } from "@/components/hero-input";
+import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
 import { applyAction, heroesOf, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
-import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
+import {
+  POSITIONS,
+  type GamesWins,
+  type HeroInfo,
+  type Position,
+  type RankBracket,
+  type Suggestion,
+} from "@/lib/engine/types";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { ScreenshotPaste } from "./screenshot-paste";
 import { usePartyDraft } from "./use-party-draft";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
@@ -63,7 +72,9 @@ const isDraft = (v: unknown): v is DraftEntry[] =>
   Array.isArray(v) &&
   v.every(
     (e) =>
-      Number.isInteger(e?.heroId) && ["ally", "enemy", "ban"].includes(e?.kind) && (e?.position === null || isPosition(e?.position)),
+      Number.isInteger(e?.heroId) &&
+      ["ally", "enemy", "ban"].includes(e?.kind) &&
+      (e?.position === null || isPosition(e?.position)),
   );
 
 /**
@@ -199,7 +210,13 @@ export function DraftBoard({
           </span>
           <div className="seg" role="group" aria-labelledby="my-position">
             {POSITIONS.map((p) => (
-              <button key={p} aria-pressed={myPosition === p} title={POSITION_NAMES[p - 1]} onClick={() => choosePosition(p)} className="seg-item">
+              <button
+                key={p}
+                aria-pressed={myPosition === p}
+                title={POSITION_NAMES[p - 1]}
+                onClick={() => choosePosition(p)}
+                className="seg-item"
+              >
                 Pos {p}
               </button>
             ))}
@@ -238,8 +255,9 @@ export function DraftBoard({
       </div>
 
       <p className="text-xs text-subtle">
-        Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Add a digit for an ally&apos;s
-        position (<span className="text-muted">cm5</span>). <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
+        Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Add a digit for an
+        ally&apos;s position (<span className="text-muted">cm5</span>). <Kbd>Backspace</Kbd> in an empty box takes the
+        last hero back out.
         {!signedIn && (
           <>
             {" "}
@@ -249,13 +267,22 @@ export function DraftBoard({
             to use your own heroes and rank.
           </>
         )}
-        {party && " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you."}
+        {party &&
+          " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you."}
       </p>
 
       {party && shared.error && (
         <p role="alert" className="notice notice-error text-sm">
           {shared.error}
         </p>
+      )}
+
+      {Object.keys(portraits).length > 0 && (
+        <ScreenshotPaste
+          heroes={engine.heroes}
+          portraits={portraits}
+          onRead={(read, side) => act(...readActions(read, side, taken))}
+        />
       )}
 
       {chance !== null && <WinBar chance={chance} />}
@@ -284,7 +311,13 @@ export function DraftBoard({
                 onRemove={() => act({ kind: "remove", heroId: e.heroId })}
               >
                 <button
-                  onClick={() => act({ kind: "ally", heroId: e.heroId, position: e.position === 5 ? null : (((e.position ?? 0) + 1) as Position) })}
+                  onClick={() =>
+                    act({
+                      kind: "ally",
+                      heroId: e.heroId,
+                      position: e.position === 5 ? null : (((e.position ?? 0) + 1) as Position),
+                    })
+                  }
                   aria-label={`${hero(e.heroId).name} position: ${e.position ?? "not set"}. Change`}
                   className={`chip micro ${e.position === myPosition ? "chip-accent" : ""}`}
                 >
@@ -308,7 +341,13 @@ export function DraftBoard({
           )}
           <Slots>
             {enemies.map((id) => (
-              <Slot key={id} hero={hero(id)} portrait={portraits[id]} by={enteredBy(id)} onRemove={() => act({ kind: "remove", heroId: id })} />
+              <Slot
+                key={id}
+                hero={hero(id)}
+                portrait={portraits[id]}
+                by={enteredBy(id)}
+                onRemove={() => act({ kind: "remove", heroId: id })}
+              />
             ))}
           </Slots>
         </TeamPanel>
@@ -332,7 +371,11 @@ export function DraftBoard({
           <ul className="flex flex-wrap gap-1">
             {bans.map((id) => (
               <li key={id}>
-                <button onClick={() => act({ kind: "remove", heroId: id })} aria-label={`Unban ${hero(id).name}`} title={hero(id).name}>
+                <button
+                  onClick={() => act({ kind: "remove", heroId: id })}
+                  aria-label={`Unban ${hero(id).name}`}
+                  title={hero(id).name}
+                >
                   <Portrait hero={hero(id)} src={portraits[id]} size="strip" banned />
                 </button>
               </li>
@@ -350,7 +393,10 @@ export function DraftBoard({
             You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
           </p>
         ) : (
-          <ol aria-label="Suggested heroes" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
+          <ol
+            aria-label="Suggested heroes"
+            className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]"
+          >
             {suggestions.map((s, i) => (
               <SuggestionCard
                 key={s.heroId}
@@ -379,7 +425,8 @@ function WinBar({ chance }: { chance: number }) {
           <span className="label-caps">Win chance</span> <span className="num text-radiant">{pct}%</span>
         </span>
         <span>
-          <span className="label-caps">Enemy</span> <span className="num text-dire">{(100 - chance * 100).toFixed(1)}%</span>
+          <span className="label-caps">Enemy</span>{" "}
+          <span className="num text-dire">{(100 - chance * 100).toFixed(1)}%</span>
         </span>
       </div>
       <div aria-hidden className="flex h-2 overflow-hidden rounded-xs bg-dire-strong">
@@ -389,7 +436,17 @@ function WinBar({ chance }: { chance: number }) {
   );
 }
 
-function TeamPanel({ title, side, count, children }: { title: string; side: "radiant" | "dire"; count: number; children: React.ReactNode }) {
+function TeamPanel({
+  title,
+  side,
+  count,
+  children,
+}: {
+  title: string;
+  side: "radiant" | "dire";
+  count: number;
+  children: React.ReactNode;
+}) {
   return (
     <section
       aria-label={title}
@@ -452,10 +509,25 @@ const SIZES = {
 };
 
 /** A hero's 16:9 portrait, or a slate tile with the name when the art is missing. */
-function Portrait({ hero, src, size, banned }: { hero: HeroInfo; src?: string; size: keyof typeof SIZES; banned?: boolean }) {
+function Portrait({
+  hero,
+  src,
+  size,
+  banned,
+}: {
+  hero: HeroInfo;
+  src?: string;
+  size: keyof typeof SIZES;
+  banned?: boolean;
+}) {
   const s = SIZES[size];
   const look = `${s.className} shrink-0 rounded-xs object-cover ${banned ? "opacity-50 grayscale" : ""}`;
-  if (!src) return <span className={`${look} micro flex items-center justify-center bg-raised p-1 text-center text-muted`}>{hero.name}</span>;
+  if (!src)
+    return (
+      <span className={`${look} micro flex items-center justify-center bg-raised p-1 text-center text-muted`}>
+        {hero.name}
+      </span>
+    );
   return <Image src={src} alt="" width={s.w} height={s.h} className={look} />;
 }
 
@@ -487,7 +559,10 @@ function SuggestionCard({
               {signed(s.score)}
             </span>
             {gain !== null && (
-              <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`} title="Change in your team's win chance">
+              <span
+                className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`}
+                title="Change in your team's win chance"
+              >
                 {signed(gain)}%
               </span>
             )}
