@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 import type { GamePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem } from "@/lib/engine/item-build";
 
@@ -16,15 +17,20 @@ export interface GamePlanPanelProps {
   playerNames: (string | null)[];
   /** The viewer's position, whose card comes first. */
   myPosition?: number;
+  /** Shown beside the heading, such as a button to send the plan. */
+  action?: ReactNode;
 }
 
 /** The game plan for a finished draft: roadmap to win, lanes, and each player's job and item build. */
-export function GamePlanPanel({ plan, heroName, icons, playerNames, myPosition }: GamePlanPanelProps) {
+export function GamePlanPanel({ plan, heroName, icons, playerNames, myPosition, action }: GamePlanPanelProps) {
   const players = [...plan.players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   return (
     <section aria-label="Game plan" className="card flex flex-col gap-4 border-t-[3px] border-t-accent p-4">
       <div className="flex flex-col gap-1">
-        <h2 className="section-title">Game plan</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="section-title">Game plan</h2>
+          {action}
+        </div>
         <p className="text-sm">{plan.winCondition}</p>
       </div>
 
