@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HeroInput } from "@/components/hero-input";
+import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
 import { applyAction, heroesOf, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
@@ -11,6 +12,7 @@ import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { ScreenshotPaste } from "./screenshot-paste";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -197,6 +199,10 @@ export function DraftBoard({ player, portraits, signedIn }: { player: Player; po
           </>
         )}
       </p>
+
+      {Object.keys(portraits).length > 0 && (
+        <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={(read, side) => act(...readActions(read, side, taken))} />
+      )}
 
       {chance !== null && <WinBar chance={chance} />}
 
