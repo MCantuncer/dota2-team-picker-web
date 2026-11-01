@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { expectAccessible, logIn, setUserType, signUp, uniqueEmail } from "./helpers";
+import { expect } from "@playwright/test";
+import { expectAccessible, logIn, setUserType, signUp, test, uniqueEmail } from "./helpers";
 
 test("plain users can't open captain mode", async ({ page }) => {
   await signUp(page, uniqueEmail("plain"), "Axe");
