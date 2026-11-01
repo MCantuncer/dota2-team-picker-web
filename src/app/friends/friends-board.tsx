@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
 import { createClient } from "@/lib/supabase/client";
 
@@ -201,6 +202,7 @@ function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }
   if (!confirming) {
     return (
       <button onClick={() => setConfirming(true)} aria-label={`Remove ${name}`} className="btn btn-ghost btn-sm">
+        <Icon name="trash" />
         Remove
       </button>
     );
