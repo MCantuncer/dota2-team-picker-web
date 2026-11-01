@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HeroInput } from "@/components/hero-input";
+import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
 import { applyAction, heroesOf, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
@@ -15,6 +16,7 @@ import { planTeam } from "@/lib/engine/plan";
 import { toPlanSlots, type HeroPool, type PlanMember } from "@/lib/party-plan";
 import { AfterGame } from "./after-game";
 import { PartyPlan } from "./party-plan";
+import { ScreenshotPaste } from "./screenshot-paste";
 import { usePartyDraft } from "./use-party-draft";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
@@ -294,6 +296,10 @@ export function DraftBoard({
         <p role="alert" className="notice notice-error text-sm">
           {shared.error}
         </p>
+      )}
+
+      {Object.keys(portraits).length > 0 && (
+        <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={(read, side) => act(...readActions(read, side, taken))} />
       )}
 
       {chance !== null && <WinBar chance={chance} />}
