@@ -125,6 +125,43 @@ or class in its own small PR, then use it.
 - **Empty states** sit inside their panel: one line in `text-muted` saying what fills it, plus one action.
 - **Loading** for remote data uses skeletons in the real shape. No spinners on the pick path.
 
+## Motion and light
+
+Motion confirms something the player just did; it is never decoration. Light does the rest: surfaces are lit from
+above, hover brightens a border or fill instead of moving the element, and team colour arrives as a thin bar or a
+12% tint.
+
+| Token | Value | Use |
+|---|---|---|
+| `--dur-fast` | 120ms | Hover and press; each item of a stagger |
+| `--dur-base` | 180ms | Small entrances: a hero entering a slot, a menu, a toast |
+| `--dur-slow` | 240ms | Larger changes: the win bar, a panel |
+| `--motion-out` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | Entrances and state changes |
+| `--motion-in` | `cubic-bezier(0.4, 0, 1, 1)` | Exits (faster than the entrance) |
+
+The easings are not called `--ease-*` on purpose: Tailwind owns those names for its `ease-*` utilities.
+
+| Class | What |
+|---|---|
+| `.enter` | Fades in and rises 4px over `--dur-base`. For one thing that just arrived |
+| `.enter-stagger` | The same over `--dur-fast`, delayed by `--i` x 20ms (capped at 5 steps). Set `--i` to the item's index among the *newly added* items only: `style={{ "--i": n } as React.CSSProperties}`. Worst case 220ms |
+| `.live-dot` | A 6px dot in `currentColor` with a slow breathing ring. Only for a live connection. Mark it `aria-hidden`; the text next to it carries the meaning |
+| `.btn` press | Every button darkens slightly while pressed and settles 1px down |
+
+Rules:
+
+- Only `opacity` and `transform` move. Never animate width, height or position on the pick path. Nothing runs longer
+  than 300ms; exits are faster than entrances.
+- Every animation and every movement sits inside `@media (prefers-reduced-motion: no-preference)` in `globals.css`.
+  With reduced motion on, nothing moves or fades: content simply appears. Never add a component-level animation
+  outside that query.
+- Content is never hidden by a base style: the starting point of an entrance exists only in its keyframes
+  (`animation-fill-mode: backwards`), so if the animation does not run, the content is there.
+- Never animate: the hero search listbox (it changes on every keystroke), team panels, the header, text being read,
+  or anything on the first paint of a working screen except the suggestion list. The live dot is the only loop.
+- Elements that are not clickable get no hover effect.
+- The e2e accessibility check runs with reduced motion, so contrast is never measured halfway through a fade.
+
 ## Writing
 
 Plain, short, from the player's side: "Banned", not "Mark as unavailable". Buttons say what happens ("Send invite").
@@ -137,4 +174,5 @@ Errors say what went wrong and how to fix it. No em dashes in UI copy.
 - [ ] Colour only for signals (team, focus, risk, error).
 - [ ] Every action works by keyboard, has a visible key hint where it matters, and has an accessible name.
 - [ ] Checked at 1280px, 1920px and phone width.
+- [ ] Motion uses the tokens and classes above, confirms an action, and is off with reduced motion.
 - [ ] New token or class? Added to `globals.css`, this page and the Design System artifact.
