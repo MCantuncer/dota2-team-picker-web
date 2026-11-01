@@ -11,6 +11,9 @@ README.
 
 Built with Next.js (App Router), Tailwind CSS and Supabase Auth.
 
+All UI work follows the [design system](docs/design-system.md): tokens and shared classes in
+`src/app/globals.css`, rules for using them in the doc.
+
 ## Pages
 
 | Path            | What it does                                                               |
@@ -35,17 +38,28 @@ npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
 npm run test:watch
 npm run typecheck      # route types + tsc
 npm run lint
-npm run check:engine   # engine copy still matches the backend's main branch
+npm run check:backend  # engine and database type copies match the pinned backend commit
+npm run sync:backend   # copy them from backend main again and pin its commit
 npm run test:e2e       # Playwright browser tests, see e2e/README.md
 ```
+
+`src/lib/engine/` and `src/lib/supabase/database.types.ts` are copied from the backend repo, at the commit
+pinned in `backend-ref.txt`. The Supabase clients use the database types, so a query on a missing table or
+column fails the type check. PR checks and the browser tests use the pinned commit, so a backend change never
+turns an unrelated website PR red. To pick up backend changes, run `npm run sync:backend` in its own PR: it
+copies the files from backend main and updates the pin. The "Backend drift" workflow reports, without blocking
+anything, when backend main has moved on.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
 full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,
 profile, private-page redirects and Captain mode, with automatic accessibility checks on every page.
 
 CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
-engine copy check, dependency review (fails on a new package with a known high or critical
+backend copy check, dependency review (fails on a new package with a known high or critical
 vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
+
+Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): it holds the code standards and the
+checklist every change follows.
 
 ## Deploy on Vercel (free)
 

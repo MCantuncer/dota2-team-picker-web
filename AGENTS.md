@@ -1,3 +1,8 @@
+# Agent notes
+
+UI work must follow the design system in `docs/design-system.md` (tokens and classes in `src/app/globals.css`).
+Read it before building or changing any screen.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

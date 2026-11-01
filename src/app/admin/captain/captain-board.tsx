@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HARD_COUNTERS } from "@/lib/hard-counters";
+import { GamePlanPanel } from "@/components/game-plan-panel";
+import { HeroChip } from "@/components/hero-chip";
+import { HeroInput } from "@/components/hero-input";
+import { Kbd } from "@/components/kbd";
+import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
@@ -127,7 +131,8 @@ export function CaptainBoard({
     setRank(nextRank);
     const { error } = await supabase
       .from("team_lineups")
-      .upsert({ team_id: team.id, slots: nextSlots, rank_bracket: nextRank });
+      // Empty slots are null; the generated types can't express null elements in a uuid[] column.
+      .upsert({ team_id: team.id, slots: nextSlots as string[], rank_bracket: nextRank });
     setSaveError(error ? `Current team not saved: ${error.message}` : null);
   };
 
@@ -162,6 +167,7 @@ export function CaptainBoard({
           slots={slots}
           rank={rank}
           draft={draft}
+          icons={icons}
           onDraft={updateDraft}
           onLineup={saveLineup}
         />
@@ -203,6 +209,7 @@ function DraftView({
   slots,
   rank,
   draft,
+  icons,
   onDraft,
   onLineup,
 }: {
@@ -212,6 +219,7 @@ function DraftView({
   slots: Slots;
   rank: number | null;
   draft: Draft;
+  icons: Record<number, string>;
   onDraft: (d: Draft) => void;
   onLineup: (slots: Slots, rank: number | null) => void;
 }) {
@@ -246,6 +254,12 @@ function DraftView({
     [view, engine, members, slots, rank, draft],
   );
 
+  const gamePlan = useMemo(
+    // The lineup's rank is a bracket (1-8) whenever it is set.
+    () => finishedDraftPlan(engine, draft.picks, draft.enemies, (rank ?? undefined) as RankBracket | undefined),
+    [engine, draft, rank],
+  );
+
   const setPick = (i: number, id: number | null) => {
     const picks = draft.picks.slice();
     picks[i] = id;
@@ -275,7 +289,7 @@ function DraftView({
                   <span className="text-xs text-subtle">{POSITION_NAMES[i]}</span>
                 </div>
                 {pick != null ? (
-                  <Chip label={name(pick)} tone="ours" onRemove={() => setPick(i, null)} />
+                  <HeroChip label={name(pick)} tone="ours" onRemove={() => setPick(i, null)} />
                 ) : (
                   <HeroInput
                     id={`slot-${i + 1}`}
@@ -310,7 +324,7 @@ function DraftView({
           )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {draft.enemies.map((id) => (
-              <Chip key={id} label={name(id)} tone="foe" onRemove={() => onDraft({ ...draft, enemies: draft.enemies.filter((x) => x !== id) })} />
+              <HeroChip key={id} label={name(id)} tone="foe" onRemove={() => onDraft({ ...draft, enemies: draft.enemies.filter((x) => x !== id) })} />
             ))}
           </div>
 
@@ -330,13 +344,23 @@ function DraftView({
           />
           <div className="mt-2 flex flex-wrap gap-1.5">
             {draft.bans.map((id) => (
-              <Chip key={id} label={name(id)} tone="ban" onRemove={() => onDraft({ ...draft, bans: draft.bans.filter((x) => x !== id) })} />
+              <HeroChip key={id} label={name(id)} tone="ban" onRemove={() => onDraft({ ...draft, bans: draft.bans.filter((x) => x !== id) })} />
             ))}
           </div>
         </section>
       </div>
 
-      <section aria-label="Suggestions" className="flex flex-col gap-2">
+      {gamePlan && (
+        <GamePlanPanel
+          plan={gamePlan}
+          heroName={name}
+          icons={icons}
+          playerNames={slots.map((id) => memberById(id)?.name ?? null)}
+        />
+      )}
+
+      {/* Once all ten heroes are in, the game plan replaces the suggestions. */}
+      <section aria-label="Suggestions" hidden={gamePlan !== null} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider">{view === "players" ? "Call these" : "Super team"}</h2>
           <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist" aria-label="Suggestion view">
@@ -644,19 +668,13 @@ function PlanCard({
   );
 }
 
+/** The engine's hard-counter notes for a hero, colored by where the counter stands in the draft. */
 function counterNotes(engine: Engine, heroId: number, draft: Draft): Note[] {
-  const hero = engine.hero(heroId).name;
-  const notes: Note[] = [];
-  for (const hc of HARD_COUNTERS) {
-    if (hc.hero !== hero) continue;
-    const counter = engine.heroes.find((h) => h.name === hc.counter);
-    if (!counter) continue;
-    if (draft.enemies.includes(counter.id)) notes.push({ kind: "bad", text: `Hard countered: ${counter.name} is on the enemy team` });
-    else if (draft.bans.includes(counter.id) || draft.picks.includes(counter.id))
-      notes.push({ kind: "good", text: `${counter.name} is out, safe to pick` });
-    else if (draft.enemies.length < 5) notes.push({ kind: "warn", text: `Gamble: ${counter.name} still available` });
-  }
-  return notes;
+  const allies = draft.picks.flatMap((id) => (id != null ? [{ heroId: id }] : []));
+  const kind = { enemy: "bad", open: "warn", out: "good" } as const;
+  return engine
+    .hardCounterNotes(heroId, { allies, enemies: draft.enemies, bans: draft.bans })
+    .map((n) => ({ kind: kind[n.status], text: n.text }));
 }
 
 function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: boolean; onPicked: () => void; onBanned: () => void }) {
@@ -856,132 +874,4 @@ function TeamView({
       />
     </div>
   );
-}
-
-// ---------- shared pieces ----------
-
-/**
- * Hero search box: Enter adds the top match, arrows choose another, Esc clears, Backspace on an empty
- * box undoes the last add. With `multi`, Enter adds every name typed, separated by spaces.
- */
-function HeroInput({
-  id,
-  placeholder,
-  search,
-  exclude,
-  multi,
-  onPick,
-  onPickMany,
-  onUndo,
-  inputRef,
-}: {
-  id: string;
-  placeholder: string;
-  search: HeroSearch<HeroInfo>;
-  exclude: Set<number>;
-  multi?: boolean;
-  onPick: (heroId: number) => void;
-  onPickMany?: (heroIds: number[]) => void;
-  onUndo?: () => void;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
-}) {
-  const [value, setValue] = useState("");
-  const [active, setActive] = useState(0);
-  const [open, setOpen] = useState(false);
-  const lastWord = multi ? (value.trimEnd().split(/\s+/).at(-1) ?? "") : value;
-  const results: HeroInfo[] = search.find(lastWord, exclude);
-
-  const choose = (hero: HeroInfo) => {
-    onPick(hero.id);
-    setValue(multi ? value.trimEnd().split(/\s+/).slice(0, -1).map((w) => w + " ").join("") : "");
-    setActive(0);
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (multi && onPickMany) {
-        const picked: number[] = [];
-        for (const word of value.trim().split(/\s+/).filter(Boolean)) {
-          const hit = search.find(word, new Set([...exclude, ...picked]), 1)[0];
-          if (hit) picked.push(hit.id);
-        }
-        if (picked.length) onPickMany(picked);
-        setValue("");
-      } else if (results[active]) choose(results[active]);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActive((a) => Math.min(a + 1, results.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActive((a) => Math.max(a - 1, 0));
-    } else if (e.key === "Escape") {
-      setValue("");
-    } else if (e.key === "Backspace" && !value && onUndo) {
-      e.preventDefault();
-      onUndo();
-    }
-  };
-
-  return (
-    <div className="relative min-w-0">
-      <input
-        id={id}
-        ref={inputRef}
-        value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          setActive(0);
-          setOpen(true);
-        }}
-        onKeyDown={onKeyDown}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        autoComplete="off"
-        spellCheck={false}
-        className="field w-full"
-      />
-      {open && results.length > 0 && (
-        <ul role="listbox" className="absolute inset-x-0 top-full z-10 mt-0.5 rounded-md bg-raised p-1 shadow-lg ring-1 ring-line-strong">
-          {results.map((h, i) => (
-            <li
-              key={h.id}
-              role="option"
-              aria-selected={i === active}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                choose(h);
-              }}
-              className={`flex cursor-pointer justify-between rounded px-2 py-1 text-sm ${i === active ? "bg-hover" : ""}`}
-            >
-              {h.name}
-              {i === 0 && <Kbd>Enter</Kbd>}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function Chip({ label, tone, onRemove }: { label: string; tone?: "ours" | "foe" | "ban"; onRemove: () => void }) {
-  const tones = {
-    ours: "bg-radiant/10 ring-radiant-strong",
-    foe: "bg-dire/10 ring-dire-strong",
-    ban: "text-subtle line-through ring-line-strong",
-  };
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full py-0.5 pl-3 pr-1 text-sm font-medium ring-1 ${tone ? tones[tone] : "bg-raised ring-line-strong"}`}>
-      {label}
-      <button onClick={onRemove} aria-label={`Remove ${label}`} className="px-1.5 text-muted hover:text-fg">
-        ×
-      </button>
-    </span>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return <kbd className="kbd mx-0.5">{children}</kbd>;
 }

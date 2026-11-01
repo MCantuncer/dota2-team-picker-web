@@ -28,7 +28,7 @@ export default async function ProfilePage() {
   const isSteam = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);
   const heroById = new Map(heroes.map((h) => [h.id, h]));
-  const stats = Object.entries((profile?.hero_stats ?? {}) as Record<string, GamesWins>)
+  const stats = Object.entries((profile?.hero_stats ?? {}) as unknown as Record<string, GamesWins>)
     .map(([id, s]) => ({ hero: heroById.get(Number(id)), ...s }))
     .filter((s) => s.hero)
     .sort((a, b) => b.games - a.games)

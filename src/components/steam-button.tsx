@@ -6,7 +6,7 @@ export function SteamButton({ next, primary }: { next: string; primary?: boolean
   return (
     <a
       href={href}
-      className={`btn btn-lg ${primary ? "btn-primary" : "bg-steam text-white ring-1 ring-line-hover hover:bg-steam-hover"}`}
+      className={`btn btn-lg ${primary ? "btn-primary" : "bg-steam text-on-strong ring-1 ring-line-hover hover:bg-steam-hover"}`}
     >
       <SteamLogo className="h-5 w-5" />
       Sign in with Steam
