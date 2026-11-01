@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
+import { DraftCaptain } from "./draft-captain";
 
 export interface Invitee {
   id: string;
@@ -100,6 +101,15 @@ export function PartyLobby({
     <div className="flex max-w-3xl flex-col gap-4">
       {error && <p className="text-sm text-dire">{error}</p>}
 
+      <DraftCaptain
+        party={party}
+        userId={userId}
+        busy={busy}
+        run={run}
+        become={() => supabase.rpc("become_captain")}
+        stepDown={() => supabase.rpc("step_down_captain")}
+      />
+
       <section aria-label="Players" className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider">
@@ -122,6 +132,7 @@ export function PartyLobby({
               key={m.id}
               member={m}
               isLeader={m.id === party.leaderId}
+              isCaptain={m.id === party.captain.id}
               isMe={m.id === userId}
               // null means "any position"; the generated types can't mark a function argument nullable.
               onPosition={(want) => run("Position not saved", () => supabase.rpc("set_party_position", { want: want as number }))}
@@ -180,12 +191,14 @@ export function PartyLobby({
 function MemberRow({
   member,
   isLeader,
+  isCaptain,
   isMe,
   onPosition,
   onRemove,
 }: {
   member: PartyMember;
   isLeader: boolean;
+  isCaptain: boolean;
   isMe: boolean;
   onPosition: (want: number | null) => void;
   onRemove?: () => void;
@@ -199,7 +212,12 @@ function MemberRow({
           {member.name}
           {isMe && <span className="ml-1.5 text-xs font-medium text-muted">(you)</span>}
         </span>
-        {isLeader && <span className="label-caps text-accent">Leader</span>}
+        {(isLeader || isCaptain) && (
+          <span className="flex flex-wrap gap-1 pt-0.5">
+            {isCaptain && <span className="chip chip-accent micro">Draft captain</span>}
+            {isLeader && <span className="chip micro">Leader</span>}
+          </span>
+        )}
       </span>
       {isMe ? (
         <select
