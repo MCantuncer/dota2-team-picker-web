@@ -258,6 +258,11 @@ export function DraftBoard({
     enemies,
     bracket,
   );
+  // Players watching the captain's draft hear each hero as it goes in.
+  const last = locked ? draft.at(-1) : undefined;
+  const entered = last
+    ? `${captainName} entered ${hero(last.heroId).name} (${last.kind === "ally" ? "my team" : last.kind === "enemy" ? "enemy" : "ban"}). `
+    : "";
   const lastOf = (kind: DraftEntry["kind"]) => draft.filter((e) => e.kind === kind).at(-1)?.heroId;
   const undoLast = (kind: DraftEntry["kind"]) => {
     const id = lastOf(kind);
@@ -296,30 +301,32 @@ export function DraftBoard({
             ))}
           </select>
         </label>
-        <div className={`ml-auto flex gap-2 ${locked ? "hidden" : ""}`}>
-          <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
-            <Icon name="undo" />
-            Undo
-          </button>
-          <button
-            onClick={() => {
-              startOver();
-              allyRef.current?.focus();
-            }}
-            disabled={!draft.length}
-            className="btn btn-secondary btn-sm"
-          >
-            <Icon name="plus" />
-            New draft
-          </button>
-        </div>
+        {!locked && (
+          <div className="ml-auto flex gap-2">
+            <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
+              <Icon name="undo" />
+              Undo
+            </button>
+            <button
+              onClick={() => {
+                startOver();
+                allyRef.current?.focus();
+              }}
+              disabled={!draft.length}
+              className="btn btn-secondary btn-sm"
+            >
+              <Icon name="plus" />
+              New draft
+            </button>
+          </div>
+        )}
       </div>
 
       {party && live.party && <DraftCaptainBar party={live.party} userId={party.userId} refresh={live.refresh} />}
 
       {locked ? (
         <p className="text-xs text-subtle">
-          Each hero shows up here as {captainName} enters it. The picks below are for your position, to pass on to them.
+          {captainName} enters every hero. Tell them which of your picks you want.
         </p>
       ) : (
         <p className="text-xs text-subtle">
@@ -337,7 +344,7 @@ export function DraftBoard({
           )}
           {party &&
             (captainId
-              ? " You enter the draft for the party; everyone in it sees each hero as it goes in."
+              ? " Your party sees each hero as you enter it."
               : " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you.")}
         </p>
       )}
@@ -383,7 +390,7 @@ export function DraftBoard({
                 key={e.heroId}
                 hero={hero(e.heroId)}
                 portrait={portraits[e.heroId]}
-                by={enteredBy(e.heroId)}
+                by={captainId ? undefined : enteredBy(e.heroId)}
                 onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
               >
                 {locked ? (
@@ -417,7 +424,7 @@ export function DraftBoard({
           )}
           <Slots>
             {enemies.map((id) => (
-              <Slot key={id} hero={hero(id)} portrait={portraits[id]} by={enteredBy(id)} onRemove={locked ? undefined : () => act({ kind: "remove", heroId: id })} />
+              <Slot key={id} hero={hero(id)} portrait={portraits[id]} by={captainId ? undefined : enteredBy(id)} onRemove={locked ? undefined : () => act({ kind: "remove", heroId: id })} />
             ))}
           </Slots>
         </TeamPanel>
@@ -517,7 +524,12 @@ export function DraftBoard({
               ))}
             </ol>
           )}
-          <Announcer text={teamPlan ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name))} />
+          <Announcer
+            text={
+              entered +
+              (teamPlan ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
+            }
+          />
         </section>
       </div>
 
