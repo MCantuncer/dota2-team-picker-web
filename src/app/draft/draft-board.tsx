@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GamePlanPanel } from "@/components/game-plan-panel";
@@ -17,6 +18,7 @@ import { pickGain, teamWinChance } from "@/lib/win";
 import { planTeam } from "@/lib/engine/plan";
 import { toPlanSlots, type HeroPool, type PlanMember } from "@/lib/party-plan";
 import { AfterGame } from "./after-game";
+import { Announcer, picksSentence } from "./announcer";
 import { PartyPlan } from "./party-plan";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { usePartyDraft } from "./use-party-draft";
@@ -106,6 +108,14 @@ export function DraftBoard({
   const draft = party ? shared.draft : soloDraft;
   const [rank, setRank] = useState<RankBracket | null>(player.rank);
   const allyRef = useRef<HTMLInputElement>(null);
+  const bansRef = useRef<HTMLInputElement>(null);
+  const picksTitleRef = useRef<HTMLHeadingElement>(null);
+  /**
+   * After Picked or Banned removes a card, keep the keyboard path: back to the box for that kind of entry. The My
+   * team box is gone once the team is full, so fall back to the picks heading.
+   */
+  const refocus = (box: "ally" | "bans") =>
+    requestAnimationFrame(() => ((box === "ally" ? allyRef.current : bansRef.current) ?? picksTitleRef.current)?.focus());
 
   useEffect(() => {
     loadSnapshot()
@@ -274,6 +284,7 @@ export function DraftBoard({
         </label>
         <div className="ml-auto flex gap-2">
           <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
+            <Icon name="undo" />
             Undo
           </button>
           <button
@@ -284,6 +295,7 @@ export function DraftBoard({
             disabled={!draft.length}
             className="btn btn-secondary btn-sm"
           >
+            <Icon name="plus" />
             New draft
           </button>
         </div>
@@ -385,6 +397,7 @@ export function DraftBoard({
           </h2>
           <HeroInput
             id="bans"
+            inputRef={bansRef}
             placeholder="Bans, several at once: pa sf am"
             search={search}
             exclude={taken}
@@ -406,7 +419,7 @@ export function DraftBoard({
 
         <section aria-labelledby="picks-title" className="flex flex-col gap-3 md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <h2 id="picks-title" className="section-title">
+            <h2 id="picks-title" ref={picksTitleRef} tabIndex={-1} className="section-title">
               {teamPlan ? (
                 "Team plan"
               ) : (
@@ -447,12 +460,19 @@ export function DraftBoard({
                   portrait={portraits[s.heroId]}
                   best={i === 0}
                   gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
-                  onPicked={() => act({ kind: "ally", heroId: s.heroId, position: myPosition })}
-                  onBanned={() => act({ kind: "ban", heroId: s.heroId })}
+                  onPicked={() => {
+                    act({ kind: "ally", heroId: s.heroId, position: myPosition });
+                    refocus("ally");
+                  }}
+                  onBanned={() => {
+                    act({ kind: "ban", heroId: s.heroId });
+                    refocus("bans");
+                  }}
                 />
               ))}
             </ol>
           )}
+          <Announcer text={teamPlan ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name))} />
         </section>
       </div>
 
@@ -549,10 +569,10 @@ function Slot({
   children?: React.ReactNode;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-md bg-raised p-1 pr-2">
+    <li className="flex min-h-11 items-center gap-3 rounded-md bg-raised p-1 pr-2">
       <Portrait hero={hero} src={portrait} size="strip" />
       <span className="flex min-w-0 flex-col">
-        <span className="truncate font-heading text-base font-semibold">{hero.name}</span>
+        <span className="font-heading text-base font-semibold leading-tight">{hero.name}</span>
         {by && <span className="micro text-subtle">Entered by {by}</span>}
       </span>
       <span className="ml-auto flex items-center gap-2">
@@ -625,10 +645,13 @@ function SuggestionCard({
         </p>
       ))}
       <div className="mt-auto flex gap-2 pt-1">
-        <button onClick={onPicked} className="btn btn-primary btn-sm">
+        {/* One gold button per region: only the Best card's Picked is primary. */}
+        <button onClick={onPicked} className={`btn btn-sm ${best ? "btn-primary" : "btn-secondary"}`}>
+          <Icon name="check" />
           Picked
         </button>
-        <button onClick={onBanned} className="btn btn-secondary btn-sm">
+        <button onClick={onBanned} className="btn btn-ghost btn-sm">
+          <Icon name="ban" />
           Banned
         </button>
       </div>

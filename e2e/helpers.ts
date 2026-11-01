@@ -37,7 +37,11 @@ export async function expectAccessible(page: Page) {
   // Typing scrolls the page by a different amount each run, which can leave a button half under the
   // sticky header; axe then reports it as too small. Check the page from the top so results are stable.
   await page.evaluate(() => window.scrollTo(0, 0));
+  // With reduced motion every animation stops at its end state, so contrast is never measured mid-fade. The
+  // motion itself is checked by eye in screenshots; tests after this go on with motion allowed.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  await page.emulateMedia({ reducedMotion: null });
   const blocking = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(blocking.map((v) => `${v.id}: ${v.help} (${v.nodes.length})`)).toEqual([]);
 }

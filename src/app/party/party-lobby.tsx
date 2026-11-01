@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
 import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } from "@/lib/party";
+import { fetchPartyLink, type PartyLink } from "@/lib/party-link";
 import { createClient } from "@/lib/supabase/client";
 import { DraftCaptain } from "./draft-captain";
+import { PartyLinkCard } from "./party-link";
 
 export interface Invitee {
   id: string;
@@ -14,14 +17,17 @@ export interface Invitee {
   detail: string;
 }
 
-/** The lobby: five slots, your position for this game, and invites for the leader to send. */
+/** The lobby: five slots, your position for this game, and invites and the invite link for the leader. */
 export function PartyLobby({
   userId,
   initialParty,
+  initialLink,
   invitees,
 }: {
   userId: string;
   initialParty: Party | null;
+  /** The invite link of initialParty, when the user leads it. */
+  initialLink: PartyLink | null;
   invitees: Invitee[];
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -30,6 +36,7 @@ export function PartyLobby({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const partyId = party?.id ?? null;
+  const getLink = useCallback((fresh: boolean) => fetchPartyLink(supabase, fresh), [supabase]);
 
   const refresh = useCallback(async () => {
     const { data, error } = await supabase.rpc("party_view");
@@ -151,6 +158,16 @@ export function PartyLobby({
         </ul>
       </section>
 
+      {isLeader && (
+        <PartyLinkCard
+          // A new party starts with a new link.
+          key={party.id}
+          initialLink={party.id === initialParty?.id ? initialLink : null}
+          isFull={full}
+          getLink={getLink}
+        />
+      )}
+
       {isLeader ? (
         <section aria-label="Invite" className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider">
@@ -238,6 +255,7 @@ function MemberRow({
       )}
       {onRemove && (
         <button onClick={onRemove} aria-label={`Remove ${member.name}`} className="btn btn-ghost btn-sm">
+          <Icon name="trash" />
           Remove
         </button>
       )}

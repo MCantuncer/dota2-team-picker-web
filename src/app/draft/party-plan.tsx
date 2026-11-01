@@ -1,6 +1,7 @@
 "use client";
 
 import type { TeamPlan } from "@/lib/engine/plan";
+import { Icon } from "@/components/icon";
 import type { Position } from "@/lib/engine/types";
 
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
@@ -72,9 +73,11 @@ export function PartyPlan({
                   )}
                   <div className="mt-auto flex gap-2 pt-1">
                     <button onClick={() => onPicked(slot.heroId, slot.position)} className="btn btn-primary btn-sm">
+                      <Icon name="check" />
                       Picked
                     </button>
                     <button onClick={() => onBanned(slot.heroId)} className="btn btn-secondary btn-sm">
+                      <Icon name="ban" />
                       Banned
                     </button>
                   </div>
