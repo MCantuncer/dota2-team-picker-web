@@ -30,6 +30,24 @@ test("the draft screen suggests heroes as both teams fill in", async ({ page }) 
   await expect(picks).toHaveCount(8);
 });
 
+test("the draft screen takes several heroes at once and forgives a typo", async ({ page }) => {
+  await page.goto("/draft");
+  const enemy = page.getByLabel("Enemy pick");
+  await expect(enemy).toBeVisible();
+
+  await enemy.fill("pa sf");
+  await enemy.press("Enter");
+  await page.getByLabel("My team pick, e.g. cm5").fill("cm5 lion 4");
+  await page.keyboard.press("Enter");
+  await enemy.fill("meduas");
+  await enemy.press("Enter");
+
+  const enemies = page.getByRole("region", { name: "Enemy" });
+  for (const name of ["Phantom Assassin", "Shadow Fiend", "Medusa"]) await expect(enemies.getByText(name)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Crystal Maiden position: 5/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Lion position: 4/ })).toBeVisible();
+});
+
 test("the draft screen shows the win chance once a checked model exists", async ({ page }) => {
   // The live data has no checked model yet, so add one that favours neither side.
   await page.route(SNAPSHOT_URL, async (route) => {
