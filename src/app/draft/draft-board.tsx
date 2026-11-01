@@ -11,6 +11,9 @@ import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { planTeam } from "@/lib/engine/plan";
+import { toPlanSlots, type HeroPool, type PlanMember } from "@/lib/party-plan";
+import { PartyPlan } from "./party-plan";
 import { usePartyDraft } from "./use-party-draft";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
@@ -30,6 +33,10 @@ export interface PartyInfo {
   names: Record<string, string>;
   /** The position the player chose in the party lobby. */
   myPosition: Position | null;
+  /** Everyone in the party with their lobby position, for the leader's team plan. */
+  members: PlanMember[];
+  /** The party's favorite heroes; only the leader gets them, and only the leader sees the team plan. */
+  pool: HeroPool | null;
 }
 
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
@@ -87,6 +94,7 @@ export function DraftBoard({
   const [history, setHistory] = useState<DraftEntry[][]>([]);
   const [myPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
+  const [view, setView] = useState<"mine" | "team">("mine");
   const draft = party ? shared.draft : soloDraft;
   const [rank, setRank] = useState<RankBracket | null>(player.rank);
   const allyRef = useRef<HTMLInputElement>(null);
@@ -172,6 +180,17 @@ export function DraftBoard({
 
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
+
+  // The leader's team plan (WCST) for the whole party, planned only while it is on screen.
+  const teamPlan =
+    party?.pool && view === "team"
+      ? planTeam(engine, {
+          slots: toPlanSlots(party.members, party.pool, allies),
+          enemies,
+          bans,
+          rankBracket: bracket,
+        })
+      : null;
   if (party && !shared.ready) {
     return shared.error ? (
       <p className="notice notice-error">{shared.error}. Reload the page to try again.</p>
@@ -342,10 +361,36 @@ export function DraftBoard({
       </section>
 
       <section aria-labelledby="picks-title" className="flex flex-col gap-3">
-        <h2 id="picks-title" className="section-title">
-          Picks for pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
-        </h2>
-        {mine ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h2 id="picks-title" className="section-title">
+            {teamPlan ? (
+              "Team plan"
+            ) : (
+              <>
+                Picks for pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
+              </>
+            )}
+          </h2>
+          {party?.pool && (
+            <div className="seg" role="group" aria-label="Suggestions for">
+              <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
+                My picks
+              </button>
+              <button aria-pressed={view === "team"} onClick={() => setView("team")} className="seg-item">
+                Team plan
+              </button>
+            </div>
+          )}
+        </div>
+        {teamPlan ? (
+          <PartyPlan
+            plan={teamPlan}
+            names={party!.names}
+            portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
+            onPicked={(heroId, position) => act({ kind: "ally", heroId, position })}
+            onBanned={(heroId) => act({ kind: "ban", heroId })}
+          />
+        ) : mine ? (
           <p className="text-sm text-muted">
             You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
           </p>

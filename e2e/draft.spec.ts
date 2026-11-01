@@ -77,3 +77,23 @@ test("in a party the draft is kept for the whole party", async ({ page }) => {
   await page.getByRole("button", { name: "New draft" }).click();
   await expect(team.getByText("Pudge")).toHaveCount(0);
 });
+
+test("the party leader can plan the whole team", async ({ page }) => {
+  await signUp(page, uniqueEmail("party-plan"), "Tiny");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Team plan" }).click();
+  const plan = page.getByRole("list", { name: "Team plan" }).locator(":scope > li");
+  await expect(plan).toHaveCount(5);
+  await expectAccessible(page);
+
+  // Marking a planned hero as picked puts it on the team in its position.
+  const first = plan.first();
+  const hero = await first.locator(".font-heading").innerText();
+  await first.getByRole("button", { name: "Picked" }).click();
+  await expect(page.getByRole("region", { name: "My team" }).getByText(hero)).toBeVisible();
+  await expect(plan.first().getByText("Picked", { exact: true })).toBeVisible();
+});
