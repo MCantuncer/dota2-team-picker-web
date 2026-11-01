@@ -45,3 +45,27 @@ describe("HeroSearch", () => {
     expect(search.find("  ", new Set())).toEqual([]);
   });
 });
+
+describe("HeroSearch typing slips", () => {
+  const search = new HeroSearch([...heroes, { id: 94, name: "Medusa" }, { id: 14, name: "Pudge" }]);
+
+  it("forgives one swapped, wrong, missing or extra letter when nothing else matches", () => {
+    expect(names(search.find("meduas", new Set()))).toEqual(["Medusa"]);
+    expect(names(search.find("pduge", new Set()))).toEqual(["Pudge"]);
+    expect(names(search.find("crytsal", new Set()))).toEqual(["Crystal Maiden"]);
+    expect(names(search.find("puudge", new Set()))).toEqual(["Pudge"]);
+  });
+
+  it("prefers a real match over a slip", () => {
+    expect(names(search.find("axe", new Set()))).toEqual(["Axe"]);
+  });
+
+  it("never guesses from two letters", () => {
+    expect(search.find("xq", new Set())).toEqual([]);
+  });
+
+  it("tells a full name apart from two heroes", () => {
+    expect(search.isNameStart("shadow fi")).toBe(true);
+    expect(search.isNameStart("pa sf")).toBe(false);
+  });
+});

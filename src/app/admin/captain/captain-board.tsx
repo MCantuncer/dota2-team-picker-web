@@ -296,8 +296,8 @@ function DraftView({
                     placeholder={`Pos ${i + 1} pick`}
                     search={search}
                     exclude={taken}
-                    onPick={(id) => {
-                      setPick(i, id);
+                    onPick={([first]) => {
+                      setPick(i, first.heroId);
                       enemyRef.current?.focus();
                     }}
                   />
@@ -318,7 +318,7 @@ function DraftView({
               placeholder="Enemy pick"
               search={search}
               exclude={taken}
-              onPick={(id) => onDraft({ ...draft, enemies: [...draft.enemies, id] })}
+              onPick={(picked) => onDraft({ ...draft, enemies: [...draft.enemies, ...picked.map((p) => p.heroId)].slice(0, 5) })}
               onUndo={() => onDraft({ ...draft, enemies: draft.enemies.slice(0, -1) })}
             />
           )}
@@ -337,9 +337,7 @@ function DraftView({
             placeholder="Bans, e.g. pa sf am"
             search={search}
             exclude={taken}
-            multi
-            onPick={(id) => onDraft({ ...draft, bans: draft.bans.includes(id) ? draft.bans : [...draft.bans, id] })}
-            onPickMany={(ids) => onDraft({ ...draft, bans: [...draft.bans, ...ids.filter((id) => !draft.bans.includes(id))] })}
+            onPick={(picked) => onDraft({ ...draft, bans: [...draft.bans, ...picked.map((p) => p.heroId).filter((id) => !draft.bans.includes(id))] })}
             onUndo={() => onDraft({ ...draft, bans: draft.bans.slice(0, -1) })}
           />
           <div className="mt-2 flex flex-wrap gap-1.5">
