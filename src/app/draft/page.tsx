@@ -68,11 +68,13 @@ export default async function DraftPage() {
       personal: (profile?.hero_stats ?? {}) as unknown as Record<number, GamesWins>,
     };
   }
-  const portraits = Object.fromEntries((await heroesPromise).map((h) => [h.id, h.image]));
+  const heroList = await heroesPromise;
+  const portraits = Object.fromEntries(heroList.map((h) => [h.id, h.image]));
+  const icons = Object.fromEntries(heroList.map((h) => [h.id, h.icon]));
 
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
-      <DraftBoard player={player} portraits={portraits} signedIn={Boolean(user)} party={party} />
+      <DraftBoard player={player} portraits={portraits} icons={icons} signedIn={Boolean(user)} party={party} />
     </main>
   );
 }

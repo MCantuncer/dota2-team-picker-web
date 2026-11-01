@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GamePlanPanel } from "@/components/game-plan-panel";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -10,6 +11,7 @@ import { applyAction, heroesOf, TEAM_SIZE, type DraftAction, type DraftEntry } f
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
+import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
 import { planTeam } from "@/lib/engine/plan";
@@ -83,11 +85,14 @@ const isDraft = (v: unknown): v is DraftEntry[] =>
 export function DraftBoard({
   player,
   portraits,
+  icons,
   signedIn,
   party,
 }: {
   player: Player;
   portraits: Record<number, string>;
+  /** Small square hero icons, for the game plan. */
+  icons: Record<number, string>;
   signedIn: boolean;
   party: PartyInfo | null;
 }) {
@@ -222,6 +227,13 @@ export function DraftBoard({
 
   const taken = new Set(draft.map((e) => e.heroId));
   const hero = (id: number) => engine.hero(id);
+  // Once both teams are in with every ally's position, the game plan for our side.
+  const gamePlan = finishedDraftPlan(
+    engine,
+    POSITIONS.map((p) => allies.find((e) => e.position === p)?.heroId ?? null),
+    enemies,
+    bracket,
+  );
   const lastOf = (kind: DraftEntry["kind"]) => draft.filter((e) => e.kind === kind).at(-1)?.heroId;
   const undoLast = (kind: DraftEntry["kind"]) => {
     const id = lastOf(kind);
@@ -436,6 +448,19 @@ export function DraftBoard({
           )}
         </section>
       </div>
+
+      {gamePlan && (
+        <GamePlanPanel
+          plan={gamePlan}
+          heroName={(id) => hero(id).name}
+          icons={icons}
+          playerNames={POSITIONS.map((p) => {
+            const member = party?.members.find((m) => m.position === p);
+            return member ? (member.id === party!.userId ? "You" : (party!.names[member.id] ?? null)) : null;
+          })}
+          myPosition={myPosition}
+        />
+      )}
 
       {party && allies.length === TEAM_SIZE && (
         <AfterGame result={shared.result} checking={shared.checking} onFind={shared.findResult} />
