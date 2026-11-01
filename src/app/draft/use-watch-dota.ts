@@ -18,6 +18,8 @@ export type WatchState = "off" | "starting" | "on" | "black" | "failed";
 export function canWatch(): boolean {
   return (
     typeof window !== "undefined" &&
+    // Dota runs on a desktop with a mouse; phones and tablets have no Dota window to share.
+    window.matchMedia("(pointer: fine)").matches &&
     "MediaStreamTrackProcessor" in window &&
     typeof navigator.mediaDevices?.getDisplayMedia === "function"
   );
