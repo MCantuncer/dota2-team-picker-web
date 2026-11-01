@@ -312,7 +312,14 @@ export function DraftBoard({
       )}
 
       {Object.keys(portraits).length > 0 && (
-        <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={(read, side) => act(...readActions(read, side, taken))} />
+        <ScreenshotPaste
+          heroes={engine.heroes}
+          portraits={portraits}
+          onRead={(read, side) => {
+            const actions = readActions(read, side, taken);
+            if (actions.length) act(...actions);
+          }}
+        />
       )}
 
       {chance !== null && <WinBar chance={chance} />}
