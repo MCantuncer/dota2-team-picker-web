@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
 import { steamAvatar, toParty } from "@/lib/party";
+import { fetchPartyLink } from "@/lib/party-link";
 import { createClient } from "@/lib/supabase/server";
 import { latestSentPlan } from "@/lib/team-game-plan";
 import { PartyLobby, type Invitee } from "./party-lobby";
@@ -25,6 +26,9 @@ export default async function PartyPage() {
   ]);
   // The game plan is extra: if it fails to load, the lobby still works.
   const sentPlan = await latestSentPlan(supabase).catch(() => null);
+  const party = toParty(rows);
+  // Loaded here so Copy needs no wait (Safari drops clipboard access after one). If it fails, the card loads it again.
+  const link = party?.leaderId === user.id ? (await fetchPartyLink(supabase)).link : null;
 
   // Friends first, then people from your teams; the database checks again on every invite.
   const invitees: Invitee[] = [
@@ -52,11 +56,11 @@ export default async function PartyPage() {
       <div className="flex flex-col gap-1">
         <h1 className="page-title">Party</h1>
         <p className="text-sm text-muted">
-          Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site.
+          Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site, or share the invite link.
         </p>
       </div>
       <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
-      <PartyLobby userId={user.id} initialParty={toParty(rows)} invitees={invitees} />
+      <PartyLobby userId={user.id} initialParty={party} initialLink={link} invitees={invitees} />
     </main>
   );
 }
