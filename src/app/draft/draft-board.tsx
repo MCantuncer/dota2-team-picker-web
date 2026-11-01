@@ -260,7 +260,9 @@ export function DraftBoard({
 
       {chance !== null && <WinBar chance={chance} />}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Wide screens put the picks between the teams, like a draft overlay, with the bans under My team. The DOM
+          keeps My team, Enemy, Bans, picks so Tab still goes from box to box. */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)] xl:grid-rows-[auto_1fr]">
         <TeamPanel title="My team" side="radiant" count={allies.length}>
           {allies.length < TEAM_SIZE && (
             <HeroInput
@@ -286,7 +288,7 @@ export function DraftBoard({
                 <button
                   onClick={() => act({ kind: "ally", heroId: e.heroId, position: e.position === 5 ? null : (((e.position ?? 0) + 1) as Position) })}
                   aria-label={`${hero(e.heroId).name} position: ${e.position ?? "not set"}. Change`}
-                  className={`chip micro ${e.position === myPosition ? "chip-accent" : ""}`}
+                  className={`chip micro shrink-0 whitespace-nowrap ${e.position === myPosition ? "chip-accent" : ""}`}
                 >
                   Pos {e.position ?? "?"}
                 </button>
@@ -295,7 +297,7 @@ export function DraftBoard({
           </Slots>
         </TeamPanel>
 
-        <TeamPanel title="Enemy" side="dire" count={enemies.length}>
+        <TeamPanel title="Enemy" side="dire" count={enemies.length} className="xl:col-start-3 xl:row-start-1">
           {enemies.length < TEAM_SIZE && (
             <HeroInput
               id="enemy"
@@ -312,59 +314,59 @@ export function DraftBoard({
             ))}
           </Slots>
         </TeamPanel>
+
+        <section aria-labelledby="bans-title" className="card flex flex-col gap-3 self-start p-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
+          <h2 id="bans-title" className="section-title">
+            Bans <span className="num text-subtle">{bans.length}</span>
+          </h2>
+          <HeroInput
+            id="bans"
+            placeholder="Bans, several at once: pa sf am"
+            search={search}
+            exclude={taken}
+            multi
+            onPick={(heroId) => act({ kind: "ban", heroId })}
+            onPickMany={(ids) => act(...ids.map((heroId) => ({ kind: "ban" as const, heroId })))}
+            onUndo={() => undoLast("ban")}
+          />
+          {bans.length > 0 && (
+            <ul className="flex flex-wrap gap-1">
+              {bans.map((id) => (
+                <li key={id}>
+                  <button onClick={() => act({ kind: "remove", heroId: id })} aria-label={`Unban ${hero(id).name}`} title={hero(id).name}>
+                    <Portrait hero={hero(id)} src={portraits[id]} size="strip" banned />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="picks-title" className="flex flex-col gap-3 md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+          <h2 id="picks-title" className="section-title">
+            Picks for pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
+          </h2>
+          {mine ? (
+            <p className="text-sm text-muted">
+              You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
+            </p>
+          ) : (
+            <ol aria-label="Suggested heroes" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(14rem,1fr))]">
+              {suggestions.map((s, i) => (
+                <SuggestionCard
+                  key={s.heroId}
+                  suggestion={s}
+                  portrait={portraits[s.heroId]}
+                  best={i === 0}
+                  gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
+                  onPicked={() => act({ kind: "ally", heroId: s.heroId, position: myPosition })}
+                  onBanned={() => act({ kind: "ban", heroId: s.heroId })}
+                />
+              ))}
+            </ol>
+          )}
+        </section>
       </div>
-
-      <section aria-labelledby="bans-title" className="card flex flex-col gap-3 p-4">
-        <h2 id="bans-title" className="section-title">
-          Bans <span className="num text-subtle">{bans.length}</span>
-        </h2>
-        <HeroInput
-          id="bans"
-          placeholder="Bans, several at once: pa sf am"
-          search={search}
-          exclude={taken}
-          multi
-          onPick={(heroId) => act({ kind: "ban", heroId })}
-          onPickMany={(ids) => act(...ids.map((heroId) => ({ kind: "ban" as const, heroId })))}
-          onUndo={() => undoLast("ban")}
-        />
-        {bans.length > 0 && (
-          <ul className="flex flex-wrap gap-1">
-            {bans.map((id) => (
-              <li key={id}>
-                <button onClick={() => act({ kind: "remove", heroId: id })} aria-label={`Unban ${hero(id).name}`} title={hero(id).name}>
-                  <Portrait hero={hero(id)} src={portraits[id]} size="strip" banned />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="picks-title" className="flex flex-col gap-3">
-        <h2 id="picks-title" className="section-title">
-          Picks for pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
-        </h2>
-        {mine ? (
-          <p className="text-sm text-muted">
-            You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
-          </p>
-        ) : (
-          <ol aria-label="Suggested heroes" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))]">
-            {suggestions.map((s, i) => (
-              <SuggestionCard
-                key={s.heroId}
-                suggestion={s}
-                portrait={portraits[s.heroId]}
-                best={i === 0}
-                gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
-                onPicked={() => act({ kind: "ally", heroId: s.heroId, position: myPosition })}
-                onBanned={() => act({ kind: "ban", heroId: s.heroId })}
-              />
-            ))}
-          </ol>
-        )}
-      </section>
     </>
   );
 }
@@ -389,11 +391,23 @@ function WinBar({ chance }: { chance: number }) {
   );
 }
 
-function TeamPanel({ title, side, count, children }: { title: string; side: "radiant" | "dire"; count: number; children: React.ReactNode }) {
+function TeamPanel({
+  title,
+  side,
+  count,
+  className = "",
+  children,
+}: {
+  title: string;
+  side: "radiant" | "dire";
+  count: number;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section
       aria-label={title}
-      className={`card flex flex-col gap-3 border-t-3 p-4 ${side === "radiant" ? "border-t-radiant-strong" : "border-t-dire-strong"}`}
+      className={`card flex flex-col gap-3 self-start border-t-3 p-4 ${side === "radiant" ? "border-t-radiant-strong" : "border-t-dire-strong"} ${className}`}
     >
       <h2 className={`section-title ${side === "radiant" ? "text-radiant" : "text-dire"}`}>
         {title} <span className="num text-subtle">{count}/5</span>
@@ -433,7 +447,7 @@ function Slot({
     <li className="flex items-center gap-3 rounded-md bg-raised p-1 pr-2">
       <Portrait hero={hero} src={portrait} size="strip" />
       <span className="flex min-w-0 flex-col">
-        <span className="font-heading text-base font-semibold">{hero.name}</span>
+        <span className="truncate font-heading text-base font-semibold">{hero.name}</span>
         {by && <span className="micro text-subtle">Entered by {by}</span>}
       </span>
       <span className="ml-auto flex items-center gap-2">
