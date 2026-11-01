@@ -138,3 +138,23 @@ test("a party draft saves what each player was shown and ends with the after-gam
   await expect(card.getByRole("status")).toHaveText(/A match ID is a number/);
   await expectAccessible(page);
 });
+
+test("the draft screen shows the game plan once both teams are in", async ({ page }) => {
+  await page.goto("/draft");
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await expect(ally).toBeVisible();
+  for (const pick of ["jugg1", "puck2", "mars3", "lion4", "cm5"]) {
+    await ally.fill(pick);
+    await ally.press("Enter");
+  }
+  const enemy = page.getByLabel("Enemy pick");
+  for (const pick of ["pa", "sf", "axe", "wd", "lich"]) {
+    await enemy.fill(pick);
+    await enemy.press("Enter");
+  }
+
+  const plan = page.getByRole("region", { name: "Game plan" });
+  await expect(plan.getByText("Roadmap to win")).toBeVisible();
+  await expect(plan.getByRole("listitem", { name: /position/ })).toHaveCount(5);
+  await expectAccessible(page);
+});
