@@ -70,15 +70,35 @@ export function similarity(a: Float32Array, b: Float32Array): number {
  * The part of a hero's 256 x 144 store portrait that the top bar shows: it zooms in about 1.2 times
  * and cuts a little off the left and top.
  */
-export function portraitPatch(px: Pixels): Float32Array {
+export function portraitRect(px: Pixels): Rect {
   const unit = px.width / 256;
   const zoom = 1.2;
-  return patch(px, {
-    x: 22 * unit,
-    y: 12 * unit,
-    w: ((144 * PATCH_W) / PATCH_H / zoom) * unit,
-    h: (144 / zoom) * unit,
-  });
+  return { x: 22 * unit, y: 12 * unit, w: ((144 * PATCH_W) / PATCH_H / zoom) * unit, h: (144 / zoom) * unit };
+}
+
+export function portraitPatch(px: Pixels): Float32Array {
+  return patch(px, portraitRect(px));
+}
+
+/**
+ * How colourful a rectangle is: the average gap between each pixel's strongest and weakest colour
+ * channel. Grey pixels score 0.
+ */
+export function colourfulness(px: Pixels, r: Rect): number {
+  let sum = 0,
+    n = 0;
+  const x1 = Math.min(Math.round(r.x + r.w), px.width),
+    y1 = Math.min(Math.round(r.y + r.h), px.height);
+  for (let y = Math.max(Math.round(r.y), 0); y < y1; y += 2)
+    for (let x = Math.max(Math.round(r.x), 0); x < x1; x += 2) {
+      const i = (y * px.width + x) * 4;
+      const red = px.data[i],
+        green = px.data[i + 1],
+        blue = px.data[i + 2];
+      sum += Math.max(red, green, blue) - Math.min(red, green, blue);
+      n++;
+    }
+  return n ? sum / n : 0;
 }
 
 /**

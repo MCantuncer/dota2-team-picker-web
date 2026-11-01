@@ -1,5 +1,5 @@
 import { cellRect, GRID_COLUMNS, slotRects, type Attribute, type Side } from "./geometry";
-import { portraitPatch, similarity, slotPatches, type Pixels } from "./match";
+import { colourfulness, portraitPatch, portraitRect, similarity, slotPatches, type Pixels } from "./match";
 
 /** A hero the reader knows: its id, name, primary attribute, and its store portrait's pixels. */
 export interface ReaderHero {
@@ -27,16 +27,26 @@ const SURE_MATCH = 0.75;
 const SURE_MARGIN = 0.1;
 /** Below this, nothing like a hero is in the slot. */
 const EMPTY_BELOW = 0.6;
+/**
+ * While a player is choosing, their slot shows the hero's portrait in grey; it turns to full colour
+ * once the pick locks in. Locked portraits keep 0.8 to 1.2 times the store portrait's colour, so a slot
+ * below this share is a preview, not a pick.
+ */
+const LOCKED_COLOUR = 0.5;
 /** Share of the diagonal that must be the red ban slash. */
 const SLASH_SHARE = 0.6;
 
 /** Compares screenshots with every hero's portrait. Build it once; reading is then fast. */
 export class DraftReader {
-  private refs: { id: number; patch: Float32Array }[];
+  private refs: { id: number; patch: Float32Array; colour: number }[];
   private grid: Record<Attribute, number[]>;
 
   constructor(heroes: ReaderHero[]) {
-    this.refs = heroes.map((h) => ({ id: h.id, patch: portraitPatch(h.portrait) }));
+    this.refs = heroes.map((h) => ({
+      id: h.id,
+      patch: portraitPatch(h.portrait),
+      colour: colourfulness(h.portrait, portraitRect(h.portrait)),
+    }));
     // The grid lists heroes by name within each attribute, by plain character order as Dota does.
     const byName = [...heroes].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     this.grid = { str: [], agi: [], int: [], all: [] };
@@ -44,7 +54,7 @@ export class DraftReader {
   }
 
   read(px: Pixels): DraftRead {
-    const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => this.readSlot(slotPatches(px, r)));
+    const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => this.readSlot(slotPatches(px, r), colourfulness(px, r)));
     const picked = new Set<number>();
     const radiant = side("radiant");
     const dire = side("dire");
@@ -56,17 +66,21 @@ export class DraftReader {
     };
   }
 
-  private readSlot(slot: Float32Array[]): SlotRead {
+  private readSlot(slot: Float32Array[], colour: number): SlotRead {
     let best = -1,
       second = -1,
-      bestId = 0;
+      bestRef = this.refs[0];
     for (const ref of this.refs) {
       let score = -1;
       for (const p of slot) score = Math.max(score, similarity(p, ref.patch));
-      if (score > best) [second, best, bestId] = [best, score, ref.id];
+      if (score > best) [second, best, bestRef] = [best, score, ref];
       else if (score > second) second = score;
     }
-    if (best >= SURE_MATCH && best - second >= SURE_MARGIN) return { heroId: bestId, unsure: false };
+    if (best >= SURE_MATCH && best - second >= SURE_MARGIN) {
+      // A grey preview of a hero the player is still choosing: not picked yet.
+      if (colour < LOCKED_COLOUR * bestRef.colour) return { heroId: null, unsure: false };
+      return { heroId: bestRef.id, unsure: false };
+    }
     return { heroId: null, unsure: best >= EMPTY_BELOW };
   }
 

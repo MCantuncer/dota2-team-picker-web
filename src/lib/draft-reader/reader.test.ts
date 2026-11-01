@@ -73,6 +73,20 @@ describe("DraftReader", () => {
     expect([...read.radiant, ...read.dire].some((s) => s.unsure)).toBe(false);
   });
 
+  it("ignores a grey preview of a hero that is not locked in yet", () => {
+    const px = screen();
+    const r = slotRects("radiant", W, H)[2];
+    drawSlot(px, r, heroes[3].portrait);
+    expect(reader.read(px).radiant[2].heroId).toBe(14);
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const i = (y * W + x) * 4;
+        const grey = 0.3 * px.data[i] + 0.59 * px.data[i + 1] + 0.11 * px.data[i + 2];
+        px.data.set([grey, grey, grey], i);
+      }
+    expect(reader.read(px).radiant[2]).toEqual({ heroId: null, unsure: false });
+  });
+
   it("finds banned heroes by the slash on their grid cell, in name order per attribute", () => {
     const px = screen();
     // Strength block in name order: Axe, Pudge. Pudge is the second cell.
