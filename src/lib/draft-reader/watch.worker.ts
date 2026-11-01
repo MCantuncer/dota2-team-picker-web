@@ -17,9 +17,12 @@ const scope = self as unknown as {
 };
 let reader: DraftReader | null = null;
 
-scope.onmessage = ({ data }) => {
-  if ("heroes" in data) reader = new DraftReader(data.heroes);
-  else void watch(data.frames);
+scope.onmessage = ({ origin, data }) => {
+  // A dedicated worker only hears from the page that started it, and those messages have an empty
+  // origin. Anything else did not come from that page, so it is ignored, as is any unexpected shape.
+  if (origin !== "" || typeof data !== "object" || data === null) return;
+  if ("heroes" in data && Array.isArray(data.heroes)) reader = new DraftReader(data.heroes);
+  else if ("frames" in data && data.frames instanceof ReadableStream) void watch(data.frames);
 };
 
 /**
