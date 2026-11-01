@@ -1,7 +1,36 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
-import { expect, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { test as base, expect, type Page } from "@playwright/test";
+import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database } from "../src/lib/supabase/database.types";
+
+const BACKEND_REF = readFileSync("backend-ref.txt", "utf8").trim();
+if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("backend-ref.txt must hold a full commit SHA");
+/** The backend's committed hero data at the pinned commit. Older than the bucket's, but fixed, so tests repeat. */
+const HERO_DATA_FIXTURE = `https://raw.githubusercontent.com/MCantuncer/dota2-team-picker/${BACKEND_REF}/services/engine/data/snapshot.json`;
+
+let heroDataCache: Promise<Record<string, unknown>> | undefined;
+
+/** The hero data the tests serve in place of the Storage bucket, downloaded once per worker. */
+export function heroData(): Promise<Record<string, unknown>> {
+  heroDataCache ??= fetch(HERO_DATA_FIXTURE).then((res) => {
+    if (!res.ok) throw new Error(`Hero data fixture download failed (${res.status})`);
+    return res.json() as Promise<Record<string, unknown>>;
+  });
+  return heroDataCache;
+}
+
+/**
+ * Playwright's `test`, with the hero data bucket answered from the fixture: the local Supabase stack runs
+ * without Storage, so the site's real hero data URL has nothing behind it in tests.
+ */
+export const test = base.extend({
+  page: async ({ page }, provide) => {
+    await page.route(SNAPSHOT_URL, async (route) => route.fulfill({ json: await heroData() }));
+    await provide(page);
+  },
+});
 
 /** Fails on accessibility problems axe rates serious or critical (WCAG 2.2 AA rules). */
 export async function expectAccessible(page: Page) {
@@ -33,6 +62,16 @@ export async function setUserType(email: string, type: "user" | "captain" | "adm
   if (!id) throw new Error(`No user ${email}`);
   const { error: updateError } = await db.from("profiles").update({ user_type: type }).eq("id", id);
   if (updateError) throw updateError;
+}
+
+/** The suggestion lists saved for a user in party drafts. */
+export async function savedSuggestions(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  const { data, error: readError } = await db.from("draft_suggestions").select("position, heroes").eq("user_id", id!);
+  if (readError) throw readError;
+  return data;
 }
 
 export async function signUp(page: Page, email: string, name: string) {

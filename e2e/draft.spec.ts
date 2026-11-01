@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
-import { expectAccessible } from "./helpers";
+import { expectAccessible, heroData, savedSuggestions, signUp, test, uniqueEmail } from "./helpers";
 
 test("the draft screen suggests heroes as both teams fill in", async ({ page }) => {
   await page.goto("/draft");
@@ -51,9 +51,8 @@ test("the draft screen takes several heroes at once and forgives a typo", async 
 test("the draft screen shows the win chance once a checked model exists", async ({ page }) => {
   // The live data has no checked model yet, so add one that favours neither side.
   await page.route(SNAPSHOT_URL, async (route) => {
-    const res = await route.fetch();
     const byKnown = Object.fromEntries([2, 4, 6, 8, 10].map((k) => [k, { a: 0, b: 0.05 }]));
-    await route.fulfill({ response: res, json: { ...(await res.json()), winModel: { fittedAt: "2026-10-26T00:00:00Z", games: 5000, byKnown } } });
+    await route.fulfill({ json: { ...(await heroData()), winModel: { fittedAt: "2026-10-26T00:00:00Z", games: 5000, byKnown } } });
   });
   await page.goto("/draft");
   const ally = page.getByLabel("My team pick, e.g. cm5");
@@ -65,5 +64,77 @@ test("the draft screen shows the win chance once a checked model exists", async 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Win chance" })).toContainText(/\d+\.\d%/);
   await expect(page.getByTitle("Change in your team's win chance")).toHaveCount(8);
+  await expectAccessible(page);
+});
+
+test("in a party the draft is kept for the whole party", async ({ page }) => {
+  await signUp(page, uniqueEmail("party-draft"), "Earthshaker");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await expect(page.getByRole("main").getByText("Party", { exact: true })).toBeVisible();
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("cm5");
+  await ally.press("Enter");
+  const team = page.getByRole("region", { name: "My team" });
+  await expect(team.getByText("Entered by You")).toBeVisible();
+
+  // The draft lives in the database, so a reload (or a teammate's screen) shows it too.
+  await page.reload();
+  await expect(team.getByText("Crystal Maiden")).toBeVisible();
+  await expectAccessible(page);
+
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(team.getByText("Crystal Maiden")).toHaveCount(0);
+  await ally.fill("pudge");
+  await ally.press("Enter");
+  await expect(team.getByText("Pudge")).toBeVisible();
+  await page.getByRole("button", { name: "New draft" }).click();
+  await expect(team.getByText("Pudge")).toHaveCount(0);
+});
+
+test("the party leader can plan the whole team", async ({ page }) => {
+  await signUp(page, uniqueEmail("party-plan"), "Tiny");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Team plan" }).click();
+  const plan = page.getByRole("list", { name: "Team plan" }).locator(":scope > li");
+  await expect(plan).toHaveCount(5);
+  await expectAccessible(page);
+
+  // Marking a planned hero as picked puts it on the team in its position.
+  const first = plan.first();
+  const hero = await first.locator(".font-heading").innerText();
+  await first.getByRole("button", { name: "Picked" }).click();
+  await expect(page.getByRole("region", { name: "My team" }).getByText(hero)).toBeVisible();
+  await expect(plan.first().getByText("Picked", { exact: true })).toBeVisible();
+});
+
+test("a party draft saves what each player was shown and ends with the after-game card", async ({ page }) => {
+  const email = uniqueEmail("after-game");
+  await signUp(page, email, "Lina");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  await expect(page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li")).toHaveCount(8);
+  await expect.poll(async () => (await savedSuggestions(email)).map((r) => r.heroes.length)).toEqual([8]);
+
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  for (const pick of ["cm5", "lion4", "axe3", "sf2", "am1"]) {
+    await ally.fill(pick);
+    await ally.press("Enter");
+  }
+  const card = page.getByRole("region", { name: "After the game" });
+  await expect(card.getByRole("button", { name: "Find result" })).toBeVisible();
+  await card.getByLabel("Or paste the match ID").fill("not a match");
+  await card.getByRole("button", { name: "Check" }).click();
+  await expect(card.getByRole("status")).toHaveText(/A match ID is a number/);
   await expectAccessible(page);
 });

@@ -24,18 +24,18 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # The database schema lives in the backend repo. Test against the commit the site's copies are pinned to.
       - id: backend
         run: echo "ref=$(cat backend-ref.txt)" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: MCantuncer/dota2-team-picker
           ref: ${{ steps.backend.outputs.ref }}
           path: backend
       # Move it out of the workspace so the site's build and lint don't pick up its files.
       - run: mv backend "$RUNNER_TEMP/backend"
-      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.122.0
       # Starting Supabase (mostly pulling its Docker images) is the slowest step, so run it in the background
@@ -47,7 +47,7 @@ jobs:
             if supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
             then echo 0 > "$RUNNER_TEMP/supabase.exit"; else echo 1 > "$RUNNER_TEMP/supabase.exit"; fi
           ) > "$RUNNER_TEMP/supabase.log" 2>&1 &
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -57,7 +57,7 @@ jobs:
       # per Playwright version.
       - id: playwright
         run: echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         id: browsers
         with:
           path: ~/.cache/ms-playwright
@@ -76,7 +76,7 @@ jobs:
           [ "$API_URL" = "$NEXT_PUBLIC_SUPABASE_URL" ] && [ "$PUBLISHABLE_KEY" = "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]
           echo "E2E_SUPABASE_SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
