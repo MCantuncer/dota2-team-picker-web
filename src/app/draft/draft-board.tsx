@@ -17,6 +17,7 @@ import { pickGain, teamWinChance } from "@/lib/win";
 import { planTeam } from "@/lib/engine/plan";
 import { toPlanSlots, type HeroPool, type PlanMember } from "@/lib/party-plan";
 import { AfterGame } from "./after-game";
+import { Announcer, picksSentence } from "./announcer";
 import { PartyPlan } from "./party-plan";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { usePartyDraft } from "./use-party-draft";
@@ -151,9 +152,6 @@ export function DraftBoard({
           count: 8,
         })
       : [];
-
-  const [top, ...rest] = suggestions;
-  const announcement = top ? `Picks updated. Best: ${top.name}, then ${rest.slice(0, 2).map((x) => x.name).join(" and ")}.` : "";
 
   const allyIds = allies.map((e) => e.heroId);
   const bracket = rank ?? undefined;
@@ -471,7 +469,7 @@ export function DraftBoard({
               ))}
             </ol>
           )}
-          {!teamPlan && !mine && <Announcer text={announcement} />}
+          <Announcer text={teamPlan ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name))} />
         </section>
       </div>
 
@@ -653,26 +651,5 @@ function SuggestionCard({
         </button>
       </div>
     </li>
-  );
-}
-
-/**
- * Tells screen readers the suggestions changed, the way the refreshed cards tell everyone else. Waits for the
- * list to settle, so a batch entry ("pa sf am", a pasted screenshot) is announced once.
- */
-function Announcer({ text }: { text: string }) {
-  const [said, setSaid] = useState("");
-  // The first list is what the page opens with, not an update, so it is not announced.
-  const [first, setFirst] = useState<string | null>(null);
-  if (first === null && text) setFirst(text);
-  useEffect(() => {
-    if (text === first) return;
-    const timer = setTimeout(() => setSaid(text), 700);
-    return () => clearTimeout(timer);
-  }, [text, first]);
-  return (
-    <p aria-live="polite" className="sr-only">
-      {said}
-    </p>
   );
 }
