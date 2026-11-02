@@ -276,14 +276,14 @@ isOneToOne: true
                   ]
                 },"party_drafts": {
                   Row: {
-                    "created_at": string,"ended_at": string | null,"id": string,"match_id": number | null,"party_id": string,"result_checked_at": string | null,"started_by": string | null,"won": boolean | null
+                    "created_at": string,"ended_at": string | null,"find_tries": number,"id": string,"match_id": number | null,"party_id": string,"result_checked_at": string | null,"started_by": string | null,"won": boolean | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id"?: number | null,"party_id": string,"result_checked_at"?: string | null,"started_by"?: string | null,"won"?: boolean | null
+                    "created_at"?: string,"ended_at"?: string | null,"find_tries"?: number,"id"?: string,"match_id"?: number | null,"party_id": string,"result_checked_at"?: string | null,"started_by"?: string | null,"won"?: boolean | null
                   }
                   Update: {
-                    "created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id"?: number | null,"party_id"?: string,"result_checked_at"?: string | null,"started_by"?: string | null,"won"?: boolean | null
+                    "created_at"?: string,"ended_at"?: string | null,"find_tries"?: number,"id"?: string,"match_id"?: number | null,"party_id"?: string,"result_checked_at"?: string | null,"started_by"?: string | null,"won"?: boolean | null
                   }
                   Relationships: [
                     {
@@ -598,6 +598,16 @@ isOneToOne: false
 "captain_timing":
 { Args: { "what": string }; Returns: string
                            },
+"claim_match_reports":
+{ Args: { "lease"?: string,"max_rows"?: number }; Returns: {
+              "attempts": number,"created_at": string,"draft_id": string,"match_id": number,"parse_requested_at": string,"parse_requests": number,"won": boolean
+            }[]
+                           },
+"claim_unattached_drafts":
+{ Args: { "max_rows"?: number }; Returns: {
+              "account_ids": (number)[],"allies": (number)[],"created_at": string,"draft_id": string
+            }[]
+                           },
 "draft_state":
 { Args: { "draft": string }; Returns: {
               "hero_id": number,"kind": string,"position": number
@@ -605,6 +615,9 @@ isOneToOne: false
                            },
 "end_party_draft":
 { Args: { "draft": string }; Returns: undefined
+                           },
+"forget_match_files":
+{ Args: { "matches": (number)[] }; Returns: number
                            },
 "friend_suggestions":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -660,6 +673,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"may_change_draft":
+{ Args: { "draft": string }; Returns: boolean
+                           },
 "my_friends":
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_url": string,"display_name": string,"incoming": boolean,"since": string,"status": string,"steam_linked": boolean,"user_id": string
@@ -713,6 +729,14 @@ isOneToOne: false
 "remove_from_party":
 { Args: { "target": string }; Returns: undefined
                            },
+"report_draft_lists":
+{ Args: { "draft": string }; Returns: {
+              "hero_id": number,"shown": (number)[]
+            }[]
+                           },
+"run_build_reports":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "runs_team":
 { Args: { "team": string }; Returns: boolean
                            },
@@ -727,6 +751,11 @@ isOneToOne: false
                            },
 "set_party_position":
 { Args: { "want": number }; Returns: undefined
+                           },
+"stale_match_files":
+{ Args: { "max_rows"?: number }; Returns: {
+              "match_id": number
+            }[]
                            },
 "start_party":
 { Args: { "team"?: string }; Returns: string
