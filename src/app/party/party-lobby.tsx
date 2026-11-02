@@ -121,7 +121,7 @@ export function PartyLobby({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold">
             Players{" "}
-            <span className="font-heading text-xs text-subtle">
+            <span className="num text-subtle">
               {party.members.length}/{PARTY_SIZE}
             </span>
           </h2>
@@ -133,7 +133,7 @@ export function PartyLobby({
             Leave party
           </button>
         </div>
-        <ul className="card divide-y divide-line">
+        <ul className="divide-y divide-line border-y border-line">
           {party.members.map((m) => (
             <MemberRow
               key={m.id}
@@ -171,15 +171,15 @@ export function PartyLobby({
       {isLeader ? (
         <section aria-label="Invite" className="flex flex-col gap-2">
           <h2 className="text-base font-semibold">
-            Invite <span className="font-heading text-xs text-subtle">{toInvite.length}</span>
+            Invite <span className="num text-subtle">{toInvite.length}</span>
           </h2>
-          <ul className="card divide-y divide-line">
+          <ul className="divide-y divide-line border-y border-line">
             {toInvite.length ? (
               toInvite.map((p) => (
                 <li key={p.id} className="flex items-center gap-2.5 px-3 py-2">
                   <Avatar account={{ name: p.name, avatarUrl: p.avatarUrl, detail: null, steamLinked: false }} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{p.name}</span>
+                    <span className="truncate font-medium leading-tight text-fg">{p.name}</span>
                     <span className="truncate text-xs text-muted">{invited.has(p.id) ? "Invite sent" : p.detail}</span>
                   </span>
                   <button
@@ -225,9 +225,9 @@ function MemberRow({
     <li className="flex items-center gap-2.5 px-3 py-2">
       <Avatar account={{ name: member.name, avatarUrl: member.avatarUrl, detail: null, steamLinked: false }} size={32} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-heading text-base font-semibold leading-tight text-fg">
+        <span className="truncate font-medium leading-tight text-fg">
           {member.name}
-          {isMe && <span className="ml-1.5 text-xs font-medium text-muted">(you)</span>}
+          {isMe && <span className="ml-2 rounded-xs bg-radiant px-1.5 align-[1px] text-xs font-semibold leading-4 text-bg">You</span>}
         </span>
         {(isLeader || isCaptain) && (
           <span className="flex flex-wrap gap-1 pt-0.5">

@@ -105,7 +105,7 @@ export function PartyLinkCard({
             placeholder="Loading…"
             aria-label="Party invite link"
             onFocus={(e) => e.currentTarget.select()}
-            className="field min-w-0 flex-1 font-mono text-sm"
+            className="field min-w-0 flex-1 text-sm"
           />
           <button onClick={copy} disabled={!link || busy} className="btn btn-primary">
             {copied ? "Copied" : "Copy link"}

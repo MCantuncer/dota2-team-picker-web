@@ -40,7 +40,7 @@ export function PartyPlan({
               <div className="flex items-center gap-3">
                 {portrait(slot.heroId, slot.name)}
                 <div className="flex min-w-0 flex-col gap-1">
-                  <span className="font-heading text-xl font-bold leading-6">{slot.name}</span>
+                  <span className="text-xl font-semibold leading-6 tracking-[-0.02em] text-fg">{slot.name}</span>
                   {slot.locked ? (
                     <span className="micro text-radiant">Picked</span>
                   ) : (

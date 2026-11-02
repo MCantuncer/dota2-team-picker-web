@@ -65,7 +65,7 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
       <div className="flex items-center gap-2.5">
         <Avatar account={{ name: leader, avatarUrl: party.leaderAvatarUrl, detail: null, steamLinked: false }} size={40} />
         <span className="flex flex-col">
-          <span className="font-heading text-base font-semibold leading-tight text-fg">{leader}</span>
+          <span className="font-medium leading-tight text-fg">{leader}</span>
           <span className="num text-sm text-muted">
             {party.members}/{PARTY_SIZE} players
           </span>

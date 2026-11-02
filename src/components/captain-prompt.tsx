@@ -129,7 +129,7 @@ export function CaptainPromptCard({
     >
       <div className="flex flex-col">
         <span className="label-caps">Draft captain</span>
-        <span role="alert" className="font-heading text-base font-semibold leading-tight text-fg">
+        <span role="alert" className="font-medium leading-tight text-fg">
           {name} wants draft captain
         </span>
       </div>

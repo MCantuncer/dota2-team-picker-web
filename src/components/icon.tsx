@@ -41,6 +41,14 @@ const PATHS = {
       <path d="m3 19 2 2" />
     </>
   ),
+  /** A warrior's helmet with a nose guard and eye slit: "your heroes". */
+  helmet: (
+    <>
+      <path d="M4 13a8 8 0 0 1 16 0v4l-3 3h-3v-6h-4v6H7l-3-3z" />
+      <path d="M12 5v4" />
+      <path d="M8.5 14h7" />
+    </>
+  ),
   star: <path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.6 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6a2 2 0 0 0-.6 1.9l.9 5.1a.5.5 0 0 1-.8.6l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.6l.9-5.1a2 2 0 0 0-.6-1.9L2.1 9.8a.5.5 0 0 1 .3-.9l5.2-.8a2 2 0 0 0 1.6-1.1z" />,
   users: (
     <>

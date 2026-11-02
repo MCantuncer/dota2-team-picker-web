@@ -312,13 +312,16 @@ body {
     background: var(--surface);
   }
 
+  /* Underlined at rest so a link never depends on colour alone (WCAG link-in-text-block). */
   .link {
     color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
     text-underline-offset: 3px;
   }
   .link:hover {
     color: var(--accent-hover);
-    text-decoration: underline;
+    text-decoration-color: currentColor;
   }
 
   /* A quiet panel: a hairline and a slightly lifted fill, no shadow or gradient. Prefer plain hairline rows. */

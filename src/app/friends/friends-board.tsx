@@ -155,7 +155,7 @@ function FriendLink({ code }: { code: string }) {
       </h2>
       <p className="text-sm text-muted">Send it to friends in Discord or anywhere else. Opening it sends you a request.</p>
       <div className="flex gap-2">
-        <input readOnly value={link} aria-label="Your friend link" onFocus={(e) => e.currentTarget.select()} className="field flex-1 font-mono text-sm" />
+        <input readOnly value={link} aria-label="Your friend link" onFocus={(e) => e.currentTarget.select()} className="field flex-1 text-sm" />
         <button onClick={copy} className="btn btn-primary">
           {copied ? "Copied" : "Copy link"}
         </button>
@@ -168,9 +168,9 @@ function Section({ title, count, children }: { title: string; count: number; chi
   return (
     <section aria-label={title} className="flex flex-col gap-2">
       <h2 className="text-base font-semibold">
-        {title} <span className="font-mono text-xs text-subtle">{count}</span>
+        {title} <span className="num text-xs text-subtle">{count}</span>
       </h2>
-      <ul className="card divide-y divide-line">{children}</ul>
+      <ul className="divide-y divide-line border-y border-line">{children}</ul>
     </section>
   );
 }
@@ -188,7 +188,7 @@ function Row({
     <li className="flex items-center gap-2.5 px-3 py-2">
       <Avatar account={{ name: person.name, avatarUrl: person.avatarUrl, detail: null, steamLinked: false }} size={32} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{person.name}</span>
+        <span className="truncate font-medium leading-tight text-fg">{person.name}</span>
         {detail && <span className="truncate text-xs text-muted">{detail}</span>}
       </span>
       <span className="flex shrink-0 gap-2">{children}</span>
