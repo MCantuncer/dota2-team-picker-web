@@ -12,7 +12,7 @@ export function AuthCard({ title, children }: { title: string; children: React.R
 
 export function Divider() {
   return (
-    <div className="flex items-center gap-3 text-xs text-subtle">
+    <div className="flex items-center gap-3 text-xs uppercase text-subtle">
       <span className="h-px flex-1 bg-hover" />
       or
       <span className="h-px flex-1 bg-hover" />
