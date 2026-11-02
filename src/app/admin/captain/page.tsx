@@ -80,6 +80,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
     };
   });
   const icons = Object.fromEntries(heroes.map((h) => [h.id, h.icon]));
+  const portraits = Object.fromEntries(heroes.map((h) => [h.id, h.image]));
   const initialInvites: Invite[] = (invites ?? []).map((i) => ({ id: i.id, email: i.email }));
 
   return (
@@ -94,6 +95,7 @@ export default async function CaptainPage({ searchParams }: PageProps<"/admin/ca
       initialSlots={lineup?.slots ?? [null, null, null, null, null]}
       initialRank={lineup?.rank_bracket ?? null}
       icons={icons}
+      portraits={portraits}
     />
   );
 }

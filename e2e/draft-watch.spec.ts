@@ -1,30 +1,11 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { expect } from "@playwright/test";
-import { test } from "./helpers";
-
-// The same hero select screenshot as the paste test, served as the "shared window".
-const SCREENSHOT = readFileSync(join(__dirname, "fixtures", "draft-nine-picked.png")).toString("base64");
+import { fakeDotaWindow, test } from "./helpers";
 
 test("Watch Dota reads both teams and the bans off the shared window", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
   test.setTimeout(60_000);
-  // Stand in for the browser's share prompt: a canvas showing the screenshot plays the Dota window.
-  await page.addInitScript((base64) => {
-    navigator.mediaDevices.getDisplayMedia = async () => {
-      const image = new Image();
-      image.src = `data:image/png;base64,${base64}`;
-      await image.decode();
-      const canvas = document.createElement("canvas");
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const ctx = canvas.getContext("2d")!;
-      setInterval(() => ctx.drawImage(image, 0, 0), 100);
-      return canvas.captureStream(5);
-    };
-  }, SCREENSHOT);
+  await fakeDotaWindow(page);
   await page.goto("/draft");
-
   await page.getByRole("button", { name: "Watch Dota" }).click();
   await expect(page.getByText("Watching Dota")).toBeVisible({ timeout: 45_000 });
   const mine = page.getByRole("region", { name: "My team" });
