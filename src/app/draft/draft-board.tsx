@@ -316,7 +316,7 @@ export function DraftBoard({
               className="btn btn-secondary btn-sm"
             >
               <Icon name="plus" />
-              New draft
+              New Draft
             </button>
           </div>
         )}
@@ -371,7 +371,7 @@ export function DraftBoard({
       {/* Wide screens put the picks between the teams, like a draft overlay, with the bans under My team. The DOM
           keeps My team, Enemy, Bans, picks so Tab still goes from box to box. */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)] xl:grid-rows-[auto_1fr]">
-        <TeamPanel title="My team" side="radiant" count={allies.length}>
+        <TeamPanel title="My Team" side="radiant" count={allies.length}>
           {!locked && allies.length < TEAM_SIZE && (
             <HeroInput
               id="ally"
@@ -468,17 +468,17 @@ export function DraftBoard({
                 "Team plan"
               ) : (
                 <>
-                  Picks for pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
+                  Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
                 </>
               )}
             </h2>
             {pool && (
               <div className="seg" role="group" aria-label="Suggestions for">
                 <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
-                  My picks
+                  My Picks
                 </button>
                 <button aria-pressed={view === "team"} onClick={() => setView("team")} className="seg-item">
-                  Team plan
+                  Team Plan
                 </button>
               </div>
             )}
@@ -558,10 +558,10 @@ export function DraftBoard({
 function WinBar({ chance }: { chance: number }) {
   const pct = (chance * 100).toFixed(1);
   return (
-    <section aria-label="Win chance" className="flex flex-col gap-2 border-y border-line py-3">
+    <section aria-label="Win Chance" className="flex flex-col gap-2 border-y border-line py-3">
       <div className="flex items-baseline justify-between">
         <span className="text-sm text-subtle">
-          Win chance <span className="num text-lg text-radiant">{pct}%</span>
+          Win Chance <span className="num text-lg text-radiant">{pct}%</span>
         </span>
         <span className="text-sm text-subtle">
           Enemy <span className="num text-lg text-dire">{(100 - chance * 100).toFixed(1)}%</span>
@@ -738,7 +738,7 @@ function SuggestionCard({
             className="pointer-events-none absolute -left-8 top-1/2 -z-10 hidden w-[52%] max-w-md -translate-y-1/2 sm:block"
           />
         )}
-        <span className="text-sm text-accent">Best pick right now</span>
+        <span className="text-sm text-accent">Best Pick Right Now</span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
           <span className="text-3xl font-semibold tracking-[-0.02em] text-accent" title="Score in win-rate points">
@@ -770,7 +770,7 @@ function SuggestionCard({
 
   return (
     <li className="group grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-line py-3">
-      {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also strong</span>}
+      {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also Strong</span>}
       <span className="num text-subtle">{rank}</span>
       <Portrait hero={hero} src={portrait} size="strip" />
       <span className="min-w-0">
