@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { actorsOf, applyAction, lastEntryBy, mergeRows, replay, toAction, type ActionRow, type DraftAction } from "@/lib/draft";
 import { createClient } from "@/lib/supabase/client";
 
+/** The database's answer when someone other than the party's draft captain changes the draft. */
+const CAPTAIN_ONLY = "42501";
+const CAPTAIN_ONLY_TEXT = "Only the draft captain can change the draft now";
+
 /**
  * The party's shared draft: everyone in the party sees it and can enter picks and bans. Entries
  * are rows added through `add_draft_action`, which checks the same rules as the solo screen, and
@@ -89,7 +93,7 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
         pos: a.kind === "ally" ? (a.position ?? undefined) : undefined,
       });
       if (error) {
-        setError(`Not saved: ${error.message}`);
+        setError(error.code === CAPTAIN_ONLY ? CAPTAIN_ONLY_TEXT : `Not saved: ${error.message}`);
         failed = true;
         break;
       }
@@ -147,7 +151,7 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
   const newDraft = async () => {
     if (!draftId) return;
     const { error } = await supabase.rpc("end_party_draft", { draft: draftId });
-    if (error) return setError(`Draft not ended: ${error.message}`);
+    if (error) return setError(error.code === CAPTAIN_ONLY ? CAPTAIN_ONLY_TEXT : `Draft not ended: ${error.message}`);
     await open();
   };
 

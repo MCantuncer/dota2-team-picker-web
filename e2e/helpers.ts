@@ -81,6 +81,21 @@ export async function savedSuggestions(email: string) {
   return data;
 }
 
+/** Makes two signed-up users friends, so one can invite the other to a party. */
+export async function befriend(emailA: string, emailB: string) {
+  const db = admin();
+  const ids = await Promise.all(
+    [emailA, emailB].map(async (address) => {
+      const { data, error } = await db.rpc("user_id_by_email", { address });
+      if (error) throw error;
+      if (!data) throw new Error(`No user ${address}`);
+      return data;
+    }),
+  );
+  const { error } = await db.from("friendships").insert({ requester_id: ids[0]!, addressee_id: ids[1]!, status: "accepted" });
+  if (error) throw error;
+}
+
 export async function signUp(page: Page, email: string, name: string) {
   await page.goto("/signup?next=/profile");
   await page.getByLabel("Name").fill(name);
