@@ -160,6 +160,11 @@ function Build({ build }: { build: ItemBuild }) {
       <div className="flex flex-col gap-1">
         <span className="micro text-muted">{isRough ? "Core, rough minutes" : "Core: usual minute, then slower than most after"}</span>
         <ItemRow items={build.core} minutes={isRough ? "rough" : "timed"} />
+        {build.bootsOr && (
+          <p className="text-xs text-muted">
+            Or {build.bootsOr.name} at <span className="num">{build.bootsOr.minute}m</span>
+          </p>
+        )}
       </div>
       {counter && (
         <p className="text-xs">
@@ -171,7 +176,7 @@ function Build({ build }: { build: ItemBuild }) {
           <summary className="micro w-fit cursor-pointer text-muted hover:text-fg">Start and other items</summary>
           <div className="mt-2 flex flex-col gap-2">
             <Labelled label="Start" items={build.start} />
-            {build.lane.length > 0 && <Labelled label="Lane" items={build.lane} />}
+            {build.lane.length > 0 && <Labelled label="Lane" items={build.lane} minutes={isRough ? undefined : "timed"} />}
             {build.situational.length > 0 && <Labelled label="If needed" items={build.situational} />}
           </div>
         </details>
@@ -180,11 +185,11 @@ function Build({ build }: { build: ItemBuild }) {
   );
 }
 
-function Labelled({ label, items }: { label: string; items: BuildItem[] }) {
+function Labelled({ label, items, minutes }: { label: string; items: BuildItem[]; minutes?: "timed" }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="micro text-muted">{label}</span>
-      <ItemRow items={items} />
+      <ItemRow items={items} minutes={minutes} />
     </div>
   );
 }
@@ -195,8 +200,15 @@ function ItemRow({ items, minutes }: { items: BuildItem[]; minutes?: "timed" | "
       {items.map((item) => (
         <li key={item.itemId} title={itemTitle(item, minutes)} className="flex flex-col items-center gap-0.5">
           <span className={`block rounded-xs ${item.reason ? "ring-1 ring-accent" : ""}`}>
-            <Image src={ITEM_CDN + item.img} alt={item.name} width={32} height={24} className="h-6 w-8 rounded-xs object-cover" />
+            <Image
+              src={ITEM_CDN + item.img}
+              alt={item.count ? `${item.count} ${item.name}` : item.name}
+              width={32}
+              height={24}
+              className="h-6 w-8 rounded-xs object-cover"
+            />
           </span>
+          {item.count && <span className="num text-xs">x{item.count}</span>}
           {minutes && (
             <span className="num text-xs">
               {minutes === "rough" ? "~" : ""}
