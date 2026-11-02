@@ -6,7 +6,7 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   test.setTimeout(60_000);
   await fakeDotaWindow(page);
   await page.goto("/draft");
-  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await page.getByRole("button", { name: "Watch as Radiant" }).click();
   await expect(page.getByText("Watching Dota")).toBeVisible({ timeout: 45_000 });
   const mine = page.getByRole("region", { name: "My team" });
   const enemy = page.getByRole("region", { name: "Enemy" });
@@ -27,5 +27,5 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   expect((await download).suggestedFilename()).toMatch(/^watch-dota-.+\.png$/);
 
   await page.getByRole("button", { name: "Stop" }).click();
-  await expect(page.getByRole("button", { name: "Watch Dota" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch as Radiant" })).toBeVisible();
 });

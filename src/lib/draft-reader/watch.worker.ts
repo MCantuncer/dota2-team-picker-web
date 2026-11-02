@@ -2,11 +2,11 @@ import { DraftReader, type DraftRead, type ReaderHero } from "./reader";
 
 /** Sent to the watcher: first the heroes, then the shared window's frames. */
 export type WatchRequest = { heroes: ReaderHero[] } | { frames: ReadableStream<VideoFrame> } | { save: true };
-/** Sent back about once a second, and the last frame read when asked to save it. */
+/** Sent back about twice a second, and the last frame read when asked to save it. */
 export type WatchReply = { read: DraftRead } | { black: true } | { error: string } | { frame: Blob };
 
-/** One read a second is plenty: a pick takes several seconds to lock in. */
-const READ_EVERY_MS = 1000;
+/** Two reads a second: a hero needs two reads in a row, so a pick shows within about a second. */
+const READ_EVERY_MS = 500;
 /** Frames are scaled down to this height first; the reader works at any height. */
 const READ_HEIGHT = 1080;
 

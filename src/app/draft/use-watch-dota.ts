@@ -27,7 +27,7 @@ export function canWatch(): boolean {
 
 /**
  * Live read: the player shares the Dota window once, and a worker reads the picks and bans off it
- * every second. Only new, steady heroes are passed to onRead. Nothing leaves the browser.
+ * twice a second. Only new, steady heroes are passed to onRead. Nothing leaves the browser.
  */
 export function useWatchDota(heroes: HeroInfo[], portraits: Record<number, string>, onRead: (read: DraftRead) => void) {
   const [state, setState] = useState<WatchState>("off");

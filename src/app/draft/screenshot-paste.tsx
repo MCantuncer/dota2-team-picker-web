@@ -8,8 +8,6 @@ import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
 import type { HeroInfo } from "@/lib/engine/types";
 import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 
-const SIDE_KEY = "solo-draft-side";
-
 interface ScreenshotPasteProps {
   heroes: HeroInfo[];
   portraits: Record<number, string>;
@@ -20,15 +18,17 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
 
 /**
  * Fills the draft from the Dota screen, two ways: Watch Dota shares the Dota window once and reads it
- * every second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
+ * twice a second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
  * come from the top bar and the bans from the hero grid. Nothing leaves the browser.
  */
 export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPasteProps) {
-  // The draft board renders only in the browser (after the hero data loads), so storage is there.
-  const [side, setSide] = useState<Side>(savedSide);
+  // Your side changes every game, so it is chosen each time rather than remembered.
+  const [side, setSide] = useState<Side | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const reader = useRef<Promise<DraftReader> | null>(null);
-  const watch = useWatchDota(heroes, portraits, (read) => onRead(read, side));
+  const watch = useWatchDota(heroes, portraits, (read) => {
+    if (side) onRead(read, side);
+  });
   // Known only in the browser; the server renders without the button.
   const watchable = useSyncExternalStore(noSubscribe, canWatch, () => false);
 
@@ -36,6 +36,10 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
     const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
     if (!file) return;
     e.preventDefault();
+    if (!side) {
+      setStatus({ kind: "warn", text: "Choose your team first (Radiant or Dire), then paste again." });
+      return;
+    }
     setStatus({ kind: "reading" });
     try {
       reader.current ??= loadReader(heroes, portraits);
@@ -59,13 +63,9 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
     return () => document.removeEventListener("paste", listener);
   }, []);
 
-  const chooseSide = (s: Side) => {
+  const watchAs = (s: Side) => {
     setSide(s);
-    try {
-      localStorage.setItem(SIDE_KEY, s);
-    } catch {
-      // Not remembering the side in this browser is fine.
-    }
+    watch.start();
   };
 
   return (
@@ -75,9 +75,14 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
     >
       {watchable &&
         (watch.state === "off" || watch.state === "failed" ? (
-          <button onClick={watch.start} className="btn btn-secondary btn-sm">
-            Watch Dota
-          </button>
+          <span className="flex items-center gap-2">
+            <button onClick={() => watchAs("radiant")} className="btn btn-secondary btn-sm">
+              Watch as Radiant
+            </button>
+            <button onClick={() => watchAs("dire")} className="btn btn-secondary btn-sm">
+              Watch as Dire
+            </button>
+          </span>
         ) : (
           <span className="flex items-center gap-2">
             <span className={`chip micro ${watch.state === "on" ? "chip-accent" : ""}`}>
@@ -101,12 +106,12 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
         Press <Kbd>PrtScn</Kbd> in Dota, then <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
       </span>
       <span className="flex items-center gap-2">
-        <span className="label-caps" id="my-side">
+        <span className="font-semibold text-muted" id="my-side">
           My team
         </span>
         <span className="seg" role="group" aria-labelledby="my-side">
           {(["radiant", "dire"] as const).map((s) => (
-            <button key={s} aria-pressed={side === s} onClick={() => chooseSide(s)} className="seg-item">
+            <button key={s} aria-pressed={side === s} onClick={() => setSide(s)} className="seg-item">
               {s === "radiant" ? "Radiant" : "Dire"}
             </button>
           ))}
@@ -139,14 +144,6 @@ const WATCH_LABEL: Record<Exclude<WatchState, "off" | "failed">, string> = {
 };
 
 const noSubscribe = () => () => {};
-
-function savedSide(): Side {
-  try {
-    return localStorage.getItem(SIDE_KEY) === "dire" ? "dire" : "radiant";
-  } catch {
-    return "radiant";
-  }
-}
 
 function summary(read: DraftRead): Status {
   const slots = [...read.radiant, ...read.dire];
