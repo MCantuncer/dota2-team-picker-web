@@ -27,15 +27,15 @@ const EXAMPLE = {
 
 const POINTS = [
   {
-    title: "Your position first",
+    title: "Your Position First",
     text: "Picks for the role you play, weighed against the enemy lineup and with your allies, from recent ranked matches.",
   },
   {
-    title: "Tuned to you",
+    title: "Tuned to You",
     text: "Your rank's meta and the heroes you actually win with. Sign in with Steam and it reads them for you.",
   },
   {
-    title: "Built for the 30 seconds",
+    title: "Built for the 30 Seconds",
     text: "Type two letters, press Enter. Eight picks with plain reasons, ready before the timer matters.",
   },
 ];
@@ -67,7 +67,7 @@ export default async function Home() {
         <div className="flex flex-col">
           <span className="text-sm text-accent">Draft assistant for Dota 2</span>
           <h1 className="mt-3 max-w-2xl text-5xl leading-[1.05] tracking-[-0.035em] sm:text-6xl">
-            Pick the hero this draft needs
+            Pick the Hero This Draft Needs
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-7 text-fg/80">
             Type the heroes as they come. In under a second you get eight picks for your position, each with the reason
@@ -76,14 +76,14 @@ export default async function Home() {
           {user ? (
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/draft" className="btn btn-primary btn-lg">
-                Start a draft
+                Start a Draft
               </Link>
               <Link href="/my-heroes" className="btn btn-secondary btn-lg">
-                Set up my heroes
+                Set Up My Heroes
               </Link>
               {(await canOpenCaptainMode(user.id)) && (
                 <Link href="/admin/captain" className="btn btn-secondary btn-lg">
-                  Open captain mode
+                  Open Captain Mode
                 </Link>
               )}
             </div>
@@ -91,7 +91,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <SteamButton next="/my-heroes" primary />
               <Link href="/signup" className="btn btn-secondary btn-lg">
-                Sign up with email
+                Sign Up with Email
               </Link>
             </div>
           )}

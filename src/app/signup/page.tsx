@@ -12,17 +12,17 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
   const nextPath = safeNext(typeof next === "string" ? next : undefined);
 
   return (
-    <AuthCard title="Sign up">
+    <AuthCard title="Sign Up">
       <SteamButton next={nextPath} primary />
       <p className="text-sm text-subtle">
         Signing in with Steam needs no sign up and adds your rank to suggestions.
       </p>
       <Divider />
-      <AuthForm action={signUp} submitLabel="Sign up with email" next={nextPath} askName />
+      <AuthForm action={signUp} submitLabel="Sign Up with Email" next={nextPath} askName />
       <p className="text-sm text-muted">
         Already have an account?{" "}
         <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="link">
-          Log in
+          Log In
         </Link>
       </p>
     </AuthCard>

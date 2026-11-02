@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <AuthCard title="Log in">
+    <AuthCard title="Log In">
       {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
       <SteamButton next={nextPath} primary />
       <p className="text-sm text-subtle">
@@ -26,11 +26,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         read it.
       </p>
       <Divider />
-      <AuthForm action={logIn} submitLabel="Log in with email" next={nextPath} />
+      <AuthForm action={logIn} submitLabel="Log In with Email" next={nextPath} />
       <p className="text-sm text-muted">
         No account?{" "}
         <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="link">
-          Sign up with email
+          Sign Up with Email
         </Link>
       </p>
     </AuthCard>
