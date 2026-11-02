@@ -37,9 +37,9 @@ test("the captain sees the game plan once all ten heroes are in", async ({ page 
     await enemy.press("Enter");
   }
 
-  const plan = page.getByRole("region", { name: "Game plan" });
+  const plan = page.getByRole("region", { name: "Game Story" });
   await expect(plan).toBeVisible();
-  await expect(plan.getByText("Roadmap to win")).toBeVisible();
+  await expect(plan.getByText("The story")).toBeVisible();
   await expect(plan.getByRole("listitem", { name: /position/ })).toHaveCount(5);
   await expect(page.getByRole("region", { name: "Suggestions" })).toBeHidden();
   await expectAccessible(page);
@@ -48,7 +48,7 @@ test("the captain sees the game plan once all ten heroes are in", async ({ page 
   await plan.getByRole("button", { name: "Send to team" }).click();
   await expect(plan.getByRole("button", { name: "Sent to team" })).toBeDisabled();
   await page.goto("/party");
-  const sent = page.getByRole("region", { name: "Game plan" });
+  const sent = page.getByRole("region", { name: "Game Story" });
   await expect(sent.getByText("From My team at")).toBeVisible();
   await expect(sent.getByRole("listitem", { name: /position/ })).toHaveCount(5);
   await expectAccessible(page);

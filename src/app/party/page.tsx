@@ -60,7 +60,8 @@ export default async function PartyPage() {
         </p>
       </div>
       <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
-      <PartyLobby userId={user.id} initialParty={party} initialLink={link} invitees={invitees} />
+      {/* Keyed by party, so joining from the invite pop-up (which refreshes this page) shows the new party. */}
+      <PartyLobby key={party?.id ?? "none"} userId={user.id} initialParty={party} initialLink={link} invitees={invitees} />
     </main>
   );
 }
