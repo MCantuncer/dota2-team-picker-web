@@ -21,6 +21,11 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   await page.waitForTimeout(2_500);
   await expect(mine.getByText("Warlock")).toHaveCount(0);
 
+  // The frame it read can be saved, for reporting a missed pick.
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save frame" }).click();
+  expect((await download).suggestedFilename()).toMatch(/^watch-dota-.+\.png$/);
+
   await page.getByRole("button", { name: "Stop" }).click();
   await expect(page.getByRole("button", { name: "Watch Dota" })).toBeVisible();
 });

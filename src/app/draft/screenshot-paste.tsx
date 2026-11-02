@@ -86,6 +86,15 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
             <button onClick={watch.stop} className="btn btn-ghost btn-sm">
               Stop
             </button>
+            {watch.state === "on" && (
+              <button
+                onClick={watch.saveFrame}
+                className="btn btn-ghost btn-sm"
+                title="Saves what Watch Dota sees right now, to send us when it misses a pick"
+              >
+                Save frame
+              </button>
+            )}
           </span>
         ))}
       <span>

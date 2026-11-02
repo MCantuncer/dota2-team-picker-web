@@ -50,6 +50,7 @@ export function useWatchDota(heroes: HeroInfo[], portraits: Record<number, strin
       stop();
       setState("failed");
     } else if ("black" in reply) setState("black");
+    else if ("frame" in reply) download(reply.frame);
     else {
       setState("on");
       latestOnRead.current(live.next(reply.read));
@@ -93,9 +94,20 @@ export function useWatchDota(heroes: HeroInfo[], portraits: Record<number, strin
   return {
     state,
     start: () => void start(),
+    /** Downloads the last frame read, for reporting a pick it missed. */
+    saveFrame: () => session.current?.worker.postMessage({ save: true } satisfies WatchRequest),
     stop: () => {
       stop();
       setState("off");
     },
   };
+}
+
+function download(frame: Blob) {
+  const url = URL.createObjectURL(frame);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `watch-dota-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
