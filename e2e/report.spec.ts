@@ -14,6 +14,9 @@ test("a player reads the report of a game they played", async ({ page }) => {
   await expect(page.getByText("Won in 34:26, 57 to 32 in kills.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Your team" }).getByText("YOU", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Lanes at 10 minutes" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Your records" })).toHaveText(
+    /No suggestions saved for the pick: 1 game, too few for a win rate\./,
+  );
   await expectAccessible(page);
 });
 
@@ -37,4 +40,17 @@ test("another player's report is not found", async ({ page, browser }) => {
   await signUp(page, uniqueEmail("report-other"), "Lion");
   const res = await page.goto(`/reports/${draftId}`);
   expect(res?.status()).toBe(404);
+});
+
+test("the Party page shows records once a game is reported", async ({ page }) => {
+  const email = uniqueEmail("records");
+  await signUp(page, email, "Mars");
+  await page.goto("/party");
+  const records = page.getByRole("region", { name: "Your records" });
+  await expect(records).toContainText("Records start after your first reported party game");
+
+  await seedReport(email, { status: "ready", facts });
+  await page.reload();
+  await expect(records).toContainText("No suggestions saved for the pick: 1 game, too few for a win rate.");
+  await expectAccessible(page);
 });

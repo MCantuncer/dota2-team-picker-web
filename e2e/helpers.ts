@@ -137,6 +137,7 @@ export async function seedReport(email: string, report: { status: string; facts:
     status: report.status,
     facts: report.facts as Json,
     facts_version: report.facts ? 1 : null,
+    game_mode: 22, // Ranked All Pick, so the game counts in the player's records.
   });
   if (reportError) throw reportError;
   return draft.id;
