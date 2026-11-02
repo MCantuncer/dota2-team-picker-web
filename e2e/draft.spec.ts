@@ -153,8 +153,8 @@ test("the draft screen shows the game plan once both teams are in", async ({ pag
     await enemy.press("Enter");
   }
 
-  const plan = page.getByRole("region", { name: "Game plan" });
-  await expect(plan.getByText("Roadmap to win")).toBeVisible();
+  const plan = page.getByRole("region", { name: "Game Story" });
+  await expect(plan.getByText("The story")).toBeVisible();
   await expect(plan.getByRole("listitem", { name: /position/ })).toHaveCount(5);
   await expectAccessible(page);
 });

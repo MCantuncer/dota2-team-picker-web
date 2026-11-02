@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GamePlanPanel } from "@/components/game-plan-panel";
+import { GameStoryPanel } from "@/components/game-story-panel";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { RankBracket } from "@/lib/engine/types";
@@ -69,7 +69,7 @@ export function TeamGamePlan({
   const myPosition = sent.players.indexOf(userId) + 1 || undefined;
   const time = new Date(sent.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
-    <GamePlanPanel
+    <GameStoryPanel
       plan={plan}
       heroName={(id) => engine.hero(id).name}
       icons={icons}
