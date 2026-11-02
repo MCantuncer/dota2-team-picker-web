@@ -121,7 +121,7 @@ export function FriendsBoard({
           {suggestions.map((s) => (
             <Row key={s.id} person={s} detail={s.teamName}>
               <button onClick={() => add(s)} className="btn btn-secondary btn-sm">
-                Add friend
+                Add Friend
               </button>
             </Row>
           ))}
@@ -151,11 +151,11 @@ function FriendLink({ code }: { code: string }) {
   return (
     <section aria-labelledby="friend-link-heading" className="card flex flex-col gap-2 p-3">
       <h2 id="friend-link-heading" className="text-base font-semibold">
-        Your friend link
+        Your Friend Link
       </h2>
       <p className="text-sm text-muted">Send it to friends in Discord or anywhere else. Opening it sends you a request.</p>
       <div className="flex gap-2">
-        <input readOnly value={link} aria-label="Your friend link" onFocus={(e) => e.currentTarget.select()} className="field flex-1 text-sm" />
+        <input readOnly value={link} aria-label="Your Friend Link" onFocus={(e) => e.currentTarget.select()} className="field flex-1 text-sm" />
         <button onClick={copy} className="btn btn-primary">
           {copied ? "Copied" : "Copy link"}
         </button>

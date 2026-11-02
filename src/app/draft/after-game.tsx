@@ -35,7 +35,7 @@ export function AfterGame({
   return (
     <section aria-labelledby="after-game-title" className="card flex flex-col gap-3 p-4">
       <h2 id="after-game-title" className="section-title">
-        After the game
+        After the Game
       </h2>
       {result ? (
         <p className="flex flex-wrap items-center gap-2 text-sm">
@@ -44,7 +44,7 @@ export function AfterGame({
             Match <span className="num">{result.matchId}</span> on OpenDota
           </a>
           <Link href={`/reports/${result.draftId}`} className="link">
-            Read the report
+            Read the Report
           </Link>
         </p>
       ) : (

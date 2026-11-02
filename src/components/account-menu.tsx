@@ -198,7 +198,7 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
             </div>
           ) : (
             <Link href="/my-heroes#steam" role="menuitem" tabIndex={-1} className={`${itemClass} text-fg`}>
-              Link Steam account
+              Link Steam Account
             </Link>
           )}
         </div>
@@ -206,7 +206,7 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
         <div className="border-t border-line pt-1">
           <form action="/auth/signout" method="post">
             <button type="submit" role="menuitem" tabIndex={-1} className={`${itemClass} text-muted`}>
-              Sign out
+              Sign Out
             </button>
           </form>
         </div>

@@ -25,7 +25,7 @@ describe("PartyLinkCard", () => {
   it("makes a new link that replaces the old one", async () => {
     const getLink = vi.fn().mockResolvedValue(ok("fedcba9876543210"));
     render(<PartyLinkCard initialLink={live} isFull={false} getLink={getLink} />);
-    await userEvent.click(screen.getByRole("button", { name: "New link" }));
+    await userEvent.click(screen.getByRole("button", { name: "New Link" }));
     expect(getLink).toHaveBeenCalledWith(true);
     expect(await screen.findByDisplayValue(/fedcba9876543210$/)).toBeInTheDocument();
   });
@@ -38,7 +38,7 @@ describe("PartyLinkCard", () => {
     render(<PartyLinkCard initialLink={null} isFull={false} getLink={getLink} />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Invite link not loaded: network down");
-    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await userEvent.click(screen.getByRole("button", { name: "Try Again" }));
     expect(await screen.findByDisplayValue(new RegExp(`${live.code}$`))).toBeInTheDocument();
   });
 

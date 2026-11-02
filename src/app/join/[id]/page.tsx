@@ -63,7 +63,7 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]">) {
         </p>
         <form action="/auth/signout" method="post">
           <button type="submit" className="btn btn-secondary">
-            Sign out
+            Sign Out
           </button>
         </form>
       </AuthCard>

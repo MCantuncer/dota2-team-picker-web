@@ -21,7 +21,7 @@ export function YourRecords({ records }: { records: Records }) {
   return (
     <section aria-labelledby="your-records" className="card flex flex-col gap-3 p-4">
       <h2 id="your-records" className="section-title">
-        Your records
+        Your Records
       </h2>
       {picks.length === 0 ? (
         <p className="text-sm text-muted">
@@ -30,7 +30,7 @@ export function YourRecords({ records }: { records: Records }) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1">
-            <h3 className="label-caps text-muted">Your picks</h3>
+            <h3 className="label-caps text-muted">Your Picks</h3>
             <ul className="flex flex-col gap-1 text-sm">
               {picks.map((s) => (
                 <li key={s.bucket}>
@@ -41,7 +41,7 @@ export function YourRecords({ records }: { records: Records }) {
           </div>
           {teammates.length > 0 && (
             <div className="flex flex-col gap-1">
-              <h3 className="label-caps text-muted">With teammates</h3>
+              <h3 className="label-caps text-muted">With Teammates</h3>
               <ul className="flex flex-col gap-1 text-sm">
                 {teammates.map((mate) => {
                   const pair = bestPair(mate);

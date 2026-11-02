@@ -91,7 +91,7 @@ export function PartyLobby({
             disabled={busy}
             className="btn btn-primary"
           >
-            Start a party
+            Start a Party
           </button>
         </section>
       </div>
@@ -130,7 +130,7 @@ export function PartyLobby({
             disabled={busy}
             className="btn btn-ghost btn-sm"
           >
-            Leave party
+            Leave Party
           </button>
         </div>
         <ul className="divide-y divide-line border-y border-line">
@@ -231,7 +231,7 @@ function MemberRow({
         </span>
         {(isLeader || isCaptain) && (
           <span className="flex flex-wrap gap-1 pt-0.5">
-            {isCaptain && <span className="chip chip-accent micro">Draft captain</span>}
+            {isCaptain && <span className="chip chip-accent micro">Draft Captain</span>}
             {isLeader && <span className="chip micro">Leader</span>}
           </span>
         )}

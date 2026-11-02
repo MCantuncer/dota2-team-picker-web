@@ -88,16 +88,16 @@ export function DraftCaptain({
   else line = "None yet. Anyone can enter the draft.";
 
   return (
-    <section aria-label="Draft captain" className="card flex items-center gap-3 px-3 py-2">
+    <section aria-label="Draft Captain" className="card flex items-center gap-3 px-3 py-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-        <span className="label-caps">Draft captain</span>
+        <span className="label-caps">Draft Captain</span>
         <p className="text-sm text-muted" aria-live="polite">
           {note ?? line}
         </p>
       </div>
       {isCaptain && (
         <button onClick={() => run("Could not step down", stepDown)} disabled={busy} className="btn btn-ghost btn-sm">
-          Step down
+          Step Down
         </button>
       )}
       {canTake && (

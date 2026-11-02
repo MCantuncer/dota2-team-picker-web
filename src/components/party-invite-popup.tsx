@@ -83,7 +83,7 @@ export function PartyInvitePopup({ userId }: { userId: string }) {
       <div className="flex items-center gap-2.5">
         <Avatar account={{ name: invite.inviterName, avatarUrl: invite.inviterAvatarUrl, detail: null, steamLinked: false }} size={36} />
         <div className="flex min-w-0 flex-col">
-          <span className="label-caps text-accent">Party invite</span>
+          <span className="label-caps text-accent">Party Invite</span>
           <span id="party-invite-title" className="truncate font-medium leading-tight text-fg">
             {invite.inviterName} invited you
           </span>

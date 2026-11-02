@@ -106,7 +106,7 @@ function MemberRow({
               )}
             </span>
             {m.steamName ? (
-              <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam account">
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam Account">
                 <SteamLogo className="h-3 w-3 shrink-0" />
                 <span className="truncate">{m.steamName}</span>
               </span>
@@ -332,7 +332,7 @@ function MemberMenu({
             }}
             className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
           >
-            Remove from team
+            Remove From Team
           </button>
         )}
       </div>

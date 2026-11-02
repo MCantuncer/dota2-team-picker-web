@@ -19,7 +19,7 @@ export function SiteHeader() {
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-1.5 focus:text-sm focus:font-semibold focus:text-on-accent"
       >
-        Skip to content
+        Skip to Content
       </a>
       <div className="page flex h-16 items-stretch gap-6">
         <Link href="/" className="flex items-center gap-3 rounded-md pr-6 sm:border-r sm:border-line" aria-label="Dota2 Team Picker home">
@@ -48,10 +48,10 @@ async function HeaderSession() {
     return (
       <div className="ml-auto flex items-center gap-1">
         <Link href="/login" className="btn btn-ghost">
-          Log in
+          Log In
         </Link>
         <Link href="/signup" className="btn btn-primary">
-          Sign up
+          Sign Up
         </Link>
       </div>
     );
@@ -73,7 +73,7 @@ async function HeaderSession() {
 
   const nav: NavItem[] = [
     { href: "/draft", label: "Draft", icon: "swords" },
-    { href: "/my-heroes", label: "My heroes", icon: "helmet" },
+    { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
     { href: "/party", label: "Party", icon: "users" },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
@@ -104,7 +104,7 @@ async function HeaderSession() {
         )}
         <Link href="/draft" className="btn btn-primary btn-sm hidden md:inline-flex">
           <Icon name="plus" />
-          New draft
+          New Draft
         </Link>
         <span aria-hidden className="hidden h-6 w-px bg-line md:block" />
         <AccountMenu account={account} nav={nav} />

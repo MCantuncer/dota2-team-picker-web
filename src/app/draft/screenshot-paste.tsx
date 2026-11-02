@@ -93,7 +93,7 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
       </span>
       <span className="flex items-center gap-2">
         <span className="label-caps" id="my-side">
-          My team
+          My Team
         </span>
         <span className="seg" role="group" aria-labelledby="my-side">
           {(["radiant", "dire"] as const).map((s) => (

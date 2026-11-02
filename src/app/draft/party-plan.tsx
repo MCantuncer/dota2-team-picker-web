@@ -27,7 +27,7 @@ export function PartyPlan({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm">{plan.gamePlan}</p>
-      <ol aria-label="Team plan" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]">
+      <ol aria-label="Team Plan" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]">
         {plan.slots.map((slot) => {
           const player = slot.playerId ? (names[slot.playerId] ?? "Left the party") : "No player";
           return (

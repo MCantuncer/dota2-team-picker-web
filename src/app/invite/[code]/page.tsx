@@ -38,7 +38,7 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
         <p className="text-muted">
           You&apos;ve been invited to a party.{" "}
           <Link href={`/signup?next=${next}`} className="link">
-            Sign up
+            Sign Up
           </Link>{" "}
           or{" "}
           <Link href={`/login?next=${next}`} className="link">

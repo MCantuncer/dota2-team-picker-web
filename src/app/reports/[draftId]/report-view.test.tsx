@@ -22,7 +22,7 @@ describe("ReportView", () => {
       "https://www.opendota.com/matches/9072422905",
     );
 
-    const team = within(screen.getByRole("region", { name: "Your team" }));
+    const team = within(screen.getByRole("region", { name: "Your Team" }));
     expect(team.getAllByText("Kills, deaths, assists:", { exact: false })).toHaveLength(5);
     // Heroes without art still show their names; unknown heroes get a plain label.
     expect(team.getAllByText("Kez").length).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ describe("ReportView", () => {
   it("leaves out what a basic report doesn't have", () => {
     const basic = { ...facts, isBasic: true, swings: null, lanes: null, fights: null, damageTaken: null, enemyBest: null, draft: null };
     render(<ReportView facts={basic} art={art} myHeroId={null} />);
-    expect(screen.getByRole("region", { name: "Your team" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Your Team" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Lanes at 10 minutes" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Turning points" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "What hurt you" })).not.toBeInTheDocument();

@@ -81,7 +81,7 @@ function emptyMessage(report: Report): string {
 function ReportPageShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="page flex flex-1 flex-col gap-4 py-8">
-      <h1 className="page-title">Game report</h1>
+      <h1 className="page-title">Game Report</h1>
       {children}
     </main>
   );

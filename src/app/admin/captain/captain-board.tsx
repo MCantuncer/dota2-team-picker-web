@@ -204,7 +204,7 @@ function Shell({ picker, tabs, children }: { picker?: React.ReactNode; tabs?: Re
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-line pb-4">
-        <h1 className="page-title">Captain mode</h1>
+        <h1 className="page-title">Captain Mode</h1>
         {picker}
         <div className="ml-auto">{tabs}</div>
       </div>
@@ -308,8 +308,8 @@ function DraftView({
       <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={fromScreen} />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <section aria-label="Our team" className="rounded-lg border border-line border-t-radiant border-t-[3px] bg-surface p-3">
-          <h2 className="mb-2 text-base font-semibold">Our team</h2>
+        <section aria-label="Our Team" className="rounded-lg border border-line border-t-radiant border-t-[3px] bg-surface p-3">
+          <h2 className="mb-2 text-base font-semibold">Our Team</h2>
           {draft.picks.map((pick, i) => {
             const member = memberById(slots[i] ?? null);
             return (
@@ -462,7 +462,7 @@ function DraftView({
       </section>
 
       <section aria-label="Lineup" className="card p-3">
-        <h2 className="mb-2 text-base font-semibold">Current team</h2>
+        <h2 className="mb-2 text-base font-semibold">Current Team</h2>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
           {slots.map((memberId, i) => (
             <label key={i} className="flex flex-col gap-1 text-xs text-muted">
@@ -517,7 +517,7 @@ function DraftView({
             }}
             className="btn btn-secondary"
           >
-            Fill from favorite positions
+            Fill From Favorite Positions
           </button>
           <button
             onClick={() => {
@@ -527,7 +527,7 @@ function DraftView({
             className="btn btn-secondary"
           >
             <Icon name="plus" />
-            New draft
+            New Draft
           </button>
         </div>
       </section>
@@ -863,7 +863,7 @@ function TeamView({
       </label>
 
       <section aria-label="Invite" className="flex flex-col gap-2 card p-3">
-        <h2 className="text-base font-semibold">Invite a friend</h2>
+        <h2 className="text-base font-semibold">Invite a Friend</h2>
         <p className="text-sm text-muted">
           They get an email with a link, pick a name and password, then their positions and heroes. Teams can have
           any number of members; you choose who plays each game on the Draft tab.

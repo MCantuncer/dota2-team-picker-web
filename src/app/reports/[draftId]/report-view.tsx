@@ -41,7 +41,7 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
 
       <section aria-labelledby="report-heroes" className="card flex flex-col gap-3 p-4">
         <h2 id="report-heroes" className="section-title">
-          Your team
+          Your Team
         </h2>
         <ul className="flex flex-col gap-2">
           {facts.heroes.map((hero) => (

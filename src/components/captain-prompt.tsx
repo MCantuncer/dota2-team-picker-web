@@ -128,7 +128,7 @@ export function CaptainPromptCard({
       className="fixed bottom-4 left-4 right-4 z-50 flex flex-col gap-3 overflow-hidden rounded-lg border border-line-strong bg-surface p-4 shadow-lg sm:left-auto sm:w-88"
     >
       <div className="flex flex-col">
-        <span className="label-caps">Draft captain</span>
+        <span className="label-caps">Draft Captain</span>
         <span role="alert" className="font-medium leading-tight text-fg">
           {name} wants draft captain
         </span>
@@ -140,10 +140,10 @@ export function CaptainPromptCard({
       {/* Buttons take no focus by themselves, so a search box keeps the keyboard mid-typing. */}
       <div className="flex gap-2">
         <button onClick={() => onAnswer(true)} disabled={busy} className="btn btn-primary flex-1">
-          Give captain
+          Give Captain
         </button>
         <button onClick={() => onAnswer(false)} disabled={busy} className="btn btn-secondary flex-1">
-          Keep it
+          Keep It
         </button>
       </div>
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-line">
