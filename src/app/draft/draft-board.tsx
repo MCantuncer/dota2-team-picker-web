@@ -738,7 +738,7 @@ function SuggestionCard({
             className="pointer-events-none absolute -left-8 top-1/2 -z-10 hidden w-[52%] max-w-md -translate-y-1/2 sm:block"
           />
         )}
-        <span className="text-sm text-accent">Your best pick for Pos {position}</span>
+        <span className="text-sm text-accent">Best pick right now</span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
           <span className="text-3xl font-semibold tracking-[-0.02em] text-accent" title="Score in win-rate points">
@@ -769,7 +769,7 @@ function SuggestionCard({
   }
 
   return (
-    <li className="grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line py-3">
+    <li className="group grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-line py-3">
       {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also strong</span>}
       <span className="num text-subtle">{rank}</span>
       <Portrait hero={hero} src={portrait} size="strip" />
@@ -778,28 +778,25 @@ function SuggestionCard({
         <span className="block text-sm text-subtle">{s.reasons[0]}</span>
       </span>
       <span className="flex items-center gap-3">
+        {/* On a mouse the row's buttons show on hover or keyboard focus; on touch they always show. */}
+        {onPicked && onBanned && (
+          <span className="flex gap-1 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
+            <button onClick={onPicked} className="btn btn-secondary btn-sm">
+              <Icon name="check" />
+              Picked
+            </button>
+            <button onClick={onBanned} className="btn btn-ghost btn-sm">
+              <Icon name="ban" />
+              Banned
+            </button>
+          </span>
+        )}
         {gainText}
-        <span className="num w-10 text-right text-fg" title="Score in win-rate points">
+        <span className="num w-12 text-right text-fg" title="Score in win-rate points">
           {signed(s.score)}
         </span>
       </span>
-      {(s.hardCounters.length > 0 || (onPicked && onBanned)) && (
-        <div className="col-span-2 col-start-3 flex flex-col gap-2">
-          {counters}
-          {onPicked && onBanned && (
-            <div className="flex gap-1">
-              <button onClick={onPicked} className="btn btn-ghost btn-sm">
-                <Icon name="check" />
-                Picked
-              </button>
-              <button onClick={onBanned} className="btn btn-ghost btn-sm">
-                <Icon name="ban" />
-                Banned
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {s.hardCounters.length > 0 && <div className="col-span-2 col-start-3 flex flex-col gap-2">{counters}</div>}
     </li>
   );
 }
