@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test as base, expect, type Page } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database, Json } from "../src/lib/supabase/database.types";
@@ -141,4 +142,25 @@ export async function seedReport(email: string, report: { status: string; facts:
   });
   if (reportError) throw reportError;
   return draft.id;
+}
+
+/**
+ * Stands in for the browser's share prompt: a canvas showing a hero select screenshot (both teams and
+ * nine bans) plays the Dota window for Watch Dota.
+ */
+export async function fakeDotaWindow(page: Page) {
+  const screenshot = readFileSync(join(__dirname, "fixtures", "draft-nine-picked.png")).toString("base64");
+  await page.addInitScript((base64) => {
+    navigator.mediaDevices.getDisplayMedia = async () => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${base64}`;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext("2d")!;
+      setInterval(() => ctx.drawImage(image, 0, 0), 100);
+      return canvas.captureStream(5);
+    };
+  }, screenshot);
 }

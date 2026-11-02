@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, logIn, setUserType, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, fakeDotaWindow, logIn, setUserType, signUp, test, uniqueEmail } from "./helpers";
 
 test("plain users can't open captain mode", async ({ page }) => {
   await signUp(page, uniqueEmail("plain"), "Axe");
@@ -51,5 +51,31 @@ test("the captain sees the game plan once all ten heroes are in", async ({ page 
   const sent = page.getByRole("region", { name: "Game Story" });
   await expect(sent.getByText("From My team at")).toBeVisible();
   await expect(sent.getByRole("listitem", { name: /position/ })).toHaveCount(5);
+  await expectAccessible(page);
+});
+
+test("Watch Dota fills the captain's draft, our heroes in their usual positions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(90_000);
+  const email = uniqueEmail("watch");
+  await signUp(page, email, "Rubick");
+  await setUserType(email, "captain");
+  await page.context().clearCookies();
+  await fakeDotaWindow(page);
+  await logIn(page, email, "/admin/captain");
+  await page.getByRole("tab", { name: "Draft" }).click();
+
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  const ours = page.getByRole("region", { name: "Our team" });
+  const enemy = page.getByRole("region", { name: "Enemy team" });
+  for (const name of ["Crystal Maiden", "Warlock", "Juggernaut", "Omniknight"])
+    await expect(ours.getByText(name)).toBeVisible({ timeout: 45_000 });
+  // Juggernaut is a carry, so pos 1 is filled; one position stays open for the last pick.
+  await expect(ours.getByPlaceholder("Pos 1 pick")).toHaveCount(0);
+  await expect(ours.getByRole("textbox")).toHaveCount(1);
+  for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny"]) await expect(enemy.getByText(name)).toBeVisible();
+  await expect(enemy.getByRole("button", { name: "Remove Pudge" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Stop" }).click();
   await expectAccessible(page);
 });

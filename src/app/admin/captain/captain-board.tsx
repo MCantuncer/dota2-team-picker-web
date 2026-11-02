@@ -7,6 +7,10 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
+import { readActions } from "@/lib/draft-reader/actions";
+import type { Side } from "@/lib/draft-reader/geometry";
+import type { DraftRead } from "@/lib/draft-reader/reader";
+import { placeByPosition } from "@/lib/draft-reader/positions";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
@@ -14,6 +18,7 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { GamesWins, HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
+import { ScreenshotPaste } from "@/app/draft/screenshot-paste";
 import { MemberList } from "./member-list";
 import { SendGamePlan } from "./send-game-plan";
 import { TeamPicker, type TeamRef } from "./team-picker";
@@ -74,6 +79,7 @@ export function CaptainBoard({
   initialSlots,
   initialRank,
   icons,
+  portraits,
 }: {
   team: TeamRef;
   teams: TeamRef[];
@@ -85,6 +91,8 @@ export function CaptainBoard({
   initialSlots: Slots;
   /** Hero icon URLs by hero id. */
   icons: Record<number, string>;
+  /** Landscape hero portrait URLs by hero id, for reading the Dota screen. */
+  portraits: Record<number, string>;
   initialRank: number | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -170,6 +178,7 @@ export function CaptainBoard({
           rank={rank}
           draft={draft}
           icons={icons}
+          portraits={portraits}
           teamId={team.id}
           userId={userId}
           onDraft={updateDraft}
@@ -214,6 +223,7 @@ function DraftView({
   rank,
   draft,
   icons,
+  portraits,
   teamId,
   userId,
   onDraft,
@@ -226,6 +236,7 @@ function DraftView({
   rank: number | null;
   draft: Draft;
   icons: Record<number, string>;
+  portraits: Record<number, string>;
   teamId: string;
   userId: string;
   onDraft: (d: Draft) => void;
@@ -274,6 +285,18 @@ function DraftView({
     onDraft({ ...draft, picks });
   };
 
+  // Watch Dota and screenshot paste: the screen shows no positions, so our heroes go to their usual open ones.
+  const fromScreen = (read: DraftRead, side: Side) => {
+    const actions = readActions(read, side, taken);
+    if (!actions.length) return;
+    const ids = (kind: "ally" | "enemy" | "ban") => actions.filter((a) => a.kind === kind).map((a) => a.heroId);
+    onDraft({
+      picks: placeByPosition(draft.picks, ids("ally"), (id) => engine.fit(id)),
+      enemies: [...draft.enemies, ...ids("enemy")].slice(0, 5),
+      bans: [...draft.bans, ...ids("ban")],
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-subtle">
@@ -281,6 +304,8 @@ function DraftView({
         <Kbd>↓</Kbd> pick another match, <Kbd>Esc</Kbd> clears, <Kbd>Backspace</Kbd> in an empty enemy or ban box
         removes the last one. Bans take several names at once.
       </p>
+
+      <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={fromScreen} />
 
       <div className="grid gap-4 md:grid-cols-2">
         <section aria-label="Our team" className="rounded-lg border border-line border-t-radiant border-t-[3px] bg-surface p-3">
