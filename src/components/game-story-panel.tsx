@@ -41,7 +41,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
 
       <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
         <div className="flex flex-col gap-2">
-          <h3 className="label-caps">The story</h3>
+          <h3 className="label-caps">The Story</h3>
           <ol className="flex flex-col">
             {plan.story.chapters.map((chapter) => (
               <li key={chapter.phase} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-t border-line py-3 text-fg/85">
@@ -51,7 +51,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           </ol>
         </div>
         <div className="flex flex-col gap-2">
-          <h3 className="label-caps">Danger heroes</h3>
+          <h3 className="label-caps">Danger Heroes</h3>
           {plan.danger.length ? (
             plan.danger.map((line) => (
               <p key={line} className="notice notice-warn">
@@ -63,7 +63,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           )}
           {plan.teamFallbacks.length > 0 && (
             <>
-              <h3 className="label-caps mt-4">If the game goes wrong</h3>
+              <h3 className="label-caps mt-4">If the Game Goes Wrong</h3>
               <ul className="flex flex-col gap-1.5 text-fg/85">
                 {plan.teamFallbacks.map((line) => (
                   <li key={line}>{line}</li>
@@ -75,7 +75,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
       </div>
 
       <div className="flex flex-col gap-2">
-        <h3 className="label-caps">Each player</h3>
+        <h3 className="label-caps">Each Player</h3>
         <ul className="flex flex-col">
           {players.map((player) => (
             <PlayerCard
@@ -140,7 +140,7 @@ function PlayerCard({
           {player.enemies.length > 0 && <Enemies player={player} heroName={heroName} />}
           {player.fallbacks.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="micro text-muted">If it goes wrong</span>
+              <span className="micro text-muted">If It Goes Wrong</span>
               <ul className="flex flex-col gap-1 text-sm">
                 {player.fallbacks.map((line) => (
                   <li key={line}>{line}</li>
@@ -161,7 +161,7 @@ function Enemies({ player, heroName }: { player: PlayerPlan; heroName: (id: numb
   const itemName = (id: number) => items.find((i) => i.itemId === id)?.name;
   return (
     <div className="flex flex-col gap-1">
-      <span className="micro text-muted">Who to watch</span>
+      <span className="micro text-muted">Who to Watch</span>
       <ul className="flex flex-col gap-1 text-sm">
         {player.enemies.map((enemy) => {
           const answers = enemy.answers.map(itemName).filter((name): name is string => Boolean(name));
@@ -202,7 +202,7 @@ function Build({ build }: { build: ItemBuild }) {
       )}
       {more && (
         <details className="flex flex-col gap-2">
-          <summary className="micro w-fit cursor-pointer text-muted hover:text-fg">Start and other items</summary>
+          <summary className="micro w-fit cursor-pointer text-muted hover:text-fg">Start and Other Items</summary>
           <div className="mt-2 flex flex-col gap-2">
             <Labelled label="Start" items={build.start} />
             {build.lane.length > 0 && <Labelled label="Lane" items={build.lane} minutes={isRough ? undefined : "timed"} />}
