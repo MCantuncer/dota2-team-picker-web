@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GamePlanPanel } from "@/components/game-plan-panel";
+import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
@@ -357,7 +357,7 @@ function DraftView({
       </div>
 
       {gamePlan && (
-        <GamePlanPanel
+        <GameStoryPanel
           plan={gamePlan}
           heroName={name}
           icons={icons}

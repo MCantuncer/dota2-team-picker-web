@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GamePlanPanel } from "@/components/game-plan-panel";
+import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -477,7 +477,7 @@ export function DraftBoard({
       </div>
 
       {gamePlan && (
-        <GamePlanPanel
+        <GameStoryPanel
           plan={gamePlan}
           heroName={(id) => hero(id).name}
           icons={icons}
