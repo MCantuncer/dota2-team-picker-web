@@ -30,28 +30,28 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const players = [...plan.players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   return (
-    <section aria-label="Game Story" className="card flex flex-col gap-4 border-t-[3px] border-t-accent p-4">
+    <section aria-label="Game Story" className="flex flex-col gap-6 border-t border-line pt-6">
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="section-title">Game Story</h2>
           {action}
         </div>
-        <p className="font-heading text-xl font-bold leading-6">{plan.story.headline}</p>
+        <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{plan.story.headline}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+      <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
         <div className="flex flex-col gap-2">
-          <h3 className="label-caps text-muted">The story</h3>
-          <ol className="flex flex-col gap-2">
+          <h3 className="label-caps">The story</h3>
+          <ol className="flex flex-col">
             {plan.story.chapters.map((chapter) => (
-              <li key={chapter.phase} className="rounded-sm bg-raised px-3 py-2 text-sm">
-                <span className="num font-semibold">{chapter.phase}.</span> {chapter.text}
+              <li key={chapter.phase} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-t border-line py-3 text-fg/85">
+                <span className="num text-accent">{chapter.phase}.</span> <span>{chapter.text}</span>
               </li>
             ))}
           </ol>
         </div>
         <div className="flex flex-col gap-2">
-          <h3 className="label-caps text-muted">Danger heroes</h3>
+          <h3 className="label-caps">Danger heroes</h3>
           {plan.danger.length ? (
             plan.danger.map((line) => (
               <p key={line} className="notice notice-warn">
@@ -63,8 +63,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           )}
           {plan.teamFallbacks.length > 0 && (
             <>
-              <h3 className="label-caps mt-2 text-muted">If the game goes wrong</h3>
-              <ul className="flex flex-col gap-1 text-sm">
+              <h3 className="label-caps mt-4">If the game goes wrong</h3>
+              <ul className="flex flex-col gap-1.5 text-fg/85">
                 {plan.teamFallbacks.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
@@ -75,8 +75,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
       </div>
 
       <div className="flex flex-col gap-2">
-        <h3 className="label-caps text-muted">Each player</h3>
-        <ul className="flex flex-col gap-2">
+        <h3 className="label-caps">Each player</h3>
+        <ul className="flex flex-col">
           {players.map((player) => (
             <PlayerCard
               key={player.position}
@@ -113,11 +113,14 @@ function PlayerCard({
   const build = player.build;
   return (
     <li aria-label={`${name}, position ${player.position}`}>
-      <details open={isMine} className={`group rounded-sm bg-raised ${isMine ? "ring-1 ring-accent" : ""}`}>
-        <summary className="flex cursor-pointer items-center gap-2 rounded-sm p-3 hover:bg-hover">
-          {icon && <Image src={icon} alt="" width={32} height={32} className="size-8 shrink-0 rounded-xs" />}
+      <details open={isMine} className="group border-t border-line">
+        <summary className="flex cursor-pointer items-center gap-3 py-3 hover:bg-surface">
+          {icon && <Image src={icon} alt="" width={40} height={40} className="size-10 shrink-0 rounded-xs" />}
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="font-heading text-xl font-bold leading-6">{name}</span>
+            <span className="flex items-center gap-2 text-xl font-semibold leading-6 tracking-[-0.02em] text-fg">
+              {name}
+              {isMine && <span className="rounded-xs bg-radiant px-1.5 text-xs font-semibold leading-4 tracking-normal text-bg">You</span>}
+            </span>
             <span className="text-xs text-muted">
               {playerName ?? POSITION_NAMES[player.position - 1]} · <span className="micro">Pos {player.position}</span>
             </span>
@@ -125,7 +128,7 @@ function PlayerCard({
           {lane && <span className={`micro ${VERDICT_STYLES[lane.verdict]}`}>{VERDICT_LABELS[lane.verdict]}</span>}
           <span aria-hidden className="micro text-subtle group-open:rotate-180">▾</span>
         </summary>
-        <div className="flex flex-col gap-3 px-3 pb-3">
+        <div className="flex flex-col gap-4 pb-5 pl-[3.25rem]">
           {lane && (
             <p className="text-sm">
               <span className="text-muted">Lane vs</span> {lane.theirs.map(heroName).join(" + ") || "nobody"}.{" "}
