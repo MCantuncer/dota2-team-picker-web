@@ -55,5 +55,13 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
 
   await ali.reload();
   await expect(aliBar.getByText("You enter the draft for the party.")).toBeVisible();
+
+  // Can now watches the draft that Ali enters, without the boxes to type heroes in.
+  await page.goto("/draft");
+  await expect(page.getByText("Ali enters every hero. Tell them which of your picks you want.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Draft captain" }).getByText("Ali enters the draft for the party.")).toBeVisible();
+  await expect(page.getByPlaceholder("My team pick, e.g. cm5")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "New draft" })).toBeHidden();
+  await expectAccessible(page);
   await aliContext.close();
 });
