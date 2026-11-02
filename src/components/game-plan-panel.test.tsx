@@ -12,6 +12,7 @@ const plan: GamePlan = {
   lanes: [{ name: "Mid", ours: [2], theirs: [7], edge: 0.2, verdict: "even", text: "Even lane against Hero 7: the better last hits win it." }],
   ourCombos: [],
   fears: ["Hero 8 is their biggest threat: strong against Hero 1. Focus or lock them down first"],
+  danger: [],
   roadmap: [{ phase: "Laning (0 to 10 min)", text: "No lane is clearly yours: farm and trade evenly." }],
   players: [
     {
@@ -19,14 +20,18 @@ const plan: GamePlan = {
       position: 1,
       job: "Farm and carry the late game.",
       build: {
+        timings: "around",
         start: [item(44, "Tango", 0)],
         lane: [],
         core: [item(50, "Phase Boots", 9), item(116, "Black King Bar", 17, "Against Hero 8: buy it early")],
         situational: [],
       },
+      fallbacks: [],
     },
-    { heroId: 2, position: 2, job: "Win your lane.", build: null },
+    { heroId: 2, position: 2, job: "Win your lane.", build: null, fallbacks: [] },
   ],
+  teamFallbacks: [],
+  story: { headline: "", chapters: [] },
 };
 
 describe("GamePlanPanel", () => {

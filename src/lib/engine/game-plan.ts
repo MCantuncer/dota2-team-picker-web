@@ -1,7 +1,10 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/game-plan.ts). Keep in sync.
+import { SURE_POSITION_ODDS, chooseDangerHeroes, dangerLine } from "./danger";
+import { pickFallbacks, type Scaling } from "./fallbacks";
+import { gameStory, type Story } from "./story";
 import { comboMap, styleSets, STYLES, type Style } from "./gameplan";
 import { itemBuild, listNames, type ItemBuild } from "./item-build";
-import { guessEnemyPositions } from "./positions";
+import { guessEnemyPositions, type PositionFit } from "./positions";
 import type { Engine } from "./score";
 import { traitsOf } from "./traits";
 import { POSITIONS, type AllyPick, type Position, type RankBracket } from "./types";
@@ -47,6 +50,8 @@ export interface PlayerPlan {
   build: ItemBuild | null;
   /** What this player does to win, in a sentence or two. */
   job: string;
+  /** What to do if their lane or items go wrong, at most two lines. */
+  fallbacks: string[];
 }
 
 export interface GamePlan {
@@ -60,8 +65,14 @@ export interface GamePlan {
   ourCombos: string[];
   /** Enemy combos and hard counters to our heroes. */
   fears: string[];
+  /** The one or two enemies who decide the game, with when they come online and our answer. */
+  danger: string[];
   roadmap: { phase: string; text: string }[];
   players: PlayerPlan[];
+  /** What the team does if it is behind or ahead at 20 minutes. */
+  teamFallbacks: string[];
+  /** The game in four timed chapters with a one-line headline. */
+  story: Story;
 }
 
 export interface GamePlanInput {
@@ -82,9 +93,8 @@ function teamStyle(ids: number[], styles: Record<Style, Set<number>>) {
   return best && { key: best.key, label: STYLES[best.key].label };
 }
 
-/** Each enemy's most likely position, giving every position to one hero. */
-function enemyPositions(engine: Engine, theirs: number[]): Map<Position, number> {
-  const odds = guessEnemyPositions(theirs.map((id) => engine.fit(id)));
+/** Each enemy's most likely position, giving every position to one hero, from their position odds. */
+function enemyPositions(theirs: number[], odds: PositionFit[]): Map<Position, number> {
   const out = new Map<Position, number>();
   const pairs = theirs.flatMap((id, i) => POSITIONS.map((p) => ({ id, p, odds: odds[i]![p] })));
   for (const { id, p } of pairs.sort((a, b) => b.odds - a.odds)) {
@@ -165,7 +175,8 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
   const ourCombos = pairCombos(ourIds);
   const theirCombos = pairCombos(input.theirs);
 
-  const theirByPos = enemyPositions(engine, input.theirs);
+  const theirOdds = guessEnemyPositions(input.theirs.map((id) => engine.fit(id)));
+  const theirByPos = enemyPositions(input.theirs, theirOdds);
   const lanes = LANES.map((lane): LanePlan => {
     const ours = input.ours.filter((p) => lane.ours.includes(p.position)).map((p) => p.heroId);
     const theirs = lane.theirs.flatMap((p) => (theirByPos.has(p) ? [theirByPos.get(p)!] : [])); // has() checked.
@@ -192,8 +203,29 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     }),
   ].filter((line, i, all) => all.indexOf(line) === i);
 
+  const threats = input.theirs
+    .map((t) => ({ t, edge: ourIds.reduce((s, o) => s + engine.matchupEdge(t, o, bracket), 0) }))
+    .filter((e) => e.edge >= THREAT_TOTAL_EDGE)
+    .sort((a, b) => b.edge - a.edge)
+    .map((e) => e.t);
+  const theirCarry = theirByPos.get(1);
+  const danger = chooseDangerHeroes(threats, theirCarry).map(({ id, kind }) => {
+    const i = input.theirs.indexOf(id);
+    const position = [...theirByPos].find(([, h]) => h === id)?.[0] ?? 1;
+    // Their usual build: counter items moved up against our heroes would give a too-early minute.
+    const build = itemBuild(engine.data, id, position, [], bracket);
+    const bkb = build?.core.find((c) => engine.data.items?.[c.itemId]?.key === "black_king_bar");
+    const item = bkb ?? keyItem(engine, build);
+    return dangerLine({
+      hero: name(id),
+      kind,
+      ...(item ? { item: { name: item.name, minute: item.minute } } : {}),
+      isSure: (theirOdds[i]?.[position] ?? 0) >= SURE_POSITION_ODDS && build?.timings !== "around",
+    });
+  });
+
   const players = input.ours.map((p): PlayerPlan => {
-    const build = itemBuild(engine.data, p.heroId, p.position, input.theirs);
+    const build = itemBuild(engine.data, p.heroId, p.position, input.theirs, bracket);
     const combo = ourCombos.find((c) => c.a === p.heroId || c.b === p.heroId);
     const partner = combo && name(combo.a === p.heroId ? combo.b : combo.a);
     const isInitiator = traitsOf(engine.hero(p.heroId)).has("initiation");
@@ -202,8 +234,32 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
       position: p.position,
       build,
       job: playerJob(p.position, name(p.heroId), isInitiator, keyItem(engine, build), combo && `${combo.text} with ${partner}`),
+      fallbacks: [],
     };
   });
+
+  const laneOf = (heroId: number) => lanes.find((l) => l.ours.includes(heroId))!; // Every position is in a lane.
+  const carry = players.find((p) => p.position === 1);
+  const carryItem = keyItem(engine, carry?.build ?? null);
+  const enemyAt = (p: Position) => (theirByPos.has(p) ? name(theirByPos.get(p)!) : undefined); // has() checked.
+  const picked = pickFallbacks({
+    players: players.map((p) => {
+      const item = keyItem(engine, p.build);
+      return {
+        position: p.position,
+        hero: name(p.heroId),
+        lane: laneOf(p.heroId).verdict,
+        ...(item ? { keyItem: { name: item.name, lateMinute: item.lateMinute } } : {}),
+      };
+    }),
+    offLaneHard: lanes[2]!.verdict === "hard", // LANES has three entries, the off lane last.
+    scaling: scaling(timing(ourStyle?.key), timing(theirStyle?.key)),
+    ourCarry: carry && name(carry.heroId),
+    ourKeyItem: carryItem?.name,
+    enemyCarry: enemyAt(1),
+    enemyOfflaner: enemyAt(3),
+  });
+  players.forEach((p, i) => (p.fallbacks = picked.players[i]!)); // Same order as players.
 
   const wonLane = lanes.find((l) => l.verdict === "win");
   const hardLane = lanes.find((l) => l.verdict === "hard");
@@ -246,9 +302,31 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     lanes,
     ourCombos: ourCombos.map((c) => `${name(c.a)} + ${name(c.b)}: ${c.text}`),
     fears,
+    danger,
     roadmap,
     players,
+    teamFallbacks: picked.team,
+    story: gameStory({
+      ourTiming,
+      theirTiming,
+      wonLane: wonLane?.name.toLowerCase(),
+      hardLane: hardLane?.name.toLowerCase(),
+      spikes: players.flatMap((p) => {
+        const item = keyItem(engine, p.build);
+        return item ? [{ hero: name(p.heroId), item: item.name, minute: item.minute }] : [];
+      }),
+      combo: firstCombo?.text,
+      ourCarry: carry && name(carry.heroId),
+      enemyCarry: enemyAt(1),
+    }),
   };
+}
+
+/** Which team gets stronger later, from each team's strongest time. */
+function scaling(ours: "early" | "late" | null, theirs: "early" | "late" | null): Scaling {
+  if (ours === "late" && theirs !== "late") return "ours";
+  if (theirs === "late" && ours !== "late") return "theirs";
+  return "even";
 }
 
 const round = (x: number) => Math.round(x * 10) / 10;
