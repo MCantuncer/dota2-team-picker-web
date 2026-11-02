@@ -109,7 +109,7 @@ test("the party leader can plan the whole team", async ({ page }) => {
 
   // Marking a planned hero as picked puts it on the team in its position.
   const first = plan.first();
-  const hero = await first.locator(".font-heading").innerText();
+  const hero = await first.locator("[data-hero-name]").innerText();
   await first.getByRole("button", { name: "Picked" }).click();
   await expect(page.getByRole("region", { name: "My team" }).getByText(hero)).toBeVisible();
   await expect(plan.first().getByText("Picked", { exact: true })).toBeVisible();
