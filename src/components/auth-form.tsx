@@ -35,7 +35,7 @@ export function AuthForm({ action, submitLabel, next, askName }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="btn btn-primary btn-lg mt-1"
+        className="btn btn-secondary btn-lg mt-1"
       >
         {pending ? "Please wait…" : submitLabel}
       </button>

@@ -118,7 +118,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const hero = (id: number) => byId.get(id);
   const names = (ids: number[]) => ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and ");
   return (
-    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong lg:mt-48">
+    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong lg:mt-64">
       <figcaption className="text-sm text-subtle">
         Example: you play mid with {names(EXAMPLE.allies)}, they have {names(EXAMPLE.enemies)}
       </figcaption>

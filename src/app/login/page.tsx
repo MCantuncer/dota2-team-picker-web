@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <AuthCard title="Log in">
       {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
-      <SteamButton next={nextPath} />
+      <SteamButton next={nextPath} primary />
       <p className="text-sm text-subtle">
         Steam accounts get rank-based suggestions. Turn on <em>Expose Public Match Data</em> in Dota 2 so we can
         read it.

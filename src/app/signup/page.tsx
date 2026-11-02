@@ -13,7 +13,7 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
 
   return (
     <AuthCard title="Sign up">
-      <SteamButton next={nextPath} />
+      <SteamButton next={nextPath} primary />
       <p className="text-sm text-subtle">
         Signing in with Steam needs no sign up and adds your rank to suggestions.
       </p>
