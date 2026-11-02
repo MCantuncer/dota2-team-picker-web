@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { SteamButton } from "@/components/steam-button";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { getUser } from "@/lib/supabase/server";
@@ -24,180 +25,122 @@ const EXAMPLE = {
   ],
 };
 
-/** Heroes for the portrait wall behind the headline. */
-const WALL = [
-  1, 2, 5, 8, 11, 14, 17, 19, 21, 22, 26, 30, 35, 39, 41, 44, 46, 53, 54, 62, 63, 64, 69, 71, 74, 75, 86, 87, 93,
-  96, 98, 100, 104, 106, 107, 113, 114, 119, 120, 121, 123, 126, 128, 129, 135, 136, 137, 138, 145, 131,
-];
-
-const FEATURES = [
+const POINTS = [
   {
-    title: "Counters and synergy",
-    text: "Every suggestion is weighed against the enemy lineup and with your allies, from hundreds of thousands of recent ranked matches.",
+    title: "Your position first",
+    text: "Picks for the role you play, weighed against the enemy lineup and with your allies, from recent ranked matches.",
   },
   {
     title: "Tuned to you",
-    text: "Your position, your rank's meta, and the heroes you actually win with. Sign in with Steam and it reads them for you.",
+    text: "Your rank's meta and the heroes you actually win with. Sign in with Steam and it reads them for you.",
   },
   {
     title: "Built for the 30 seconds",
-    text: "Alt-tab, type two letters, press Enter. Eight picks with plain reasons, ready before the timer matters.",
+    text: "Type two letters, press Enter. Eight picks with plain reasons, ready before the timer matters.",
   },
 ];
+
+/** The one hero render on the page: graded down and faded at the edges so the copy stays in front. */
+const RENDER_STYLE: CSSProperties = {
+  filter: "grayscale(.55) sepia(.25) brightness(.55)",
+  maskImage: "radial-gradient(closest-side at 50% 45%, #000 50%, transparent 100%)",
+  WebkitMaskImage: "radial-gradient(closest-side at 50% 45%, #000 50%, transparent 100%)",
+};
 
 export default async function Home() {
   const [user, heroes] = await Promise.all([getUser(), getHeroes().catch(() => [] as Hero[])]);
   const byId = new Map(heroes.map((h) => [h.id, h]));
-  const wall = WALL.map((id) => byId.get(id)).filter((h): h is Hero => Boolean(h));
 
   return (
-    <main className="flex flex-1 flex-col">
-      <section className="relative isolate overflow-hidden border-b border-line">
-        <PortraitWall heroes={wall} />
-        <div className="page grid items-center gap-12 py-16 lg:grid-cols-[1fr_minmax(0,34rem)] lg:py-24">
-          <div className="flex flex-col gap-6">
-            <span className="label-caps text-accent">Draft assistant for Dota 2</span>
-            <h1 className="text-5xl font-bold uppercase leading-[0.95] tracking-tight text-fg sm:text-6xl">
-              Win the draft
-              <br />
-              <span className="text-accent">before the horn.</span>
-            </h1>
-            <p className="max-w-xl text-lg text-muted">
-              Enter the heroes already picked and your position. Get the 8 best picks for this game in seconds, each
-              with the reason it works.
-            </p>
-            {user ? (
-              <div className="flex flex-wrap gap-3">
-                <Link href="/my-heroes" className="btn btn-primary btn-lg">
-                  Set up my heroes
+    <main className="relative isolate flex flex-1 flex-col overflow-hidden">
+      <Image
+        src="/art/invoker.webp"
+        alt=""
+        aria-hidden
+        width={1100}
+        height={1100}
+        priority
+        style={RENDER_STYLE}
+        className="pointer-events-none absolute -right-24 top-4 -z-10 w-[min(44rem,90vw)] opacity-60 lg:right-0 lg:opacity-100"
+      />
+      <section className="page grid items-center gap-12 pb-12 pt-16 lg:grid-cols-[minmax(0,1fr)_25rem] lg:pt-20">
+        <div className="flex flex-col">
+          <span className="text-sm text-accent">Draft assistant for Dota 2</span>
+          <h1 className="mt-3 max-w-2xl text-5xl leading-[1.05] tracking-[-0.035em] sm:text-6xl">
+            Pick the hero this draft needs
+          </h1>
+          <p className="mt-5 max-w-xl text-lg leading-7 text-fg/80">
+            Type the heroes as they come. In under a second you get eight picks for your position, each with the reason
+            from this draft.
+          </p>
+          {user ? (
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/draft" className="btn btn-primary btn-lg">
+                Start a draft
+              </Link>
+              <Link href="/my-heroes" className="btn btn-secondary btn-lg">
+                Set up my heroes
+              </Link>
+              {(await canOpenCaptainMode(user.id)) && (
+                <Link href="/admin/captain" className="btn btn-secondary btn-lg">
+                  Open captain mode
                 </Link>
-                {(await canOpenCaptainMode(user.id)) && (
-                  <Link href="/admin/captain" className="btn btn-secondary btn-lg">
-                    Open captain mode
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-3">
-                <SteamButton next="/my-heroes" primary />
-                <Link href="/signup" className="btn btn-secondary btn-lg">
-                  Sign up with email
-                </Link>
-              </div>
-            )}
-            {user && <p className="text-sm text-subtle">The live draft screen is coming next.</p>}
-          </div>
-          <DraftPreview byId={byId} />
+              )}
+            </div>
+          ) : (
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <SteamButton next="/my-heroes" primary />
+              <Link href="/signup" className="btn btn-secondary btn-lg">
+                Sign up with email
+              </Link>
+            </div>
+          )}
         </div>
+        <DraftPreview byId={byId} />
       </section>
 
-      <section className="page grid gap-4 py-14 md:grid-cols-3">
-        {FEATURES.map((f, i) => (
-          <div key={f.title} className="card flex flex-col gap-2 p-5">
-            <span className="font-heading text-sm font-semibold text-accent">0{i + 1}</span>
-            <h2 className="text-xl font-semibold uppercase tracking-wide text-fg">{f.title}</h2>
-            <p className="text-sm leading-relaxed text-muted">{f.text}</p>
-          </div>
-        ))}
+      <section className="page pb-16">
+        <div className="grid gap-8 border-t border-line pt-7 md:grid-cols-3 md:gap-10">
+          {POINTS.map((p) => (
+            <div key={p.title}>
+              <h2 className="text-lg leading-6">{p.title}</h2>
+              <p className="mt-2 text-sm leading-[1.35rem] text-subtle">{p.text}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   );
 }
 
-/** A tilted wall of hero portraits that fades into the page, behind the headline. */
-function PortraitWall({ heroes }: { heroes: Hero[] }) {
-  if (!heroes.length) return null;
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-      <div className="absolute -inset-x-24 -top-24 bottom-0 grid origin-center -rotate-6 grid-cols-6 gap-2 opacity-40 sm:grid-cols-8 lg:grid-cols-10">
-        {heroes.concat(heroes).map((h, i) => (
-          <Image
-            key={i}
-            src={h.image}
-            alt=""
-            width={256}
-            height={144}
-            sizes="(min-width: 1024px) 10vw, 16vw"
-            className="aspect-video w-full rounded-sm object-cover grayscale-[35%]"
-          />
-        ))}
-      </div>
-      {/* Fade the wall out under the text and toward the bottom so copy stays readable. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/85 to-bg/40" />
-      <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg/60" />
-    </div>
-  );
-}
-
-/** The product in one picture: a draft in progress and the engine's 8 picks. */
+/** The product in one picture: a real engine result for a draft in progress. */
 function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const hero = (id: number) => byId.get(id);
+  const names = (ids: number[]) => ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and ");
   return (
-    <figure className="card overflow-hidden bg-surface/90 backdrop-blur">
-      <div className="grid grid-cols-2 border-b border-line">
-        <TeamRow label="Your team" ids={EXAMPLE.allies} hero={hero} side="radiant" />
-        <TeamRow label="Enemy" ids={EXAMPLE.enemies} hero={hero} side="dire" />
-      </div>
-      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
-        <span className="label-caps">Best picks for you · Mid</span>
-        <span className="text-xs text-subtle">Legend</span>
-      </div>
-      <ol className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
-        {EXAMPLE.suggestions.map((s, i) => {
+    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong lg:mt-48">
+      <figcaption className="text-sm text-subtle">
+        Example: you play mid with {names(EXAMPLE.allies)}, they have {names(EXAMPLE.enemies)}
+      </figcaption>
+      <ol className="mt-2">
+        {EXAMPLE.suggestions.slice(0, 4).map((s, i) => {
           const h = hero(s.id);
           return (
-            <li
-              key={s.id}
-              className={`flex items-center gap-2.5 rounded-md border p-1.5 pr-2.5 ${
-                i === 0 ? "border-accent/60 bg-accent/10" : "border-line bg-raised/60"
-              }`}
-            >
-              {h && <Image src={h.image} alt="" width={64} height={36} className="h-9 w-16 shrink-0 rounded object-cover" />}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-semibold text-fg">{h?.name ?? `Hero ${s.id}`}</span>
-                  <span className="text-xs font-semibold text-accent">{s.score.toFixed(1)}</span>
-                </div>
-                <div className="truncate text-xs text-muted">{s.reason}</div>
-              </div>
+            <li key={s.id} className="grid grid-cols-[4rem_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line py-2.5">
+              {h ? (
+                <Image src={h.image} alt="" width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />
+              ) : (
+                <span className="h-9 w-16 rounded-xs bg-raised" />
+              )}
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-fg">{h?.name ?? `Hero ${s.id}`}</span>
+                <span className="block truncate text-xs text-subtle">{s.reason}</span>
+              </span>
+              <span className={`num text-right ${i === 0 ? "text-accent" : "text-fg"}`}>{s.score.toFixed(1)}</span>
             </li>
           );
         })}
       </ol>
-      <figcaption className="border-t border-line px-4 py-2.5 text-xs text-subtle">
-        Real output from the engine for this draft.
-      </figcaption>
     </figure>
-  );
-}
-
-function TeamRow({
-  label,
-  ids,
-  hero,
-  side,
-}: {
-  label: string;
-  ids: number[];
-  hero: (id: number) => Hero | undefined;
-  side: "radiant" | "dire";
-}) {
-  const color = side === "radiant" ? "text-radiant" : "text-dire";
-  const bar = side === "radiant" ? "bg-radiant" : "bg-dire";
-  return (
-    <div className={`relative flex flex-col gap-2 p-4 ${side === "dire" ? "border-l border-line" : ""}`}>
-      <span aria-hidden className={`absolute inset-x-0 top-0 h-0.5 ${bar}`} />
-      <span className={`label-caps ${color}`}>{label}</span>
-      <div className="grid grid-cols-5 gap-1">
-        {Array.from({ length: 5 }, (_, i) => {
-          const h = ids[i] ? hero(ids[i]) : undefined;
-          return h ? (
-            <Image key={i} src={h.image} alt={h.name} title={h.name} width={64} height={36} className="aspect-video w-full rounded-sm object-cover" />
-          ) : (
-            <span key={i} className="aspect-video w-full rounded-sm border border-dashed border-line-strong" />
-          );
-        })}
-      </div>
-    </div>
   );
 }

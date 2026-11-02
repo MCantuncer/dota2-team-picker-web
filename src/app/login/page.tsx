@@ -21,13 +21,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     <AuthCard title="Log in">
       {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
       <SteamButton next={nextPath} />
-      <p className="text-center text-xs text-subtle">
+      <p className="text-sm text-subtle">
         Steam accounts get rank-based suggestions. Turn on <em>Expose Public Match Data</em> in Dota 2 so we can
         read it.
       </p>
       <Divider />
       <AuthForm action={logIn} submitLabel="Log in with email" next={nextPath} />
-      <p className="text-center text-sm text-muted">
+      <p className="text-sm text-muted">
         No account?{" "}
         <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="link">
           Sign up with email
