@@ -134,6 +134,7 @@ function PlayerCard({
           )}
           {build ? <Build build={build} /> : <p className="text-xs text-muted">No item data for this hero yet.</p>}
           <p className="text-sm">{player.job}</p>
+          {player.enemies.length > 0 && <Enemies player={player} heroName={heroName} />}
           {player.fallbacks.length > 0 && (
             <div className="flex flex-col gap-1">
               <span className="micro text-muted">If it goes wrong</span>
@@ -147,6 +148,31 @@ function PlayerCard({
         </div>
       </details>
     </li>
+  );
+}
+
+/** Each enemy for this player, lane enemies first: the threat in one line, then the items that answer it or a tip. */
+function Enemies({ player, heroName }: { player: PlayerPlan; heroName: (id: number) => string }) {
+  const build = player.build;
+  const items = build ? [...build.start, ...build.lane, ...build.core, ...build.situational] : [];
+  const itemName = (id: number) => items.find((i) => i.itemId === id)?.name;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="micro text-muted">Who to watch</span>
+      <ul className="flex flex-col gap-1 text-sm">
+        {player.enemies.map((enemy) => {
+          const answers = enemy.answers.map(itemName).filter((name): name is string => Boolean(name));
+          return (
+            <li key={enemy.heroId}>
+              <span className="font-bold">{heroName(enemy.heroId)}</span>
+              {enemy.inLane && <span className="micro text-muted"> {enemy.laneSure ? "Lane" : "Lane, guessed"}</span>}{" "}
+              <span className="text-muted">{enemy.threat}.</span>{" "}
+              {answers.length > 0 ? <span className="text-accent">Buy {answers.join(", ")}.</span> : enemy.tip && <span>{enemy.tip}.</span>}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -177,7 +203,7 @@ function Build({ build }: { build: ItemBuild }) {
           <div className="mt-2 flex flex-col gap-2">
             <Labelled label="Start" items={build.start} />
             {build.lane.length > 0 && <Labelled label="Lane" items={build.lane} minutes={isRough ? undefined : "timed"} />}
-            {build.situational.length > 0 && <Labelled label="If needed" items={build.situational} />}
+            {build.situational.length > 0 && <Labelled label="If needed" items={build.situational} core={build.core} />}
           </div>
         </details>
       )}
@@ -185,21 +211,21 @@ function Build({ build }: { build: ItemBuild }) {
   );
 }
 
-function Labelled({ label, items, minutes }: { label: string; items: BuildItem[]; minutes?: "timed" }) {
+function Labelled({ label, items, minutes, core }: { label: string; items: BuildItem[]; minutes?: "timed"; core?: BuildItem[] }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="micro text-muted">{label}</span>
-      <ItemRow items={items} minutes={minutes} />
+      <ItemRow items={items} minutes={minutes} core={core} />
     </div>
   );
 }
 
-function ItemRow({ items, minutes }: { items: BuildItem[]; minutes?: "timed" | "rough" }) {
+function ItemRow({ items, minutes, core }: { items: BuildItem[]; minutes?: "timed" | "rough"; core?: BuildItem[] }) {
   return (
     <ol className="flex flex-wrap gap-2">
       {items.map((item) => (
-        <li key={item.itemId} title={itemTitle(item, minutes)} className="flex flex-col items-center gap-0.5">
-          <span className={`block rounded-xs ${item.reason ? "ring-1 ring-accent" : ""}`}>
+        <li key={item.itemId} title={itemTitle(item, minutes, core?.find((c) => c.itemId === item.replaces)?.name)} className="flex flex-col items-center gap-0.5">
+          <span className={`block rounded-xs ${item.draft || item.reason ? "ring-1 ring-accent" : ""}`}>
             <Image
               src={ITEM_CDN + item.img}
               alt={item.count ? `${item.count} ${item.name}` : item.name}
@@ -224,7 +250,7 @@ function ItemRow({ items, minutes }: { items: BuildItem[]; minutes?: "timed" | "
   );
 }
 
-function itemTitle(item: BuildItem, minutes: "timed" | "rough" | undefined): string {
+function itemTitle(item: BuildItem, minutes: "timed" | "rough" | undefined, replaces?: string): string {
   const parts = [item.name];
   if (minutes === "rough") parts.push(`around ${item.minute} min`);
   if (minutes === "timed") {
@@ -232,5 +258,6 @@ function itemTitle(item: BuildItem, minutes: "timed" | "rough" | undefined): str
     if (item.lateMinute !== undefined) parts.push(`slower than most after ${item.lateMinute} min`);
   }
   if (item.reason) parts.push(item.reason);
+  if (replaces) parts.push(`instead of ${replaces}`);
   return parts.join(", ");
 }

@@ -29,6 +29,10 @@ const plan: GamePlan = {
       position: 1,
       job: "Farm and carry the late game.",
       fallbacks: ["Lane lost? Leave the lane at 5 to 6 min for the jungle."],
+      enemies: [
+        { heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage", answers: [], tip: "Don't focus them" },
+        { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116] },
+      ],
       build: {
         timings: "rank",
         start: [item(44, "Tango", 0), item(16, "Iron Branch", 0, { count: 2 })],
@@ -38,7 +42,7 @@ const plan: GamePlan = {
           item(116, "Black King Bar", 17, { reason: "Against Hero 8: buy it early", lateMinute: 20 }),
         ],
         bootsOr: item(63, "Power Treads", 8),
-        situational: [],
+        situational: [{ ...item(145, "Monkey King Bar", 30), draft: true, replaces: 116 }],
       },
     },
     {
@@ -46,6 +50,7 @@ const plan: GamePlan = {
       position: 2,
       job: "Win your lane.",
       fallbacks: [],
+      enemies: [],
       build: { timings: "around", start: [], lane: [], core: [item(36, "Magic Wand", 8)], situational: [] },
     },
   ],
@@ -91,6 +96,15 @@ describe("GameStoryPanel", () => {
     expect(within(carry).getByText("x2")).toBeInTheDocument();
     expect(within(carry).getByTitle(/Wraith Band, usually by 2 min/)).toBeInTheDocument();
     expect(within(carry).getByText(/Or Power Treads at/)).toBeInTheDocument();
+  });
+
+  it("lists who to watch, lane enemies first, with the items that answer them or a tip", () => {
+    renderPanel(1);
+    const carry = screen.getByRole("listitem", { name: "Hero 1, position 1" });
+    const watch = within(carry).getAllByRole("listitem").filter((li) => /Tank who|Stuns and/.test(li.textContent ?? ""));
+    expect(watch[0]).toHaveTextContent("Hero 9 Lane, guessed Tank who soaks your damage. Don't focus them.");
+    expect(watch[1]).toHaveTextContent("Hero 8 Stuns and disables. Buy Black King Bar.");
+    expect(within(carry).getByTitle(/Monkey King Bar.*instead of Black King Bar/)).toBeInTheDocument();
   });
 
   it("marks rough minutes when there are no real timings", () => {
