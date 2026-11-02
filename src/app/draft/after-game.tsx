@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 /** A match ID as Dota shows it: digits only. */
@@ -7,7 +8,7 @@ const MATCH_ID = /^\d{6,12}$/;
 
 /**
  * After the game: finds the match the party draft became and shows whether the party won. The
- * result is saved with the draft for the party's reports. Players without Steam, or with a
+ * result is saved with the draft, and its report gets built from it. Players without Steam, or with a
  * hidden Dota profile, paste the match ID instead.
  */
 export function AfterGame({
@@ -15,7 +16,7 @@ export function AfterGame({
   checking,
   onFind,
 }: {
-  result: { matchId: number; won: boolean } | null;
+  result: { draftId: string; matchId: number; won: boolean } | null;
   checking: boolean;
   /** Returns a message to show when no result was saved. */
   onFind: (matchId?: number) => Promise<string | null>;
@@ -42,7 +43,9 @@ export function AfterGame({
           <a href={`https://www.opendota.com/matches/${result.matchId}`} target="_blank" rel="noopener noreferrer" className="underline">
             Match <span className="num">{result.matchId}</span> on OpenDota
           </a>
-          <span className="text-muted">Saved for your party&apos;s reports.</span>
+          <Link href={`/reports/${result.draftId}`} className="link">
+            Read the report
+          </Link>
         </p>
       ) : (
         <>
