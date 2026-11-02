@@ -1,32 +1,33 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. A palette inspired by the Dota 2 client, not copied from it:
- * cool blue-black slates for surfaces, Radiant green and Dire red for the two
- * teams, and a muted gold as the single accent (focus and the primary action).
+ * Design tokens, direction C ("Codex"): a warm near black page, hairlines instead of
+ * boxes, three text tones, Radiant green and Dire red as signals only, and one copper
+ * accent that marks the answer (the recommended pick, the chosen talent, the main action).
+ * One type family, Geist, for all text and titles. Sentence case everywhere.
  * Every color in the app comes from here; components never use raw hex values.
  *
  * This file is the code side of the site's design system. The rules for using
  * it (what each token and class is for) are in docs/design-system.md.
  */
 :root {
-  --bg: #0c0f14;
-  --surface: #131820;
-  --raised: #1a2029;
-  --hover: #222935;
-  --line: #232a35;
-  --line-strong: #323b48;
-  --line-hover: #46505f;
+  --bg: #12110f;
+  --surface: #1a1815;
+  --raised: #211f1b;
+  --hover: #2a2722;
+  --line: #26231f;
+  --line-strong: #2e2a25;
+  --line-hover: #3a352e;
 
-  --fg: #e6e8eb;
-  --muted: #a1a9b5;
-  --subtle: #7f8896;
+  --fg: #ece6da;
+  --muted: #a8a296;
+  --subtle: #8f897d;
 
-  --accent: #c9a45c;
-  --accent-hover: #d9b670;
-  --accent-bright: #e6c684;
-  --accent-deep: #9c7b3a;
-  --on-accent: #17130a;
+  --accent: #e8a052;
+  --accent-hover: #f0b06a;
+  --accent-bright: #f6c48a;
+  --accent-deep: #9a6232;
+  --on-accent: #1a120a;
 
   --radiant: #8cc265;
   --radiant-strong: #4e8a2c;
@@ -40,14 +41,14 @@
   --dire-tint: color-mix(in srgb, var(--dire) 12%, var(--surface));
   --warn-tint: color-mix(in srgb, var(--warn) 12%, var(--surface));
 
-  --hover-strong: #2b3341;
+  --hover-strong: #33302a;
   /* Solid fill for the commit step of an action that can't be undone. */
   --danger: #c4452f;
   --danger-hover: #d14f38;
   /* Text on --danger and --steam. */
   --on-strong: #ffffff;
   /* Ban slash and outline on greyed portraits. Non-text only (3.4:1 on --bg). */
-  --ban: #5f6875;
+  --ban: #6a645a;
 
   /* Attribute glyphs only (12px), never text or fills. */
   --attr-str: #c77b5e;
@@ -55,15 +56,15 @@
   --attr-int: #6ba3d6;
   --attr-uni: #b48ad8;
 
-  /* Rank badge ramp, Herald (0) to Immortal (7): slate to gold. */
-  --rank-0: #7f8896;
-  --rank-1: #8f96a0;
-  --rank-2: #9fa3a6;
-  --rank-3: #b0ab9c;
-  --rank-4: #c0ad84;
-  --rank-5: #c9a45c;
-  --rank-6: #d9b670;
-  --rank-7: #e6c684;
+  /* Rank badge ramp, Herald (0) to Immortal (7): warm grey to copper. */
+  --rank-0: #8f897d;
+  --rank-1: #9a9387;
+  --rank-2: #a8a296;
+  --rank-3: #b9a98f;
+  --rank-4: #c9a77e;
+  --rank-5: #d9a56a;
+  --rank-6: #e8a052;
+  --rank-7: #f6c48a;
 
   /*
    * Motion. Hover and press use --dur-fast, small entrances --dur-base, larger panels --dur-slow; nothing runs
@@ -125,18 +126,15 @@
   --color-steam: var(--steam);
   --color-steam-hover: var(--steam-hover);
   --font-sans: var(--font-geist-sans);
-  --font-heading: var(--font-display), var(--font-geist-sans), sans-serif;
+  --font-heading: var(--font-geist-sans), sans-serif;
 }
 
 body {
-  /* Faint Radiant and Dire light from the two top corners, like the two sides of the map. */
-  background:
-    radial-gradient(60rem 28rem at -10% -8rem, color-mix(in srgb, var(--radiant-strong) 14%, transparent), transparent 70%),
-    radial-gradient(60rem 28rem at 110% -8rem, color-mix(in srgb, var(--dire-strong) 13%, transparent), transparent 70%),
-    var(--bg);
-  background-attachment: fixed;
-  color: var(--fg);
+  background: var(--bg);
+  color: var(--muted);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -162,10 +160,14 @@ body {
     outline-offset: 2px;
   }
 
+  /* Titles: Geist at 600, slightly tight. Never caps. */
   h1,
-  h2 {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    letter-spacing: 0.01em;
+  h2,
+  h3 {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--fg);
   }
 }
 
@@ -182,13 +184,11 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 0.375rem;
-    padding-inline: 1rem;
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    padding-inline: 1.125rem;
+    font-family: var(--font-geist-sans), sans-serif;
     font-size: 0.9375rem;
     line-height: 1;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-weight: 500;
     white-space: nowrap;
     transition:
       background-color var(--dur-fast),
@@ -216,23 +216,23 @@ body {
     padding-inline: 0.75rem;
     font-size: 0.8125rem;
   }
-  /* Gold, lit from above, the way the client's main buttons are. */
+  /* Flat copper: the one main action on a screen. */
   .btn-primary {
-    background: linear-gradient(to bottom, var(--accent-hover), var(--accent) 55%, var(--accent-deep));
+    background: var(--accent);
     color: var(--on-accent);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 0 0 1px var(--accent-deep), 0 1px 2px rgb(0 0 0 / 0.4);
   }
   .btn-primary:not(:disabled):hover {
-    background: linear-gradient(to bottom, var(--accent-bright), var(--accent-hover) 55%, var(--accent));
+    background: var(--accent-hover);
   }
+  /* Outlined: every other action. */
   .btn-secondary {
-    background: linear-gradient(to bottom, var(--hover), var(--raised));
+    background: transparent;
     color: var(--fg);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 0 0 1px var(--line-strong);
+    box-shadow: inset 0 0 0 1px var(--line-hover);
   }
   .btn-secondary:not(:disabled):hover {
-    background: linear-gradient(to bottom, var(--hover-strong), var(--hover));
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), inset 0 0 0 1px var(--line-hover);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--subtle);
   }
   .btn-ghost {
     color: var(--muted);
@@ -256,12 +256,11 @@ body {
   }
   /* For the confirm step of an action that can't be undone, such as removing a member. */
   .btn-danger {
-    background: linear-gradient(to bottom, var(--danger), var(--dire-strong));
+    background: var(--danger);
     color: var(--on-strong);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 0 0 1px var(--dire-strong), 0 1px 2px rgb(0 0 0 / 0.4);
   }
   .btn-danger:not(:disabled):hover {
-    background: linear-gradient(to bottom, var(--danger-hover), var(--danger));
+    background: var(--danger-hover);
   }
   /* A destructive action that is not the final commit, such as Remove in a row menu. */
   .btn-danger-quiet {
@@ -276,9 +275,9 @@ body {
     height: 2.25rem;
     min-width: 0;
     border-radius: 0.375rem;
-    background: var(--raised);
-    padding-inline: 0.75rem;
-    font-size: 0.875rem;
+    background: var(--surface);
+    padding-inline: 0.875rem;
+    font-size: 0.9375rem;
     color: var(--fg);
     box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: box-shadow var(--dur-fast);
@@ -303,7 +302,7 @@ body {
   select.field {
     appearance: none;
     padding-right: 2.25rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23a1a9b5' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23a8a296' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 1rem;
@@ -322,47 +321,43 @@ body {
     text-decoration: underline;
   }
 
-  /* A panel: slightly lit at the top edge and darker toward the bottom. */
+  /* A quiet panel: a hairline and a slightly lifted fill, no shadow or gradient. Prefer plain hairline rows. */
   .card {
     border-radius: 0.5rem;
     border: 1px solid var(--line);
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--raised) 80%, transparent), var(--surface) 6rem);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    background: color-mix(in srgb, var(--surface) 60%, var(--bg));
   }
 
   .page-title {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    font-size: 1.875rem;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 2.5rem;
     line-height: 1.1;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: -0.03em;
     color: var(--fg);
   }
 
+  /* A small label over a group ("Your best pick for Pos 1"). Sentence case; the name is historical. */
   .label-caps {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-family: var(--font-geist-sans), sans-serif;
     font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
+    font-weight: 500;
+    color: var(--subtle);
   }
 
   /* Panel and column headings ("My team", "Members 4"). */
   .section-title {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    font-size: 1rem;
-    line-height: 1.25rem;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: -0.02em;
     color: var(--fg);
   }
 
   /* Scores, win rates and counts. Signed values use a real minus sign (U+2212). */
   .num {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    font-family: var(--font-geist-sans), sans-serif;
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 600;
@@ -371,12 +366,10 @@ body {
 
   /* The smallest text on the site: key hints, position digits, badges, "+N". */
   .micro {
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    font-size: 0.6875rem;
-    line-height: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
   }
 
   .kbd {
@@ -387,10 +380,9 @@ body {
     justify-content: center;
     border-radius: 0.25rem;
     padding-inline: 0.25rem;
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
     color: var(--muted);
     background: var(--raised);
     box-shadow: inset 0 -1px 0 var(--line-strong), inset 0 0 0 1px var(--line-strong);
@@ -429,11 +421,9 @@ body {
     align-items: center;
     border-radius: 0.25rem;
     padding-inline: 0.75rem;
-    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
     color: var(--muted);
     cursor: pointer;
     transition:
@@ -447,7 +437,7 @@ body {
   .seg-item[aria-pressed="true"] {
     background: var(--raised);
     color: var(--fg);
-    box-shadow: inset 0 -2px 0 var(--accent);
+    box-shadow: inset 0 -1px 0 var(--accent);
   }
 
   /*

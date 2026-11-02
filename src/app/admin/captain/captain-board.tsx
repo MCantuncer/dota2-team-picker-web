@@ -309,7 +309,7 @@ function DraftView({
 
       <div className="grid gap-4 md:grid-cols-2">
         <section aria-label="Our team" className="rounded-lg border border-line border-t-radiant border-t-[3px] bg-surface p-3">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">Our team</h2>
+          <h2 className="mb-2 text-base font-semibold">Our team</h2>
           {draft.picks.map((pick, i) => {
             const member = memberById(slots[i] ?? null);
             return (
@@ -341,7 +341,7 @@ function DraftView({
         </section>
 
         <section aria-label="Enemy team" className="rounded-lg border border-line border-t-dire border-t-[3px] bg-surface p-3">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">
+          <h2 className="mb-2 text-base font-semibold">
             Enemy <span className="font-mono text-xs text-subtle">{draft.enemies.length}/5</span>
           </h2>
           {draft.enemies.length < 5 && (
@@ -361,7 +361,7 @@ function DraftView({
             ))}
           </div>
 
-          <h3 className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wider text-muted">
+          <h3 className="mb-1.5 mt-4 text-sm font-medium text-muted">
             Bans <span className="font-mono text-subtle">{draft.bans.length}</span>
           </h3>
           <HeroInput
@@ -406,7 +406,7 @@ function DraftView({
       {/* Once all ten heroes are in, the game plan replaces the suggestions. */}
       <section aria-label="Suggestions" hidden={gamePlan !== null} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider">{view === "players" ? "Call these" : "Super team"}</h2>
+          <h2 className="text-base font-semibold">{view === "players" ? "Call these" : "Super team"}</h2>
           <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist" aria-label="Suggestion view">
             {(["players", "wcst"] as const).map((v) => (
               <button
@@ -462,7 +462,7 @@ function DraftView({
       </section>
 
       <section aria-label="Lineup" className="card p-3">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider">Current team</h2>
+        <h2 className="mb-2 text-base font-semibold">Current team</h2>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
           {slots.map((memberId, i) => (
             <label key={i} className="flex flex-col gap-1 text-xs text-muted">
@@ -863,7 +863,7 @@ function TeamView({
       </label>
 
       <section aria-label="Invite" className="flex flex-col gap-2 card p-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider">Invite a friend</h2>
+        <h2 className="text-base font-semibold">Invite a friend</h2>
         <p className="text-sm text-muted">
           They get an email with a link, pick a name and password, then their positions and heroes. Teams can have
           any number of members; you choose who plays each game on the Draft tab.

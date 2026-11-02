@@ -57,7 +57,7 @@ export default async function Home() {
         <div className="page grid items-center gap-12 py-16 lg:grid-cols-[1fr_minmax(0,34rem)] lg:py-24">
           <div className="flex flex-col gap-6">
             <span className="label-caps text-accent">Draft assistant for Dota 2</span>
-            <h1 className="text-5xl font-bold uppercase leading-[0.95] tracking-tight text-fg sm:text-6xl">
+            <h1 className="text-5xl font-bold leading-[0.95] tracking-tight text-fg sm:text-6xl">
               Win the draft
               <br />
               <span className="text-accent">before the horn.</span>
@@ -95,7 +95,7 @@ export default async function Home() {
         {FEATURES.map((f, i) => (
           <div key={f.title} className="card flex flex-col gap-2 p-5">
             <span className="font-heading text-sm font-semibold text-accent">0{i + 1}</span>
-            <h2 className="text-xl font-semibold uppercase tracking-wide text-fg">{f.title}</h2>
+            <h2 className="text-xl font-semibold text-fg">{f.title}</h2>
             <p className="text-sm leading-relaxed text-muted">{f.text}</p>
           </div>
         ))}

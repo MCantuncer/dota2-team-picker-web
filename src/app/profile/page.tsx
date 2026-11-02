@@ -48,7 +48,7 @@ export default async function ProfilePage() {
         <h2 className="text-lg font-semibold">Rank</h2>
         {isSteam ? (
           <>
-            <p className="font-heading text-4xl font-bold uppercase tracking-wide text-accent">{rank ?? "Unknown"}</p>
+            <p className="font-heading text-4xl font-bold text-accent">{rank ?? "Unknown"}</p>
             {!rank && (
               <p className="max-w-prose text-sm text-muted">
                 OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}

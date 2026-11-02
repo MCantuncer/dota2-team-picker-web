@@ -181,7 +181,7 @@ export function PositionHeroes({
           if (!list.length) return null;
           return (
             <div key={attr.key} className="flex flex-col gap-1.5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">{attr.name}</h3>
+              <h3 className="text-sm font-medium text-subtle">{attr.name}</h3>
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
                 {list.map((h) => {
                   const on = chosen.includes(h.id);

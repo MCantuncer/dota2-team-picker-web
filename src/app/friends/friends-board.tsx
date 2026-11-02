@@ -150,7 +150,7 @@ function FriendLink({ code }: { code: string }) {
 
   return (
     <section aria-labelledby="friend-link-heading" className="card flex flex-col gap-2 p-3">
-      <h2 id="friend-link-heading" className="text-sm font-semibold uppercase tracking-wider">
+      <h2 id="friend-link-heading" className="text-base font-semibold">
         Your friend link
       </h2>
       <p className="text-sm text-muted">Send it to friends in Discord or anywhere else. Opening it sends you a request.</p>
@@ -167,7 +167,7 @@ function FriendLink({ code }: { code: string }) {
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wider">
+      <h2 className="text-base font-semibold">
         {title} <span className="font-mono text-xs text-subtle">{count}</span>
       </h2>
       <ul className="card divide-y divide-line">{children}</ul>

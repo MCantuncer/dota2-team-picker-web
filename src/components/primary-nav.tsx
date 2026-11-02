@@ -41,14 +41,14 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-md px-3 py-1.5 font-heading text-[0.9375rem] font-semibold uppercase tracking-wider transition-colors ${
-                  active ? "text-fg" : "text-muted hover:bg-raised hover:text-fg"
+                className={`rounded-md px-2.5 py-1.5 text-[0.9375rem] transition-colors ${
+                  active ? "text-fg" : "text-muted hover:text-fg"
                 }`}
               >
                 {item.label}
                 <NavBadge count={item.badge} />
               </Link>
-              {active && <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-accent" />}
+              {active && <span aria-hidden className="absolute inset-x-2.5 -bottom-px h-px bg-accent" />}
             </li>
           );
         })}

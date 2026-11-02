@@ -119,7 +119,7 @@ export function PartyLobby({
 
       <section aria-label="Players" className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wider">
+          <h2 className="text-base font-semibold">
             Players{" "}
             <span className="font-heading text-xs text-subtle">
               {party.members.length}/{PARTY_SIZE}
@@ -170,7 +170,7 @@ export function PartyLobby({
 
       {isLeader ? (
         <section aria-label="Invite" className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wider">
+          <h2 className="text-base font-semibold">
             Invite <span className="font-heading text-xs text-subtle">{toInvite.length}</span>
           </h2>
           <ul className="card divide-y divide-line">

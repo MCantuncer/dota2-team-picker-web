@@ -39,7 +39,7 @@ export function MemberList({
 }) {
   return (
     <section aria-labelledby="members-heading" className="flex flex-col gap-2">
-      <h2 id="members-heading" className="text-sm font-semibold uppercase tracking-wider">
+      <h2 id="members-heading" className="text-base font-semibold">
         Members <span className="font-mono text-xs text-subtle">{members.length}</span>
       </h2>
       {members.length ? (
@@ -100,7 +100,7 @@ function MemberRow({
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
               {m.role === "co_captain" && (
-                <span className="shrink-0 rounded bg-accent/15 px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide text-accent ring-1 ring-accent/40">
+                <span className="shrink-0 rounded bg-accent/15 px-1.5 py-px text-[11px] font-semibold text-accent ring-1 ring-accent/40">
                   Co-captain
                 </span>
               )}

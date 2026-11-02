@@ -12,19 +12,18 @@ import { PrimaryNav, type NavItem } from "./primary-nav";
 /** The bar at the top of every page: brand, main sections, and the account menu. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur supports-[backdrop-filter]:bg-bg/75">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-1.5 focus:text-sm focus:font-semibold focus:text-on-accent"
       >
         Skip to content
       </a>
-      <div className="page flex h-14 items-stretch gap-8">
-        <Link href="/" className="flex items-center gap-2.5 rounded-md" aria-label="Team Picker home">
-          <LogoMark />
-          <span className="font-heading text-lg font-bold uppercase leading-none tracking-wide text-fg">
-            Team Picker
-            <span className="ml-2 hidden text-xs font-semibold tracking-widest text-accent sm:inline">Dota 2</span>
+      <div className="page flex h-16 items-stretch gap-8">
+        <Link href="/" className="flex items-center gap-2.5 rounded-md" aria-label="Dota2 Team Picker home">
+          <LogoMark className="h-6 w-6" />
+          <span className="text-lg font-semibold leading-none tracking-[-0.02em] text-fg">
+            <span className="hidden sm:inline">Dota2 </span>Team Picker
           </span>
         </Link>
         <Suspense fallback={<div className="ml-auto" />}>
