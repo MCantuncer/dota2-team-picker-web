@@ -13,7 +13,7 @@ This is the site's one design system. Every screen, component and email follows 
 ## Principles
 
 1. **Calm and serious (direction C, "Codex").** A warm near black page, hairlines and space instead of boxes, one
-   dimmed hero render per page, real hero, item and ability art. Sentence case everywhere: no all-caps text and no
+   dimmed hero render per page, real hero, item and ability art. No all-caps text (capitalisation rule under Writing) and no
    wide letter spacing. Nothing that would fit on a League tool (tier badges, candy colours, pill chips).
 2. **The portrait is the hero.** Heroes are shown by their art first. Names are the backup and are never truncated.
 3. **Colour is a signal.** Radiant green means your side, Dire red the enemy, copper means focus, selected or "do
@@ -62,7 +62,7 @@ with a label, a position or the column they sit in.
 ## Type
 
 One family: Geist, for all text and titles (`font-sans`; `font-heading` is the same face). Titles are 600 with tight
-tracking (-0.02em). Sentence case only: never `uppercase`, never wide tracking. All numbers use tabular figures.
+tracking (-0.02em). Never `uppercase`, never wide tracking. All numbers use tabular figures.
 
 | Style | Class | Use |
 |---|---|---|
@@ -72,7 +72,7 @@ tracking (-0.02em). Sentence case only: never `uppercase`, never wide tracking. 
 | Hero name 20/24 | `text-xl font-semibold` | Hero name on a suggestion, member name |
 | Body 15/22 | (default) | Default text, reasons |
 | Small 13/18 | `text-sm` | Meta lines, helper text, form labels |
-| Label 13/16 | `.label-caps` | Field and group labels (sentence case; the class name is historical) |
+| Label 13/16 | `.label-caps` | Field and group labels (never caps; the class name is historical) |
 | Number 14/20 | `.num` | Scores, win rates, counts |
 | Micro 12/16 | `.micro` | Key hints, position digits, badges, "+N" |
 
@@ -164,13 +164,18 @@ Rules:
 
 ## Writing
 
-Plain, short, from the player's side: "Banned", not "Mark as unavailable". Buttons say what happens ("Send invite").
+Plain, short, from the player's side: "Banned", not "Mark as unavailable". Buttons say what happens ("Send Invite").
+
+**Capitalisation.** Nav items, tabs, page and section titles, headings and buttons use Title Case: capitalise every
+word except small words (a, an, the, and, or, of, to, on, for, at, by, vs, with, from) unless they come first:
+"Game Story", "Item Build", "Skills and Talents", "My Heroes", "Sign In with Steam". Body text, reasons, helper lines,
+tooltips and field labels are normal sentences. Never all caps.
 Errors say what went wrong and how to fix it. No em dashes in UI copy.
 
 ## Checklist for UI work
 
 - [ ] Only tokens and shared classes; no raw hex, palette colours, arbitrary sizes, `font-mono` or bare `rounded`.
-- [ ] Sentence case: no `uppercase` and no wide tracking anywhere.
+- [ ] Title Case for nav, tabs, titles, headings and buttons; sentences for body text; no `uppercase` or wide tracking.
 - [ ] Heroes shown with their art; names never truncated.
 - [ ] Colour only for signals (team, focus, risk, error).
 - [ ] Every action works by keyboard, has a visible key hint where it matters, and has an accessible name.
