@@ -429,7 +429,7 @@ export function DraftBoard({
           </Slots>
         </TeamPanel>
 
-        <section aria-labelledby="bans-title" className="card flex flex-col gap-3 self-start p-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
+        <section aria-labelledby="bans-title" className="flex flex-col gap-3 self-start border-t border-line pt-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
           <h2 id="bans-title" className="section-title">
             Bans <span className="num text-subtle">{bans.length}</span>
           </h2>
@@ -496,13 +496,14 @@ export function DraftBoard({
               You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
             </p>
           ) : (
-            <ol aria-label="Suggested heroes" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(14rem,1fr))]">
+            <ol aria-label="Suggested heroes" className="flex flex-col">
               {suggestions.map((s, i) => (
                 <SuggestionCard
                   key={s.heroId}
                   suggestion={s}
                   portrait={portraits[s.heroId]}
-                  best={i === 0}
+                  rank={i + 1}
+                  position={myPosition}
                   gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
                   onPicked={
                     locked
@@ -557,16 +558,16 @@ export function DraftBoard({
 function WinBar({ chance }: { chance: number }) {
   const pct = (chance * 100).toFixed(1);
   return (
-    <section aria-label="Win chance" className="card flex flex-col gap-2 p-3">
-      <div className="flex items-center justify-between text-sm">
-        <span>
-          <span className="label-caps">Win chance</span> <span className="num text-radiant">{pct}%</span>
+    <section aria-label="Win chance" className="flex flex-col gap-2 border-y border-line py-3">
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm text-subtle">
+          Win chance <span className="num text-lg text-radiant">{pct}%</span>
         </span>
-        <span>
-          <span className="label-caps">Enemy</span> <span className="num text-dire">{(100 - chance * 100).toFixed(1)}%</span>
+        <span className="text-sm text-subtle">
+          Enemy <span className="num text-lg text-dire">{(100 - chance * 100).toFixed(1)}%</span>
         </span>
       </div>
-      <div aria-hidden className="flex h-2 overflow-hidden rounded-xs bg-dire-strong">
+      <div aria-hidden className="flex h-1 overflow-hidden rounded-xs bg-dire-strong">
         <div className="bg-radiant-strong" style={{ width: `${pct}%` }} />
       </div>
     </section>
@@ -589,9 +590,10 @@ function TeamPanel({
   return (
     <section
       aria-label={title}
-      className={`card flex flex-col gap-3 self-start border-t-3 p-4 ${side === "radiant" ? "border-t-radiant-strong" : "border-t-dire-strong"} ${className}`}
+      className={`flex flex-col gap-3 self-start border-t pt-4 ${side === "radiant" ? "border-t-radiant-strong" : "border-t-dire-strong"} ${className}`}
     >
-      <h2 className={`section-title ${side === "radiant" ? "text-radiant" : "text-dire"}`}>
+      <h2 className="section-title flex items-baseline gap-2">
+        <span aria-hidden className={`h-2 w-2 self-center rounded-full ${side === "radiant" ? "bg-radiant" : "bg-dire"}`} />
         {title} <span className="num text-subtle">{count}/5</span>
       </h2>
       {children}
@@ -605,7 +607,10 @@ function Slots({ children }: { children: React.ReactNode[] }) {
     <ul className="flex flex-col gap-1">
       {children}
       {Array.from({ length: TEAM_SIZE - children.length }, (_, i) => (
-        <li key={`empty-${i}`} aria-hidden className="h-11 rounded-md border border-dashed border-line" />
+        <li key={`empty-${i}`} aria-hidden className="flex h-11 items-center gap-3 rounded-sm bg-surface p-1 ring-1 ring-inset ring-line">
+          <span className="h-9 w-16 shrink-0 rounded-xs bg-raised" />
+          <span className="text-sm text-subtle">Open</span>
+        </li>
       ))}
     </ul>
   );
@@ -627,10 +632,10 @@ function Slot({
   children?: React.ReactNode;
 }) {
   return (
-    <li className="flex min-h-11 items-center gap-3 rounded-md bg-raised p-1 pr-2">
+    <li className="flex min-h-11 items-center gap-3 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line">
       <Portrait hero={hero} src={portrait} size="strip" />
       <span className="flex min-w-0 flex-col">
-        <span className="font-heading text-base font-semibold leading-tight">{hero.name}</span>
+        <span className="font-medium leading-tight text-fg">{hero.name}</span>
         {by && <span className="micro text-subtle">Entered by {by}</span>}
       </span>
       <span className="ml-auto flex items-center gap-2">
@@ -671,17 +676,34 @@ function Portrait({
   return <Image src={src} alt={label ? hero.name : ""} width={s.w} height={s.h} className={look} />;
 }
 
+/** The hero's large transparent render on the Steam CDN, from its portrait URL. */
+const renderOf = (portrait?: string) =>
+  portrait?.replace("/images/dota_react/heroes/", "/videos/dota_react/heroes/renders/");
+
+/** The graded render behind the best pick: one per page, never a portrait wall. */
+const RENDER_STYLE: React.CSSProperties = {
+  filter: "grayscale(.55) sepia(.25) brightness(.6)",
+  maskImage: "radial-gradient(closest-side at 50% 45%, #000 45%, transparent 100%)",
+  WebkitMaskImage: "radial-gradient(closest-side at 50% 45%, #000 45%, transparent 100%)",
+};
+
+/**
+ * One suggestion. Rank 1 is the answer: a large name over the hero's render, the score in copper and the main
+ * Picked button. Ranks 2 to 8 are equal hairline rows with the same columns, so the eye reads down them.
+ */
 function SuggestionCard({
   suggestion: s,
   portrait,
-  best,
+  rank,
+  position,
   gain,
   onPicked,
   onBanned,
 }: {
   suggestion: Suggestion;
   portrait?: string;
-  best: boolean;
+  rank: number;
+  position: Position;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -689,46 +711,93 @@ function SuggestionCard({
   onBanned?: () => void;
 }) {
   const hero = { id: s.heroId, name: s.name } as HeroInfo;
-  return (
-    <li className={`card flex flex-col gap-2 p-3 ${best ? "ring-2 ring-accent" : ""}`}>
-      <div className="flex items-start gap-3">
-        <Portrait hero={hero} src={portrait} size="card" />
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="font-heading text-xl font-bold leading-6">{s.name}</span>
-          <span className="flex items-center gap-2">
-            <span className="num text-muted" title="Score in win-rate points">
-              {signed(s.score)}
-            </span>
-            {gain !== null && (
-              <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`} title="Change in your team's win chance">
-                {signed(gain)}%
-              </span>
-            )}
-            {best && <span className="chip chip-accent micro">Best</span>}
+  const counters = s.hardCounters.map((n) => (
+    <p key={n.counterId} className={`notice ${NOTICE[n.status]} text-xs`}>
+      {n.text}
+    </p>
+  ));
+  const gainText =
+    gain !== null ? (
+      <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`} title="Change in your team's win chance">
+        {signed(gain)}%
+      </span>
+    ) : null;
+
+  if (rank === 1) {
+    const render = renderOf(portrait);
+    return (
+      <li className="relative isolate mb-6 flex min-h-72 flex-col justify-center gap-3 py-6 sm:pl-[42%]">
+        {render && (
+          <Image
+            src={render}
+            alt=""
+            aria-hidden
+            width={640}
+            height={640}
+            style={RENDER_STYLE}
+            className="pointer-events-none absolute -left-8 top-1/2 -z-10 hidden w-[52%] max-w-md -translate-y-1/2 sm:block"
+          />
+        )}
+        <span className="text-sm text-accent">Your best pick for Pos {position}</span>
+        <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
+        <span className="flex items-baseline gap-3">
+          <span className="text-3xl font-semibold tracking-[-0.02em] text-accent" title="Score in win-rate points">
+            {signed(s.score)}
           </span>
-        </div>
-      </div>
-      <ul className="flex flex-col gap-0.5 text-sm">
-        {s.reasons.slice(0, 2).map((r) => (
-          <li key={r}>{r}</li>
-        ))}
-      </ul>
-      {s.hardCounters.map((n) => (
-        <p key={n.counterId} className={`notice ${NOTICE[n.status]} text-xs`}>
-          {n.text}
-        </p>
-      ))}
-      {onPicked && onBanned && (
-        <div className="mt-auto flex gap-2 pt-1">
-          {/* One gold button per region: only the Best card's Picked is primary. */}
-          <button onClick={onPicked} className={`btn btn-sm ${best ? "btn-primary" : "btn-secondary"}`}>
-            <Icon name="check" />
-            Picked
-          </button>
-          <button onClick={onBanned} className="btn btn-ghost btn-sm">
-            <Icon name="ban" />
-            Banned
-          </button>
+          {gainText}
+        </span>
+        <ul className="flex max-w-md flex-col gap-1.5 text-fg/85">
+          {s.reasons.slice(0, 2).map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+        {counters}
+        {onPicked && onBanned && (
+          <div className="mt-2 flex gap-2">
+            <button onClick={onPicked} className="btn btn-primary">
+              <Icon name="check" />
+              Picked
+            </button>
+            <button onClick={onBanned} className="btn btn-secondary">
+              <Icon name="ban" />
+              Banned
+            </button>
+          </div>
+        )}
+      </li>
+    );
+  }
+
+  return (
+    <li className="grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line py-3">
+      {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also strong</span>}
+      <span className="num text-subtle">{rank}</span>
+      <Portrait hero={hero} src={portrait} size="strip" />
+      <span className="min-w-0">
+        <span className="block font-medium text-fg">{s.name}</span>
+        <span className="block text-sm text-subtle">{s.reasons[0]}</span>
+      </span>
+      <span className="flex items-center gap-3">
+        {gainText}
+        <span className="num w-10 text-right text-fg" title="Score in win-rate points">
+          {signed(s.score)}
+        </span>
+      </span>
+      {(s.hardCounters.length > 0 || (onPicked && onBanned)) && (
+        <div className="col-span-2 col-start-3 flex flex-col gap-2">
+          {counters}
+          {onPicked && onBanned && (
+            <div className="flex gap-1">
+              <button onClick={onPicked} className="btn btn-ghost btn-sm">
+                <Icon name="check" />
+                Picked
+              </button>
+              <button onClick={onBanned} className="btn btn-ghost btn-sm">
+                <Icon name="ban" />
+                Banned
+              </button>
+            </div>
+          )}
         </div>
       )}
     </li>
