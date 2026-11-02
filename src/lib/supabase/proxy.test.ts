@@ -12,7 +12,7 @@ const request = (path: string) => new NextRequest(new URL(path, "https://dota2te
 describe("updateSession", () => {
   beforeEach(() => getUser.mockReset());
 
-  it.each(["/profile", "/my-heroes", "/profile/settings"])("sends signed-out visitors from %s to login", async (path) => {
+  it.each(["/profile", "/my-heroes", "/profile/settings", "/reports/2b1c7f4e-0000-4000-8000-000000000001"])("sends signed-out visitors from %s to login", async (path) => {
     getUser.mockResolvedValue({ data: { user: null } });
     const res = await updateSession(request(path));
     expect(res.status).toBe(307);

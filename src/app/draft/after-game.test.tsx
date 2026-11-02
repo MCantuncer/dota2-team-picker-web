@@ -29,13 +29,14 @@ describe("AfterGame", () => {
     expect(onFind).toHaveBeenCalledWith(8012345678);
   });
 
-  it("shows a saved result with a link to the match", () => {
-    render(<AfterGame result={{ matchId: 8012345678, won: false }} checking={false} onFind={vi.fn()} />);
+  it("shows a saved result with links to the match and its report", () => {
+    render(<AfterGame result={{ draftId: "d1", matchId: 8012345678, won: false }} checking={false} onFind={vi.fn()} />);
     expect(screen.getByText("Lost")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Match 8012345678 on OpenDota/ })).toHaveAttribute(
       "href",
       "https://www.opendota.com/matches/8012345678",
     );
+    expect(screen.getByRole("link", { name: "Read the report" })).toHaveAttribute("href", "/reports/d1");
     expect(screen.queryByRole("button", { name: "Find result" })).not.toBeInTheDocument();
   });
 });

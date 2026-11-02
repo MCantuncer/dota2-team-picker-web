@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { test as base, expect, type Page } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
-import type { Database } from "../src/lib/supabase/database.types";
+import type { Database, Json } from "../src/lib/supabase/database.types";
 
 const BACKEND_REF = readFileSync("backend-ref.txt", "utf8").trim();
 if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("backend-ref.txt must hold a full commit SHA");
@@ -112,4 +112,32 @@ export async function logIn(page: Page, email: string, next = "/profile") {
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Log in with email" }).click();
   await expect(page).toHaveURL((url) => url.pathname === next);
+}
+
+/** Seeds an ended party draft that the user played, with a match report holding `facts`. Returns the draft id. */
+export async function seedReport(email: string, report: { status: string; facts: object | null }) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { data: party, error: partyError } = await db.from("parties").insert({ leader_id: id, closed_at: new Date().toISOString() }).select("id").single();
+  if (partyError) throw partyError;
+  const matchId = 9072422905;
+  const { data: draft, error: draftError } = await db
+    .from("party_drafts")
+    .insert({ party_id: party.id, started_by: id, ended_at: new Date().toISOString(), match_id: matchId, won: true })
+    .select("id")
+    .single();
+  if (draftError) throw draftError;
+  const { error: playerError } = await db.from("draft_players").insert({ draft_id: draft.id, user_id: id, hero_id: 145, hero_source: "position" });
+  if (playerError) throw playerError;
+  const { error: reportError } = await db.from("match_reports").insert({
+    draft_id: draft.id,
+    match_id: matchId,
+    status: report.status,
+    facts: report.facts as Json,
+    facts_version: report.facts ? 1 : null,
+  });
+  if (reportError) throw reportError;
+  return draft.id;
 }
