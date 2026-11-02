@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icon, type IconName } from "./icon";
 
 export interface NavItem {
   href: string;
   label: string;
+  icon?: IconName;
   /** Things waiting there, such as friend requests; shown as a count. */
   badge?: number;
 }
@@ -14,7 +16,7 @@ export interface NavItem {
 export function NavBadge({ count }: { count?: number }) {
   if (!count) return null;
   return (
-    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-px font-sans text-[11px] font-bold tabular-nums text-on-accent">
+    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-px text-xs font-semibold tabular-nums text-on-accent">
       {count}
       <span className="sr-only"> waiting</span>
     </span>
@@ -33,7 +35,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
 
   return (
     <nav aria-label="Main" className="hidden h-full sm:block">
-      <ul className="flex h-full items-stretch gap-1">
+      <ul className="flex h-full items-stretch gap-0.5">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           return (
@@ -41,14 +43,20 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-md px-2.5 py-1.5 text-[0.9375rem] transition-colors ${
-                  active ? "text-fg" : "text-muted hover:text-fg"
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-[0.9375rem] transition-colors ${
+                  active ? "bg-raised text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >
-                {item.label}
+                {item.icon && (
+                  <span className={active ? "text-accent" : "text-subtle"}>
+                    <Icon name={item.icon} />
+                  </span>
+                )}
+                <span className="hidden lg:inline">{item.label}</span>
+                <span className="sr-only lg:hidden">{item.label}</span>
                 <NavBadge count={item.badge} />
               </Link>
-              {active && <span aria-hidden className="absolute inset-x-2.5 -bottom-px h-px bg-accent" />}
+              {active && <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 bg-accent" />}
             </li>
           );
         })}

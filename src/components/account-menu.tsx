@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { isActive, NavBadge, type NavItem } from "./primary-nav";
+import { RankMedal } from "./rank-medal";
 
 export interface Account {
   name: string;
@@ -12,6 +13,8 @@ export interface Account {
   detail: string | null;
   avatarUrl: string | null;
   steamLinked: boolean;
+  /** Medal and stars (54 = Legend 4), for the medal beside the name. */
+  rankTier?: number | null;
 }
 
 /** First letters of the first two words, for the avatar of users without a Steam picture. */
@@ -135,10 +138,14 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
         aria-label={`Account menu for ${account.name}`}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onButtonKey}
-        className={`flex h-9 items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-raised ${open ? "bg-raised" : ""}`}
+        className={`flex h-11 items-center gap-2.5 rounded-md py-1 pl-1 pr-2 transition-colors hover:bg-raised ${open ? "bg-raised" : ""}`}
       >
-        <Avatar account={account} size={28} />
-        <span className="hidden max-w-36 truncate text-sm font-medium text-fg md:block">{account.name}</span>
+        <Avatar account={account} size={30} />
+        <span className="hidden min-w-0 flex-col text-left leading-tight md:flex">
+          <span className="max-w-36 truncate text-sm font-medium text-fg">{account.name}</span>
+          {account.detail && <span className="max-w-36 truncate text-xs text-subtle">{account.detail}</span>}
+        </span>
+        {account.rankTier ? <RankMedal rankTier={account.rankTier} size={26} /> : null}
         <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 text-subtle transition-transform ${open ? "rotate-180" : ""}`}>
           <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
