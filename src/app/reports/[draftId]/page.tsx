@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { getItems } from "@/lib/items";
+import { getRecords } from "@/lib/records";
 import { getReport, type Report } from "@/lib/reports";
 import { createClient } from "@/lib/supabase/server";
+import { YourRecords } from "@/components/your-records";
 import { type ReportArt, ReportView } from "./report-view";
 
 export const metadata: Metadata = { title: "Game report · Dota 2 Team Picker" };
@@ -42,11 +44,12 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
     );
   }
 
-  // Art and the YOU tag are extras: without them the report still shows every name and number.
-  const [heroes, items, mine] = await Promise.all([
+  // Art, the YOU tag and the records are extras: without them the report still shows every name and number.
+  const [heroes, items, mine, records] = await Promise.all([
     getHeroes().catch(() => []),
     getItems().catch(() => new Map()),
     supabase.from("draft_players").select("hero_id").eq("draft_id", report.draftId).eq("user_id", user.id).maybeSingle(),
+    getRecords(supabase).catch(() => null),
   ]);
   const art: ReportArt = { heroes: new Map(heroes.map((h) => [h.id, { name: h.name, image: h.image }])), items };
   const myHeroId = mine.error ? null : (mine.data?.hero_id ?? null);
@@ -62,6 +65,7 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
         <p className="notice text-sm">OpenDota didn&apos;t parse this replay, so lanes, fights and damage are left out.</p>
       )}
       <ReportView facts={report.facts} art={art} myHeroId={myHeroId} />
+      {records && <YourRecords records={records} />}
       <p className="text-xs text-muted">The match data behind this report is kept for 90 days.</p>
     </ReportPageShell>
   );

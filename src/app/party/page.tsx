@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
 import { steamAvatar, toParty } from "@/lib/party";
 import { fetchPartyLink } from "@/lib/party-link";
+import { getRecords } from "@/lib/records";
 import { createClient } from "@/lib/supabase/server";
 import { latestSentPlan } from "@/lib/team-game-plan";
+import { YourRecords } from "@/components/your-records";
 import { PartyLobby, type Invitee } from "./party-lobby";
 import { TeamGamePlan } from "./team-game-plan";
 
@@ -24,8 +26,11 @@ export default async function PartyPage() {
     // Hero icons are decoration: without them the game plan shows hero names only.
     getHeroes().catch(() => []),
   ]);
-  // The game plan is extra: if it fails to load, the lobby still works.
-  const sentPlan = await latestSentPlan(supabase).catch(() => null);
+  // The game plan and records are extras: if they fail to load, the lobby still works.
+  const [sentPlan, records] = await Promise.all([
+    latestSentPlan(supabase).catch(() => null),
+    getRecords(supabase).catch(() => null),
+  ]);
   const party = toParty(rows);
   // Loaded here so Copy needs no wait (Safari drops clipboard access after one). If it fails, the card loads it again.
   const link = party?.leaderId === user.id ? (await fetchPartyLink(supabase)).link : null;
@@ -62,6 +67,7 @@ export default async function PartyPage() {
       <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
       {/* Keyed by party, so joining from the invite pop-up (which refreshes this page) shows the new party. */}
       <PartyLobby key={party?.id ?? "none"} userId={user.id} initialParty={party} initialLink={link} invitees={invitees} />
+      {records && <YourRecords records={records} />}
     </main>
   );
 }
