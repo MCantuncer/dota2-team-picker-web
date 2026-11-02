@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import { GameStoryPanel } from "./game-story-panel";
 
-const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number } = {}) => ({
+const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number; count?: number } = {}) => ({
   itemId,
   name,
   img: `/items/${itemId}.png`,
@@ -31,12 +31,13 @@ const plan: GamePlan = {
       fallbacks: ["Lane lost? Leave the lane at 5 to 6 min for the jungle."],
       build: {
         timings: "rank",
-        start: [item(44, "Tango", 0)],
-        lane: [],
+        start: [item(44, "Tango", 0), item(16, "Iron Branch", 0, { count: 2 })],
+        lane: [item(75, "Wraith Band", 2), item(36, "Magic Wand", 3)],
         core: [
           item(50, "Phase Boots", 9),
           item(116, "Black King Bar", 17, { reason: "Against Hero 8: buy it early", lateMinute: 20 }),
         ],
+        bootsOr: item(63, "Power Treads", 8),
         situational: [],
       },
     },
@@ -81,6 +82,15 @@ describe("GameStoryPanel", () => {
     expect(within(carry).getByTitle(/Black King Bar, usually by 17 min, slower than most after 20 min/)).toBeInTheDocument();
     expect(within(carry).getByText("Against Hero 8: buy it early")).toBeInTheDocument();
     expect(within(carry).getByText(/Lane lost\?/)).toBeInTheDocument();
+  });
+
+  it("shows start copies, lane minutes and the other boots", () => {
+    renderPanel(1);
+    const carry = screen.getByRole("listitem", { name: "Hero 1, position 1" });
+    expect(within(carry).getByAltText("2 Iron Branch")).toBeInTheDocument();
+    expect(within(carry).getByText("x2")).toBeInTheDocument();
+    expect(within(carry).getByTitle(/Wraith Band, usually by 2 min/)).toBeInTheDocument();
+    expect(within(carry).getByText(/Or Power Treads at/)).toBeInTheDocument();
   });
 
   it("marks rough minutes when there are no real timings", () => {

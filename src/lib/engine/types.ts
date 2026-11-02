@@ -85,6 +85,8 @@ export interface Snapshot {
   itemTimings?: Record<string, Record<string, Partial<Record<ItemTimingSliceKey, ItemTimingSlice>>>>;
   /** When item timings were last downloaded; they are refreshed daily. */
   itemTimingsAt?: string;
+  /** What players start with and which boots they buy, from STRATZ: itemStarts[heroId][position], every rank. */
+  itemStarts?: Record<string, Record<string, ItemStart>>;
   /** The patch the counts are for, from OpenDota's patch list. */
   patch?: { name: string; startedAt: string };
   /** Highest public match id already counted, so daily runs only add new matches. */
@@ -102,6 +104,19 @@ export interface ItemTimingSlice {
   games: number;
   /** Most bought core items first: [item id, average minute bought, minute after which a player is slower than most]. */
   items: [itemId: number, minute: number, lateMinute: number][];
+  /**
+   * Small items most players buy in lane, like Wraith Band, Magic Wand or Perseverance, in buy order:
+   * [item id, average minute bought]. Missing in snapshots from before Nov 2026.
+   */
+  lane?: [itemId: number, minute: number][];
+}
+
+export interface ItemStart {
+  games: number;
+  /** Items bought at the horn, most bought first: [item id, copies]. */
+  start: [itemId: number, count: number][];
+  /** Upgraded boots, most bought first: [item id, average minute, share of boot buyers]. */
+  boots: [itemId: number, minute: number, share: number][];
 }
 
 export interface ItemInfo {
