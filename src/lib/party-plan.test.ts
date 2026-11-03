@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toHeroPool, toPlanSlots } from "./party-plan";
+import { toHeroPool, toPartyStats, toPlanSlots } from "./party-plan";
 
 describe("toPlanSlots", () => {
   const pool = { a: { 1: [10], 0: [11] }, b: { 5: [20] }, c: { 0: [30, 31] } };
@@ -53,5 +53,27 @@ describe("toHeroPool", () => {
         { user_id: "b", position: 5, hero_id: 20 },
       ]),
     ).toEqual({ a: { 1: [10, 12], 0: [11] }, b: { 5: [20] } });
+  });
+});
+
+describe("toPartyStats", () => {
+  it("builds the pool and each member's rank and stats", () => {
+    const { pool, players } = toPartyStats([
+      { user_id: "a", rank_tier: 54, favorites: { "1": [10, 12], "0": [11] }, hero_stats: { "10": { games: 8, wins: 5 } } },
+      { user_id: "b", rank_tier: null, favorites: {}, hero_stats: {} },
+    ]);
+    expect(pool).toEqual({ a: { 1: [10, 12], 0: [11] }, b: {} });
+    expect(players.a).toEqual({ rank: 5, personal: { "10": { games: 8, wins: 5 } } });
+    expect(players.b!.rank).toBeNull();
+  });
+
+  it("skips malformed favorites instead of trusting them", () => {
+    const { pool, players } = toPartyStats([
+      { user_id: "a", rank_tier: 80, favorites: { "1": [10, "x", 1.5], "2": "nope" }, hero_stats: null },
+      { user_id: "b", rank_tier: 10, favorites: [1, 2], hero_stats: [] },
+    ]);
+    expect(pool).toEqual({ a: { 1: [10] }, b: {} });
+    expect(players.a).toEqual({ rank: 8, personal: {} });
+    expect(players.b!.personal).toEqual({});
   });
 });

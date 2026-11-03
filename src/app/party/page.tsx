@@ -76,6 +76,7 @@ export default async function PartyPage() {
           Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site, or share the invite link.
         </p>
         <p className="text-sm text-muted">A Stack is your saved group. A party is who&apos;s playing this game.</p>
+        <p className="text-sm text-muted">Party members see each other&apos;s heroes and match stats.</p>
       </div>
       <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
       {/* Keyed by party, so joining from the invite pop-up (which refreshes this page) shows the new party. */}
