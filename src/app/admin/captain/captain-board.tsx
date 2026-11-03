@@ -752,7 +752,7 @@ function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: bo
         </p>
       ))}
       <div className="flex gap-1.5 pt-0.5">
-        <button onClick={onPicked} className="btn btn-primary btn-sm">
+        <button onClick={onPicked} className={`btn btn-sm ${top ? "btn-primary" : "btn-secondary"}`}>
           <Icon name="check" />
           Picked
         </button>
