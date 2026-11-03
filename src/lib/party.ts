@@ -8,8 +8,8 @@ export const POSITION_NAMES: Record<number, string> = {
   1: "Carry",
   2: "Mid",
   3: "Offlane",
-  4: "Soft support",
-  5: "Hard support",
+  4: "Soft Support",
+  5: "Hard Support",
 };
 
 /** How soon a player can ask for draft captain again, counted from their last ask (matches the database). */

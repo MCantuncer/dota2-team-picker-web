@@ -59,7 +59,7 @@ interface Draft {
   bans: number[];
 }
 
-const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
+const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const EMPTY_DRAFT: Draft = { picks: [null, null, null, null, null], enemies: [], bans: [] };
 const PER_FRIEND = 4;

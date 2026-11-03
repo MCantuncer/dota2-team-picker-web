@@ -111,11 +111,11 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
           </span>
         </Link>
       )}
-      {showCards && <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />}
       <PositionHeroes
         // A fresh list after the switch changes, since the cards are copied into state.
         key={suggestions.map((s) => s.id).join(",")}
         suggestions={suggestions}
+        options={showCards && <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />}
         userId={user.id}
         heroes={heroes}
         initialPositions={(positions ?? []).map((p) => p.position)}

@@ -1,18 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+import { PositionIcon } from "@/components/position-icon";
 import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
 import type { PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/client";
 
 const POSITIONS = [
-  { n: 1, name: "Carry", lane: "Safe lane" },
-  { n: 2, name: "Mid", lane: "Mid lane" },
-  { n: 3, name: "Offlane", lane: "Off lane" },
-  { n: 4, name: "Soft support", lane: "Off lane" },
-  { n: 5, name: "Hard support", lane: "Safe lane" },
+  { n: 1, name: "Carry" },
+  { n: 2, name: "Mid" },
+  { n: 3, name: "Offlane" },
+  { n: 4, name: "Soft Support" },
+  { n: 5, name: "Hard Support" },
 ];
 const ATTRS = [
   { key: "str", name: "Strength" },
@@ -22,7 +23,7 @@ const ATTRS = [
 ];
 
 /**
- * Positions on the left, heroes for the selected position on the right. Typing filters the hero
+ * A row of position tabs, then the heroes for the selected position. Typing filters the hero
  * grid and Enter adds the top match; clicking a portrait adds or removes it. Everything saves at once.
  */
 export function PositionHeroes({
@@ -31,6 +32,7 @@ export function PositionHeroes({
   initialPositions,
   initialHeroes,
   suggestions = [],
+  options,
 }: {
   userId: string;
   heroes: Hero[];
@@ -38,6 +40,8 @@ export function PositionHeroes({
   initialHeroes: Record<number, number[]>;
   /** Hero pool cards still waiting for an answer, shown on their position. */
   suggestions?: PoolCard[];
+  /** Page-level settings shown beside "I play", such as the suggestions switch. */
+  options?: ReactNode;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const search = useMemo(() => new HeroSearch(heroes), [heroes]);
@@ -112,20 +116,26 @@ export function PositionHeroes({
               key={p.n}
               onClick={() => setActive(p.n)}
               aria-current={isActive}
-              className={`relative flex min-w-0 flex-col items-start gap-0.5 px-1 pb-3 pt-2 text-left sm:px-3 ${
+              title={p.name}
+              className={`relative flex min-w-0 items-center justify-between gap-2 px-2 py-3 text-left sm:px-4 ${
                 isActive ? "text-fg" : "text-muted hover:text-fg"
               }`}
             >
-              <span className="flex items-center gap-2">
-                <span className={`num text-2xl font-semibold ${isActive ? "text-accent" : ""}`}>{p.n}</span>
-                {played.has(p.n) && <span aria-label="You play this" className="size-1.5 rounded-full bg-radiant" />}
-                {cards.some((c) => c.position === p.n) && (
-                  <span aria-label="Suggestion from your games" className="size-1.5 rounded-full bg-accent" />
-                )}
+              <span className="flex min-w-0 flex-col gap-0.5 max-sm:hidden">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium">{p.name}</span>
+                  {played.has(p.n) && <span aria-label="You play this" className="size-1.5 shrink-0 rounded-full bg-radiant" />}
+                  {cards.some((c) => c.position === p.n) && (
+                    <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
+                  )}
+                </span>
+                <span className="num truncate text-xs text-subtle">
+                  Pos {p.n} · {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
+                </span>
               </span>
-              <span className="truncate text-sm font-medium max-sm:hidden">{p.name}</span>
-              <span className="num truncate text-xs text-subtle max-sm:hidden">
-                {count ? `${count} hero${count === 1 ? "" : "es"}` : p.lane}
+              <span className={`flex items-center gap-1.5 ${isActive ? "text-accent" : "text-subtle"}`}>
+                <span className="num text-sm font-semibold sm:hidden">{p.n}</span>
+                <PositionIcon position={p.n} size={32} />
               </span>
               {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
@@ -134,21 +144,21 @@ export function PositionHeroes({
       </nav>
 
       <section aria-label={`${pos.name} heroes`} className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div className="mr-auto flex flex-col gap-0.5">
-            <h2 className="section-title">
-              {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
-            </h2>
-            <span className="text-sm text-muted">Your best heroes first. Five to ten is plenty.</span>
+        <div className="flex flex-col gap-2">
+          <h2 className="section-title">
+            {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
+          </h2>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
+              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="switch" />I
+              play {pos.name}
+            </label>
+            {options}
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="size-4 accent-radiant" />I
-            play {pos.name}
-          </label>
         </div>
 
         <div className="flex min-h-12 flex-wrap gap-2">
-          {chosen.length === 0 && <p className="self-center text-sm text-subtle">No heroes yet. Search or click a portrait below.</p>}
+          {chosen.length === 0 && <p className="self-center text-sm text-subtle">No heroes yet. Add your best ones first; five to ten is plenty.</p>}
           {chosen.map((id, i) => {
             const h = byId.get(id);
             if (!h) return null;

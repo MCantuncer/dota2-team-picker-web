@@ -4,7 +4,7 @@ import type { TeamPlan } from "@/lib/engine/plan";
 import { Icon } from "@/components/icon";
 import type { Position } from "@/lib/engine/types";
 
-const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
+const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 
 /**
  * The leader's team plan (WCST): the best five heroes for the party, from each player's hero pool,
