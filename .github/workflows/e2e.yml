@@ -15,10 +15,16 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # The tests are CPU bound (4 workers on one runner were no faster than 2), so they are split across 3
+  # runners. Each one starts Supabase and builds the site, which overlap, then runs a third of the tests.
   e2e:
-    name: Browser tests (Playwright + axe)
+    name: Browser tests part ${{ matrix.shard }} of 3
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     env:
       # The local Supabase stack's fixed URL and public key (the same on every machine, nothing secret), so the
       # site can build before the stack is up. The wait step checks they still match.
@@ -84,10 +90,21 @@ jobs:
           # The build already used the local stack's well-known URL and publishable key; make sure they match.
           [ "$API_URL" = "$NEXT_PUBLIC_SUPABASE_URL" ] && [ "$PUBLISHABLE_KEY" = "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]
           echo "E2E_SUPABASE_SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report
           retention-days: 7
+
+  # The required check. It always runs and passes only when every part passed: a job that only "needs" the
+  # parts would be skipped when one fails, and GitHub counts a skipped required check as passing.
+  e2e-result:
+    name: Browser tests (Playwright + axe)
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: '[ "${{ needs.e2e.result }}" = success ] || { echo "::error::Browser tests ${{ needs.e2e.result }}"; exit 1; }'
