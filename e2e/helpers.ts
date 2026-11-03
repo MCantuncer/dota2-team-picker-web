@@ -82,6 +82,35 @@ export async function savedSuggestions(email: string) {
   return data;
 }
 
+/**
+ * Links a made-up Steam account to the user and opens a hero pool card for Monkey King at carry,
+ * as the trends job would. Returns the card id.
+ */
+export async function seedPoolCard(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  // A unique made-up SteamID64 per user, since profiles.steam_id is unique.
+  const steamId = `7656119${String(Date.now()).slice(-7)}${String(Math.floor(Math.random() * 1e3)).padStart(3, "0")}`;
+  const { error: steamError } = await db.from("profiles").update({ steam_id: steamId }).eq("id", id);
+  if (steamError) throw steamError;
+  const { data, error: cardError } = await db
+    .from("pool_suggestions")
+    .insert({
+      user_id: id,
+      hero_id: 114,
+      position: 1,
+      question: "Add Monkey King to your carry heroes?",
+      reason: "You won 86% of your last 7 Monkey King games as carry (pos 1).",
+      evidence: { games: 7, wins: 6 },
+    })
+    .select("id")
+    .single();
+  if (cardError) throw cardError;
+  return data.id;
+}
+
 /** Makes two signed-up users friends, so one can invite the other to a party. */
 export async function befriend(emailA: string, emailB: string) {
   const db = admin();
