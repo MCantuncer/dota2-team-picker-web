@@ -1,0 +1,32 @@
+name: Install dependencies
+description: >-
+  Sets up Node and installs node_modules. npm ci spends about a minute unpacking packages, so the installed
+  tree is restored from the cache when no package file changed, and npm ci runs only on a miss.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 22
+    # The tree holds native binaries, so the key covers the runner image, CPU and Node major as well as
+    # every package file. No fallback keys: a near match is never used.
+    - id: key
+      shell: bash
+      run: |
+        node=$(node -p 'process.versions.node.split(".")[0]')
+        echo "key=node-modules-$RUNNER_OS-$RUNNER_ARCH-$ImageOS-node$node-${{ hashFiles('package-lock.json', 'package.json') }}" >> "$GITHUB_OUTPUT"
+    - id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: node_modules
+        key: ${{ steps.key.outputs.key }}
+    - if: steps.restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci
+    # Save straight after the install, before lint, tests or the build write their own caches into node_modules.
+    - if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: node_modules
+        key: ${{ steps.restore.outputs.cache-primary-key }}

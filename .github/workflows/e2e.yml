@@ -8,10 +8,11 @@ on:
 permissions:
   contents: read
 
-# A newer push makes the running check out of date, so stop it rather than queue behind it.
+# A newer push to a PR makes the running check out of date, so stop it rather than queue behind it. Runs on
+# main always finish, so every merge is tested.
 concurrency:
   group: e2e-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
@@ -45,15 +46,14 @@ jobs:
       - name: Start local Supabase in the background
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
+          date +%s > "$RUNNER_TEMP/supabase.started"
           (
             if supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
-            then echo 0 > "$RUNNER_TEMP/supabase.exit"; else echo 1 > "$RUNNER_TEMP/supabase.exit"; fi
+            then status=0; else status=1; fi
+            date +%s > "$RUNNER_TEMP/supabase.ended"
+            echo "$status" > "$RUNNER_TEMP/supabase.exit"
           ) > "$RUNNER_TEMP/supabase.log" 2>&1 &
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/install
       # Headless runs only need Chromium's headless shell, and the runner image already has its system
       # libraries, so skip --with-deps (its apt step was most of this job's time). Cache the browser
       # per Playwright version.
@@ -70,8 +70,11 @@ jobs:
       - name: Wait for local Supabase
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
+          waited=$(date +%s)
           timeout 300 bash -c 'until [ -f "$RUNNER_TEMP/supabase.exit" ]; do sleep 2; done'
           cat "$RUNNER_TEMP/supabase.log"
+          started=$(cat "$RUNNER_TEMP/supabase.started") ended=$(cat "$RUNNER_TEMP/supabase.ended")
+          echo "::notice::Supabase took $((ended - started))s to start; the tests waited $(($(date +%s) - waited))s for it."
           [ "$(cat "$RUNNER_TEMP/supabase.exit")" = 0 ]
           eval "$(supabase status -o env)"
           # The build already used the local stack's well-known URL and publishable key; make sure they match.
