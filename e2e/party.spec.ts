@@ -71,3 +71,16 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await expectAccessible(page);
   await aliContext.close();
 });
+
+test("the party planner sees suggestions per player", async ({ page }) => {
+  await signUp(page, uniqueEmail("per-player"), "Lion");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("region", { name: "Draft captain" })).toBeVisible();
+
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Per Player" }).click();
+  await expect(page.getByRole("heading", { name: "Per Player" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Suggested heroes for Lion" })).toBeVisible();
+  await expectAccessible(page);
+});
