@@ -35,3 +35,33 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await expect(page.getByRole("region", { name: /^Members/ }).getByText("Tusk")).toBeVisible();
   await palContext.close();
 });
+
+test("a player finds an open Stack by name and asks to join", async ({ page, browser }) => {
+  const name = `Lane ${Date.now().toString(36)}`;
+  await signUp(page, uniqueEmail("open-owner"), "Lina");
+  await page.goto("/stacks");
+  await page.getByPlaceholder("Stack name, e.g. Friday Five").fill(name);
+  await page.getByRole("button", { name: "Create Stack" }).click();
+  await expect(page.getByLabel("Stack Name")).toHaveValue(name);
+
+  const strangerContext = await browser.newContext();
+  const stranger = await strangerContext.newPage();
+  await signUp(stranger, uniqueEmail("open-stranger"), "Axe");
+  await stranger.goto("/stacks");
+  const all = stranger.getByRole("region", { name: "All Stacks" });
+  await all.getByLabel("Search Stacks by name").fill(name);
+  await all.getByRole("button", { name: "Search" }).click();
+  const row = all.getByRole("listitem").filter({ hasText: name });
+  await expect(row).toHaveCount(1);
+  await row.getByRole("button", { name: "Ask to Join" }).click();
+  await expect(row.getByText("Asked")).toBeVisible();
+  await expectAccessible(stranger);
+
+  // The request survives a reload, and the asker can take it back.
+  await stranger.reload();
+  await all.getByLabel("Search Stacks by name").fill(name);
+  await all.getByRole("button", { name: "Search" }).click();
+  await row.getByRole("button", { name: "Cancel" }).click();
+  await expect(row.getByRole("button", { name: "Ask to Join" })).toBeVisible();
+  await strangerContext.close();
+});
