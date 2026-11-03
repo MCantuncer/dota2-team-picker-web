@@ -8,15 +8,15 @@ describe("PositionPicker", () => {
     const onChange = vi.fn();
     render(<PositionPicker heroName="Lion" position={5} isGuess={false} onChange={onChange} />);
 
-    expect(screen.getByRole("radio", { name: "Pos 5, Hard support, chosen" })).toBeChecked();
-    await userEvent.click(screen.getByRole("radio", { name: "Pos 4, Soft support" }));
+    expect(screen.getByRole("radio", { name: "Pos 5, Hard Support, chosen" })).toBeChecked();
+    await userEvent.click(screen.getByRole("radio", { name: "Pos 4, Soft Support" }));
     expect(onChange).toHaveBeenCalledWith(4);
   });
 
   it("confirms a guess and hands a choice back to the guess", async () => {
     const onChange = vi.fn();
     const { rerender } = render(<PositionPicker heroName="Lion" position={5} isGuess onChange={onChange} />);
-    const guess = screen.getByRole("radio", { name: "Pos 5, Hard support, guessed. Click to confirm" });
+    const guess = screen.getByRole("radio", { name: "Pos 5, Hard Support, guessed. Click to confirm" });
 
     expect(guess).not.toBeChecked();
     expect(guess).toHaveAttribute("data-guess");
@@ -24,7 +24,7 @@ describe("PositionPicker", () => {
     expect(onChange).toHaveBeenLastCalledWith(5);
 
     rerender(<PositionPicker heroName="Lion" position={5} isGuess={false} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("radio", { name: "Pos 5, Hard support, chosen" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Pos 5, Hard Support, chosen" }));
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
@@ -33,7 +33,7 @@ describe("PositionPicker", () => {
     render(<PositionPicker heroName="Lion" position={5} isGuess={false} onChange={onChange} />);
 
     await userEvent.tab();
-    expect(screen.getByRole("radio", { name: "Pos 5, Hard support, chosen" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Pos 5, Hard Support, chosen" })).toHaveFocus();
     await userEvent.keyboard("{ArrowRight}");
     expect(onChange).toHaveBeenLastCalledWith(1);
     await userEvent.keyboard("{ArrowLeft}");

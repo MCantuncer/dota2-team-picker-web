@@ -55,7 +55,7 @@ export interface PartyInfo {
   party: Party;
 }
 
-const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
+const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";

@@ -6,7 +6,7 @@ import type { HeroAbilities, Snapshot } from "@/lib/engine/types";
 import { SkillPlanCard } from "./skill-plan-card";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
-const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
+const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 const VERDICT_LABELS: Record<LaneVerdict, string> = { win: "Won lane", even: "Even lane", hard: "Hard lane" };
 const VERDICT_STYLES: Record<LaneVerdict, string> = { win: "text-radiant", even: "text-muted", hard: "text-warn" };
 
