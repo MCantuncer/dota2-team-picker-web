@@ -119,3 +119,18 @@ export async function loadInvites(
   }
   return { emails, friends };
 }
+
+/** An open Stack as anyone sees it: no member names, heroes or positions. */
+export interface StackCard {
+  id: string;
+  name: string;
+  ownerName: string;
+  members: number;
+  /** Games its players played together in the last 14 days. */
+  games: number;
+}
+
+/** A browse_stacks or hot_stacks row as a StackCard. */
+export function toStackCard(s: { id: string; name: string; owner_name: string | null; members: number; games: number }): StackCard {
+  return { id: s.id, name: s.name, ownerName: s.owner_name ?? "Unnamed", members: s.members, games: s.games };
+}

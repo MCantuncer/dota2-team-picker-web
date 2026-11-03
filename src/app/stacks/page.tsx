@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
-import { loadInvites, loadMembers, steamAvatarOnly, type StackRef } from "@/lib/stacks";
+import { loadInvites, loadMembers, steamAvatarOnly, toStackCard, type StackRef } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/server";
+import { FindStacks } from "./find-stacks";
 import { StackBoard, type Friend, type JoinedStack, type OpenInvite } from "./stack-board";
 
 export const metadata: Metadata = { title: "Stacks · Dota 2 Team Picker" };
@@ -15,13 +16,17 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [owned, memberships, invites, friends] = await Promise.all([
+  const [owned, memberships, invites, friends, hot, all, requests] = await Promise.all([
     supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
     supabase.from("team_members").select("role, teams(id, name, owner_id, profiles!teams_owner_id_fkey(display_name))").eq("user_id", user.id),
     supabase.rpc("my_team_invites"),
     supabase.rpc("my_friends"),
+    supabase.rpc("hot_stacks"),
+    supabase.rpc("browse_stacks"),
+    supabase.from("team_join_requests").select("id, team_id").eq("user_id", user.id).eq("status", "pending"),
   ]);
-  const failed = owned.error ?? memberships.error ?? invites.error ?? friends.error;
+  const failed =
+    owned.error ?? memberships.error ?? invites.error ?? friends.error ?? hot.error ?? all.error ?? requests.error;
   if (failed) throw new Error(`Could not load your stacks: ${failed.message}`);
 
   const run: StackRef[] = (owned.data ?? []).map((t) => ({ ...t, owned: true }));
@@ -73,6 +78,12 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         openInvites={openInvites}
         friends={friendList}
         icons={Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, icon: h.icon }]))}
+      />
+      <FindStacks
+        hot={(hot.data ?? []).map(toStackCard)}
+        all={(all.data ?? []).map(toStackCard)}
+        mine={[...run, ...joined].map((s) => s.id)}
+        requests={Object.fromEntries((requests.data ?? []).map((r) => [r.team_id, r.id]))}
       />
     </main>
   );
