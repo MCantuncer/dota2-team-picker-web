@@ -46,6 +46,7 @@ export function StackBoard({
   openInvites,
   friends,
   icons,
+  waiting = 0,
 }: {
   userId: string;
   /** Stacks you own or manage. */
@@ -58,6 +59,8 @@ export function StackBoard({
   openInvites: OpenInvite[];
   friends: Friend[];
   icons: Record<number, HeroFace>;
+  /** Players asking to join the open Stack. */
+  waiting?: number;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -119,7 +122,17 @@ export function StackBoard({
 
           {current && (
             <div className="flex flex-col gap-8">
-              <StackName key={current.id} stack={current} onError={setError} />
+              <div className="flex flex-wrap items-end gap-3">
+                <StackName key={current.id} stack={current} onError={setError} />
+                <Link href={`/stacks/${current.id}`} className="btn btn-secondary">
+                  Stack Page
+                  {waiting > 0 && (
+                    <span className="rounded-full bg-accent px-1.5 py-px text-xs font-semibold tabular-nums text-on-accent">
+                      {waiting} {waiting === 1 ? "wants" : "want"} to join
+                    </span>
+                  )}
+                </Link>
+              </div>
               <FriendInvites stackId={current.id} friends={friends} members={members} initial={friendInvites} onError={setError} />
               <EmailInvites stackId={current.id} initial={emailInvites} onError={setError} />
               <MemberList
@@ -141,7 +154,9 @@ export function StackBoard({
                 {joined.map((s) => (
                   <li key={s.id} className="flex items-center gap-3 py-2.5">
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate font-medium text-fg">{s.name}</span>
+                      <Link href={`/stacks/${s.id}`} className="truncate font-medium text-fg hover:underline">
+                        {s.name}
+                      </Link>
                       <span className="text-xs text-muted">Owned by {s.ownerName}</span>
                     </span>
                     <button onClick={() => leave(s)} className="btn btn-secondary btn-sm">
