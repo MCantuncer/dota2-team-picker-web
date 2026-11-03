@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getHeroes } from "@/lib/heroes";
 import { liveCards, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/server";
@@ -99,6 +100,17 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
         </p>
       </div>
       <SteamLink account={steamAccount} result={steamResult} />
+      {steamAccount && (
+        <Link href="/my-heroes/games" className="card flex items-center justify-between gap-4 p-4 hover:border-line-hover">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-base font-semibold text-fg">Your Games</span>
+            <span className="text-sm text-muted">Strengths and problems from your recent matches.</span>
+          </span>
+          <span aria-hidden className="text-muted">
+            →
+          </span>
+        </Link>
+      )}
       {showCards && <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />}
       <PositionHeroes
         // A fresh list after the switch changes, since the cards are copied into state.

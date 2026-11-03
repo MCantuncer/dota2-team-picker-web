@@ -1,0 +1,24 @@
+import { expect } from "@playwright/test";
+import { expectAccessible, seedFeedback, signUp, test, uniqueEmail } from "./helpers";
+
+test("Your Games shows strengths and problems with what to change", async ({ page }) => {
+  const email = uniqueEmail("your-games");
+  await signUp(page, email, "Your Games");
+
+  // Without Steam there is nothing to read yet.
+  await page.goto("/my-heroes/games");
+  await expect(page.getByRole("status")).toContainText("it needs your Steam account");
+
+  await seedFeedback(email);
+  await page.goto("/my-heroes");
+  await page.getByRole("link", { name: /Your Games/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Your Games" })).toBeVisible();
+
+  const problems = page.getByRole("region", { name: "Problems" });
+  await expect(problems.getByRole("heading", { name: "Early deaths are costing your lanes" })).toBeVisible();
+  await problems.getByText("Show Details").click();
+  await expect(problems.getByText(/Most early deaths came from Ember Spirit/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Strengths" })).toContainText("Strong farm");
+  await expect(page.getByRole("region", { name: "Better Than Last Week" })).toContainText("You fall behind in lane");
+  await expectAccessible(page);
+});
