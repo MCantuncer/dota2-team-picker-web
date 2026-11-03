@@ -24,7 +24,7 @@ export interface SteamAccount {
 /** The connected Steam account, or an optional button to link one, for rank and hero record. */
 export function SteamLink({ account, result }: { account: SteamAccount | null; result?: { text: string; ok: boolean } }) {
   return (
-    <section className="card flex flex-col gap-3 px-4 py-3" aria-labelledby="steam-heading">
+    <section className="flex flex-col gap-3 rounded-md bg-surface px-5 py-4" aria-labelledby="steam-heading">
       {account ? <Connected account={account} /> : <NotLinked />}
       {result && (
         <p role="status" className={`text-sm ${result.ok ? "text-radiant" : "text-dire"}`}>
