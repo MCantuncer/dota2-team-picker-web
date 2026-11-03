@@ -30,7 +30,7 @@ describe("HeroPoolCard", () => {
     show();
     expect(screen.getByRole("region", { name: card.question })).toBeInTheDocument();
     expect(screen.getByText(card.reason)).toBeInTheDocument();
-    expect(screen.getByText("Yes also turns on carry in your positions.")).toBeInTheDocument();
+    expect(screen.getByText("Adding also turns on carry in your positions.")).toBeInTheDocument();
     expect(document.activeElement).toBe(document.body);
   });
 

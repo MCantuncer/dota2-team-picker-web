@@ -80,7 +80,7 @@ export function HeroPoolCard({ card, heroName, heroImage }: { card: PoolCard; he
         ) : (
           <>
             <p className="text-sm text-muted">{card.reason}</p>
-            <p className="text-xs text-subtle">Yes also turns on {role} in your positions.</p>
+            <p className="text-xs text-subtle">Adding also turns on {role} in your positions.</p>
             {error && (
               <p role="alert" className="text-sm text-dire">
                 {error}
