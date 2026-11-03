@@ -27,7 +27,8 @@ export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
   const ours = spreadMarks(chapters.flatMap((c) => c.ours).map((s) => ({ spike: s, left: at(s.minute) })));
   const theirs = spreadMarks(chapters.flatMap((c) => c.theirs).map((s) => ({ spike: s, left: at(s.minute) })));
   return (
-    <div className="overflow-x-auto">
+    // On phones the box scrolls sideways, so it takes keyboard focus to scroll with the arrow keys.
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Story timeline">
       <div className="min-w-[57.5rem]">
         <div className="relative h-60" role="img" aria-label={timelineLabel(story)}>
           {chapters.map((c, i) => (
