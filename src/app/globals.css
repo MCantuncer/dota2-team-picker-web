@@ -312,52 +312,60 @@ body {
     background: var(--surface);
   }
 
-  /* An on/off setting: a checkbox drawn as a switch. "On" is the chosen state, so it is copper like every other choice. */
-  .switch {
+  /*
+   * Lane Mark: the site's own on/off checkbox, drawn from the logo. A small tile with the mid lane in it;
+   * on lights the lane copper and drops the copper dot where the lanes meet. Gradients, not pseudo
+   * elements, so it renders the same in every browser.
+   */
+  .lane-check {
     appearance: none;
-    position: relative;
     flex-shrink: 0;
-    width: 2.25rem;
+    width: 1.25rem;
     height: 1.25rem;
-    border-radius: 9999px;
-    background: var(--raised);
+    margin: 0;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    background-color: var(--raised);
+    background-image: linear-gradient(
+      -45deg,
+      transparent calc(50% - 1px),
+      var(--line-hover) calc(50% - 1px),
+      var(--line-hover) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+    background-origin: content-box;
+    background-clip: content-box;
     box-shadow: inset 0 0 0 1px var(--line-hover);
     cursor: pointer;
-    transition: background-color 150ms ease-out;
+    transition: box-shadow 150ms ease-out;
   }
-  .switch::before {
-    content: "";
-    position: absolute;
-    top: 0.1875rem;
-    left: 0.1875rem;
-    width: 0.875rem;
-    height: 0.875rem;
-    border-radius: 9999px;
-    background: var(--muted);
-    transition: transform 150ms ease-out, background-color 150ms ease-out;
+  .lane-check:checked {
+    background-color: var(--accent-tint);
+    background-image:
+      radial-gradient(circle, var(--accent) 2.25px, transparent 2.75px),
+      linear-gradient(
+        -45deg,
+        transparent calc(50% - 1px),
+        var(--accent) calc(50% - 1px),
+        var(--accent) calc(50% + 1px),
+        transparent calc(50% + 1px)
+      );
+    background-clip: border-box, content-box;
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
-  .switch:checked {
-    background: var(--accent);
-    box-shadow: none;
+  .lane-check:hover:not(:disabled):not(:checked) {
+    box-shadow: inset 0 0 0 1px var(--subtle);
   }
-  .switch:checked::before {
-    transform: translateX(1rem);
-    background: var(--on-accent);
+  .lane-check:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
-  .switch:hover:not(:disabled) {
-    box-shadow: inset 0 0 0 1px var(--muted);
-  }
-  .switch:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-  .switch:disabled {
+  .lane-check:disabled {
     opacity: 0.5;
     cursor: default;
   }
   @media (prefers-reduced-motion: reduce) {
-    .switch,
-    .switch::before {
+    .lane-check {
       transition: none;
     }
   }

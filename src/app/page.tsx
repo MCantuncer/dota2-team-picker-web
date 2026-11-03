@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { Icon } from "@/components/icon";
 import { SteamButton } from "@/components/steam-button";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { getUser } from "@/lib/supabase/server";
@@ -76,13 +77,16 @@ export default async function Home() {
           {user ? (
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/draft" className="btn btn-primary btn-lg">
+                <Icon name="play" />
                 Start a Draft
               </Link>
               <Link href="/my-heroes" className="btn btn-secondary btn-lg">
+                <Icon name="helmet" />
                 Set Up My Heroes
               </Link>
               {(await canOpenCaptainMode(user.id)) && (
                 <Link href="/admin/captain" className="btn btn-secondary btn-lg">
+                  <Icon name="crown" />
                   Open Captain Mode
                 </Link>
               )}

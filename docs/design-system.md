@@ -110,7 +110,7 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.seg-sm` | Compact segmented control for one row (an ally's position). Its items are radios: the chosen one (`aria-checked`) is copper filled, a guessed, unconfirmed one gets `data-guess`: dashed, not filled |
 | `.notice` + `.notice-error`, `-warn`, `-done` | Page or panel message; edge colour and icon carry the meaning |
 | `.link` | Copper text link |
-| `.switch` | On/off setting on a checkbox input (`<input type="checkbox" className="switch">` inside its `<label>`). Use it for settings that apply at once, never for a list of choices |
+| `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
 or class in its own small PR, then use it.
@@ -124,6 +124,9 @@ or class in its own small PR, then use it.
   with a `ban` slash.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
+- **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
+  bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
+  Support (5). The tile takes the text colour: copper when selected, `subtle` otherwise. Always next to the position name.
 - **Focus** is a 2px copper ring with 2px offset on everything interactive (set globally; don't remove it).
 - **Empty states** sit inside their panel: one line in `text-muted` saying what fills it, plus one action.
 - **Loading** for remote data uses skeletons in the real shape. No spinners on the pick path.
