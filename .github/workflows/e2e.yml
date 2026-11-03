@@ -27,9 +27,10 @@ jobs:
       NEXT_PUBLIC_POOL_CARDS: "on"
     steps:
       - uses: actions/checkout@v7
-      # The database schema lives in the backend repo. Test against the commit the site's copies are pinned to.
+      # The database schema lives in the backend repo. Test against the newest backend commit whose database
+      # types match the site's copy, so a backend change never turns an unrelated website PR red.
       - id: backend
-        run: echo "ref=$(cat backend-ref.txt)" >> "$GITHUB_OUTPUT"
+        run: echo "ref=$(node scripts/check-backend-sync.mjs --schema-commit)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
         with:
           repository: MCantuncer/dota2-team-picker
