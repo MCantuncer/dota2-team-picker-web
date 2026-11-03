@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
+import type { PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/client";
 
 const POSITIONS = [
@@ -29,11 +30,14 @@ export function PositionHeroes({
   heroes,
   initialPositions,
   initialHeroes,
+  suggestions = [],
 }: {
   userId: string;
   heroes: Hero[];
   initialPositions: number[];
   initialHeroes: Record<number, number[]>;
+  /** Hero pool cards still waiting for an answer, shown on their position. */
+  suggestions?: PoolCard[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const search = useMemo(() => new HeroSearch(heroes), [heroes]);
@@ -43,6 +47,8 @@ export function PositionHeroes({
   const [active, setActive] = useState(initialPositions.length ? Math.min(...initialPositions) : 1);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [cards, setCards] = useState(suggestions);
+  const [answering, setAnswering] = useState<string | null>(null);
 
   const chosen = picks[active] ?? [];
   const matches = query.trim() ? search.find(query, new Set(), 200) : null;
@@ -75,7 +81,24 @@ export function PositionHeroes({
     );
   }
 
+  /** Yes adds the hero and turns the position on in the database; mirror that here. */
+  async function answerCard(card: PoolCard, yes: boolean) {
+    setAnswering(card.id);
+    const { error } = await supabase.rpc("answer_pool_suggestion", { card: card.id, answer: yes ? "yes" : "no" });
+    setAnswering(null);
+    if (error) return setError("Could not save your answer. Please try again.");
+    setError(null);
+    setCards((cur) => cur.filter((c) => c.id !== card.id));
+    if (!yes) return;
+    setPicks((cur) => {
+      const list = cur[card.position] ?? [];
+      return list.includes(card.heroId) ? cur : { ...cur, [card.position]: [...list, card.heroId] };
+    });
+    setPlayed((cur) => new Set(cur).add(card.position));
+  }
+
   const pos = POSITIONS[active - 1]!;
+  const activeCards = cards.filter((c) => c.position === active);
   const isPlayed = played.has(active);
 
   return (
@@ -96,6 +119,9 @@ export function PositionHeroes({
               <span className="flex items-center gap-2">
                 <span className={`num text-2xl font-semibold ${isActive ? "text-accent" : ""}`}>{p.n}</span>
                 {played.has(p.n) && <span aria-label="You play this" className="size-1.5 rounded-full bg-radiant" />}
+                {cards.some((c) => c.position === p.n) && (
+                  <span aria-label="Suggestion from your games" className="size-1.5 rounded-full bg-accent" />
+                )}
               </span>
               <span className="truncate text-sm font-medium max-sm:hidden">{p.name}</span>
               <span className="num truncate text-xs text-subtle max-sm:hidden">
@@ -143,6 +169,36 @@ export function PositionHeroes({
             );
           })}
         </div>
+
+        {activeCards.length > 0 && (
+          <div role="group" aria-labelledby="from-games-title" className="flex flex-col gap-2 rounded-md bg-surface p-3">
+            <h3 id="from-games-title" className="label-caps">
+              From Your Games
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {activeCards.map((card) => {
+                const h = byId.get(card.heroId);
+                return (
+                  <li key={card.id} className="flex flex-wrap items-center gap-3">
+                    {h && <Image src={h.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />}
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-sm font-medium text-fg">{card.question}</span>
+                      <span className="text-sm text-muted">{card.reason}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => answerCard(card, true)} disabled={answering === card.id} className="btn btn-primary btn-sm">
+                        Add Hero
+                      </button>
+                      <button onClick={() => answerCard(card, false)} disabled={answering === card.id} className="btn btn-secondary btn-sm">
+                        No
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 border-t border-line pt-4">
           <input
