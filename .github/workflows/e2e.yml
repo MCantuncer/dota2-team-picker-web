@@ -8,16 +8,23 @@ on:
 permissions:
   contents: read
 
-# A newer push makes the running check out of date, so stop it rather than queue behind it.
+# A newer push to a PR makes the running check out of date, so stop it rather than queue behind it. Runs on
+# main always finish, so every merge is tested.
 concurrency:
   group: e2e-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # The tests are CPU bound (4 workers on one runner were no faster than 2), so they are split across 3
+  # runners. Each one starts Supabase and builds the site, which overlap, then runs a third of the tests.
   e2e:
-    name: Browser tests (Playwright + axe)
+    name: Browser tests part ${{ matrix.shard }} of 3
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     env:
       # The local Supabase stack's fixed URL and public key (the same on every machine, nothing secret), so the
       # site can build before the stack is up. The wait step checks they still match.
@@ -49,15 +56,14 @@ jobs:
       - name: Start local Supabase in the background
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
+          date +%s > "$RUNNER_TEMP/supabase.started"
           (
             if supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
-            then echo 0 > "$RUNNER_TEMP/supabase.exit"; else echo 1 > "$RUNNER_TEMP/supabase.exit"; fi
+            then status=0; else status=1; fi
+            date +%s > "$RUNNER_TEMP/supabase.ended"
+            echo "$status" > "$RUNNER_TEMP/supabase.exit"
           ) > "$RUNNER_TEMP/supabase.log" 2>&1 &
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/install
       # Headless runs only need Chromium's headless shell, and the runner image already has its system
       # libraries, so skip --with-deps (its apt step was most of this job's time). Cache the browser
       # per Playwright version.
@@ -74,17 +80,31 @@ jobs:
       - name: Wait for local Supabase
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
+          waited=$(date +%s)
           timeout 300 bash -c 'until [ -f "$RUNNER_TEMP/supabase.exit" ]; do sleep 2; done'
           cat "$RUNNER_TEMP/supabase.log"
+          started=$(cat "$RUNNER_TEMP/supabase.started") ended=$(cat "$RUNNER_TEMP/supabase.ended")
+          echo "::notice::Supabase took $((ended - started))s to start; the tests waited $(($(date +%s) - waited))s for it."
           [ "$(cat "$RUNNER_TEMP/supabase.exit")" = 0 ]
           eval "$(supabase status -o env)"
           # The build already used the local stack's well-known URL and publishable key; make sure they match.
           [ "$API_URL" = "$NEXT_PUBLIC_SUPABASE_URL" ] && [ "$PUBLISHABLE_KEY" = "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]
           echo "E2E_SUPABASE_SECRET_KEY=$SECRET_KEY" >> "$GITHUB_ENV"
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report
           retention-days: 7
+
+  # The required check. It always runs and passes only when every part passed: a job that only "needs" the
+  # parts would be skipped when one fails, and GitHub counts a skipped required check as passing.
+  e2e-result:
+    name: Browser tests (Playwright + axe)
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: '[ "${{ needs.e2e.result }}" = success ] || { echo "::error::Browser tests ${{ needs.e2e.result }}"; exit 1; }'

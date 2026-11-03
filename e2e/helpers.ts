@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
 import { execFileSync } from "node:child_process";
+import { randomInt } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test as base, expect, type Page } from "@playwright/test";
@@ -58,6 +59,11 @@ export function uniqueEmail(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 }
 
+/** A made-up SteamID64 no other test uses, since profiles.steam_id is unique and tests run in parallel. */
+function uniqueSteamId() {
+  return `7656119${String(randomInt(1e10)).padStart(10, "0")}`;
+}
+
 export const PASSWORD = "e2e-password-123";
 
 /** Admin access to the local test database, for setup the site has no UI for (like account types). */
@@ -97,8 +103,7 @@ export async function seedPoolCard(email: string) {
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
   if (error) throw error;
   if (!id) throw new Error(`No user ${email}`);
-  // A unique made-up SteamID64 per user, since profiles.steam_id is unique.
-  const steamId = `7656119${String(Date.now()).slice(-7)}${String(Math.floor(Math.random() * 1e3)).padStart(3, "0")}`;
+  const steamId = uniqueSteamId();
   const { error: steamError } = await db.from("profiles").update({ steam_id: steamId }).eq("id", id);
   if (steamError) throw steamError;
   const { data, error: cardError } = await db
@@ -126,7 +131,7 @@ export async function seedFeedback(email: string) {
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
   if (error) throw error;
   if (!id) throw new Error(`No user ${email}`);
-  const steamId = `7656119${String(Date.now()).slice(-7)}${String(Math.floor(Math.random() * 1e3)).padStart(3, "0")}`;
+  const steamId = uniqueSteamId();
   const { error: steamError } = await db.from("profiles").update({ steam_id: steamId }).eq("id", id);
   if (steamError) throw steamError;
   const day = 24 * 60 * 60 * 1000;
