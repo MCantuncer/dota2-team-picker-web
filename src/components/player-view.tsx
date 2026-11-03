@@ -76,7 +76,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           );
         }}
       />
-      <div id={`${id}-player-panel`} role="tabpanel" aria-labelledby={playerTab(player.position)} tabIndex={0} className="flex flex-col focus-visible:outline-none">
+      <div id={`${id}-player-panel`} role="tabpanel" aria-labelledby={playerTab(player.position)} className="flex flex-col">
         <Tabs
           label={`${heroName(player.heroId)} view`}
           items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel` }))}
@@ -87,7 +87,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
             <span className={`block border-b-2 pb-1.5 pt-1 text-base font-medium ${selected ? "border-fg text-fg" : "border-transparent text-muted hover:text-fg"}`}>{key}</span>
           )}
         />
-        <div id={`${id}-view-panel`} role="tabpanel" aria-labelledby={viewTab(view)} tabIndex={0} className="pt-7 focus-visible:outline-none">
+        <div id={`${id}-view-panel`} role="tabpanel" aria-labelledby={viewTab(view)} tabIndex={0} className="pt-7 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
           {view === "Item Build" && (
             <PlayerItems player={player} heroName={heroName} icons={icons} laneNote={lane ? LANE_NOTES[lane.verdict] : undefined} />
           )}
