@@ -388,12 +388,16 @@ export function DraftBoard({
               search={search}
               exclude={taken}
               withPosition
-              onPick={(picked) => {
-                for (const p of picked) {
-                  if (p.position === null) act({ kind: "ally", heroId: p.heroId, position: null });
-                  else placeAlly(p.heroId, p.position);
-                }
-              }}
+              onPick={(picked) =>
+                // One act for the whole line: each act starts from the draft as this render saw it.
+                act(
+                  ...picked.flatMap((p) =>
+                    p.position === null
+                      ? [{ kind: "ally" as const, heroId: p.heroId, position: null }]
+                      : positionActions(resolved, p.heroId, p.position),
+                  ),
+                )
+              }
               onUndo={() => undoLast("ally")}
             />
           )}
