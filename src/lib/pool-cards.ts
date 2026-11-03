@@ -57,3 +57,10 @@ export function dueCard(rows: PoolCardRow[], now: number): PoolCard | null {
   );
   return row ? { id: row.id, heroId: row.hero_id, position: row.position, question: row.question, reason: row.reason } : null;
 }
+
+/** Every card still waiting for an answer (open or snoozed), for My Heroes, which shows them all. */
+export function liveCards(rows: PoolCardRow[]): PoolCard[] {
+  return rows
+    .filter((r) => POSITION_WORDS[r.position] !== undefined && (r.status === "open" || r.status === "snoozed"))
+    .map((r) => ({ id: r.id, heroId: r.hero_id, position: r.position, question: r.question, reason: r.reason }));
+}

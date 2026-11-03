@@ -16,8 +16,8 @@ test("a hero pool card adds the hero to the player's position", async ({ page })
   await page.goto("/draft");
   await expect(page.getByRole("region", { name: /Add Monkey King/ })).toHaveCount(0);
 
-  await page.goto("/my-heroes");
-  await page.getByRole("button", { name: "Add Hero" }).click();
+  await page.goto("/party");
+  await card.getByRole("button", { name: "Add Hero" }).click();
   await expect(page.getByRole("heading", { name: "Monkey King is in your carry heroes" })).toBeVisible();
 
   // Answered cards don't come back.
@@ -35,4 +35,22 @@ test("closing a hero pool card asks again later, not never", async ({ page }) =>
   await expect(page.getByRole("region", { name: /Add Monkey King/ })).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole("region", { name: /Add Monkey King/ })).toHaveCount(0);
+});
+
+test("My Heroes lists suggestions on their position and can turn them off", async ({ page }) => {
+  const email = uniqueEmail("pool-row");
+  await signUp(page, email, "Pool Row");
+  await seedPoolCard(email);
+
+  await page.goto("/my-heroes");
+  const row = page.getByRole("group", { name: "From Your Games" });
+  await expect(row).toContainText("Add Monkey King to your carry heroes?");
+  await row.getByRole("button", { name: "Add Hero" }).click();
+  await expect(row).toHaveCount(0);
+  await expect(page.getByTitle("Remove Monkey King")).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "I play Carry" })).toBeChecked();
+
+  await page.getByRole("checkbox", { name: "Suggest heroes from my recent games" }).uncheck();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Suggest heroes from my recent games" })).not.toBeChecked();
 });

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
+import { liveCards, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/server";
+import { PoolCardsSwitch } from "./pool-cards-switch";
 import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamLink } from "./steam-link";
@@ -38,7 +40,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0).order("created_at"),
     supabase
       .from("profiles")
-      .select("steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at")
+      .select("steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at, pool_suggestions_off, trends_state")
       .eq("id", user.id)
       .single(),
     supabase.from("team_members").select("teams(name)").eq("user_id", user.id),
@@ -48,6 +50,20 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   for (const f of favorites ?? []) (heroesByPosition[f.position] ??= []).push(f.hero_id);
   const teamNames = (teams ?? []).flatMap((t) => (t.teams ? [(t.teams as unknown as { name: string }).name] : []));
   const steamResult = typeof steam === "string" ? STEAM_RESULTS[steam] : undefined;
+
+  const showCards = Boolean(profile?.steam_id) && poolCardsEnabled();
+  let suggestions: PoolCard[] = [];
+  if (showCards && !profile?.pool_suggestions_off) {
+    const { data, error } = await supabase
+      .from("pool_suggestions")
+      .select("id, hero_id, position, status, question, reason, snooze_until")
+      .eq("user_id", user.id)
+      .in("status", ["open", "snoozed"])
+      .order("created_at", { ascending: false });
+    // Suggestions are extra: without them the page still works.
+    if (error) console.error("My Heroes pool cards:", error.message);
+    else suggestions = liveCards(data);
+  }
 
   let steamAccount: SteamAccount | null = null;
   if (profile?.steam_id) {
@@ -83,7 +99,11 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
         </p>
       </div>
       <SteamLink account={steamAccount} result={steamResult} />
+      {showCards && <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />}
       <PositionHeroes
+        // A fresh list after the switch changes, since the cards are copied into state.
+        key={suggestions.map((s) => s.id).join(",")}
+        suggestions={suggestions}
         userId={user.id}
         heroes={heroes}
         initialPositions={(positions ?? []).map((p) => p.position)}
