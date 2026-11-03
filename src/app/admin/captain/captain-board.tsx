@@ -904,7 +904,7 @@ function TeamView({
                   Resend
                 </button>
                 <button onClick={() => copyLink(i)} className="btn btn-secondary btn-sm">
-                  {copied === i.id ? "Copied" : "Copy link"}
+                  {copied === i.id ? "Copied" : "Copy Link"}
                 </button>
                 <button onClick={() => cancel(i)} className="btn btn-secondary btn-sm">
                   Cancel

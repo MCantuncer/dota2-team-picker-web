@@ -81,8 +81,8 @@ export function PartyLinkCard({
   };
 
   return (
-    <section aria-labelledby="party-link-heading" className="card flex flex-col gap-2 p-3">
-      <h2 id="party-link-heading" className="text-base font-semibold">
+    <section aria-labelledby="party-link-heading" className="flex flex-col gap-2">
+      <h2 id="party-link-heading" className="section-title">
         Invite Link
       </h2>
       <p className="text-sm text-muted">
@@ -108,7 +108,7 @@ export function PartyLinkCard({
             className="field min-w-0 flex-1 text-sm"
           />
           <button onClick={copy} disabled={!link || busy} className="btn btn-primary">
-            {copied ? "Copied" : "Copy link"}
+            {copied ? "Copied" : "Copy Link"}
           </button>
           <button
             onClick={() => load(true)}

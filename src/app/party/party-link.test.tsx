@@ -15,7 +15,7 @@ describe("PartyLinkCard", () => {
     render(<PartyLinkCard initialLink={live} isFull={false} getLink={getLink} />);
 
     expect(screen.getByLabelText("Party invite link")).toHaveValue(`${window.location.origin}/invite/${live.code}`);
-    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    await user.click(screen.getByRole("button", { name: "Copy Link" }));
 
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/invite/${live.code}`);
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
@@ -17,21 +19,61 @@ export interface Invitee {
   detail: string;
 }
 
-/** The lobby: five slots, your position for this game, and invites and the invite link for the leader. */
+/** Favourite heroes by player, then by position, best first. */
+type Pool = Record<string, Record<number, number[]>>;
+
+/**
+ * The heroes behind each seat: your own favourites, plus everyone's when you run the party's
+ * draft (party_hero_pool returns rows only to the draft captain, or the leader with no captain).
+ * The art is decoration, so a failed read just leaves the seats plain.
+ */
+async function loadPool(supabase: ReturnType<typeof createClient>, userId: string): Promise<Pool> {
+  const [own, party] = await Promise.all([
+    supabase.from("favorite_heroes").select("user_id, position, hero_id").eq("user_id", userId).order("created_at"),
+    supabase.rpc("party_hero_pool"),
+  ]);
+  if (own.error) console.error("Favourite heroes not loaded", own.error.message);
+  if (party.error) console.error("Party hero pool not loaded", party.error.message);
+  const pool: Pool = {};
+  for (const row of [...(own.data ?? []), ...(party.data ?? [])]) {
+    const byPos = (pool[row.user_id] ??= {});
+    const list = (byPos[row.position] ??= []);
+    if (!list.includes(row.hero_id)) list.push(row.hero_id);
+  }
+  return pool;
+}
+
+/** The hero shown on a seat: the player's best hero for their position this game, else any favourite. */
+function seatHero(pool: Pool, member: PartyMember): number | null {
+  const byPos = pool[member.id];
+  if (!byPos) return null;
+  if (member.position && byPos[member.position]?.[0]) return byPos[member.position]![0]!;
+  const positions = Object.keys(byPos)
+    .map(Number)
+    .filter((p) => p > 0)
+    .sort((a, b) => a - b);
+  return positions.length ? (byPos[positions[0]!]![0] ?? null) : null;
+}
+
+/** The lobby: five seats, your position for this game, and invites and the invite link for the leader. */
 export function PartyLobby({
   userId,
   initialParty,
   initialLink,
   invitees,
+  heroArt,
 }: {
   userId: string;
   initialParty: Party | null;
   /** The invite link of initialParty, when the user leads it. */
   initialLink: PartyLink | null;
   invitees: Invitee[];
+  /** Hero name and landscape image by hero id, for the seats. */
+  heroArt: Record<number, { name: string; image: string }>;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [party, setParty] = useState(initialParty);
+  const [pool, setPool] = useState<Pool>({});
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,27 +86,72 @@ export function PartyLobby({
     const next = toParty(data);
     setParty(next);
     if (!next) return setInvited(new Set());
-    const { data: invites } = await supabase
-      .from("party_invites")
-      .select("user_id")
-      .eq("party_id", next.id)
-      .eq("status", "pending");
+    setPool(await loadPool(supabase, userId));
+    const { data: invites } = await supabase.from("party_invites").select("user_id").eq("party_id", next.id).eq("status", "pending");
     setInvited(new Set((invites ?? []).map((i) => i.user_id as string)));
-  }, [supabase]);
+  }, [supabase, userId]);
+
+  // Seat art after the first paint; refresh() reloads it as players join or move.
+  useEffect(() => {
+    if (!partyId) return;
+    let cancelled = false;
+    loadPool(supabase, userId).then((p) => {
+      if (!cancelled) setPool(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, userId, partyId]);
 
   // Live updates: players joining, leaving, picking positions, and the leader changing.
   useEffect(() => {
     if (!partyId) return;
     const channel = supabase
       .channel(`party:${partyId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "parties", filter: `id=eq.${partyId}` }, refresh)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "party_members", filter: `party_id=eq.${partyId}` }, refresh)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "party_members", filter: `party_id=eq.${partyId}` }, refresh)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "parties",
+          filter: `id=eq.${partyId}`,
+        },
+        refresh,
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "party_members",
+          filter: `party_id=eq.${partyId}`,
+        },
+        refresh,
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "party_members",
+          filter: `party_id=eq.${partyId}`,
+        },
+        refresh,
+      )
       // Realtime can't filter deletes, so they are checked here.
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "party_members" }, (change) => {
         if ((change.old as { party_id?: string }).party_id === partyId) refresh();
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "party_invites", filter: `party_id=eq.${partyId}` }, refresh)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "party_invites",
+          filter: `party_id=eq.${partyId}`,
+        },
+        refresh,
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -82,18 +169,19 @@ export function PartyLobby({
 
   if (!party) {
     return (
-      <div className="flex max-w-3xl flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {error && <p className="text-sm text-dire">{error}</p>}
-        <section className="card flex flex-col items-start gap-3 p-4">
-          <p className="text-sm text-muted">You&apos;re not in a party. Start one and invite your friends and teammates.</p>
-          <button
-            onClick={() => run("Party not started", () => supabase.rpc("start_party"))}
-            disabled={busy}
-            className="btn btn-primary"
-          >
+        <ul aria-hidden className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: PARTY_SIZE }, (_, i) => (
+            <li key={i} className={`aspect-video rounded-sm bg-surface ring-1 ring-inset ring-line ${i > 1 ? "max-sm:hidden" : ""}`} />
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
+          <p className="flex-1 text-sm text-muted">You&apos;re not in a party. Start one and invite your friends and teammates.</p>
+          <button onClick={() => run("Party not started", () => supabase.rpc("start_party"))} disabled={busy} className="btn btn-primary">
             Start a Party
           </button>
-        </section>
+        </div>
       </div>
     );
   }
@@ -105,24 +193,15 @@ export function PartyLobby({
   const emptySlots = PARTY_SIZE - party.members.length;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {error && <p className="text-sm text-dire">{error}</p>}
 
-      <DraftCaptain
-        party={party}
-        userId={userId}
-        busy={busy}
-        run={run}
-        become={() => supabase.rpc("become_captain")}
-        stepDown={() => supabase.rpc("step_down_captain")}
-      />
-
-      <section aria-label="Players" className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">
+      <section aria-label="Players" className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="section-title">
             Players{" "}
-            <span className="num text-subtle">
-              {party.members.length}/{PARTY_SIZE}
+            <span className="num text-base font-medium text-subtle">
+              {party.members.length} of {PARTY_SIZE}
             </span>
           </h2>
           <button
@@ -133,30 +212,59 @@ export function PartyLobby({
             Leave Party
           </button>
         </div>
-        <ul className="divide-y divide-line border-y border-line">
-          {party.members.map((m) => (
-            <MemberRow
-              key={m.id}
-              member={m}
-              isLeader={m.id === party.leaderId}
-              isCaptain={m.id === party.captain.id}
-              isMe={m.id === userId}
-              // null means "any position"; the generated types can't mark a function argument nullable.
-              onPosition={(want) => run("Position not saved", () => supabase.rpc("set_party_position", { want: want as number }))}
-              onRemove={
-                isLeader && m.id !== userId
-                  ? () => run("Could not remove", () => supabase.rpc("remove_from_party", { target: m.id }))
-                  : undefined
-              }
-            />
-          ))}
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+          {party.members.map((m) => {
+            const hero = seatHero(pool, m);
+            return (
+              <Seat
+                key={m.id}
+                member={m}
+                art={hero !== null ? heroArt[hero] : undefined}
+                isLeader={m.id === party.leaderId}
+                isCaptain={m.id === party.captain.id}
+                isMe={m.id === userId}
+                // null means "any position"; the generated types can't mark a function argument nullable.
+                onPosition={(want) =>
+                  run("Position not saved", () =>
+                    supabase.rpc("set_party_position", {
+                      want: want as number,
+                    }),
+                  )
+                }
+                onRemove={
+                  isLeader && m.id !== userId
+                    ? () => run("Could not remove", () => supabase.rpc("remove_from_party", { target: m.id }))
+                    : undefined
+                }
+              />
+            );
+          })}
           {Array.from({ length: emptySlots }, (_, i) => (
-            <li key={`empty-${i}`} className="flex h-12 items-center px-3 text-sm text-subtle">
-              Open slot
+            <li key={`empty-${i}`} className="flex flex-col gap-2">
+              <div className="grid aspect-video place-items-center rounded-sm bg-surface text-sm text-subtle ring-1 ring-inset ring-line">
+                Open seat
+              </div>
+              <span className="text-sm text-subtle">Waiting for a player</span>
             </li>
           ))}
         </ul>
       </section>
+
+      <div className="flex flex-col gap-3 rounded-md bg-surface p-4 sm:flex-row sm:items-center sm:gap-6 sm:px-5">
+        <div className="min-w-0 flex-1">
+          <DraftCaptain
+            party={party}
+            userId={userId}
+            busy={busy}
+            run={run}
+            become={() => supabase.rpc("become_captain")}
+            stepDown={() => supabase.rpc("step_down_captain")}
+          />
+        </div>
+        <Link href="/draft" className="btn btn-secondary shrink-0">
+          Open Party Draft
+        </Link>
+      </div>
 
       {isLeader && (
         <PartyLinkCard
@@ -170,14 +278,22 @@ export function PartyLobby({
 
       {isLeader ? (
         <section aria-label="Invite" className="flex flex-col gap-2">
-          <h2 className="text-base font-semibold">
-            Invite <span className="num text-subtle">{toInvite.length}</span>
+          <h2 className="section-title">
+            Invite <span className="num text-base font-medium text-subtle">{toInvite.length}</span>
           </h2>
           <ul className="divide-y divide-line border-y border-line">
             {toInvite.length ? (
               toInvite.map((p) => (
-                <li key={p.id} className="flex items-center gap-2.5 px-3 py-2">
-                  <Avatar account={{ name: p.name, avatarUrl: p.avatarUrl, detail: null, steamLinked: false }} size={32} />
+                <li key={p.id} className="flex items-center gap-3 py-2.5">
+                  <Avatar
+                    account={{
+                      name: p.name,
+                      avatarUrl: p.avatarUrl,
+                      detail: null,
+                      steamLinked: false,
+                    }}
+                    size={32}
+                  />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-medium leading-tight text-fg">{p.name}</span>
                     <span className="truncate text-xs text-muted">{invited.has(p.id) ? "Invite sent" : p.detail}</span>
@@ -187,14 +303,12 @@ export function PartyLobby({
                     disabled={busy || full}
                     className="btn btn-secondary btn-sm"
                   >
-                    {invited.has(p.id) ? "Invite again" : "Invite"}
+                    {invited.has(p.id) ? "Invite Again" : "Invite"}
                   </button>
                 </li>
               ))
             ) : (
-              <li className="p-4 text-sm text-muted">
-                No one to invite yet. Add friends on the Friends page, or join a team.
-              </li>
+              <li className="py-4 text-sm text-muted">No one to invite yet. Add friends on the Friends page, or join a team.</li>
             )}
           </ul>
         </section>
@@ -205,8 +319,9 @@ export function PartyLobby({
   );
 }
 
-function MemberRow({
+function Seat({
   member,
+  art,
   isLeader,
   isCaptain,
   isMe,
@@ -214,6 +329,7 @@ function MemberRow({
   onRemove,
 }: {
   member: PartyMember;
+  art?: { name: string; image: string };
   isLeader: boolean;
   isCaptain: boolean;
   isMe: boolean;
@@ -222,43 +338,63 @@ function MemberRow({
 }) {
   const position = member.position;
   return (
-    <li className="flex items-center gap-2.5 px-3 py-2">
-      <Avatar account={{ name: member.name, avatarUrl: member.avatarUrl, detail: null, steamLinked: false }} size={32} />
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-medium leading-tight text-fg">
-          {member.name}
-          {isMe && <span className="ml-2 rounded-xs bg-radiant px-1.5 align-[1px] text-xs font-semibold leading-4 text-bg">You</span>}
-        </span>
+    <li className="group flex min-w-0 flex-col gap-2">
+      <div className="relative aspect-video overflow-hidden rounded-sm bg-surface ring-1 ring-inset ring-line">
+        {art ? (
+          <Image src={art.image} alt={art.name} fill sizes="(min-width: 1024px) 20vw, 50vw" unoptimized className="object-cover" />
+        ) : (
+          <div className="grid h-full place-items-center">
+            <Avatar
+              account={{
+                name: member.name,
+                avatarUrl: member.avatarUrl,
+                detail: null,
+                steamLinked: false,
+              }}
+              size={48}
+            />
+          </div>
+        )}
+        {isMe && (
+          <span className="absolute right-1.5 top-1.5 rounded-xs bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>
+        )}
+        {onRemove && (
+          <button
+            onClick={onRemove}
+            aria-label={`Remove ${member.name}`}
+            title={`Remove ${member.name}`}
+            className="absolute left-1.5 top-1.5 grid size-7 place-items-center rounded-sm bg-bg/80 text-muted hover:text-dire focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+          >
+            <Icon name="trash" />
+          </button>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="truncate font-medium leading-tight text-fg">{member.name}</span>
+        {isMe ? (
+          <select
+            aria-label="Your position this game"
+            value={position ?? ""}
+            onChange={(e) => onPosition(e.target.value ? Number(e.target.value) : null)}
+            className="field h-8 w-full py-0 text-sm"
+          >
+            <option value="">Any position</option>
+            {Object.entries(POSITION_NAMES).map(([n, name]) => (
+              <option key={n} value={n}>
+                Pos {n} {name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="truncate text-sm text-muted">{position ? `Pos ${position} ${POSITION_NAMES[position]}` : "Any position"}</span>
+        )}
         {(isLeader || isCaptain) && (
-          <span className="flex flex-wrap gap-1 pt-0.5">
+          <span className="flex flex-wrap gap-1">
             {isCaptain && <span className="chip chip-accent micro">Draft Captain</span>}
             {isLeader && <span className="chip micro">Leader</span>}
           </span>
         )}
-      </span>
-      {isMe ? (
-        <select
-          aria-label="Your position this game"
-          value={position ?? ""}
-          onChange={(e) => onPosition(e.target.value ? Number(e.target.value) : null)}
-          className="field w-40 text-sm"
-        >
-          <option value="">Any position</option>
-          {Object.entries(POSITION_NAMES).map(([n, name]) => (
-            <option key={n} value={n}>
-              {n} {name}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <span className="text-sm text-muted">{position ? `${position} ${POSITION_NAMES[position]}` : "Any position"}</span>
-      )}
-      {onRemove && (
-        <button onClick={onRemove} aria-label={`Remove ${member.name}`} className="btn btn-ghost btn-sm">
-          <Icon name="trash" />
-          Remove
-        </button>
-      )}
+      </div>
     </li>
   );
 }
