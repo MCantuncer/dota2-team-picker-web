@@ -61,7 +61,7 @@ async function HeaderSession() {
     );
   }
 
-  const [{ data: profile }, { count: requests }, { data: partyRows, error: partyError }] = await Promise.all([
+  const [{ data: profile }, { count: requests }, { data: partyRows, error: partyError }, { data: stackInvites }] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier").eq("id", user.id).single(),
     // Friend requests waiting for this user.
     supabase
@@ -70,6 +70,8 @@ async function HeaderSession() {
       .eq("addressee_id", user.id)
       .eq("status", "pending"),
     supabase.rpc("party_view"),
+    // Stack invites waiting for this user; a failure only hides the badge.
+    supabase.rpc("my_team_invites"),
   ]);
   // The party chip is a shortcut only: without it the Party page still works, so a failure just hides it.
   if (partyError) console.error("Header party:", partyError.message);
@@ -79,6 +81,7 @@ async function HeaderSession() {
     { href: "/draft", label: "Draft", icon: "swords" },
     { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
     { href: "/party", label: "Party", icon: "users" },
+    { href: "/stacks", label: "Stacks", icon: "layers", badge: stackInvites?.length ?? 0 },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
   if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain", icon: "crown" });
