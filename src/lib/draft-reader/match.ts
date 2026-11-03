@@ -81,6 +81,17 @@ export function portraitPatch(px: Pixels): Float32Array {
 }
 
 /**
+ * Your own slot carries a hero level badge over the right of the portrait, so portraits are also
+ * compared on their left part alone, which the badge never covers.
+ */
+const LEFT_SHARE = 0.6;
+export const leftPart = (r: Rect): Rect => ({ ...r, w: r.w * LEFT_SHARE });
+
+export function portraitLeftPatch(px: Pixels): Float32Array {
+  return patch(px, leftPart(portraitRect(px)));
+}
+
+/**
  * How colourful a rectangle is: the average gap between each pixel's strongest and weakest colour
  * channel. Grey pixels score 0.
  */
@@ -105,14 +116,14 @@ export function colourfulness(px: Pixels, r: Rect): number {
  * The slot cut a few ways (slightly bigger or smaller, shifted a little), because the top bar's crop
  * differs a few pixels between heroes and screen sizes. The best of these is compared.
  */
-export function slotPatches(px: Pixels, r: Rect): Float32Array[] {
+export function slotPatches(px: Pixels, r: Rect, part: (r: Rect) => Rect = (x) => x): Float32Array[] {
   const out: Float32Array[] = [];
   for (const scale of [0.95, 1, 1.05])
     for (const sx of [-0.04, -0.02, 0, 0.02, 0.04])
       for (const sy of [-0.04, 0, 0.04]) {
         const w = r.w * scale;
         const h = r.h * scale;
-        out.push(patch(px, { x: r.x + (r.w - w) / 2 + sx * r.w, y: r.y + (r.h - h) / 2 + sy * r.h, w, h }));
+        out.push(patch(px, part({ x: r.x + (r.w - w) / 2 + sx * r.w, y: r.y + (r.h - h) / 2 + sy * r.h, w, h })));
       }
   return out;
 }

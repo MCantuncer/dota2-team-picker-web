@@ -20,18 +20,21 @@ export function readActions(read: DraftRead, mySide: Side, inDraft: Set<number>)
 
 /**
  * Turns a stream of live reads into what is safe to add. A hero counts once it shows in two reads in
- * a row, so a portrait caught mid animation is skipped, and it is passed on only once, so a hero you
- * remove by hand (a wrong read) is not put back a second later.
+ * a row, so a portrait caught mid animation is skipped. It is offered on every read until it reaches
+ * the draft, so a pick lost on the way (the page was busy, or two picks landed together) is added
+ * half a second later. Once a hero has been in the draft it is not offered again, so a hero you
+ * remove by hand (a wrong read) stays out.
  */
 export class LiveReads {
   private last = new Set<string>();
-  private passed = new Set<number>();
+  private landed = new Set<number>();
 
-  next(read: DraftRead): DraftRead {
+  next(read: DraftRead, inDraft: Set<number>): DraftRead {
+    for (const id of inDraft) this.landed.add(id);
     const keys = new Set<string>();
     const keep = (key: string, heroId: number) => {
       keys.add(key);
-      return this.last.has(key) && !this.passed.has(heroId);
+      return this.last.has(key) && !this.landed.has(heroId);
     };
     const slots = (side: "radiant" | "dire") =>
       read[side].map((s, i) =>
@@ -43,8 +46,6 @@ export class LiveReads {
       bans: read.bans.filter((id) => keep(`ban:${id}`, id)),
     };
     this.last = keys;
-    for (const s of [...stable.radiant, ...stable.dire]) if (s.heroId !== null) this.passed.add(s.heroId);
-    for (const id of stable.bans) this.passed.add(id);
     return stable;
   }
 }

@@ -29,13 +29,20 @@ export function canWatch(): boolean {
  * Live read: the player shares the Dota window once, and a worker reads the picks and bans off it
  * twice a second. Only new, steady heroes are passed to onRead. Nothing leaves the browser.
  */
-export function useWatchDota(heroes: HeroInfo[], portraits: Record<number, string>, onRead: (read: DraftRead) => void) {
+export function useWatchDota(
+  heroes: HeroInfo[],
+  portraits: Record<number, string>,
+  inDraft: Set<number>,
+  onRead: (read: DraftRead) => void,
+) {
   const [state, setState] = useState<WatchState>("off");
   const session = useRef<{ stream: MediaStream; worker: Worker } | null>(null);
   // Replies arrive long after the render that started watching; they must reach the latest draft.
   const latestOnRead = useRef(onRead);
+  const latestInDraft = useRef(inDraft);
   useEffect(() => {
     latestOnRead.current = onRead;
+    latestInDraft.current = inDraft;
   });
 
   const stop = () => {
@@ -53,7 +60,7 @@ export function useWatchDota(heroes: HeroInfo[], portraits: Record<number, strin
     else if ("frame" in reply) download(reply.frame);
     else {
       setState("on");
-      latestOnRead.current(live.next(reply.read));
+      latestOnRead.current(live.next(reply.read, latestInDraft.current));
     }
   };
 

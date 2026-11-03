@@ -111,6 +111,10 @@ export function DraftBoard({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [soloDraft, setSoloDraft] = useState<DraftEntry[]>([]);
   const [history, setHistory] = useState<DraftEntry[][]>([]);
+  // The draft as of the last change, ahead of the next render: Watch Dota can add picks twice in a row
+  // before the page renders (it is in the background while Dota is in front), and the second must build
+  // on the first.
+  const latestSolo = useRef<DraftEntry[]>([]);
   const [myPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null, party?.userId ?? null);
@@ -136,7 +140,9 @@ export function DraftBoard({
   useEffect(() => {
     loadSnapshot()
       .then((s) => {
-        setSoloDraft(readStorage(DRAFT_KEY, isDraft) ?? []);
+        const savedDraft = readStorage(DRAFT_KEY, isDraft) ?? [];
+        latestSolo.current = savedDraft;
+        setSoloDraft(savedDraft);
         const saved = readStorage(POSITION_KEY, isPosition);
         if (saved && !party?.myPosition) setMyPosition(saved);
         setEngine(new Engine(s));
@@ -207,15 +213,17 @@ export function DraftBoard({
   }, [shown, myPosition, saveSuggestions]);
 
   const change = (next: DraftEntry[]) => {
-    if (next === soloDraft) return;
-    setHistory((h) => [...h.slice(-49), soloDraft]);
+    const current = latestSolo.current;
+    if (next === current) return;
+    setHistory((h) => [...h.slice(-49), current]);
+    latestSolo.current = next;
     setSoloDraft(next);
     writeStorage(DRAFT_KEY, next);
   };
   const act = (...actions: DraftAction[]) => {
     if (locked) return;
     if (party) void shared.act(actions);
-    else change(actions.reduce(applyAction, soloDraft));
+    else change(actions.reduce(applyAction, latestSolo.current));
   };
   // In a party, Undo takes back your own latest entry; the rest of the party keeps theirs.
   const canUndo = party ? shared.lastMine !== null : history.length > 0;
@@ -227,6 +235,7 @@ export function DraftBoard({
     const prev = history.at(-1);
     if (!prev) return;
     setHistory((h) => h.slice(0, -1));
+    latestSolo.current = prev;
     setSoloDraft(prev);
     writeStorage(DRAFT_KEY, prev);
   };
@@ -376,6 +385,7 @@ export function DraftBoard({
         <ScreenshotPaste
           heroes={engine.heroes}
           portraits={portraits}
+          inDraft={taken}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);

@@ -110,6 +110,9 @@ export function CaptainBoard({
   const [slots, setSlots] = useState<Slots>(initialSlots);
   const [rank, setRank] = useState<number | null>(initialRank);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  // The draft as of the last change, ahead of the next render, so changes made back to back (Watch Dota
+  // while the page is in the background) build on each other.
+  const latestDraft = useRef<Draft>(EMPTY_DRAFT);
   const [saveError, setSaveError] = useState<string | null>(null);
   // Each team keeps its own draft in this browser.
   const draftKey = `captain-draft-${team.id}`;
@@ -119,7 +122,10 @@ export function CaptainBoard({
       .then((s) => {
         try {
           const saved = localStorage.getItem(draftKey);
-          if (saved) setDraft(JSON.parse(saved));
+          if (saved) {
+            latestDraft.current = JSON.parse(saved);
+            setDraft(latestDraft.current);
+          }
         } catch {
           // A fresh draft is fine.
         }
@@ -128,7 +134,10 @@ export function CaptainBoard({
       .catch((e: Error) => setLoadError(e.message));
   }, [draftKey]);
 
-  const updateDraft = (next: Draft) => {
+  const updateDraft = (change: Draft | ((current: Draft) => Draft)) => {
+    const next = typeof change === "function" ? change(latestDraft.current) : change;
+    if (next === latestDraft.current) return;
+    latestDraft.current = next;
     setDraft(next);
     try {
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -246,7 +255,7 @@ function DraftView({
   portraits: Record<number, string>;
   teamId: string;
   userId: string;
-  onDraft: (d: Draft) => void;
+  onDraft: (change: Draft | ((current: Draft) => Draft)) => void;
   onLineup: (slots: Slots, rank: number | null) => void;
 }) {
   const enemyRef = useRef<HTMLInputElement>(null);
@@ -294,16 +303,18 @@ function DraftView({
   };
 
   // Watch Dota and screenshot paste: the screen shows no positions, so our heroes go to their usual open ones.
-  const fromScreen = (read: DraftRead, side: Side) => {
-    const actions = readActions(read, side, taken);
-    if (!actions.length) return;
-    const ids = (kind: "ally" | "enemy" | "ban") => actions.filter((a) => a.kind === kind).map((a) => a.heroId);
-    onDraft({
-      picks: placeByPosition(draft.picks, ids("ally"), (id) => engine.fit(id)),
-      enemies: [...draft.enemies, ...ids("enemy")].slice(0, 5),
-      bans: [...draft.bans, ...ids("ban")],
+  const fromScreen = (read: DraftRead, side: Side) =>
+    onDraft((current) => {
+      const inCurrent = new Set([...current.picks.filter((x): x is number => x != null), ...current.enemies, ...current.bans]);
+      const actions = readActions(read, side, inCurrent);
+      if (!actions.length) return current;
+      const ids = (kind: "ally" | "enemy" | "ban") => actions.filter((a) => a.kind === kind).map((a) => a.heroId);
+      return {
+        picks: placeByPosition(current.picks, ids("ally"), (id) => engine.fit(id)),
+        enemies: [...current.enemies, ...ids("enemy")].slice(0, 5),
+        bans: [...current.bans, ...ids("ban")],
+      };
     });
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -313,7 +324,7 @@ function DraftView({
         removes the last one. Bans take several names at once.
       </p>
 
-      <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={fromScreen} />
+      <ScreenshotPaste heroes={engine.heroes} portraits={portraits} inDraft={taken} onRead={fromScreen} />
 
       <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
         <section aria-label="Our Team" className="border-t-2 border-radiant pt-3">
