@@ -36,19 +36,24 @@ export interface PlayerViewProps {
  */
 export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, abilities }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
-  const [active, setActive] = useState<number | undefined>(ordered[0]?.position);
+  // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
+  // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
+  const [picked, setPicked] = useState<{ for?: number; position: number }>();
   const [view, setView] = useState<View>("Item Build");
   const id = useId();
-  const player = ordered.find((p) => p.position === active) ?? ordered[0];
+  const chosen = picked && picked.for === myPosition ? picked.position : undefined;
+  const player = ordered.find((p) => p.position === chosen) ?? ordered[0];
   if (!player) return null;
   const lane = laneOf(player.heroId);
+  const playerTab = (position: number) => `${id}-player-${position}`;
+  const viewTab = (v: View) => `${id}-view-${v.replace(/ /g, "")}`;
   return (
-    <section aria-label="Your Team" className="flex flex-col">
+    <section aria-label="Your Hero" className="flex flex-col">
       <Tabs
         label="Players"
-        items={ordered.map((p) => ({ key: String(p.position), id: `${id}-p${p.position}` }))}
+        items={ordered.map((p) => ({ key: String(p.position), id: playerTab(p.position), controls: `${id}-player-panel` }))}
         selected={String(player.position)}
-        onSelect={(key) => setActive(Number(key))}
+        onSelect={(key) => setPicked({ for: myPosition, position: Number(key) })}
         className="flex gap-7 overflow-x-auto border-b border-line"
         render={(key, selected) => {
           const p = ordered.find((x) => String(x.position) === key);
@@ -71,21 +76,29 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           );
         }}
       />
-      <Tabs
-        label="Player view"
-        items={VIEWS.map((v) => ({ key: v, id: `${id}-${v.replace(/ /g, "")}` }))}
-        selected={view}
-        onSelect={(key) => setView(key as View)} // The keys are VIEWS.
-        className="mt-5 flex justify-center gap-8"
-        render={(key, selected) => (
-          <span className={`border-b-2 pb-1.5 pt-1 text-base font-medium ${selected ? "border-fg text-fg" : "border-transparent text-muted hover:text-fg"}`}>{key}</span>
-        )}
-      />
-      <div role="tabpanel" aria-labelledby={`${id}-${view.replace(/ /g, "")}`} className="pt-7">
-        {view === "Item Build" && <PlayerItems player={player} heroName={heroName} icons={icons} laneNote={lane ? LANE_NOTES[lane.verdict] : undefined} />}
-        {view === "Game Story" && <PlayerStory player={player} lane={lane} heroName={heroName} icons={icons} />}
-        {view === "Skills and Talents" &&
-          (player.skills ? <SkillPlanCard plan={player.skills} abilities={abilities?.[player.heroId]} /> : <p className="text-sm text-muted">No skill data for this hero yet.</p>)}
+      <div id={`${id}-player-panel`} role="tabpanel" aria-labelledby={playerTab(player.position)} tabIndex={0} className="flex flex-col focus-visible:outline-none">
+        <Tabs
+          label={`${heroName(player.heroId)} view`}
+          items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel` }))}
+          selected={view}
+          onSelect={(key) => setView(key as View)} // The keys are VIEWS.
+          className="mt-5 flex flex-wrap justify-start gap-x-5 gap-y-2 sm:justify-center sm:gap-x-8"
+          render={(key, selected) => (
+            <span className={`block border-b-2 pb-1.5 pt-1 text-base font-medium ${selected ? "border-fg text-fg" : "border-transparent text-muted hover:text-fg"}`}>{key}</span>
+          )}
+        />
+        <div id={`${id}-view-panel`} role="tabpanel" aria-labelledby={viewTab(view)} tabIndex={0} className="pt-7 focus-visible:outline-none">
+          {view === "Item Build" && (
+            <PlayerItems player={player} heroName={heroName} icons={icons} laneNote={lane ? LANE_NOTES[lane.verdict] : undefined} />
+          )}
+          {view === "Game Story" && <PlayerStory player={player} lane={lane} heroName={heroName} icons={icons} />}
+          {view === "Skills and Talents" &&
+            (player.skills ? (
+              <SkillPlanCard plan={player.skills} abilities={abilities?.[player.heroId]} />
+            ) : (
+              <p className="text-sm text-muted">No skill data for this hero yet.</p>
+            ))}
+        </div>
       </div>
     </section>
   );
@@ -105,7 +118,7 @@ function PlayerStory({ player, lane, heroName, icons }: { player: PlayerPlan; la
     <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
       {lane && (
         <div className="flex flex-col gap-2.5">
-          <h4 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">{lane.name}</h4>
+          <h3 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">{lane.name}</h3>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-subtle">
             {lane.ours.map(face)} vs {lane.theirs.length ? lane.theirs.map(face) : "nobody"}
           </div>
@@ -117,7 +130,7 @@ function PlayerStory({ player, lane, heroName, icons }: { player: PlayerPlan; la
         <p className="text-[0.9375rem] text-fg">{player.job}</p>
         {player.fallbacks.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <h5 className="text-sm font-medium text-muted">If It Goes Wrong</h5>
+            <h4 className="text-sm font-medium text-muted">If It Goes Wrong</h4>
             <ul className="flex flex-col gap-1 text-sm text-fg/85">
               {player.fallbacks.map((line) => (
                 <li key={line}>{line}</li>
@@ -140,7 +153,7 @@ function Tabs({
   render,
 }: {
   label: string;
-  items: { key: string; id: string }[];
+  items: { key: string; id: string; controls: string }[];
   selected: string;
   onSelect: (key: string) => void;
   className: string;
@@ -170,6 +183,7 @@ function Tabs({
             type="button"
             role="tab"
             aria-selected={on}
+            aria-controls={item.controls}
             tabIndex={on ? 0 : -1}
             onClick={() => onSelect(item.key)}
             onKeyDown={(e) => move(e, i)}

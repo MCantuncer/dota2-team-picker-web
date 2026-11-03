@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import { GameStoryPanel } from "./game-story-panel";
+import { sentence } from "./player-items";
 
 const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number; count?: number } = {}) => ({
   itemId,
@@ -108,7 +109,7 @@ describe("GameStoryPanel", () => {
     expect(tabs[0]).toHaveTextContent("Hero 2");
     expect(tabs[0]).toHaveTextContent("You");
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(within(screen.getByRole("tablist", { name: "Player view" })).getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
+    expect(within(screen.getByRole("tablist", { name: "Hero 2 view" })).getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
     // The viewer's hero comes before the team's Story.
     const order = screen.getByText("Item Journey").compareDocumentPosition(screen.getByText("The Team"));
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -123,6 +124,18 @@ describe("GameStoryPanel", () => {
     expect(screen.getByText(/Or Power Treads at/)).toBeInTheDocument();
   });
 
+  it("keeps the viewer's hero open when their position arrives after the first render", () => {
+    const { rerender } = renderPanel();
+    rerender(<GameStoryPanel plan={plan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={["Can", null]} myPosition={2} />);
+    expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("shows the other boots once, under the core boots, and why an If Needed item replaces one", () => {
+    renderPanel(1);
+    expect(screen.getAllByText(/Or Power Treads at/)).toHaveLength(1);
+    expect(screen.getByText("Instead of Black King Bar.")).toBeInTheDocument();
+  });
+
   it("shows start items as icons only, names on hover", () => {
     renderPanel(1);
     const start = screen.getByRole("list", { name: "Start items" });
@@ -134,9 +147,9 @@ describe("GameStoryPanel", () => {
   it("lists their threats with the item that answers them, or what to do", () => {
     renderPanel(1);
     const threats = within(screen.getByRole("complementary")).getAllByRole("listitem");
-    expect(threats[0]).toHaveTextContent("Hero 9Tank who soaks your damage. Don't focus them.");
-    expect(threats[1]).toHaveTextContent("Hero 8Stuns and disables.");
-    expect(within(threats[1]!).getByTitle("Answer: Black King Bar")).toBeInTheDocument();
+    expect(threats[0]).toHaveTextContent("Hero 9 Lane, guessedTank who soaks your damage. Don't focus them.");
+    expect(threats[1]).toHaveTextContent("Hero 8Stuns and disables.Answer:");
+    expect(within(threats[1]!).getByAltText("Black King Bar")).toBeInTheDocument();
   });
 
   it("marks rough minutes when there are no real timings", async () => {
@@ -185,5 +198,14 @@ describe("GameStoryPanel", () => {
   it("never cuts text off", () => {
     const { container } = renderPanel(1);
     expect(container.querySelector(".truncate, [class*='line-clamp'], [class*='text-ellipsis']")).toBeNull();
+  });
+});
+
+describe("sentence", () => {
+  it("ends a line with one period, and keeps a question or exclamation", () => {
+    expect(sentence("Against Hero 8: buy it early")).toBe("Against Hero 8: buy it early.");
+    expect(sentence("Spell immunity.")).toBe("Spell immunity.");
+    expect(sentence("Behind at 20?")).toBe("Behind at 20?");
+    expect(sentence("Fight now: ")).toBe("Fight now.");
   });
 });
