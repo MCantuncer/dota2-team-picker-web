@@ -88,9 +88,9 @@ export function DraftCaptain({
   else line = "None yet. Anyone can enter the draft.";
 
   return (
-    <section aria-label="Draft Captain" className="card flex items-center gap-3 px-3 py-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-        <span className="label-caps">Draft Captain</span>
+    <section aria-label="Draft Captain" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="font-semibold text-fg">Draft Captain</span>
         <p className="text-sm text-muted" aria-live="polite">
           {note ?? line}
         </p>
@@ -102,12 +102,12 @@ export function DraftCaptain({
       )}
       {canTake && (
         <button onClick={take} disabled={busy} className="btn btn-secondary btn-sm">
-          {captainId ? "Take captain" : "Become captain"}
+          {captainId ? "Take Captain" : "Become Captain"}
         </button>
       )}
       {canAsk && !waiting && (
         <button onClick={take} disabled={busy || waitLeft > 0} className="btn btn-secondary btn-sm">
-          {waitLeft > 0 ? `Ask again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the captain"} for captain`}
+          {waitLeft > 0 ? `Ask Again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the Captain"} for Captain`}
         </button>
       )}
     </section>

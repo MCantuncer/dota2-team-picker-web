@@ -55,18 +55,20 @@ export default async function PartyPage() {
 
   const names = Object.fromEntries(invitees.map((i) => [i.id, i.name]));
   const icons = Object.fromEntries(heroes.map((h) => [h.id, h.icon]));
+  const heroArt = Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, image: h.image }]));
+  const leader = party?.members.find((m) => m.id === party.leaderId);
 
   return (
-    <main className="page flex flex-1 flex-col gap-5 py-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="page-title">Party</h1>
+    <main className="page flex flex-1 flex-col gap-8 py-10">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="page-title">{leader ? `${leader.name}'s Party` : "Party"}</h1>
         <p className="text-sm text-muted">
           Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site, or share the invite link.
         </p>
       </div>
       <TeamGamePlan userId={user.id} initialPlan={sentPlan} names={names} icons={icons} />
       {/* Keyed by party, so joining from the invite pop-up (which refreshes this page) shows the new party. */}
-      <PartyLobby key={party?.id ?? "none"} userId={user.id} initialParty={party} initialLink={link} invitees={invitees} />
+      <PartyLobby key={party?.id ?? "none"} userId={user.id} initialParty={party} initialLink={link} invitees={invitees} heroArt={heroArt} />
       {records && <YourRecords records={records} />}
     </main>
   );

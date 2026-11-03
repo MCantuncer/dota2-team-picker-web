@@ -38,8 +38,8 @@ export default async function FriendsPage() {
   }));
 
   return (
-    <main className="page flex flex-1 flex-col gap-5 py-8">
-      <div className="flex flex-col gap-1">
+    <main className="page flex flex-1 flex-col gap-8 py-10">
+      <div className="flex flex-col gap-1.5">
         <h1 className="page-title">Friends</h1>
         <p className="text-sm text-muted">
           Add the people you play with, then invite them to a party.
