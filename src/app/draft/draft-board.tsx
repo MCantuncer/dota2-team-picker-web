@@ -23,11 +23,13 @@ import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
+import { perPlayerColumns } from "@/lib/per-player";
 import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { DraftCaptainBar } from "./draft-captain-bar";
 import { PartyPlan } from "./party-plan";
+import { PerPlayerView } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
@@ -129,7 +131,7 @@ export function DraftBoard({
   // With a draft captain, only they enter the draft; everyone else watches it fill in.
   const locked = captainId !== null && captainId !== party?.userId;
   const captainName = captainId ? (live.party?.members.find((m) => m.id === captainId)?.name ?? "The captain") : null;
-  const [view, setView] = useState<"mine" | "team">("mine");
+  const [view, setView] = useState<"mine" | "players" | "team">("mine");
   const draft = party ? shared.draft : soloDraft;
   const [soloRank, setSoloRank] = useState<RankBracket | null>(player.rank);
   const [rankError, setRankError] = useState<string | null>(null);
@@ -290,6 +292,17 @@ export function DraftBoard({
     pool && (view === "team" || !isPlanner)
       ? planTeam(engine, {
           slots: toPlanSlots(planMembers, pool, allies),
+          enemies,
+          bans,
+          rankBracket: bracket,
+        })
+      : null;
+  // Per Player: what each member who still has to pick should take, one hero per player.
+  const playerColumns =
+    pool && isPlanner && view === "players"
+      ? perPlayerColumns(engine, {
+          slots: toPlanSlots(planMembers, pool, allies),
+          personal: Object.fromEntries(Object.entries(live.players).map(([id, p]) => [id, p.personal])),
           enemies,
           bans,
           rankBracket: bracket,
@@ -605,12 +618,15 @@ export function DraftBoard({
               tabIndex={-1}
               className="section-title"
             >
-              {teamPlan ? "Team Plan" : picksHeading}
+              {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
             </h2>
             {pool && isPlanner && (
               <div className="seg" role="group" aria-label="Suggestions for">
                 <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
                   My Picks
+                </button>
+                <button aria-pressed={view === "players"} onClick={() => setView("players")} className="seg-item">
+                  Per Player
                 </button>
                 <button aria-pressed={view === "team"} onClick={() => setView("team")} className="seg-item">
                   Team Plan
@@ -626,6 +642,15 @@ export function DraftBoard({
               onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
               onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
             />
+          ) : playerColumns ? (
+            <PerPlayerView
+              columns={playerColumns}
+              names={party!.names}
+              draftKey={JSON.stringify([allyIds, enemies, bans])}
+              portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="strip" />}
+              onPicked={(heroId, position) => placeAlly(heroId, position)}
+              onBanned={(heroId) => act({ kind: "ban", heroId })}
+            />
           ) : isPlanner ? (
             myPart
           ) : (
@@ -634,7 +659,7 @@ export function DraftBoard({
           <Announcer
             text={
               entered +
-              (teamPlan && isPlanner ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
+              ((teamPlan || playerColumns) && isPlanner ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
             }
           />
         </section>
