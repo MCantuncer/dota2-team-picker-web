@@ -769,7 +769,7 @@ function SuggestionCard({
   }
 
   return (
-    <li className="group grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-line py-3">
+    <li className="group relative grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-line py-3">
       {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also Strong</span>}
       <span className="num text-subtle">{rank}</span>
       <Portrait hero={hero} src={portrait} size="strip" />
@@ -778,9 +778,9 @@ function SuggestionCard({
         <span className="block text-sm text-subtle">{s.reasons[0]}</span>
       </span>
       <span className="flex items-center gap-3">
-        {/* On a mouse the row's buttons show on hover or keyboard focus; on touch they always show. */}
+        {/* On a mouse the row's buttons float over the reason on hover or keyboard focus, so they take no room; on touch they always show. */}
         {onPicked && onBanned && (
-          <span className="flex gap-1 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
+          <span className="flex gap-1 [@media(hover:hover)]:absolute [@media(hover:hover)]:right-16 [@media(hover:hover)]:top-1/2 [@media(hover:hover)]:-translate-y-1/2 [@media(hover:hover)]:bg-bg [@media(hover:hover)]:pl-4 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
             <button onClick={onPicked} className="btn btn-secondary btn-sm">
               <Icon name="check" />
               Picked
