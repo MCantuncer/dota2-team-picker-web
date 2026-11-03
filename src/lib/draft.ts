@@ -78,10 +78,27 @@ export function mergeRows(rows: ActionRow[], added: ActionRow[]): ActionRow[] {
   return [...byId.values()].sort((a, b) => a.id - b.id);
 }
 
-/** Who entered each hero still in the draft: the actor of its latest action. */
+/**
+ * The rows that put a hero into the draft, leaving out the ones that only moved an ally to another position, so
+ * changing a position never makes you the one who entered the hero or the target of your Undo.
+ */
+function entryRows(rows: ActionRow[]): ActionRow[] {
+  const inDraft = new Set<number>();
+  return rows.filter((r) => {
+    if (r.kind === "remove") {
+      inDraft.delete(r.hero_id);
+      return true;
+    }
+    if (inDraft.has(r.hero_id)) return false;
+    inDraft.add(r.hero_id);
+    return true;
+  });
+}
+
+/** Who entered each hero still in the draft: the actor of the row that put it in. */
 export function actorsOf(rows: ActionRow[]): Map<number, string> {
   const actors = new Map<number, string>();
-  for (const r of rows) {
+  for (const r of entryRows(rows)) {
     if (r.kind === "remove") actors.delete(r.hero_id);
     else actors.set(r.hero_id, r.actor_id);
   }
@@ -90,8 +107,9 @@ export function actorsOf(rows: ActionRow[]): Map<number, string> {
 
 /** The hero of `userId`'s latest entry that is still in the draft as entered, for Undo. */
 export function lastEntryBy(rows: ActionRow[], draft: DraftEntry[], userId: string): number | null {
-  for (let i = rows.length - 1; i >= 0; i--) {
-    const r = rows[i]!;
+  const entries = entryRows(rows);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const r = entries[i]!;
     if (r.actor_id !== userId || r.kind === "remove") continue;
     if (draft.some((e) => e.heroId === r.hero_id && e.kind === r.kind)) return r.hero_id;
   }

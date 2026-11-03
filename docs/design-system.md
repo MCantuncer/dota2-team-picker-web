@@ -107,6 +107,7 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.kbd` | Key hint (`Enter`, `Tab`, `Esc`). Show the key next to every keyboard action |
 | `.chip`, `.chip-accent` | Small label ("Pos 5"), and the copper version ("Best", "Captain") |
 | `.seg` + `.seg-item` | Segmented control; mark the chosen item `aria-selected` or `aria-pressed` |
+| `.seg-sm` | Compact segmented control for one row (an ally's position). Its items are radios: the chosen one (`aria-checked`) is copper filled, a guessed, unconfirmed one gets `data-guess`: dashed, not filled |
 | `.notice` + `.notice-error`, `-warn`, `-done` | Page or panel message; edge colour and icon carry the meaning |
 | `.link` | Copper text link |
 

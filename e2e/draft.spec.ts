@@ -1,6 +1,11 @@
 import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
+import type { Page } from "@playwright/test";
 import { expectAccessible, heroData, savedSuggestions, signUp, test, uniqueEmail } from "./helpers";
+
+/** The position chosen for an ally, as its checked radio. */
+const chosen = (page: Page, hero: string) =>
+  page.getByRole("radiogroup", { name: `${hero} position` }).getByRole("radio", { checked: true });
 
 test("the draft screen suggests heroes as both teams fill in", async ({ page }) => {
   await page.goto("/draft");
@@ -15,7 +20,7 @@ test("the draft screen suggests heroes as both teams fill in", async ({ page }) 
   await page.keyboard.press("Enter");
 
   await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Crystal Maiden position: 5/ })).toBeVisible();
+  await expect(chosen(page, "Crystal Maiden")).toHaveAccessibleName(/^Pos 5/);
   await expect(page.getByRole("region", { name: "Enemy" }).getByText("Pudge")).toBeVisible();
   await expect(page.getByRole("button", { name: "Unban Anti-Mage" })).toBeVisible();
 
@@ -44,8 +49,26 @@ test("the draft screen takes several heroes at once and forgives a typo", async 
 
   const enemies = page.getByRole("region", { name: "Enemy" });
   for (const name of ["Phantom Assassin", "Shadow Fiend", "Medusa"]) await expect(enemies.getByText(name)).toBeVisible();
-  await expect(page.getByRole("button", { name: /Crystal Maiden position: 5/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Lion position: 4/ })).toBeVisible();
+  await expect(chosen(page, "Crystal Maiden")).toHaveAccessibleName(/^Pos 5/);
+  await expect(chosen(page, "Lion")).toHaveAccessibleName(/^Pos 4/);
+});
+
+test("the draft screen guesses ally positions and swaps them in one click", async ({ page }) => {
+  await page.goto("/draft");
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("cm5 lion");
+  await ally.press("Enter");
+
+  // Lion has no position typed, so it shows a guess until someone sets it.
+  const lion = page.getByRole("radiogroup", { name: "Lion position" });
+  await expect(lion.getByRole("radio", { name: /guessed/ })).toBeVisible();
+  await expect(page.getByText("Dashed positions are guesses")).toBeVisible();
+
+  // Giving Lion Crystal Maiden's position swaps them, so two heroes never share one.
+  await lion.getByRole("radio", { name: /^Pos 5/ }).click();
+  await expect(chosen(page, "Lion")).toHaveAccessibleName(/^Pos 5/);
+  await expect(page.getByRole("radiogroup", { name: "Crystal Maiden position" }).getByRole("radio", { name: /guessed/ })).toBeVisible();
+  await expectAccessible(page);
 });
 
 test("the draft screen shows the win chance once a checked model exists", async ({ page }) => {
