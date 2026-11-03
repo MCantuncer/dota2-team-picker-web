@@ -111,6 +111,56 @@ export async function seedPoolCard(email: string) {
   return data.id;
 }
 
+/**
+ * Links a made-up Steam account to the user and saves game feedback for them, as the
+ * refresh-trends job would: one strength and one problem over 6 games.
+ */
+export async function seedFeedback(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const steamId = `7656119${String(Date.now()).slice(-7)}${String(Math.floor(Math.random() * 1e3)).padStart(3, "0")}`;
+  const { error: steamError } = await db.from("profiles").update({ steam_id: steamId }).eq("id", id);
+  if (steamError) throw steamError;
+  const day = 24 * 60 * 60 * 1000;
+  const { error: saveError } = await db.from("player_feedback").insert({
+    user_id: id,
+    version: 1,
+    games: 6,
+    parsed_games: 5,
+    first_game_at: new Date(Date.now() - 9 * day).toISOString(),
+    last_game_at: new Date(Date.now() - day).toISOString(),
+    improved: [{ kind: "laning", headline: "You fall behind in lane" }],
+    findings: [
+      {
+        kind: "farm",
+        tone: "strength",
+        score: 1.4,
+        headline: "Strong farm",
+        happened: ["Monkey King: 84th percentile for farm (GPM and last hits)"],
+        pattern: "Across 5 games on Monkey King, you had higher farm (GPM and last hits) than 81% of games on these heroes on OpenDota (all ranks).",
+        cost: null,
+        change: null,
+        matchIds: [1, 2, 3, 4, 5],
+      },
+      {
+        kind: "early_deaths",
+        tone: "problem",
+        score: 1.2,
+        headline: "Early deaths are costing your lanes",
+        happened: ["Monkey King: died at 6:20 to Ember Spirit (210 gold lost, 18s dead)"],
+        pattern: "You died 6 times before 10 minutes in 4 of your last 5 games.",
+        cost: "1260 gold lost and 108 seconds dead before 10 minutes.",
+        change:
+          "Most early deaths came from Ember Spirit. Before minute 10, keep a Town Portal Scroll, stand behind your creep wave and step back when the enemy mid goes missing after a rune.",
+        matchIds: [1, 2, 3, 4],
+      },
+    ],
+  });
+  if (saveError) throw saveError;
+}
+
 /** Makes two signed-up users friends, so one can invite the other to a party. */
 export async function befriend(emailA: string, emailB: string) {
   const db = admin();

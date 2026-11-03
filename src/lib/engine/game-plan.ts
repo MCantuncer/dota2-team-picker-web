@@ -3,6 +3,8 @@ import { SURE_POSITION_ODDS, chooseDangerHeroes, dangerLine } from "./danger";
 import { pickFallbacks, type Scaling } from "./fallbacks";
 import { enemyList, type EnemyNote } from "./enemy-list";
 import { laneAdjusted } from "./lane-items";
+import type { MatchupGame } from "./matchup-talents";
+import { skillPlan, type SkillPlan } from "./skill-plan";
 import { gameStory, ourWindow, type Story, type Timing } from "./story";
 import { comboMap, styleSets, STYLES, type Style } from "./gameplan";
 import { isUpgradedBoots, itemBuild, listNames, type BuildItem, type ItemBuild } from "./item-build";
@@ -67,6 +69,8 @@ export interface PlayerPlan {
   fallbacks: string[];
   /** The five enemies as this player meets them, in-lane first (see enemy-list.ts). */
   enemies: EnemyNote[];
+  /** Skill order and talent tree with reasons, when the snapshot has this hero's abilities. */
+  skills?: SkillPlan;
 }
 
 export interface GamePlan {
@@ -96,6 +100,13 @@ export interface GamePlanInput {
   /** All five enemy heroes. */
   theirs: number[];
   rankBracket?: RankBracket;
+  /**
+   * The live matchup lookup's games for each of our heroes against these enemies, by hero id. Leave
+   * it out while the lookup runs. null means the lookup failed or was refused, for everyone or (as a
+   * hero's value) for that hero; "sign-in" means the viewer must sign in to run it. A hero missing
+   * from an answered lookup had no games.
+   */
+  matchups?: Record<number, MatchupGame[] | null> | null | "sign-in";
 }
 
 /** Heroes per style, and the style with the most heroes when at least STYLE_MIN share it. */
@@ -300,6 +311,11 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     const combo = ourCombos.find((c) => c.a === p.heroId || c.b === p.heroId);
     const partner = combo && name(combo.a === p.heroId ? combo.b : combo.a);
     const isInitiator = traitsOf(engine.hero(p.heroId)).has("initiation");
+    const { matchups } = input;
+    // A hero's null (its lookup failed) stays null; a hero missing from the answer had no games.
+    const answered = typeof matchups === "object" && matchups !== null;
+    const games = answered ? (matchups[p.heroId] === undefined ? [] : matchups[p.heroId]) : matchups;
+    const skills = skillPlan(engine.data, p.heroId, p.position, input.theirs.map(name), games);
     return {
       heroId: p.heroId,
       position: p.position,
@@ -325,6 +341,7 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
           };
         }),
       ),
+      ...(skills ? { skills } : {}),
     };
   });
 
