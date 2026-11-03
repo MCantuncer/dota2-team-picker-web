@@ -3,9 +3,9 @@ import { SURE_POSITION_ODDS, chooseDangerHeroes, dangerLine } from "./danger";
 import { pickFallbacks, type Scaling } from "./fallbacks";
 import { enemyList, type EnemyNote } from "./enemy-list";
 import { laneAdjusted } from "./lane-items";
-import { gameStory, type Story } from "./story";
+import { gameStory, ourWindow, type Story, type Timing } from "./story";
 import { comboMap, styleSets, STYLES, type Style } from "./gameplan";
-import { itemBuild, listNames, type BuildItem, type ItemBuild } from "./item-build";
+import { isUpgradedBoots, itemBuild, listNames, type BuildItem, type ItemBuild } from "./item-build";
 import { guessEnemyPositions, type PositionFit } from "./positions";
 import type { Engine } from "./score";
 import { traitsOf } from "./traits";
@@ -32,6 +32,17 @@ const THREAT_EDGE = 1;
 const THREAT_TOTAL_EDGE = 2;
 /** Heroes in a style before a team counts as playing it. */
 const STYLE_MIN = 2;
+/**
+ * An enemy counts as a core (and, in the pos 1 slot, as their carry) when players put the hero in
+ * pos 1 to 3 at least this often...
+ */
+const CORE_SHARE = 0.5;
+/**
+ * ...or when the hero is played in their guessed core slot this often and the guess is sure: a
+ * flex carry like Vengeful Spirit (pos 1 in 1 game of 5). The position guess always fills pos 1,
+ * so a hero who is never played there (Witch Doctor) still doesn't become "their carry".
+ */
+const FLEX_SHARE = 0.15;
 
 export type LaneVerdict = "win" | "even" | "hard";
 
@@ -143,21 +154,33 @@ function keyItem(engine: Engine, build: ItemBuild | null, heroId: number | undef
   const isBlink = (i: BuildItem) => engine.data.items?.[i.itemId]?.key === "blink";
   const startsFights = position !== 1 && heroId !== undefined && traitsOf(engine.hero(heroId)).has("initiation");
   const blink = startsFights ? build?.core.find(isBlink) : undefined;
-  return blink ?? build?.core.find((i) => (engine.data.items?.[i.itemId]?.cost ?? 0) >= KEY_ITEM_MIN_COST);
+  // Boots of Travel costs enough, but it moves a hero; it doesn't win fights.
+  return blink ?? build?.core.find((i) => (engine.data.items?.[i.itemId]?.cost ?? 0) >= KEY_ITEM_MIN_COST && !isUpgradedBoots(engine.data.items?.[i.itemId]));
 }
 
-function playerJob(position: Position, name: string, isInitiator: boolean, item: ItemBuild["core"][number] | undefined, combo?: string): string {
+function playerJob(
+  position: Position,
+  name: string,
+  isInitiator: boolean,
+  item: ItemBuild["core"][number] | undefined,
+  window: Timing,
+  hasCarry: boolean,
+  combo?: string,
+): string {
+  const theirLane = hasCarry ? "their carry's lane" : "their safe lane";
   const timingText = item ? ` Your timing is ${item.name} around minute ${item.minute}.` : "";
   const comboText = combo ? ` Set up ${combo}.` : "";
   switch (position) {
     case 1:
-      return `Farm and carry the late game; join fights once your items are in.${timingText}${comboText}`;
+      return window === "early"
+        ? `Farm fast, then join every push: this game should end before 30 minutes.${timingText}${comboText}`
+        : `Farm and carry the late game; join fights once your items are in.${timingText}${comboText}`;
     case 2:
       return `Win your lane, then use runes to help the side lanes.${timingText}${comboText}`;
     case 3:
       return isInitiator
-        ? `Make their carry's lane hard, then start the team's fights as ${name}.${timingText}${comboText}`
-        : `Make their carry's lane hard and soak damage at the front in fights.${timingText}${comboText}`;
+        ? `Make ${theirLane} hard, then start the team's fights as ${name}.${timingText}${comboText}`
+        : `Make ${theirLane} hard and soak damage at the front in fights.${timingText}${comboText}`;
     case 4:
       return `Help win the off lane, then look for kills around the map with your mid.${timingText}${comboText}`;
     case 5:
@@ -214,25 +237,56 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     }),
   ].filter((line, i, all) => all.indexOf(line) === i);
 
-  const isCore = (id: number) => [...theirByPos].some(([pos, h]) => h === id && pos <= 3);
+  /** Whether the enemy plays core in their guessed slot (see CORE_SHARE and FLEX_SHARE). */
+  const playsCore = (id: number, position: Position) => {
+    const fit = engine.fit(id);
+    if (position > 3) return false;
+    if (fit[1] + fit[2] + fit[3] >= CORE_SHARE) return true;
+    return fit[position] >= FLEX_SHARE && (theirOdds[input.theirs.indexOf(id)]?.[position] ?? 0) >= SURE_POSITION_ODDS;
+  };
+  const isCore = (id: number) => [...theirByPos].some(([pos, h]) => h === id && playsCore(id, pos));
   const threats = input.theirs
     .filter(isCore)
     .map((t) => ({ t, edge: ourIds.reduce((s, o) => s + engine.matchupEdge(t, o, bracket), 0) }))
     .filter((e) => e.edge >= THREAT_TOTAL_EDGE)
     .sort((a, b) => b.edge - a.edge)
     .map((e) => e.t);
-  const theirCarry = theirByPos.get(1);
-  const danger = chooseDangerHeroes(threats, theirCarry).map(({ id, kind }) => {
-    const i = input.theirs.indexOf(id);
-    const position = [...theirByPos].find(([, h]) => h === id)?.[0] ?? 1;
-    // Their usual build, with the item their power comes from.
+  const guessedCarry = theirByPos.get(1);
+  const theirCarry = guessedCarry !== undefined && playsCore(guessedCarry, 1) ? guessedCarry : undefined;
+  /**
+   * An enemy's key item, the one their power comes from, only when its minute can be trusted: the
+   * hero's position is a sure guess, and the build is for that position. STRATZ timings are; a rough
+   * OpenDota build ("around") mixes every position, so it only counts for a hero who mostly plays
+   * this one. A support's Manta Style "around 28" from carry games is worse than no minute.
+   */
+  const sureKeyItem = (id: number, position: Position) => {
+    if ((theirOdds[input.theirs.indexOf(id)]?.[position] ?? 0) < SURE_POSITION_ODDS) return undefined;
     const build = itemBuild(engine.data, id, position, [], bracket);
+    const exact = build?.timings !== "around";
+    if (!exact && engine.fit(id)[position] < SURE_POSITION_ODDS) return undefined;
     const item = keyItem(engine, build, id, position);
+    return item && { itemId: item.itemId, name: item.name, minute: item.minute, exact };
+  };
+  // Their cores who start fights with a Blink Dagger, from a sure minute, earliest first.
+  const initiators = [...theirByPos]
+    .filter(([, id]) => isCore(id) && traitsOf(engine.hero(id)).has("initiation"))
+    .flatMap(([pos, id]) => {
+      const item = sureKeyItem(id, pos);
+      return item && engine.data.items?.[item.itemId]?.key === "blink" ? [{ id, minute: item.minute }] : [];
+    })
+    .sort((a, b) => a.minute - b.minute)
+    .map((i) => i.id);
+  // Their carry is a danger hero only with a sure minute: "farms fast" adds nothing to the plan.
+  const dangerCarry = theirCarry !== undefined && sureKeyItem(theirCarry, 1) ? theirCarry : undefined;
+  const danger = chooseDangerHeroes(threats, dangerCarry, initiators).map(({ id, kind }) => {
+    const position = [...theirByPos].find(([, h]) => h === id)?.[0] ?? 1;
+    const item = sureKeyItem(id, position);
     return dangerLine({
       hero: name(id),
       kind,
       ...(item ? { item: { name: item.name, minute: item.minute } } : {}),
-      isSure: (theirOdds[i]?.[position] ?? 0) >= SURE_POSITION_ODDS && build?.timings !== "around",
+      isSure: item?.exact ?? false,
+      window: ourWindow(timing(ourStyle?.key), timing(theirStyle?.key)),
     });
   });
 
@@ -250,7 +304,15 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
       heroId: p.heroId,
       position: p.position,
       build,
-      job: playerJob(p.position, name(p.heroId), isInitiator, keyItem(engine, build, p.heroId, p.position), combo && `${combo.text} with ${partner}`),
+      job: playerJob(
+        p.position,
+        name(p.heroId),
+        isInitiator,
+        keyItem(engine, build, p.heroId, p.position),
+        ourWindow(timing(ourStyle?.key), timing(theirStyle?.key)),
+        theirCarry !== undefined,
+        combo && `${combo.text} with ${partner}`,
+      ),
       fallbacks: [],
       enemies: enemyList(
         build,
@@ -270,6 +332,7 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
   const carry = players.find((p) => p.position === 1);
   const carryItem = keyItem(engine, carry?.build ?? null, carry?.heroId, 1);
   const enemyAt = (p: Position) => (theirByPos.has(p) ? name(theirByPos.get(p)!) : undefined); // has() checked.
+  const enemyCarry = theirCarry !== undefined ? name(theirCarry) : undefined;
   const picked = pickFallbacks({
     players: players.map((p) => {
       const item = keyItem(engine, p.build, p.heroId, p.position);
@@ -284,7 +347,7 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     scaling: scaling(timing(ourStyle?.key), timing(theirStyle?.key)),
     ourCarry: carry && name(carry.heroId),
     ourKeyItem: carryItem?.name,
-    enemyCarry: enemyAt(1),
+    enemyCarry,
     enemyOfflaner: enemyAt(3),
   });
   players.forEach((p, i) => (p.fallbacks = picked.players[i]!)); // Same order as players.
@@ -294,7 +357,7 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
   const ourTiming = timing(ourStyle?.key);
   const theirTiming = timing(theirStyle?.key);
   const firstCombo = ourCombos[0];
-  const ourMid = players.find((p) => p.position === 2);
+  const laneFact = (l: LanePlan) => ({ name: l.name.toLowerCase(), ours: l.ours.map(name), theirs: l.theirs.map(name) });
   const roadmap = [
     {
       phase: "Laning (0 to 10 min)",
@@ -338,32 +401,30 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     story: gameStory({
       ourTiming,
       theirTiming,
-      wonLane: wonLane?.name.toLowerCase(),
-      hardLane: hardLane?.name.toLowerCase(),
-      ...(hardLane?.theirs.length ? { hardLaneEnemies: hardLane.theirs.map(name) } : {}),
-      ourMid: ourMid && name(ourMid.heroId),
+      ...(wonLane ? { wonLane: laneFact(wonLane) } : {}),
+      ...(hardLane ? { hardLane: laneFact(hardLane) } : {}),
       theirSpikes: [...theirByPos]
-        .filter(([pos]) => pos <= 3)
+        .filter(([pos, id]) => playsCore(id, pos))
         .flatMap(([pos, id]) => {
-          const item = keyItem(engine, itemBuild(engine.data, id, pos, [], bracket), id, pos);
-          return item ? [{ hero: name(id), item: item.name, minute: item.minute }] : [];
+          const item = sureKeyItem(id, pos);
+          return item ? [{ hero: name(id), item: item.name, minute: item.minute, ...(item.exact ? {} : { around: true }) }] : [];
         }),
-      spikes: players.flatMap((p) => {
+      // Cores only: a support's Glimmer Cape isn't a team timing.
+      spikes: players.filter((p) => p.position <= 3).flatMap((p) => {
         const item = keyItem(engine, p.build, p.heroId, p.position);
-        return item ? [{ hero: name(p.heroId), item: item.name, minute: item.minute }] : [];
+        return item ? [{ hero: name(p.heroId), item: item.name, minute: item.minute, ...(p.build?.timings === "around" ? { around: true } : {}) }] : [];
       }),
       combo: firstCombo?.text,
       ourCarry: carry && name(carry.heroId),
-      enemyCarry: enemyAt(1),
+      enemyCarry,
     }),
   };
 }
 
-/** Which team gets stronger later, from each team's strongest time. */
-function scaling(ours: "early" | "late" | null, theirs: "early" | "late" | null): Scaling {
-  if (ours === "late" && theirs !== "late") return "ours";
-  if (theirs === "late" && ours !== "late") return "theirs";
-  return "even";
+/** Which team gets stronger later, from the same decision as the story (see ourWindow). */
+function scaling(ours: Timing, theirs: Timing): Scaling {
+  const window = ourWindow(ours, theirs);
+  return window === "late" ? "ours" : window === "early" ? "theirs" : "even";
 }
 
 const round = (x: number) => Math.round(x * 10) / 10;

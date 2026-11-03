@@ -65,7 +65,7 @@ test("Watch Dota fills the captain's draft, our heroes in their usual positions"
   await logIn(page, email, "/admin/captain");
   await page.getByRole("tab", { name: "Draft" }).click();
 
-  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await page.getByRole("button", { name: "Watch as Radiant" }).click();
   const ours = page.getByRole("region", { name: "Our team" });
   const enemy = page.getByRole("region", { name: "Enemy team" });
   for (const name of ["Crystal Maiden", "Warlock", "Juggernaut", "Omniknight"])

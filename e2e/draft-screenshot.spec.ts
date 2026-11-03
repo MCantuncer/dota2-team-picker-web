@@ -11,6 +11,7 @@ test("pasting a Dota screenshot fills both teams and the bans", async ({ page })
   test.setTimeout(60_000);
   await page.goto("/draft");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeVisible();
+  await page.getByRole("region", { name: "Read the Dota screen" }).getByRole("button", { name: "Radiant", exact: true }).click();
 
   await page.evaluate(async (base64) => {
     const blob = await (await fetch(`data:image/png;base64,${base64}`)).blob();
