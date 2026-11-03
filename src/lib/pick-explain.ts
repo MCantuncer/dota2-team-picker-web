@@ -19,6 +19,15 @@ export function reactingTo({ enemies, allies, bans }: { enemies: string[]; allie
   return `Reacting to ${list(parts)}.`;
 }
 
+/** Suggestions saved per player for the after-game card and reports (the database allows 1 to 8). */
+export const SAVED_SUGGESTIONS = 8;
+
+/** The list to save: the first SAVED_SUGGESTIONS heroes as shown, with their scores. */
+export function toSaved(shown: { heroId: number; score: number }[]): { heroes: number[]; scores: number[] } {
+  const top = shown.slice(0, SAVED_SUGGESTIONS);
+  return { heroes: top.map((s) => s.heroId), scores: top.map((s) => Math.round(s.score * 100) / 100) };
+}
+
 /** Pool heroes shown at most, before the others. */
 const POOL_MAX = 8;
 /** Heroes outside the pool shown after the pool. */
