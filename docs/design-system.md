@@ -124,6 +124,9 @@ or class in its own small PR, then use it.
   with a `ban` slash.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
+- **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
+  bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
+  Support (5). The tile takes the text colour: copper when selected, `subtle` otherwise. Always next to the position name.
 - **Focus** is a 2px copper ring with 2px offset on everything interactive (set globally; don't remove it).
 - **Empty states** sit inside their panel: one line in `text-muted` saying what fills it, plus one action.
 - **Loading** for remote data uses skeletons in the real shape. No spinners on the pick path.

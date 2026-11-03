@@ -5,6 +5,8 @@
  */
 const PATHS = {
   check: <path d="M20 6 9 17l-5-5" />,
+  /** A filled play mark, like the game's own Play button: "start a draft". */
+  play: <path d="M7 4.5v15l12-7.5z" fill="currentColor" />,
   ban: (
     <>
       <circle cx="12" cy="12" r="10" />
