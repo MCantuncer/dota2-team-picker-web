@@ -159,6 +159,26 @@ export async function seedFeedback(email: string) {
     ],
   });
   if (saveError) throw saveError;
+  const game = (matchId: number, daysAgo: number, isWin: boolean, findings: { tone: string; headline: string }[]) => ({
+    user_id: id,
+    match_id: matchId,
+    hero_id: 114,
+    position: 1,
+    is_win: isWin,
+    started_at: new Date(Date.now() - daysAgo * day).toISOString(),
+    duration_s: 2045,
+    status: "parsed",
+    summary: { card: { kills: 9, deaths: 2, assists: 7, goldPerMin: 712 } },
+    summary_version: 1,
+    findings,
+  });
+  const { error: gamesError } = await db
+    .from("player_game_facts")
+    .insert([
+      game(8100000001 + Math.floor(Math.random() * 1e6), 1, true, [{ tone: "strength", headline: "Strong farm" }]),
+      game(8200000001 + Math.floor(Math.random() * 1e6), 2, false, [{ tone: "problem", headline: "2 deaths before 10 minutes" }]),
+    ]);
+  if (gamesError) throw gamesError;
 }
 
 /** Makes two signed-up users friends, so one can invite the other to a party. */
