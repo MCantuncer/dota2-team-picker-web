@@ -6,6 +6,8 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import type { RankBracket } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
+import { matchupRequest } from "@/lib/matchup-games";
+import { useMatchupGames } from "@/lib/use-matchup-games";
 import { createClient } from "@/lib/supabase/client";
 import { latestSentPlan, type SentPlan } from "@/lib/team-game-plan";
 
@@ -59,9 +61,13 @@ export function TeamGamePlan({
       .catch(() => setError("Hero data didn't load. Reload the page to try again."));
   }, [hasPlan, engine]);
 
+  const matchups = useMatchupGames(sent && engine ? matchupRequest(engine.data, sent.picks, sent.enemies) : null);
   const plan = useMemo(
-    () => sent && engine && finishedDraftPlan(engine, sent.picks, sent.enemies, (sent.rankBracket ?? undefined) as RankBracket | undefined),
-    [sent, engine],
+    () =>
+      sent &&
+      engine &&
+      finishedDraftPlan(engine, sent.picks, sent.enemies, (sent.rankBracket ?? undefined) as RankBracket | undefined, matchups),
+    [sent, engine, matchups],
   );
 
   if (error) return <p className="notice notice-error">{error}</p>;
@@ -73,6 +79,7 @@ export function TeamGamePlan({
       plan={plan}
       heroName={(id) => engine.hero(id).name}
       icons={icons}
+      abilities={engine.data.heroAbilities}
       playerNames={sent.players.map((id) => (id === userId ? "You" : id ? (names[id] ?? null) : null))}
       myPosition={myPosition}
       action={

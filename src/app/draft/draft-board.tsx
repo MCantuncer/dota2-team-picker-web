@@ -14,6 +14,8 @@ import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
+import { matchupRequest } from "@/lib/matchup-games";
+import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
 import { poolFirst, reactingTo, toSaved, useRankMoves } from "@/lib/pick-explain";
@@ -183,6 +185,9 @@ export function DraftBoard({
   );
   const bracket = rank ?? undefined;
   const chance = engine ? teamWinChance(engine, allyIds, enemies, bracket) : null;
+  // Our picks by position once placed, and the live games against these enemies for the talents.
+  const picksByPosition = POSITIONS.map((p) => resolved.find((a) => a.position === p)?.heroId ?? null);
+  const matchups = useMatchupGames(engine ? matchupRequest(engine.data, picksByPosition, enemies) : null);
 
   // In a party, save the list this player sees once it settles, for the after-game card and
   // reports. The list as a string, so a re-render with the same list saves nothing.
@@ -269,12 +274,7 @@ export function DraftBoard({
   const taken = new Set(draft.map((e) => e.heroId));
   const hero = (id: number) => engine.hero(id);
   // Once both teams are in with every ally's position, the game plan for our side.
-  const gamePlan = finishedDraftPlan(
-    engine,
-    POSITIONS.map((p) => resolved.find((a) => a.position === p)?.heroId ?? null),
-    enemies,
-    bracket,
-  );
+  const gamePlan = finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups);
   // Players watching the captain's draft hear each hero as it goes in.
   const last = locked ? draft.at(-1) : undefined;
   const entered = last
@@ -578,6 +578,7 @@ export function DraftBoard({
         <GameStoryPanel
           plan={gamePlan}
           heroName={(id) => hero(id).name}
+          abilities={engine.data.heroAbilities}
           icons={icons}
           playerNames={POSITIONS.map((p) => {
             const member = party?.members.find((m) => m.position === p);

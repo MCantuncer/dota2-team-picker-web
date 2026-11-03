@@ -2,6 +2,8 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { GamePlan, LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
+import type { HeroAbilities, Snapshot } from "@/lib/engine/types";
+import { SkillPlanCard } from "./skill-plan-card";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support"];
@@ -19,6 +21,8 @@ export interface GameStoryPanelProps {
   myPosition?: number;
   /** Shown beside the heading, such as a button to send the plan. */
   action?: ReactNode;
+  /** Each hero's abilities, for the skill order icons. */
+  abilities?: Snapshot["heroAbilities"];
 }
 
 /**
@@ -26,7 +30,7 @@ export interface GameStoryPanelProps {
  * timed chapters, the enemies who decide it, and each player's card with their items, minutes and
  * what to do if it goes wrong. The viewer's card is open; teammates' cards open with one tap.
  */
-export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action }: GameStoryPanelProps) {
+export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities }: GameStoryPanelProps) {
   const players = [...plan.players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   return (
@@ -86,6 +90,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
               icon={icons[player.heroId]}
               playerName={playerNames[player.position - 1] ?? null}
               isMine={player.position === myPosition}
+              abilities={abilities?.[player.heroId]}
             />
           ))}
         </ul>
@@ -101,6 +106,7 @@ function PlayerCard({
   icon,
   playerName,
   isMine,
+  abilities,
 }: {
   player: PlayerPlan;
   heroName: (id: number) => string;
@@ -108,6 +114,7 @@ function PlayerCard({
   icon: string | undefined;
   playerName: string | null;
   isMine: boolean;
+  abilities: HeroAbilities | undefined;
 }) {
   const name = heroName(player.heroId);
   const build = player.build;
@@ -137,6 +144,7 @@ function PlayerCard({
           )}
           {build ? <Build build={build} /> : <p className="text-xs text-muted">No item data for this hero yet.</p>}
           <p className="text-sm">{player.job}</p>
+          {player.skills && <SkillPlanCard plan={player.skills} abilities={abilities} />}
           {player.enemies.length > 0 && <Enemies player={player} heroName={heroName} />}
           {player.fallbacks.length > 0 && (
             <div className="flex flex-col gap-1">
