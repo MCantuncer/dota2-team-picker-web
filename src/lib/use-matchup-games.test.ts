@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MatchupRequest } from "@/lib/matchup-games";
-import { RETRY_MS, SETTLE_MS, useMatchupGames } from "@/lib/use-matchup-games";
+import { BUSY_RETRIES, RETRY_MS, SETTLE_MS, useMatchupGames } from "@/lib/use-matchup-games";
 
 let sessionUser: { user: { id: string } } | null = { user: { id: "u" } };
 const invoke = vi.fn();
@@ -112,6 +112,43 @@ describe("useMatchupGames", () => {
     await settle(RETRY_MS);
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(result.current).toBeUndefined();
+  });
+
+  it("shows what it has while STRATZ is busy, then asks again at the time given", async () => {
+    const busy = () => ({
+      data: { slices: [], pending: [{ hero: 1 }], reasons: ["stratz-busy"], retryAt: new Date(Date.now() + 60_000).toISOString() },
+      error: null,
+    });
+    invoke.mockImplementationOnce(() => Promise.resolve(busy())).mockResolvedValueOnce({ data: { slices: [{ hero: 1, games: [game] }] }, error: null });
+    const { result } = renderHook(() => useMatchupGames(request));
+    await settle();
+    expect(result.current).toMatchObject({ 1: null, 2: [] });
+    await settle(59_000);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    await settle(1_000);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(result.current).toMatchObject({ 1: [game] });
+  });
+
+  it("stops asking after a few busy answers, and when the card goes away", async () => {
+    invoke.mockImplementation(() =>
+      Promise.resolve({
+        data: { slices: [], pending: [{ hero: 1 }], reasons: ["stratz-busy"], retryAt: new Date(Date.now() + 60_000).toISOString() },
+        error: null,
+      }),
+    );
+    const { unmount } = renderHook(() => useMatchupGames(request));
+    await settle();
+    for (let i = 0; i < BUSY_RETRIES + 2; i++) await settle(60_000);
+    expect(invoke).toHaveBeenCalledTimes(1 + BUSY_RETRIES);
+
+    invoke.mockClear();
+    const second = renderHook(() => useMatchupGames({ ...request, version: 185 }));
+    await settle();
+    second.unmount();
+    unmount();
+    await settle(60_000);
+    expect(invoke).toHaveBeenCalledTimes(1);
   });
 
   it("is null without a finished draft", () => {
