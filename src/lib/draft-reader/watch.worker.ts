@@ -1,12 +1,12 @@
 import { DraftReader, type DraftRead, type ReaderHero } from "./reader";
 
 /** Sent to the watcher: first the heroes, then the shared window's frames. */
-export type WatchRequest = { heroes: ReaderHero[] } | { frames: ReadableStream<VideoFrame> };
-/** Sent back about once a second. */
-export type WatchReply = { read: DraftRead } | { black: true } | { error: string };
+export type WatchRequest = { heroes: ReaderHero[] } | { frames: ReadableStream<VideoFrame> } | { save: true };
+/** Sent back about twice a second, and the last frame read when asked to save it. */
+export type WatchReply = { read: DraftRead } | { black: true } | { error: string } | { frame: Blob };
 
-/** One read a second is plenty: a pick takes several seconds to lock in. */
-const READ_EVERY_MS = 1000;
+/** Two reads a second: a hero needs two reads in a row, so a pick shows within about a second. */
+const READ_EVERY_MS = 500;
 /** Frames are scaled down to this height first; the reader works at any height. */
 const READ_HEIGHT = 1080;
 
@@ -16,6 +16,8 @@ const scope = self as unknown as {
   postMessage(reply: WatchReply): void;
 };
 let reader: DraftReader | null = null;
+/** The last frame read, exactly as the reader saw it, kept so the player can save it for a bug report. */
+let canvas: OffscreenCanvas | null = null;
 
 scope.onmessage = ({ origin, data }) => {
   // A dedicated worker only hears from the page that started it, and those messages have an empty
@@ -23,7 +25,13 @@ scope.onmessage = ({ origin, data }) => {
   if (origin !== "" || typeof data !== "object" || data === null) return;
   if ("heroes" in data && Array.isArray(data.heroes)) reader = new DraftReader(data.heroes);
   else if ("frames" in data && data.frames instanceof ReadableStream) void watch(data.frames);
+  else if ("save" in data && data.save === true) void save();
 };
+
+async function save() {
+  if (!canvas) return;
+  scope.postMessage({ frame: await canvas.convertToBlob({ type: "image/png" }) } satisfies WatchReply);
+}
 
 /**
  * Reads the shared Dota window in the background. Runs in a worker so the page keeps reading while
@@ -31,7 +39,6 @@ scope.onmessage = ({ origin, data }) => {
  */
 async function watch(frames: ReadableStream<VideoFrame>) {
   const stream = frames.getReader();
-  let canvas: OffscreenCanvas | null = null;
   let last = 0;
   try {
     for (;;) {
