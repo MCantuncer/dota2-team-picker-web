@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueCard, isPoolCardHidden, type PoolCardRow } from "./pool-cards";
+import { dueCard, isPoolCardHidden, liveCards, type PoolCardRow } from "./pool-cards";
 
 const NOW = Date.parse("2026-11-03T12:00:00Z");
 const row = (over: Partial<PoolCardRow> = {}): PoolCardRow => ({
@@ -43,5 +43,17 @@ describe("isPoolCardHidden", () => {
 
   it("shows elsewhere", () => {
     for (const path of ["/", "/my-heroes", "/party", "/drafts", "/reports/1"]) expect(isPoolCardHidden(path)).toBe(false);
+  });
+});
+
+describe("liveCards", () => {
+  it("lists open and snoozed cards, snoozed or not yet due", () => {
+    const rows = [
+      row(),
+      row({ id: "c2", status: "snoozed", snooze_until: "2026-11-05T00:00:00Z" }),
+      row({ id: "c3", status: "declined" }),
+      row({ id: "c4", position: 0 }),
+    ];
+    expect(liveCards(rows).map((c) => c.id)).toEqual(["c1", "c2"]);
   });
 });
