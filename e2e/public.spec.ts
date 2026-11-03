@@ -21,9 +21,9 @@ test("private pages send signed-out visitors to log in and back", async ({ page 
   await expect(page).toHaveURL(/\/login\?next=%2Fprofile$/);
 });
 
-test("captain mode is hidden from signed-out visitors", async ({ page }) => {
-  const res = await page.goto("/admin/captain");
-  expect(res?.status()).toBe(404);
+test("the old Captain mode address opens the draft", async ({ page }) => {
+  await page.goto("/admin/captain");
+  await expect(page).toHaveURL(/\/draft$/);
 });
 
 test("login refuses other sites as the next page", async ({ page }) => {

@@ -75,15 +75,6 @@ function admin() {
   return createClient<Database>(url, key, { auth: { persistSession: false } });
 }
 
-export async function setUserType(email: string, type: "user" | "captain" | "admin") {
-  const db = admin();
-  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
-  if (error) throw error;
-  if (!id) throw new Error(`No user ${email}`);
-  const { error: updateError } = await db.from("profiles").update({ user_type: type }).eq("id", id);
-  if (updateError) throw updateError;
-}
-
 /** The suggestion lists saved for a user in party drafts. */
 export async function savedSuggestions(email: string) {
   const db = admin();

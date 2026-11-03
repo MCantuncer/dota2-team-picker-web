@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Captain mode is gone: every party plans its draft on /draft.
+  async redirects() {
+    return [{ source: "/admin/captain", destination: "/draft", permanent: true }];
+  },
   images: {
     remotePatterns: [
       // Hero portraits and Steam avatars.
