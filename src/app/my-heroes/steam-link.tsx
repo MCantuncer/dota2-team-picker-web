@@ -63,7 +63,7 @@ function NotLinked() {
         {error && <span className="text-sm text-dire">{error}</span>}
       </div>
       <button onClick={link} disabled={pending} className="btn btn-secondary">
-        {pending ? "Opening Steam…" : "Link Steam account"}
+        {pending ? "Opening Steam…" : "Link Steam Account"}
       </button>
     </div>
   );
@@ -87,7 +87,7 @@ function Connected({ account }: { account: SteamAccount }) {
         <div className="mr-auto flex min-w-0 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 id="steam-heading" className="truncate font-semibold">
-              {account.name ?? "Steam account"}
+              {account.name ?? "Steam Account"}
             </h2>
             <span className="rounded-sm bg-radiant-strong/25 px-1.5 py-0.5 text-xs font-semibold text-radiant">
               Steam connected
@@ -122,7 +122,7 @@ function Connected({ account }: { account: SteamAccount }) {
         <div className="flex items-center gap-2">
           <form action={sync}>
             <button type="submit" disabled={syncing} className="btn btn-secondary btn-sm">
-              {syncing ? "Updating…" : "Update now"}
+              {syncing ? "Updating…" : "Update Now"}
             </button>
           </form>
           {!account.steamOnly && !confirming && (
