@@ -89,7 +89,7 @@ export function TeamPicker({
               <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5">
                 <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
-              New team
+              New Team
             </button>
           )}
         </>

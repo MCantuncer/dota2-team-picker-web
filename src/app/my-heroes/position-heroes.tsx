@@ -93,7 +93,7 @@ export function PositionHeroes({
             >
               <button onClick={() => setActive(p.n)} className="flex flex-1 items-center gap-3 text-left" aria-current={isActive}>
                 <span
-                  className={`grid size-8 place-items-center rounded-md font-mono text-sm font-bold ${
+                  className={`grid size-8 place-items-center rounded-md num text-sm font-bold ${
                     isPlayed ? "bg-radiant/15 text-radiant ring-1 ring-radiant-strong" : "bg-raised text-subtle"
                   }`}
                 >
@@ -124,7 +124,7 @@ export function PositionHeroes({
       <section aria-label={`${pos.name} heroes`} className="flex min-w-0 flex-col gap-3 card/70 p-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <h2 className="text-lg font-bold">
-            <span className="font-mono text-radiant">{pos.n}</span> {pos.name} heroes
+            <span className="num text-radiant">{pos.n}</span> {pos.name} heroes
           </h2>
           <span className="text-sm text-subtle">Your best heroes first. Five to ten is plenty.</span>
         </div>
@@ -181,7 +181,7 @@ export function PositionHeroes({
           if (!list.length) return null;
           return (
             <div key={attr.key} className="flex flex-col gap-1.5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">{attr.name}</h3>
+              <h3 className="text-sm font-medium text-subtle">{attr.name}</h3>
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1.5">
                 {list.map((h) => {
                   const on = chosen.includes(h.id);
@@ -197,7 +197,7 @@ export function PositionHeroes({
                       >
                         <Image src={h.image} alt={h.name} width={128} height={72} unoptimized className="aspect-video w-full bg-raised object-cover" />
                         {on && (
-                          <span className="absolute right-0.5 top-0.5 rounded-sm bg-radiant-strong px-1 font-mono text-[10px] font-bold">
+                          <span className="absolute right-0.5 top-0.5 rounded-sm bg-radiant-strong px-1 num text-xs font-bold">
                             {chosen.indexOf(h.id) + 1}
                           </span>
                         )}

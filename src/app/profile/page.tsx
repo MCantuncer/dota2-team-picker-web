@@ -37,7 +37,7 @@ export default async function ProfilePage() {
   return (
     <main className="page flex flex-col gap-10 py-10">
       <section className="flex flex-col gap-3">
-        <h1 className="page-title">Your profile</h1>
+        <h1 className="page-title">Your Profile</h1>
         <NameForm name={profile?.display_name ?? ""} />
         <p className="text-sm text-subtle">
           {isSteam ? "Signed in with Steam." : `Signed in with ${user.email}.`}
@@ -48,7 +48,7 @@ export default async function ProfilePage() {
         <h2 className="text-lg font-semibold">Rank</h2>
         {isSteam ? (
           <>
-            <p className="font-heading text-4xl font-bold uppercase tracking-wide text-accent">{rank ?? "Unknown"}</p>
+            <p className="text-4xl font-semibold tracking-[-0.03em] text-accent">{rank ?? "Unknown"}</p>
             {!rank && (
               <p className="max-w-prose text-sm text-muted">
                 OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
@@ -77,7 +77,7 @@ export default async function ProfilePage() {
           <p className="max-w-prose text-sm text-muted">
             Email accounts get suggestions from all ranks.{" "}
             <Link href="/my-heroes" className="link">
-              Link your Steam account
+              Link Your Steam Account
             </Link>{" "}
             to have suggestions tuned to your rank and the heroes you win with.
           </p>
@@ -85,11 +85,11 @@ export default async function ProfilePage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Positions and heroes</h2>
+        <h2 className="text-lg font-semibold">Positions and Heroes</h2>
         <p className="text-sm text-muted">
           Suggestions lean toward the heroes you pick for each position on{" "}
           <Link href="/my-heroes" className="link">
-            My heroes
+            My Heroes
           </Link>
           .
         </p>

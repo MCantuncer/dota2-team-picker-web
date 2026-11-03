@@ -36,7 +36,7 @@ describe("AfterGame", () => {
       "href",
       "https://www.opendota.com/matches/8012345678",
     );
-    expect(screen.getByRole("link", { name: "Read the report" })).toHaveAttribute("href", "/reports/d1");
+    expect(screen.getByRole("link", { name: "Read the Report" })).toHaveAttribute("href", "/reports/d1");
     expect(screen.queryByRole("button", { name: "Find result" })).not.toBeInTheDocument();
   });
 });

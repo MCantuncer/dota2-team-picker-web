@@ -97,7 +97,7 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
                 className="btn btn-ghost btn-sm"
                 title="Saves what Watch Dota sees right now, to send us when it misses a pick"
               >
-                Save frame
+                Save Frame
               </button>
             )}
           </span>
@@ -106,8 +106,8 @@ export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPastePr
         Press <Kbd>PrtScn</Kbd> in Dota, then <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
       </span>
       <span className="flex items-center gap-2">
-        <span className="font-semibold text-muted" id="my-side">
-          My team
+        <span className="label-caps" id="my-side">
+          My Team
         </span>
         <span className="seg" role="group" aria-labelledby="my-side">
           {(["radiant", "dire"] as const).map((s) => (

@@ -57,7 +57,7 @@ function NotLinked() {
     <div className="flex flex-wrap items-center gap-3">
       <div className="mr-auto flex flex-col">
         <h2 id="steam-heading" className="font-semibold">
-          Steam account
+          Steam Account
         </h2>
         <span className="text-sm text-muted">Optional. Linking adds your rank and hero record to suggestions.</span>
         {error && <span className="text-sm text-dire">{error}</span>}
@@ -102,7 +102,7 @@ function Connected({ account }: { account: SteamAccount }) {
           </p>
           <p className="flex gap-3 text-xs">
             <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="link">
-              Steam profile
+              Steam Profile
             </a>
             <a href={openDotaUrl} target="_blank" rel="noopener noreferrer" className="link">
               OpenDota

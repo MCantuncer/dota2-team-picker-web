@@ -82,8 +82,8 @@ export function PartyLinkCard({
 
   return (
     <section aria-labelledby="party-link-heading" className="card flex flex-col gap-2 p-3">
-      <h2 id="party-link-heading" className="text-sm font-semibold uppercase tracking-wider">
-        Invite link
+      <h2 id="party-link-heading" className="text-base font-semibold">
+        Invite Link
       </h2>
       <p className="text-sm text-muted">
         Paste it in Discord or Steam chat. Anyone with it can join, friend or not. It works for 24 hours after you copy it.
@@ -94,7 +94,7 @@ export function PartyLinkCard({
         <div role="alert" className="notice notice-error items-center justify-between">
           <span>Invite link not loaded: {error}</span>
           <button onClick={() => load(false)} disabled={busy} className="btn btn-secondary btn-sm">
-            Try again
+            Try Again
           </button>
         </div>
       ) : (
@@ -105,7 +105,7 @@ export function PartyLinkCard({
             placeholder="Loading…"
             aria-label="Party invite link"
             onFocus={(e) => e.currentTarget.select()}
-            className="field min-w-0 flex-1 font-mono text-sm"
+            className="field min-w-0 flex-1 text-sm"
           />
           <button onClick={copy} disabled={!link || busy} className="btn btn-primary">
             {copied ? "Copied" : "Copy link"}
@@ -116,7 +116,7 @@ export function PartyLinkCard({
             title="Make a new link. The old one stops working."
             className="btn btn-ghost"
           >
-            New link
+            New Link
           </button>
         </div>
       )}

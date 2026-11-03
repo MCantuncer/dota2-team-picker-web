@@ -21,7 +21,7 @@ export default async function AddFriendPage({ params }: PageProps<"/add/[code]">
         <p className="text-muted">
           Someone shared their friend link with you.{" "}
           <Link href={`/signup?next=${next}`} className="link">
-            Sign up
+            Sign Up
           </Link>{" "}
           or{" "}
           <Link href={`/login?next=${next}`} className="link">

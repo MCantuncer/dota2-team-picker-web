@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { rankName } from "@/lib/rank";
+import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
 import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
+import { Icon } from "./icon";
 import { LogoMark } from "./logo";
 import { CaptainPrompt } from "./captain-prompt";
 import { PartyInvitePopup } from "./party-invite-popup";
@@ -12,19 +14,19 @@ import { PrimaryNav, type NavItem } from "./primary-nav";
 /** The bar at the top of every page: brand, main sections, and the account menu. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur supports-[backdrop-filter]:bg-bg/75">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-1.5 focus:text-sm focus:font-semibold focus:text-on-accent"
       >
-        Skip to content
+        Skip to Content
       </a>
-      <div className="page flex h-14 items-stretch gap-8">
-        <Link href="/" className="flex items-center gap-2.5 rounded-md" aria-label="Team Picker home">
-          <LogoMark />
-          <span className="font-heading text-lg font-bold uppercase leading-none tracking-wide text-fg">
-            Team Picker
-            <span className="ml-2 hidden text-xs font-semibold tracking-widest text-accent sm:inline">Dota 2</span>
+      <div className="page flex h-16 items-stretch gap-6">
+        <Link href="/" className="flex items-center gap-3 rounded-md pr-6 sm:border-r sm:border-line" aria-label="Dota2 Team Picker home">
+          <LogoMark className="h-8 w-8" />
+          <span className="flex flex-col leading-none">
+            <span className="text-[1.0625rem] font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
+            <span className="mt-1 text-xs text-subtle">for Dota 2</span>
           </span>
         </Link>
         <Suspense fallback={<div className="ml-auto" />}>
@@ -46,16 +48,16 @@ async function HeaderSession() {
     return (
       <div className="ml-auto flex items-center gap-1">
         <Link href="/login" className="btn btn-ghost">
-          Log in
+          Log In
         </Link>
         <Link href="/signup" className="btn btn-primary">
-          Sign up
+          Sign Up
         </Link>
       </div>
     );
   }
 
-  const [{ data: profile }, { count: requests }] = await Promise.all([
+  const [{ data: profile }, { count: requests }, { data: partyRows, error: partyError }] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier").eq("id", user.id).single(),
     // Friend requests waiting for this user.
     supabase
@@ -63,15 +65,19 @@ async function HeaderSession() {
       .select("requester_id", { count: "exact", head: true })
       .eq("addressee_id", user.id)
       .eq("status", "pending"),
+    supabase.rpc("party_view"),
   ]);
+  // The party chip is a shortcut only: without it the Party page still works, so a failure just hides it.
+  if (partyError) console.error("Header party:", partyError.message);
+  const party = partyError ? null : toParty(partyRows);
 
   const nav: NavItem[] = [
-    { href: "/draft", label: "Draft" },
-    { href: "/my-heroes", label: "My heroes" },
-    { href: "/party", label: "Party" },
-    { href: "/friends", label: "Friends", badge: requests ?? 0 },
+    { href: "/draft", label: "Draft", icon: "swords" },
+    { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
+    { href: "/party", label: "Party", icon: "users" },
+    { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
-  if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain" });
+  if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain", icon: "crown" });
 
   const steamLinked = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);
@@ -80,12 +86,27 @@ async function HeaderSession() {
     detail: steamLinked ? (rank ?? "Rank not visible yet") : (user.email ?? null),
     avatarUrl: profile?.avatar_url ?? null,
     steamLinked,
+    rankTier: profile?.rank_tier ?? null,
   };
 
   return (
     <>
       <PrimaryNav items={nav} />
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-3">
+        {party && (
+          <Link
+            href="/party"
+            className="hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted ring-1 ring-inset ring-line-strong hover:text-fg md:flex"
+          >
+            <span aria-hidden className="live-dot text-radiant" />
+            In a party <span className="num text-fg">{party.members.length}/5</span>
+          </Link>
+        )}
+        <Link href="/draft" className="btn btn-primary btn-sm hidden md:inline-flex">
+          <Icon name="plus" />
+          New Draft
+        </Link>
+        <span aria-hidden className="hidden h-6 w-px bg-line md:block" />
         <AccountMenu account={account} nav={nav} />
       </div>
       <PartyInvitePopup userId={user.id} />

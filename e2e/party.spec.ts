@@ -12,7 +12,7 @@ test("a party player can become draft captain and step down", async ({ page }) =
 
   await captain.getByRole("button", { name: "Become captain" }).click();
   await expect(captain.getByText("You enter the draft for the party.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Players" }).getByText("Draft captain", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Players" }).getByText("Draft Captain", { exact: true })).toBeVisible();
 
   await captain.getByRole("button", { name: "Step down" }).click();
   await expect(captain.getByText("None yet. Anyone can enter the draft.")).toBeVisible();

@@ -27,7 +27,7 @@ export function PartyPlan({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm">{plan.gamePlan}</p>
-      <ol aria-label="Team plan" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]">
+      <ol aria-label="Team Plan" className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]">
         {plan.slots.map((slot) => {
           const player = slot.playerId ? (names[slot.playerId] ?? "Left the party") : "No player";
           return (
@@ -40,7 +40,7 @@ export function PartyPlan({
               <div className="flex items-center gap-3">
                 {portrait(slot.heroId, slot.name)}
                 <div className="flex min-w-0 flex-col gap-1">
-                  <span className="font-heading text-xl font-bold leading-6">{slot.name}</span>
+                  <span data-hero-name className="text-xl font-semibold leading-6 tracking-[-0.02em] text-fg">{slot.name}</span>
                   {slot.locked ? (
                     <span className="micro text-radiant">Picked</span>
                   ) : (

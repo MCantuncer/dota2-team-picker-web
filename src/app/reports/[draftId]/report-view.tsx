@@ -30,7 +30,7 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
     <div className="flex flex-col gap-4">
       <header className={`card flex flex-col gap-2 border-t-3 p-4 ${facts.won ? "border-t-radiant-strong" : "border-t-dire-strong"}`}>
         <span className={`chip micro self-start ${facts.won ? "text-radiant" : "text-dire"}`}>{facts.won ? "Won" : "Lost"}</span>
-        <p className="font-heading text-2xl font-bold leading-7">{headline(facts)}</p>
+        <p className="text-2xl font-semibold leading-7 tracking-[-0.02em] text-fg">{headline(facts)}</p>
         <p className="text-sm text-muted">
           You played {facts.side === "radiant" ? "Radiant" : "Dire"}.{" "}
           <a href={`https://www.opendota.com/matches/${facts.matchId}`} target="_blank" rel="noopener noreferrer" className="link">
@@ -41,7 +41,7 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
 
       <section aria-labelledby="report-heroes" className="card flex flex-col gap-3 p-4">
         <h2 id="report-heroes" className="section-title">
-          Your team
+          Your Team
         </h2>
         <ul className="flex flex-col gap-2">
           {facts.heroes.map((hero) => (
@@ -104,7 +104,7 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-heading text-lg font-bold leading-6">{heroName}</span>
+          <span className="text-lg font-semibold leading-6 tracking-[-0.02em] text-fg">{heroName}</span>
           <span className="num text-sm">
             <span className="sr-only">Kills, deaths, assists: </span>
             {hero.kills}/{hero.deaths}/{hero.assists}

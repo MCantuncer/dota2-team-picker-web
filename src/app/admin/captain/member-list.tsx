@@ -39,11 +39,11 @@ export function MemberList({
 }) {
   return (
     <section aria-labelledby="members-heading" className="flex flex-col gap-2">
-      <h2 id="members-heading" className="text-sm font-semibold uppercase tracking-wider">
-        Members <span className="font-mono text-xs text-subtle">{members.length}</span>
+      <h2 id="members-heading" className="text-base font-semibold">
+        Members <span className="num text-xs text-subtle">{members.length}</span>
       </h2>
       {members.length ? (
-        <ul className="card divide-y divide-line">
+        <ul className="divide-y divide-line border-y border-line">
           {members.map((m) => (
             <MemberRow
               key={m.id}
@@ -98,15 +98,15 @@ function MemberRow({
           <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.steamName }} size={32} />
           <span className="flex min-w-0 flex-1 flex-col md:w-32 md:flex-none">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-heading text-base font-semibold leading-tight text-fg">{m.name}</span>
+              <span className="truncate font-medium leading-tight text-fg">{m.name}</span>
               {m.role === "co_captain" && (
-                <span className="shrink-0 rounded bg-accent/15 px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide text-accent ring-1 ring-accent/40">
+                <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-px text-xs font-semibold text-accent ring-1 ring-accent/40">
                   Co-captain
                 </span>
               )}
             </span>
             {m.steamName ? (
-              <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam account">
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted" title="Steam Account">
                 <SteamLogo className="h-3 w-3 shrink-0" />
                 <span className="truncate">{m.steamName}</span>
               </span>
@@ -144,7 +144,7 @@ function MemberRow({
               ))
             )}
           </span>
-          <span className="ml-auto shrink-0 font-mono text-xs text-subtle md:hidden">
+          <span className="ml-auto shrink-0 num text-xs text-subtle md:hidden">
             {m.positions.length ? `Pos ${m.positions.join(" ")}` : "No positions"}
           </span>
         </button>
@@ -332,7 +332,7 @@ function MemberMenu({
             }}
             className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
           >
-            Remove from team
+            Remove From Team
           </button>
         )}
       </div>
