@@ -159,6 +159,7 @@ describe("useMatchupGames", () => {
     await settle();
     await settle(60_000);
     // The first draft, the second, and the second's own retry: never the first's retry.
+    // The invoke mock is untyped; the hook always sends { body: request }.
     expect(invoke.mock.calls.map((c) => (c[1] as { body: MatchupRequest }).body.theirs.at(-1))).toEqual([10, 11, 11]);
   });
 

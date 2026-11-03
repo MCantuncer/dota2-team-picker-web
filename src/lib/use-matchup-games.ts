@@ -58,7 +58,8 @@ async function lookup(request: MatchupRequest, isLive: () => boolean): Promise<L
 /**
  * Asks matchup-builds once the draft has settled, and again when the viewer signs in or out. When
  * STRATZ was busy, the games so far show and it asks again at the time the answer gives (up to
- * BUSY_RETRIES times); a retry that fails keeps the games already shown. Undefined while waiting, then the games by hero (see MatchupGames).
+ * BUSY_RETRIES times); a retry that fails keeps the games already shown. Undefined while waiting,
+ * then the games by hero (see MatchupGames).
  */
 export function useMatchupGames(request: MatchupRequest | null): MatchupGames | undefined {
   const key = request ? JSON.stringify(request) : null;
