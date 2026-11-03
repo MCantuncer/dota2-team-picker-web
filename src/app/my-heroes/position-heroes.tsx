@@ -106,7 +106,7 @@ export function PositionHeroes({
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Positions" className="flex flex-wrap gap-1">
+      <nav aria-label="Positions" className="grid grid-cols-5 border-b border-line">
         {POSITIONS.map((p) => {
           const isActive = p.n === active;
           const count = picks[p.n]?.length ?? 0;
@@ -116,17 +116,22 @@ export function PositionHeroes({
               onClick={() => setActive(p.n)}
               aria-current={isActive}
               title={p.name}
-              className={`flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium ${
-                isActive ? "bg-surface text-fg ring-1 ring-inset ring-line-strong" : "text-muted hover:bg-surface hover:text-fg"
+              className={`relative flex min-w-0 items-center justify-between gap-2 px-2 py-3 text-left sm:px-4 ${
+                isActive ? "text-fg" : "text-muted hover:text-fg"
               }`}
             >
-              <span className={`num font-semibold ${isActive ? "text-accent" : "text-subtle"}`}>{p.n}</span>
-              <span className="max-sm:hidden">{p.name}</span>
-              {count > 0 && <span className="num text-xs text-subtle">{count}</span>}
-              {played.has(p.n) && <span aria-label="You play this" className="size-1.5 rounded-full bg-radiant" />}
-              {cards.some((c) => c.position === p.n) && (
-                <span aria-label="Suggestion from your games" className="size-1.5 rounded-full bg-accent" />
-              )}
+              <span className="flex min-w-0 flex-col gap-0.5 max-sm:hidden">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium">{p.name}</span>
+                  {played.has(p.n) && <span aria-label="You play this" className="size-1.5 shrink-0 rounded-full bg-radiant" />}
+                  {cards.some((c) => c.position === p.n) && (
+                    <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
+                  )}
+                </span>
+                <span className="num truncate text-xs text-subtle">{count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}</span>
+              </span>
+              <span className={`num text-3xl font-semibold leading-none ${isActive ? "text-accent" : "text-subtle"}`}>{p.n}</span>
+              {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
           );
         })}
