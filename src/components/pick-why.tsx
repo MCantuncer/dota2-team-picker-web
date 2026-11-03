@@ -43,3 +43,12 @@ export function OutsidePool({ title = "Not one of your heroes for this position"
     </span>
   );
 }
+
+/** Beside a pool hero that dropped back because it is weak in this draft. */
+export function WeakHere() {
+  return (
+    <span className="chip text-xs text-warn" title="One of your heroes, but weak into this draft: a score below 0, a hard counter on the enemy team, or a matchup of -1.5 or worse">
+      Weak Here
+    </span>
+  );
+}

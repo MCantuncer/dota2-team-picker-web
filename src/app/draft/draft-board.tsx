@@ -5,7 +5,7 @@ import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, OutsidePool, PickWhy } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -18,7 +18,7 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { poolFirst, reactingTo, toSaved, useRankMoves } from "@/lib/pick-explain";
+import { poolFirst, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
@@ -160,7 +160,8 @@ export function DraftBoard({
   const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
-  // Your heroes for the position come first, then the best few outside your pool.
+  // Your heroes for the position come first, then the best few outside your pool. A pool hero that
+  // is weak in this draft drops back and competes with the others by score.
   const favorites = [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])];
   const ranked =
     engine && !mine
@@ -175,7 +176,9 @@ export function DraftBoard({
           count: engine.heroes.length,
         })
       : [];
-  const { list: suggestions, outside } = poolFirst(ranked, new Set(favorites));
+  const { list: suggestions, outside, weak } = poolFirst(ranked, new Set(favorites), {
+    weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined) : 0),
+  });
 
   const allyIds = allies.map((e) => e.heroId);
   const moves = useRankMoves(
@@ -535,6 +538,7 @@ export function DraftBoard({
                   suggestion={s}
                   move={moves.get(s.heroId)}
                   outsidePool={outside.has(s.heroId)}
+                  weakHere={weak.has(s.heroId)}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
                   position={myPosition}
@@ -743,6 +747,7 @@ function SuggestionCard({
   position,
   move,
   outsidePool,
+  weakHere,
   gain,
   onPicked,
   onBanned,
@@ -755,6 +760,8 @@ function SuggestionCard({
   move?: string;
   /** Not one of the player's heroes for this position. */
   outsidePool?: boolean;
+  /** One of the player's heroes, but weak in this draft. */
+  weakHere?: boolean;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -792,6 +799,7 @@ function SuggestionCard({
         <span className="flex items-center gap-2 text-sm text-accent">
           Best Pick Right Now <MoveMark move={move} />
           {outsidePool && <OutsidePool />}
+          {weakHere && <WeakHere />}
         </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
@@ -827,6 +835,7 @@ function SuggestionCard({
         <span className="flex items-center gap-2 font-medium text-fg">
           {s.name} <MoveMark move={move} />
           {outsidePool && <OutsidePool />}
+          {weakHere && <WeakHere />}
         </span>
         <details className="text-sm text-subtle">
           <summary className="cursor-pointer truncate">{s.reasons[0] ?? "Why This Pick"}</summary>

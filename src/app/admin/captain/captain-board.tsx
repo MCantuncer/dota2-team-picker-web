@@ -7,7 +7,7 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
-import { MoveMark, OutsidePool, PickWhy } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
 import type { DraftRead } from "@/lib/draft-reader/reader";
@@ -16,7 +16,7 @@ import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
-import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
+import { poolFirst, reactingTo, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
@@ -72,8 +72,8 @@ interface Note {
   kind: "warn" | "bad" | "good";
   text: string;
 }
-/** `outsidePool`: not one of the member's heroes for the position. */
-type Card = Suggestion & { notes: Note[]; outsidePool: boolean };
+/** `outsidePool`: not one of the member's heroes for the position; `weakHere`: one of them, but weak in this draft. */
+type Card = Suggestion & { notes: Note[]; outsidePool: boolean; weakHere: boolean };
 
 /** Captain mode: one person enters the whole draft and gets picks to call for each member's open position. */
 export function CaptainBoard({
@@ -585,8 +585,18 @@ function suggestColumns(engine: Engine, members: Member[], slots: Slots, rank: n
   );
   return open.map((o, col) => {
     const mine = lists[col]!.filter((s) => best.get(s.heroId)!.col === col);
-    const { list, outside } = poolFirst(mine, new Set(pools[col]), { poolMax: PER_FRIEND, outsideMax: OUTSIDE_PER_FRIEND });
-    const cards: Card[] = list.map((s) => ({ ...s, notes: counterNotes(engine, s.heroId, draft), outsidePool: outside.has(s.heroId) }));
+    const bracket = (rank ?? undefined) as RankBracket | undefined;
+    const { list, outside, weak } = poolFirst(mine, new Set(pools[col]), {
+      poolMax: PER_FRIEND,
+      outsideMax: OUTSIDE_PER_FRIEND,
+      weak: (s) => weakHere(s, worstMatchup(engine, s.heroId, draft.enemies, o.position, bracket)),
+    });
+    const cards: Card[] = list.map((s) => ({
+      ...s,
+      notes: counterNotes(engine, s.heroId, draft),
+      outsidePool: outside.has(s.heroId),
+      weakHere: weak.has(s.heroId),
+    }));
     return { ...o, cards };
   });
 }
@@ -802,6 +812,7 @@ function SuggestionCard({
         <span className={`flex items-center gap-2 text-lg font-semibold leading-tight tracking-[-0.01em] ${top ? "text-accent" : "text-fg"}`}>
           {card.name} <MoveMark move={move} />
           {card.outsidePool && <OutsidePool title="Not one of this player's heroes for this position" />}
+          {card.weakHere && <WeakHere />}
         </span>
         <span className="num text-xs text-subtle" title="Score in win-rate points">
           {card.score >= 0 ? "+" : ""}
