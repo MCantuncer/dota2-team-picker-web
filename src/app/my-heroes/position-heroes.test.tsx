@@ -46,7 +46,7 @@ describe("PositionHeroes suggestions", () => {
     expect(rpc).toHaveBeenCalledWith("answer_pool_suggestion", { card: "c1", answer: "yes" });
     expect(screen.queryByRole("group", { name: "From Your Games" })).not.toBeInTheDocument();
     expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Available for Carry" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Use in drafts" })).toBeChecked();
   });
 
   it("No removes the suggestion without adding the hero", async () => {
