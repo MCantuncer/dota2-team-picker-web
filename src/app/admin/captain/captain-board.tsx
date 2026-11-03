@@ -13,6 +13,8 @@ import type { Side } from "@/lib/draft-reader/geometry";
 import type { DraftRead } from "@/lib/draft-reader/reader";
 import { placeByPosition } from "@/lib/draft-reader/positions";
 import { finishedDraftPlan } from "@/lib/game-plan";
+import { matchupRequest } from "@/lib/matchup-games";
+import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
@@ -278,10 +280,11 @@ function DraftView({
     [view, engine, members, slots, rank, draft],
   );
 
+  const matchups = useMatchupGames(matchupRequest(engine.data, draft.picks, draft.enemies));
   const gamePlan = useMemo(
     // The lineup's rank is a bracket (1-8) whenever it is set.
-    () => finishedDraftPlan(engine, draft.picks, draft.enemies, (rank ?? undefined) as RankBracket | undefined),
-    [engine, draft, rank],
+    () => finishedDraftPlan(engine, draft.picks, draft.enemies, (rank ?? undefined) as RankBracket | undefined, matchups),
+    [engine, draft, rank, matchups],
   );
 
   const setPick = (i: number, id: number | null) => {
@@ -394,6 +397,7 @@ function DraftView({
         <GameStoryPanel
           plan={gamePlan}
           heroName={name}
+          abilities={engine.data.heroAbilities}
           icons={icons}
           playerNames={slots.map((id) => memberById(id)?.name ?? null)}
           action={

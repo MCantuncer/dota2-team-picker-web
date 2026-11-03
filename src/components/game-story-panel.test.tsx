@@ -122,6 +122,20 @@ describe("GameStoryPanel", () => {
     expect(cards[1]!.querySelector("details")).not.toHaveAttribute("open");
   });
 
+  it("shows Skills and Talents only on cards with a skill plan", () => {
+    const skills = {
+      levels: null,
+      names: {},
+      buildReason: "No high-rank skill builds for this hero in this position yet.",
+      talents: [],
+      live: "loading" as const,
+    };
+    const withSkills = { ...plan, players: plan.players.map((p, i) => (i === 0 ? { ...p, skills } : p)) };
+    render(<GameStoryPanel plan={withSkills} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} />);
+    expect(screen.getAllByText("Skills and Talents")).toHaveLength(1);
+    expect(screen.getByText(skills.buildReason)).toBeInTheDocument();
+  });
+
   it("never cuts text off", () => {
     const { container } = renderPanel(1);
     expect(container.querySelector(".truncate, [class*='line-clamp'], [class*='text-ellipsis']")).toBeNull();
