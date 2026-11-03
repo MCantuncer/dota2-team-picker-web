@@ -18,10 +18,12 @@ import { pickGain, teamWinChance } from "@/lib/win";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
+import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { DraftCaptainBar } from "./draft-captain-bar";
 import { PartyPlan } from "./party-plan";
+import { PositionPicker } from "./position-picker";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
@@ -148,6 +150,10 @@ export function DraftBoard({
   const enemies = heroesOf(draft, "enemy");
   const bans = heroesOf(draft, "ban");
   const mine = allies.find((e) => e.position === myPosition);
+  // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
+  const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
+  const reserved = party && lobbyPositions.length ? lobbyPositions : [myPosition];
+  const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
   const suggestions =
@@ -220,6 +226,8 @@ export function DraftBoard({
     if (!party || !actor) return undefined;
     return actor === party.userId ? "You" : (party.names[actor] ?? "Left the party");
   };
+  /** Puts an ally in a position, swapping with whoever held it, so no two allies share one. */
+  const placeAlly = (heroId: number, position: Position | null) => act(...positionActions(resolved, heroId, position));
   const choosePosition = (p: Position) => {
     setMyPosition(p);
     writeStorage(POSITION_KEY, p);
@@ -254,7 +262,7 @@ export function DraftBoard({
   // Once both teams are in with every ally's position, the game plan for our side.
   const gamePlan = finishedDraftPlan(
     engine,
-    POSITIONS.map((p) => allies.find((e) => e.position === p)?.heroId ?? null),
+    POSITIONS.map((p) => resolved.find((a) => a.position === p)?.heroId ?? null),
     enemies,
     bracket,
   );
@@ -380,35 +388,36 @@ export function DraftBoard({
               search={search}
               exclude={taken}
               withPosition
-              onPick={(picked) => act(...picked.map((p) => ({ kind: "ally" as const, ...p })))}
+              onPick={(picked) => {
+                for (const p of picked) {
+                  if (p.position === null) act({ kind: "ally", heroId: p.heroId, position: null });
+                  else placeAlly(p.heroId, p.position);
+                }
+              }}
               onUndo={() => undoLast("ally")}
             />
           )}
           <Slots>
-            {allies.map((e) => (
+            {resolved.map((a) => (
               <Slot
-                key={e.heroId}
-                hero={hero(e.heroId)}
-                portrait={portraits[e.heroId]}
-                by={captainId ? undefined : enteredBy(e.heroId)}
-                onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
+                key={a.heroId}
+                hero={hero(a.heroId)}
+                portrait={portraits[a.heroId]}
+                by={captainId ? undefined : enteredBy(a.heroId)}
+                onRemove={locked ? undefined : () => act({ kind: "remove", heroId: a.heroId })}
               >
-                {locked ? (
-                  <span className={`chip micro shrink-0 whitespace-nowrap ${e.position === myPosition ? "chip-accent" : ""}`}>
-                    Pos {e.position ?? "?"}
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => act({ kind: "ally", heroId: e.heroId, position: e.position === 5 ? null : (((e.position ?? 0) + 1) as Position) })}
-                    aria-label={`${hero(e.heroId).name} position: ${e.position ?? "not set"}. Change`}
-                    className={`chip micro shrink-0 whitespace-nowrap ${e.position === myPosition ? "chip-accent" : ""}`}
-                  >
-                    Pos {e.position ?? "?"}
-                  </button>
-                )}
+                <PositionPicker
+                  heroName={hero(a.heroId).name}
+                  position={a.position}
+                  isGuess={a.isGuess}
+                  onChange={locked ? undefined : (p) => placeAlly(a.heroId, p)}
+                />
               </Slot>
             ))}
           </Slots>
+          {resolved.some((a) => a.isGuess) && (
+            <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
+          )}
         </TeamPanel>
 
         <TeamPanel title="Enemy" side="dire" count={enemies.length} className="xl:col-start-3 xl:row-start-1">
@@ -488,7 +497,7 @@ export function DraftBoard({
               plan={teamPlan}
               names={party!.names}
               portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
-              onPicked={(heroId, position) => act({ kind: "ally", heroId, position })}
+              onPicked={(heroId, position) => placeAlly(heroId, position)}
               onBanned={(heroId) => act({ kind: "ban", heroId })}
             />
           ) : mine ? (
@@ -509,7 +518,7 @@ export function DraftBoard({
                     locked
                       ? undefined
                       : () => {
-                          act({ kind: "ally", heroId: s.heroId, position: myPosition });
+                          placeAlly(s.heroId, myPosition);
                           refocus("ally");
                         }
                   }
@@ -534,6 +543,11 @@ export function DraftBoard({
         </section>
       </div>
 
+      {gamePlan && resolved.some((a) => a.isGuess) && (
+        <p className="notice notice-warn text-sm">
+          This game plan uses guessed positions for some of My Team. Set them above if they are wrong.
+        </p>
+      )}
       {gamePlan && (
         <GameStoryPanel
           plan={gamePlan}
@@ -601,14 +615,14 @@ function TeamPanel({
   );
 }
 
-/** The team's five slots: picks in order, then empty ones. */
+/** The team's five slots: picks in order, then empty ones, all the same size. */
 function Slots({ children }: { children: React.ReactNode[] }) {
   return (
     <ul className="flex flex-col gap-1">
       {children}
       {Array.from({ length: TEAM_SIZE - children.length }, (_, i) => (
-        <li key={`empty-${i}`} aria-hidden className="flex h-11 items-center gap-3 rounded-sm bg-surface p-1 ring-1 ring-inset ring-line">
-          <span className="h-9 w-16 shrink-0 rounded-xs bg-raised" />
+        <li key={`empty-${i}`} aria-hidden className={`${SLOT} items-center`}>
+          <span className={`${SIZES.slot.className} shrink-0 rounded-xs bg-raised`} />
           <span className="text-sm text-subtle">Open</span>
         </li>
       ))}
@@ -616,6 +630,9 @@ function Slots({ children }: { children: React.ReactNode[] }) {
   );
 }
 
+const SLOT = "flex h-16 gap-3 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line";
+
+/** One pick: portrait, name and Remove on top, and its controls (an ally's position) under the name. */
 function Slot({
   hero,
   portrait,
@@ -632,26 +649,27 @@ function Slot({
   children?: React.ReactNode;
 }) {
   return (
-    <li className="flex min-h-11 items-center gap-3 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line">
-      <Portrait hero={hero} src={portrait} size="strip" />
-      <span className="flex min-w-0 flex-col">
-        <span className="font-medium leading-tight text-fg">{hero.name}</span>
-        {by && <span className="micro text-subtle">Entered by {by}</span>}
-      </span>
-      <span className="ml-auto flex items-center gap-2">
+    <li className={`${SLOT} items-center`}>
+      <Portrait hero={hero} src={portrait} size="slot" />
+      <span className={`flex min-w-0 flex-1 flex-col gap-0.5 ${children ? "self-stretch justify-between" : ""}`}>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="truncate font-medium leading-tight text-fg">{hero.name}</span>
+          {by && <span className="micro truncate text-subtle">Entered by {by}</span>}
+        </span>
         {children}
-        {onRemove && (
-          <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className="btn btn-icon btn-sm text-muted">
-            ×
-          </button>
-        )}
       </span>
+      {onRemove && (
+        <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className="btn btn-icon btn-sm shrink-0 self-start text-muted">
+          ×
+        </button>
+      )}
     </li>
   );
 }
 
 const SIZES = {
   strip: { w: 64, h: 36, className: "h-9 w-16" },
+  slot: { w: 96, h: 54, className: "h-13.5 w-24" },
   card: { w: 112, h: 63, className: "h-15.75 w-28" },
 };
 

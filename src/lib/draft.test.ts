@@ -99,4 +99,23 @@ describe("party draft rows", () => {
     expect(lastEntryBy(rows, draft, "a")).toBe(5);
     expect(lastEntryBy(rows, draft, "c")).toBeNull();
   });
+
+  it("does not count a position change as entering the hero", () => {
+    // b entered both allies, then a swapped their positions: Undo for a has nothing to take back.
+    const rows = [row(1, "b", "ally", 5, 1), row(2, "b", "ally", 6, 2), row(3, "a", "ally", 6, 1), row(4, "a", "ally", 5, 2)];
+    const draft = replay(rows.map(toAction).filter((a) => a !== null));
+    expect([...actorsOf(rows)]).toEqual([
+      [5, "b"],
+      [6, "b"],
+    ]);
+    expect(lastEntryBy(rows, draft, "a")).toBeNull();
+    expect(lastEntryBy(rows, draft, "b")).toBe(6);
+  });
+
+  it("counts a hero entered again after it was removed", () => {
+    const rows = [row(1, "b", "ally", 5), row(2, "b", "remove", 5), row(3, "a", "ally", 5)];
+    const draft = replay(rows.map(toAction).filter((a) => a !== null));
+    expect(actorsOf(rows).get(5)).toBe("a");
+    expect(lastEntryBy(rows, draft, "a")).toBe(5);
+  });
 });
