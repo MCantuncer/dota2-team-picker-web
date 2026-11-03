@@ -20,5 +20,13 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   await expect(problems.getByText(/Most early deaths came from Ember Spirit/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Strengths" })).toContainText("Strong farm");
   await expect(page.getByRole("region", { name: "Better Than Last Week" })).toContainText("You fall behind in lane");
+
+  const games = page.getByRole("region", { name: /Previous Games/ });
+  await expect(games.getByRole("listitem")).toHaveCount(2);
+  await page.getByRole("combobox", { name: "Result" }).selectOption("lost");
+  await page.getByRole("button", { name: "Filter" }).click();
+  await expect(page).toHaveURL(/result=lost/);
+  await expect(games.getByRole("listitem")).toHaveCount(1);
+  await expect(games).toContainText("2 deaths before 10 minutes");
   await expectAccessible(page);
 });

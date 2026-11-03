@@ -1,7 +1,7 @@
 name: Backend drift
 
-# Reports when backend main has moved on from the commit pinned in backend-ref.txt.
-# Informational only: PR checks compare with the pinned commit, so this never blocks a merge.
+# Reports when backend main has newer versions of the copied files.
+# Informational only: PR checks accept any version on backend main, so this never blocks a merge.
 on:
   push:
     branches: [main]

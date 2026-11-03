@@ -38,17 +38,18 @@ npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
 npm run test:watch
 npm run typecheck      # route types + tsc
 npm run lint
-npm run check:backend  # engine and database type copies match the pinned backend commit
-npm run sync:backend   # copy them from backend main again and pin its commit
+npm run check:backend  # engine and database type copies match a version on backend main
+npm run sync:backend   # copy them from backend main again
 npm run test:e2e       # Playwright browser tests, see e2e/README.md
 ```
 
-`src/lib/engine/` and `src/lib/supabase/database.types.ts` are copied from the backend repo, at the commit
-pinned in `backend-ref.txt`. The Supabase clients use the database types, so a query on a missing table or
-column fails the type check. PR checks and the browser tests use the pinned commit, so a backend change never
-turns an unrelated website PR red. To pick up backend changes, run `npm run sync:backend` in its own PR: it
-copies the files from backend main and updates the pin. The "Backend drift" workflow reports, without blocking
-anything, when backend main has moved on.
+`src/lib/engine/` and `src/lib/supabase/database.types.ts` are copied from the backend repo. The Supabase
+clients use the database types, so a query on a missing table or column fails the type check. There is no pin
+file: PR checks accept a copy that matches any version of that file on backend main, and the browser tests run
+against the newest backend commit whose database types match the copy. So a backend change never turns an
+unrelated website PR red, and sync PRs from different threads don't conflict. To pick up backend changes, run
+`npm run sync:backend` in its own PR: it copies the files from backend main. The "Backend drift" workflow
+reports, without blocking anything, when backend main has newer versions.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
 full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,

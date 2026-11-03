@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
+import { execFileSync } from "node:child_process";
 import { randomInt } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,9 +8,14 @@ import { test as base, expect, type Page } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database, Json } from "../src/lib/supabase/database.types";
 
-const BACKEND_REF = readFileSync("backend-ref.txt", "utf8").trim();
-if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("backend-ref.txt must hold a full commit SHA");
-/** The backend's committed hero data at the pinned commit. Older than the bucket's, but fixed, so tests repeat. */
+/**
+ * The backend commit the tests run against: the newest one whose database types match the site's copy. CI sets
+ * BACKEND_REF once for the job; a local run works it out (see scripts/check-backend-sync.mjs).
+ */
+const BACKEND_REF =
+  process.env.BACKEND_REF ?? execFileSync("node", ["scripts/check-backend-sync.mjs", "--schema-commit"], { encoding: "utf8" }).trim();
+if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("BACKEND_REF must be a full commit SHA");
+/** The backend's committed hero data at that commit. Older than the bucket's, but fixed, so tests repeat. */
 const HERO_DATA_FIXTURE = `https://raw.githubusercontent.com/MCantuncer/dota2-team-picker/${BACKEND_REF}/services/engine/data/snapshot.json`;
 
 let heroDataCache: Promise<Record<string, unknown>> | undefined;
@@ -164,6 +170,26 @@ export async function seedFeedback(email: string) {
     ],
   });
   if (saveError) throw saveError;
+  const game = (matchId: number, daysAgo: number, isWin: boolean, findings: { tone: string; headline: string }[]) => ({
+    user_id: id,
+    match_id: matchId,
+    hero_id: 114,
+    position: 1,
+    is_win: isWin,
+    started_at: new Date(Date.now() - daysAgo * day).toISOString(),
+    duration_s: 2045,
+    status: "parsed",
+    summary: { card: { kills: 9, deaths: 2, assists: 7, goldPerMin: 712 } },
+    summary_version: 1,
+    findings,
+  });
+  const { error: gamesError } = await db
+    .from("player_game_facts")
+    .insert([
+      game(8100000001 + Math.floor(Math.random() * 1e6), 1, true, [{ tone: "strength", headline: "Strong farm" }]),
+      game(8200000001 + Math.floor(Math.random() * 1e6), 2, false, [{ tone: "problem", headline: "2 deaths before 10 minutes" }]),
+    ]);
+  if (gamesError) throw gamesError;
 }
 
 /** Makes two signed-up users friends, so one can invite the other to a party. */
