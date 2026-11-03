@@ -27,22 +27,22 @@ describe("ReportView", () => {
     // Heroes without art still show their names; unknown heroes get a plain label.
     expect(team.getAllByText("Kez").length).toBeGreaterThan(0);
     expect(team.getAllByText("Hero 70").length).toBeGreaterThan(0);
-    expect(team.getByText("YOU")).toBeInTheDocument();
+    expect(team.getByText("You", { exact: true })).toBeInTheDocument();
     expect(team.getByRole("img", { name: "Power Treads" })).toBeInTheDocument();
 
-    expect(screen.getByRole("region", { name: "Lanes at 10 minutes" })).toHaveTextContent("Mid (Lina): even at 10 minutes.");
-    expect(screen.getByRole("region", { name: "Turning points" })).toHaveTextContent("Minutes 28 to 31: 13k gold swung your way.");
-    expect(screen.getByRole("region", { name: "What hurt you" })).toHaveTextContent("Right-clicks: 33% of the damage you took.");
+    expect(screen.getByRole("region", { name: "Lanes at 10 Minutes" })).toHaveTextContent("Mid (Lina): even at 10 minutes.");
+    expect(screen.getByRole("region", { name: "Turning Points" })).toHaveTextContent("Minutes 28 to 31: 13k gold swung your way.");
+    expect(screen.getByRole("region", { name: "What Hurt You" })).toHaveTextContent("Right-clicks: 33% of the damage you took.");
   });
 
   it("leaves out what a basic report doesn't have", () => {
     const basic = { ...facts, isBasic: true, swings: null, lanes: null, fights: null, damageTaken: null, enemyBest: null, draft: null };
     render(<ReportView facts={basic} art={art} myHeroId={null} />);
     expect(screen.getByRole("region", { name: "Your Team" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Lanes at 10 minutes" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Turning points" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "What hurt you" })).not.toBeInTheDocument();
-    expect(screen.queryByText("YOU")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Lanes at 10 Minutes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Turning Points" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "What Hurt You" })).not.toBeInTheDocument();
+    expect(screen.queryByText("You", { exact: true })).not.toBeInTheDocument();
   });
 
   it("reviews the draft when lists were saved", () => {

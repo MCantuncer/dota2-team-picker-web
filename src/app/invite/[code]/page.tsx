@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Join a party · Dota 2 Team Picker" 
 
 function DeadLink() {
   return (
-    <AuthCard title="Link not working">
+    <AuthCard title="Link Not Working">
       <p className="text-muted">This invite link no longer works. Ask the party leader for a new one.</p>
       <Link href="/party" className="btn btn-secondary self-start">
         Go to Party
@@ -34,11 +34,11 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
   if (!user) {
     const next = encodeURIComponent(`${PARTY_LINK_PATH}/${code}`);
     return (
-      <AuthCard title="Join a party">
+      <AuthCard title="Join a Party">
         <p className="text-muted">
           You&apos;ve been invited to a party.{" "}
           <Link href={`/signup?next=${next}`} className="link">
-            Sign Up
+            Sign up
           </Link>{" "}
           or{" "}
           <Link href={`/login?next=${next}`} className="link">
@@ -61,7 +61,7 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
   const leader = party.leaderName;
   const isFull = party.members >= PARTY_SIZE;
   return (
-    <AuthCard title={`Join ${leader}'s party`}>
+    <AuthCard title={`Join ${leader}'s Party`}>
       <div className="flex items-center gap-2.5">
         <Avatar account={{ name: leader, avatarUrl: party.leaderAvatarUrl, detail: null, steamLinked: false }} size={40} />
         <span className="flex flex-col">
