@@ -5,7 +5,6 @@ import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroes } from "@/lib/heroes";
 import { dueCard, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
-import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
 import { ActivityMark } from "./activity-mark";
 import { Icon } from "./icon";
@@ -96,7 +95,6 @@ async function HeaderSession() {
     { href: "/stacks", label: "Stacks", icon: "layers", badge: (stackInvites?.length ?? 0) + (joinRequests ?? 0) },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
-  if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain", icon: "crown" });
 
   const steamLinked = Boolean(profile?.steam_id);
   const poolCard = steamLinked && poolCardsEnabled() ? await loadPoolCard(supabase, user.id) : null;
