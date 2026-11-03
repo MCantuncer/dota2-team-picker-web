@@ -19,6 +19,22 @@ export function reactingTo({ enemies, allies, bans }: { enemies: string[]; allie
   return `Reacting to ${list(parts)}.`;
 }
 
+/** Pool heroes shown at most, before the others. */
+const POOL_MAX = 8;
+/** Heroes outside the pool shown after the pool. */
+const OUTSIDE_MAX = 3;
+
+/**
+ * The player's own heroes for the position first, best first, then the best few outside the pool.
+ * `ranked` is every suggestion, best first. With an empty pool, the top `POOL_MAX + OUTSIDE_MAX`.
+ */
+export function poolFirst<T extends { heroId: number }>(ranked: T[], pool: Set<number>): { list: T[]; outside: Set<number> } {
+  if (!pool.size) return { list: ranked.slice(0, POOL_MAX), outside: new Set() };
+  const mine = ranked.filter((s) => pool.has(s.heroId)).slice(0, POOL_MAX);
+  const others = ranked.filter((s) => !pool.has(s.heroId)).slice(0, OUTSIDE_MAX);
+  return { list: [...mine, ...others], outside: new Set(others.map((s) => s.heroId)) };
+}
+
 /** "New" for a hero not in the list before, "Up 2" for one that moved up two places. */
 export function rankMoves(before: number[] | null, now: number[]): Map<number, string> {
   const moves = new Map<number, string>();

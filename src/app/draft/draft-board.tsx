@@ -16,7 +16,7 @@ import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBrack
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { reactingTo, useRankMoves } from "@/lib/pick-explain";
+import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
@@ -152,7 +152,9 @@ export function DraftBoard({
   const mine = allies.find((e) => e.position === myPosition);
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
-  const suggestions =
+  // Your heroes for the position come first, then the best few outside your pool.
+  const favorites = [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])];
+  const ranked =
     engine && !mine
       ? engine.suggest({
           myPosition,
@@ -160,11 +162,12 @@ export function DraftBoard({
           enemies,
           bans,
           rankBracket: rank ?? undefined,
-          favorites: [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])],
+          favorites,
           personal: player.personal,
-          count: 8,
+          count: engine.heroes.length,
         })
       : [];
+  const { list: suggestions, outside } = poolFirst(ranked, new Set(favorites));
 
   const allyIds = allies.map((e) => e.heroId);
   const moves = useRankMoves(
@@ -519,6 +522,7 @@ export function DraftBoard({
                   key={s.heroId}
                   suggestion={s}
                   move={moves.get(s.heroId)}
+                  outsidePool={outside.has(s.heroId)}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
                   position={myPosition}
@@ -716,6 +720,7 @@ function SuggestionCard({
   rank,
   position,
   move,
+  outsidePool,
   gain,
   onPicked,
   onBanned,
@@ -726,6 +731,8 @@ function SuggestionCard({
   position: Position;
   /** "New" or "Up 2" since the last pick or ban. */
   move?: string;
+  /** Not one of the player's heroes for this position. */
+  outsidePool?: boolean;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -762,6 +769,7 @@ function SuggestionCard({
         )}
         <span className="flex items-center gap-2 text-sm text-accent">
           Best Pick Right Now <MoveMark move={move} />
+          {outsidePool && <OutsidePool />}
         </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
@@ -796,6 +804,7 @@ function SuggestionCard({
       <div className="min-w-0">
         <span className="flex items-center gap-2 font-medium text-fg">
           {s.name} <MoveMark move={move} />
+          {outsidePool && <OutsidePool />}
         </span>
         <details className="text-sm text-subtle">
           <summary className="cursor-pointer truncate">{s.reasons[0] ?? "Why This Pick"}</summary>
@@ -823,5 +832,13 @@ function SuggestionCard({
       </span>
       {s.hardCounters.length > 0 && <div className="col-span-2 col-start-3 flex flex-col gap-2">{counters}</div>}
     </li>
+  );
+}
+
+function OutsidePool() {
+  return (
+    <span className="chip text-xs" title="Not one of your heroes for this position">
+      Outside Pool
+    </span>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rankMoves, reactingTo } from "./pick-explain";
+import { poolFirst, rankMoves, reactingTo } from "./pick-explain";
 
 describe("reactingTo", () => {
   it("says the list is a blind pick before anyone picks", () => {
@@ -23,5 +23,21 @@ describe("rankMoves", () => {
 
   it("marks nothing before there is a list to compare with", () => {
     expect(rankMoves(null, [1, 2]).size).toBe(0);
+  });
+});
+
+describe("poolFirst", () => {
+  const ranked = [10, 20, 30, 40, 50, 60].map((heroId) => ({ heroId }));
+
+  it("puts the pool heroes first, then the best three outside the pool", () => {
+    const { list, outside } = poolFirst(ranked, new Set([30, 60]));
+    expect(list.map((s) => s.heroId)).toEqual([30, 60, 10, 20, 40]);
+    expect([...outside]).toEqual([10, 20, 40]);
+  });
+
+  it("ranks every hero together when the pool is empty", () => {
+    const { list, outside } = poolFirst(ranked, new Set());
+    expect(list.map((s) => s.heroId)).toEqual([10, 20, 30, 40, 50, 60]);
+    expect(outside.size).toBe(0);
   });
 });
