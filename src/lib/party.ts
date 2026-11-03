@@ -39,6 +39,8 @@ export interface PartyCaptain {
 export interface Party {
   id: string;
   leaderId: string;
+  /** The Stack this party was started for, if any. */
+  teamId: string | null;
   captain: PartyCaptain;
   members: PartyMember[];
 }
@@ -63,6 +65,7 @@ export function toParty(rows: Record<string, unknown>[] | null): Party | null {
   return {
     id: first.party_id as string,
     leaderId: first.leader_id as string,
+    teamId: str(first.team_id),
     captain: {
       id: str(first.captain_id),
       online: first.captain_online === true,

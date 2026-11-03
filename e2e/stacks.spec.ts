@@ -33,10 +33,20 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
 
   await page.reload();
   await expect(page.getByRole("region", { name: /^Members/ }).getByText("Tusk")).toBeVisible();
+
+  // The owner starts a party for the Stack and invites from it in one click.
+  await page.goto("/party");
+  await page.getByLabel("Stack", { exact: true }).selectOption({ label: "Night Owls" });
+  await page.getByRole("button", { name: "Start a Party" }).click();
+  const fromStack = page.getByRole("region", { name: "Invite from Stack" });
+  await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
+  await fromStack.getByRole("button", { name: "Invite" }).click();
+  await expect(fromStack.getByText("Invite sent.")).toBeVisible();
+  await expectAccessible(page);
   await palContext.close();
 });
 
-test("a player finds an open Stack by name and asks to join", async ({ page, browser }) => {
+test("a player finds an open Stack, asks to join, and the owner accepts", async ({ page, browser }) => {
   const name = `Lane ${Date.now().toString(36)}`;
   await signUp(page, uniqueEmail("open-owner"), "Lina");
   await page.goto("/stacks");
@@ -63,5 +73,27 @@ test("a player finds an open Stack by name and asks to join", async ({ page, bro
   await all.getByRole("button", { name: "Search" }).click();
   await row.getByRole("button", { name: "Cancel" }).click();
   await expect(row.getByRole("button", { name: "Ask to Join" })).toBeVisible();
+
+  // Asking again from the Stack's own page.
+  await row.getByRole("link", { name }).click();
+  await expect(stranger.getByRole("heading", { name })).toBeVisible();
+  await expect(stranger.getByText("Only players in this Stack see who is in it.")).toBeVisible();
+  await stranger.getByRole("button", { name: "Ask to Join" }).click();
+  await expect(stranger.getByText("Asked, waiting for the owner")).toBeVisible();
+
+  // The owner sees the request on the Stacks page and accepts it on the Stack page.
+  await page.reload();
+  await page.getByRole("link", { name: /Stack Page/ }).click();
+  await expect(page.getByRole("tab", { name: /Players Who Want to Join/ })).toHaveAttribute("aria-selected", "true");
+  await expectAccessible(page);
+  const asked = page.getByRole("tabpanel").getByRole("listitem").filter({ hasText: "Axe" });
+  await asked.getByRole("button", { name: "Accept" }).click();
+  await expect(asked).toHaveCount(0);
+  await page.getByRole("tab", { name: "Members" }).click();
+  await expect(page.getByRole("tabpanel").getByText("Axe")).toBeVisible();
+
+  await stranger.reload();
+  await expect(stranger.getByRole("button", { name: "Leave" })).toBeVisible();
+  await expect(stranger.getByRole("tabpanel").getByText("Lina")).toBeVisible();
   await strangerContext.close();
 });

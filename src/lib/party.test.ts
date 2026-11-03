@@ -15,6 +15,7 @@ describe("toParty", () => {
     expect(party).toEqual({
       id: "p",
       leaderId: "a",
+      teamId: null,
       captain: { id: null, online: false, requestBy: null, requestMsLeft: 0 },
       members: [
         { id: "a", name: "Can", avatarUrl: null, position: 3, askWaitMs: 0 },

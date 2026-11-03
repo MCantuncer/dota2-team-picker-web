@@ -1,30 +1,56 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { RankBracket } from "@/lib/engine/types";
 import { toParty, type Party } from "@/lib/party";
-import { toHeroPool, type HeroPool } from "@/lib/party-plan";
+import { toPartyStats, type HeroPool, type PartyPlayer } from "@/lib/party-plan";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * The party on the draft screen, kept live: who is in it, their positions and the draft captain.
- * Also loads the party's favorite heroes for whoever plans the team: the captain, or the leader
- * while nobody is captain. The database only gives them to that player.
+ * The party on the draft screen, kept live: who is in it, their positions, the draft captain and the
+ * party rank. Also loads every member's favorite heroes, rank and match stats, which the database
+ * gives to everyone in the party, so the whole Draft Room sees the planner's numbers.
  */
-export function useLiveParty(initial: Party | null, userId: string | null) {
+export function useLiveParty(initial: Party | null) {
   const supabase = useMemo(() => createClient(), []);
   const [party, setParty] = useState(initial);
-  const [pool, setPool] = useState<HeroPool | null>(null);
+  const [partyRank, setPartyRank] = useState<RankBracket | null>(null);
+  const [stats, setStats] = useState<{ pool: HeroPool; players: Record<string, PartyPlayer> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const partyId = initial?.id ?? null;
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.rpc("party_view");
-    if (error) return setError(`Party not loaded: ${error.message}`);
-    setParty(toParty(data));
+    const [view, row] = await Promise.all([
+      supabase.rpc("party_view"),
+      partyId ? supabase.from("parties").select("rank_bracket").eq("id", partyId).maybeSingle() : null,
+    ]);
+    if (view.error) return setError(`Party not loaded: ${view.error.message}`);
+    if (row?.error) return setError(`Party rank not loaded: ${row.error.message}`);
+    setParty(toParty(view.data));
+    setPartyRank((row?.data?.rank_bracket as RankBracket | null | undefined) ?? null);
     setError(null);
-  }, [supabase]);
+  }, [supabase, partyId]);
 
-  // The captain changing or a request opening, and players joining, leaving or moving position.
+  // The party rank is not in party_view, so it is read once here and again on every change.
+  useEffect(() => {
+    if (!partyId) return;
+    let current = true;
+    supabase
+      .from("parties")
+      .select("rank_bracket")
+      .eq("id", partyId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!current) return;
+        if (error) setError(`Party rank not loaded: ${error.message}`);
+        else setPartyRank((data?.rank_bracket as RankBracket | null | undefined) ?? null);
+      });
+    return () => {
+      current = false;
+    };
+  }, [supabase, partyId]);
+
+  // The captain or the rank changing, a request opening, and players joining, leaving or moving position.
   useEffect(() => {
     if (!partyId) return;
     const channel = supabase
@@ -42,23 +68,26 @@ export function useLiveParty(initial: Party | null, userId: string | null) {
     };
   }, [supabase, partyId, refresh]);
 
-  const planner = party ? (party.captain.id ?? party.leaderId) : null;
-  const plansTeam = planner !== null && planner === userId;
+  // Everyone's heroes and stats, loaded again whenever someone joins or leaves.
+  const memberKey = (party?.members ?? [])
+    .map((m) => m.id)
+    .sort()
+    .join(",");
   useEffect(() => {
-    if (!plansTeam) return;
+    if (!memberKey) return;
     let current = true;
-    supabase.rpc("party_hero_pool").then(({ data, error }) => {
+    supabase.rpc("party_player_stats").then(({ data, error }) => {
       if (!current) return;
       if (error) {
-        setPool(null);
+        setStats(null);
         setError(`Could not load your party's heroes: ${error.message}`);
-      } else setPool(toHeroPool(data ?? []));
+      } else setStats(toPartyStats(data ?? []));
     });
     return () => {
       current = false;
     };
-  }, [supabase, plansTeam]);
+  }, [supabase, memberKey]);
 
-  // A pool loaded earlier is dropped as soon as someone else plans the team.
-  return { party, pool: plansTeam ? pool : null, error, refresh };
+  const planner = party ? (party.captain.id ?? party.leaderId) : null;
+  return { party, planner, partyRank, pool: stats?.pool ?? null, players: stats?.players ?? {}, error, refresh };
 }

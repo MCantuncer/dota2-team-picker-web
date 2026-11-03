@@ -59,6 +59,12 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   // Can now watches the draft that Ali enters, without the boxes to type heroes in.
   await page.goto("/draft");
   await expect(page.getByText("Ali enters every hero. Tell them which of your picks you want.")).toBeVisible();
+  // Can's own picks come first, then Ali's Team Plan, read only: no Picked or Banned buttons, and Ali sets the rank.
+  await expect(page.getByRole("status").getByText("Watching Ali's Draft")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Team Plan" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Picked" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "My Picks" })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: /^Rank/ })).toBeDisabled();
   await expect(page.getByRole("region", { name: "Draft captain" }).getByText("Ali enters the draft for the party.")).toBeVisible();
   await expect(page.getByPlaceholder("My team pick, e.g. cm5")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "New draft" })).toBeHidden();

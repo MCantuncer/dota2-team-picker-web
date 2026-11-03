@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
-import { loadInvites, loadMembers, steamAvatarOnly, toStackCard, type StackRef } from "@/lib/stacks";
+import { countJoinRequests, loadInvites, loadMembers, steamAvatarOnly, toStackCard, type StackRef } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/server";
 import { FindStacks } from "./find-stacks";
 import { StackBoard, type Friend, type JoinedStack, type OpenInvite } from "./stack-board";
@@ -40,14 +40,15 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
   }
 
   const current = run.find((s) => s.id === wanted) ?? (wanted ? undefined : run[0]);
-  const [members, stackInvites, heroes] = current
+  const [members, stackInvites, heroes, waiting] = current
     ? await Promise.all([
         loadMembers(supabase, current.id),
         loadInvites(supabase, current.id),
         // Hero icons are decoration: if OpenDota is down the member list falls back to hero names.
         getHeroes().catch(() => []),
+        countJoinRequests(supabase, current.id),
       ])
-    : [[], { emails: [], friends: [] }, []];
+    : [[], { emails: [], friends: [] }, [], 0];
 
   const openInvites: OpenInvite[] = (invites.data ?? []).map((i) => ({
     id: i.invite_id,
@@ -78,6 +79,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         openInvites={openInvites}
         friends={friendList}
         icons={Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, icon: h.icon }]))}
+        waiting={waiting}
       />
       <FindStacks
         hot={(hot.data ?? []).map(toStackCard)}
