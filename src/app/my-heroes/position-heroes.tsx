@@ -40,7 +40,7 @@ export function PositionHeroes({
   initialHeroes: Record<number, number[]>;
   /** Hero pool cards still waiting for an answer, shown on their position. */
   suggestions?: PoolCard[];
-  /** Page-level settings shown beside "I play", such as the suggestions switch. */
+  /** Page-level settings shown beside "Available for", such as the suggestions setting. */
   options?: ReactNode;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -150,8 +150,8 @@ export function PositionHeroes({
           </h2>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
             <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
-              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="switch" />I
-              play {pos.name}
+              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="lane-check" />
+              Available for {pos.name}
             </label>
             {options}
           </div>

@@ -48,7 +48,7 @@ test("My Heroes lists suggestions on their position and can turn them off", asyn
   await row.getByRole("button", { name: "Add Hero" }).click();
   await expect(row).toHaveCount(0);
   await expect(page.getByTitle("Remove Monkey King")).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: "I play Carry" })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Available for Carry" })).toBeChecked();
 
   await page.getByRole("checkbox", { name: "Suggest heroes from my recent games" }).uncheck();
   await page.reload();
