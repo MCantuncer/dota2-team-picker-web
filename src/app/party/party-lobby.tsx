@@ -9,6 +9,7 @@ import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } fro
 import { fetchPartyLink, type PartyLink } from "@/lib/party-link";
 import { createClient } from "@/lib/supabase/client";
 import { DraftCaptain } from "./draft-captain";
+import { InviteFromStack, type StackOption } from "./invite-from-stack";
 import { PartyLinkCard } from "./party-link";
 
 export interface Invitee {
@@ -61,6 +62,7 @@ export function PartyLobby({
   initialParty,
   initialLink,
   invitees,
+  stacks = [],
   heroArt,
 }: {
   userId: string;
@@ -68,6 +70,8 @@ export function PartyLobby({
   /** The invite link of initialParty, when the user leads it. */
   initialLink: PartyLink | null;
   invitees: Invitee[];
+  /** Stacks you own or play in, for Invite from Stack. */
+  stacks?: StackOption[];
   /** Hero name and landscape image by hero id, for the seats. */
   heroArt: Record<number, { name: string; image: string }>;
 }) {
@@ -77,6 +81,7 @@ export function PartyLobby({
   const [invited, setInvited] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [startStack, setStartStack] = useState("");
   const partyId = party?.id ?? null;
   const getLink = useCallback((fresh: boolean) => fetchPartyLink(supabase, fresh), [supabase]);
 
@@ -178,7 +183,24 @@ export function PartyLobby({
         </ul>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
           <p className="flex-1 text-sm text-muted">You&apos;re not in a party. Start one and invite your friends and teammates.</p>
-          <button onClick={() => run("Party not started", () => supabase.rpc("start_party"))} disabled={busy} className="btn btn-primary">
+          {stacks.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-muted">
+              Stack
+              <select value={startStack} onChange={(e) => setStartStack(e.target.value)} className="field h-9 w-auto">
+                <option value="">No Stack</option>
+                {stacks.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button
+            onClick={() => run("Party not started", () => supabase.rpc("start_party", startStack ? { team: startStack } : {}))}
+            disabled={busy}
+            className="btn btn-primary"
+          >
             Start a Party
           </button>
         </div>
@@ -276,6 +298,16 @@ export function PartyLobby({
         />
       )}
 
+      {isLeader && !full && (
+        <InviteFromStack
+          stacks={stacks}
+          initialStack={party.teamId}
+          memberIds={party.members.map((m) => m.id)}
+          openSeats={emptySlots}
+          onInvited={refresh}
+        />
+      )}
+
       {isLeader ? (
         <section aria-label="Invite" className="flex flex-col gap-2">
           <h2 className="section-title">
@@ -308,7 +340,7 @@ export function PartyLobby({
                 </li>
               ))
             ) : (
-              <li className="py-4 text-sm text-muted">No one to invite yet. Add friends on the Friends page, or join a team.</li>
+              <li className="py-4 text-sm text-muted">No one to invite yet. Add friends on the Friends page, or join a Stack.</li>
             )}
           </ul>
         </section>

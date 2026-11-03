@@ -33,6 +33,16 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
 
   await page.reload();
   await expect(page.getByRole("region", { name: /^Members/ }).getByText("Tusk")).toBeVisible();
+
+  // The owner starts a party for the Stack and invites from it in one click.
+  await page.goto("/party");
+  await page.getByLabel("Stack", { exact: true }).selectOption({ label: "Night Owls" });
+  await page.getByRole("button", { name: "Start a Party" }).click();
+  const fromStack = page.getByRole("region", { name: "Invite from Stack" });
+  await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
+  await fromStack.getByRole("button", { name: "Invite" }).click();
+  await expect(fromStack.getByText("Invite sent.")).toBeVisible();
+  await expectAccessible(page);
   await palContext.close();
 });
 
