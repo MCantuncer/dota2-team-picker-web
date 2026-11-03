@@ -17,7 +17,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
 
   const [owned, memberships, invites, friends] = await Promise.all([
     supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
-    supabase.from("team_members").select("role, teams(id, name, owner_id, profiles(display_name))").eq("user_id", user.id),
+    supabase.from("team_members").select("role, teams(id, name, owner_id, profiles!teams_owner_id_fkey(display_name))").eq("user_id", user.id),
     supabase.rpc("my_team_invites"),
     supabase.rpc("my_friends"),
   ]);
