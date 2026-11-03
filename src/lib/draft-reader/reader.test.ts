@@ -73,6 +73,17 @@ describe("DraftReader", () => {
     expect([...read.radiant, ...read.dire].some((s) => s.unsure)).toBe(false);
   });
 
+  it("reads your own slot with the level badge over the right of the portrait", () => {
+    const px = screen();
+    const r = slotRects("radiant", W, H)[0];
+    drawSlot(px, r, heroes[1].portrait);
+    // A bright gold and red badge over the right of the slot.
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x + Math.round(r.w * 0.62); x < r.x + r.w; x++)
+        px.data.set(Math.floor((x + y) / 6) % 2 ? [255, 210, 40] : [120, 0, 20], (y * W + x) * 4);
+    expect(reader.read(px).radiant[0]).toEqual({ heroId: 2, unsure: false });
+  });
+
   it("ignores a grey preview of a hero that is not locked in yet", () => {
     const px = screen();
     const r = slotRects("radiant", W, H)[2];

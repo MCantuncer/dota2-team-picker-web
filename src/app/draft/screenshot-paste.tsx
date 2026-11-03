@@ -11,6 +11,8 @@ import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 interface ScreenshotPasteProps {
   heroes: HeroInfo[];
   portraits: Record<number, string>;
+  /** Heroes already in the draft (picks and bans). */
+  inDraft: Set<number>;
   onRead: (read: DraftRead, mySide: Side) => void;
 }
 
@@ -21,12 +23,12 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
  * twice a second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
  * come from the top bar and the bans from the hero grid. Nothing leaves the browser.
  */
-export function ScreenshotPaste({ heroes, portraits, onRead }: ScreenshotPasteProps) {
+export function ScreenshotPaste({ heroes, portraits, inDraft, onRead }: ScreenshotPasteProps) {
   // Your side changes every game, so it is chosen each time rather than remembered.
   const [side, setSide] = useState<Side | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const reader = useRef<Promise<DraftReader> | null>(null);
-  const watch = useWatchDota(heroes, portraits, (read) => {
+  const watch = useWatchDota(heroes, portraits, inDraft, (read) => {
     if (side) onRead(read, side);
   });
   // Known only in the browser; the server renders without the button.
