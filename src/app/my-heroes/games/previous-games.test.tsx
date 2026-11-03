@@ -42,6 +42,7 @@ describe("PreviousGames", () => {
     expect(first.textContent).toContain("2 Nov · 34:05");
     expect(first.textContent).toContain("9/2/7");
     expect(first.textContent).toContain("2 deaths before 10 minutes");
+    expect(within(first).getByRole("link", { name: "Monkey King won on 2 Nov" }).getAttribute("href")).toBe("/my-heroes/games/1");
     expect(second.textContent).toContain("Position unknown");
     expect(second.textContent).toContain("Waiting for OpenDota to parse this game");
     expect(screen.getByRole("combobox", { name: "Hero" }).textContent).toBe("All HeroesLinaMonkey King");

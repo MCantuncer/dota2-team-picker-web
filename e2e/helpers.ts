@@ -170,7 +170,18 @@ export async function seedFeedback(email: string) {
     ],
   });
   if (saveError) throw saveError;
-  const game = (matchId: number, daysAgo: number, isWin: boolean, findings: { tone: string; headline: string }[]) => ({
+  const finding = (tone: string, headline: string, change: string | null) => ({
+    kind: tone === "strength" ? "farm" : "early_deaths",
+    tone,
+    score: 1,
+    headline,
+    happened: [tone === "strength" ? "84th percentile for farm" : "Died at 6:20 to Ember Spirit (210 gold lost, 18s dead)"],
+    pattern: null,
+    cost: null,
+    change,
+    matchIds: [],
+  });
+  const game = (matchId: number, daysAgo: number, isWin: boolean, findings: ReturnType<typeof finding>[]) => ({
     user_id: id,
     match_id: matchId,
     hero_id: 114,
@@ -179,15 +190,26 @@ export async function seedFeedback(email: string) {
     started_at: new Date(Date.now() - daysAgo * day).toISOString(),
     duration_s: 2045,
     status: "parsed",
-    summary: { card: { kills: 9, deaths: 2, assists: 7, goldPerMin: 712 } },
+    summary: {
+      card: { kills: 9, deaths: 2, assists: 7, goldPerMin: 712, xpPerMin: 640, lastHits: 310, denies: 12 },
+      lastHitsAt10: 52,
+      deniesAt10: 6,
+      laneNetWorthDiffAt10: -640,
+      deaths: [
+        { time: 380, goldLost: 210, timeDead: 18, killerHeroId: 106, isKillerFromMid: true, buildingsLost: [] },
+        { time: 545, goldLost: 260, timeDead: 21, killerHeroId: 106, isKillerFromMid: true, buildingsLost: [] },
+      ],
+    },
     summary_version: 1,
     findings,
   });
   const { error: gamesError } = await db
     .from("player_game_facts")
     .insert([
-      game(8100000001 + Math.floor(Math.random() * 1e6), 1, true, [{ tone: "strength", headline: "Strong farm" }]),
-      game(8200000001 + Math.floor(Math.random() * 1e6), 2, false, [{ tone: "problem", headline: "2 deaths before 10 minutes" }]),
+      game(8100000001 + Math.floor(Math.random() * 1e6), 1, true, [finding("strength", "Strong farm", null)]),
+      game(8200000001 + Math.floor(Math.random() * 1e6), 2, false, [
+        finding("problem", "2 deaths before 10 minutes", "Keep a Town Portal Scroll and step back when Ember Spirit goes missing."),
+      ]),
     ]);
   if (gamesError) throw gamesError;
 }

@@ -48,7 +48,7 @@ const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !
 const str = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
-function readFinding(v: unknown): Finding | null {
+export function readFinding(v: unknown): Finding | null {
   if (!isObj(v) || (v.tone !== "strength" && v.tone !== "problem")) return null;
   const headline = str(v.headline);
   if (!headline || typeof v.kind !== "string") return null;
