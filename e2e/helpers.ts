@@ -1,14 +1,20 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createClient } from "@supabase/supabase-js";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test as base, expect, type Page } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database, Json } from "../src/lib/supabase/database.types";
 
-const BACKEND_REF = readFileSync("backend-ref.txt", "utf8").trim();
-if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("backend-ref.txt must hold a full commit SHA");
-/** The backend's committed hero data at the pinned commit. Older than the bucket's, but fixed, so tests repeat. */
+/**
+ * The backend commit the tests run against: the newest one whose database types match the site's copy. CI sets
+ * BACKEND_REF once for the job; a local run works it out (see scripts/check-backend-sync.mjs).
+ */
+const BACKEND_REF =
+  process.env.BACKEND_REF ?? execFileSync("node", ["scripts/check-backend-sync.mjs", "--schema-commit"], { encoding: "utf8" }).trim();
+if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("BACKEND_REF must be a full commit SHA");
+/** The backend's committed hero data at that commit. Older than the bucket's, but fixed, so tests repeat. */
 const HERO_DATA_FIXTURE = `https://raw.githubusercontent.com/MCantuncer/dota2-team-picker/${BACKEND_REF}/services/engine/data/snapshot.json`;
 
 let heroDataCache: Promise<Record<string, unknown>> | undefined;
