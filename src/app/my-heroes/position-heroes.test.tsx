@@ -66,7 +66,7 @@ describe("PositionHeroes suggestions", () => {
 
   it("shows nothing on positions without suggestions", async () => {
     show();
-    await userEvent.click(screen.getByRole("button", { name: /^Mid/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Mid/ }));
     expect(screen.queryByRole("group", { name: "From Your Games" })).not.toBeInTheDocument();
   });
 });

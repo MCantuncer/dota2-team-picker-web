@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { type ReactNode, useMemo, useState } from "react";
+import { PositionIcon } from "@/components/position-icon";
 import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
 import type { PoolCard } from "@/lib/pool-cards";
@@ -128,9 +129,14 @@ export function PositionHeroes({
                     <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
                   )}
                 </span>
-                <span className="num truncate text-xs text-subtle">{count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}</span>
+                <span className="num truncate text-xs text-subtle">
+                  Pos {p.n} · {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
+                </span>
               </span>
-              <span className={`num text-3xl font-semibold leading-none ${isActive ? "text-accent" : "text-subtle"}`}>{p.n}</span>
+              <span className={`flex items-center gap-1.5 ${isActive ? "text-accent" : "text-subtle"}`}>
+                <span className="num text-sm font-semibold sm:hidden">{p.n}</span>
+                <PositionIcon position={p.n} size={32} />
+              </span>
               {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
           );
