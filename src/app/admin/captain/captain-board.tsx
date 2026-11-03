@@ -7,12 +7,14 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
+import { MoveMark, PickWhy } from "@/components/pick-why";
 import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
 import type { DraftRead } from "@/lib/draft-reader/reader";
 import { placeByPosition } from "@/lib/draft-reader/positions";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
+import { reactingTo, useRankMoves } from "@/lib/pick-explain";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
@@ -444,24 +446,26 @@ function DraftView({
             {slots.some(Boolean) ? "Everyone in the team has picked. Good luck!" : "Pick who plays which position under Current team to get suggestions."}
           </p>
         ) : (
-          <div className="grid gap-x-6 gap-y-3 [grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))]">
-            {columns.map((col) => (
-              <div key={col.position} className="flex min-w-0 flex-col gap-2">
-                <div className="font-semibold">
-                  {col.member.name} <span className="num text-sm font-normal text-subtle">Pos {col.position}</span>
-                </div>
-                {col.cards.map((card, n) => (
-                  <SuggestionCard
-                    key={card.heroId}
-                    card={card}
-                    top={n === 0}
-                    onPicked={() => setPick(col.position - 1, card.heroId)}
-                    onBanned={() => onDraft({ ...draft, bans: [...draft.bans, card.heroId] })}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+          <>
+            <p className="text-sm text-subtle">
+              {reactingTo({
+                enemies: draft.enemies.map(name),
+                allies: draft.picks.filter((x): x is number => x != null).map(name),
+                bans: draft.bans.length,
+              })}
+            </p>
+            <div className="grid gap-x-6 gap-y-3 [grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))]">
+              {columns.map((col) => (
+                <SuggestionColumn
+                  key={col.position}
+                  column={col}
+                  draftKey={JSON.stringify([draft.picks, draft.enemies, draft.bans])}
+                  onPicked={(heroId) => setPick(col.position - 1, heroId)}
+                  onBanned={(heroId) => onDraft({ ...draft, bans: [...draft.bans, heroId] })}
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
 
@@ -728,24 +732,68 @@ function counterNotes(engine: Engine, heroId: number, draft: Draft): Note[] {
     .map((n) => ({ kind: kind[n.status], text: n.text }));
 }
 
-function SuggestionCard({ card, top, onPicked, onBanned }: { card: Card; top: boolean; onPicked: () => void; onBanned: () => void }) {
+/** One member's suggestions, marking heroes that are new or moved up since the last pick or ban. */
+function SuggestionColumn({
+  column,
+  draftKey,
+  onPicked,
+  onBanned,
+}: {
+  column: { member: Member; position: Position; cards: Card[] };
+  draftKey: string;
+  onPicked: (heroId: number) => void;
+  onBanned: (heroId: number) => void;
+}) {
+  const moves = useRankMoves(
+    column.cards.map((c) => c.heroId),
+    draftKey,
+    `${column.member.id}:${column.position}`,
+  );
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="font-semibold">
+        {column.member.name} <span className="num text-sm font-normal text-subtle">Pos {column.position}</span>
+      </div>
+      {column.cards.map((card, n) => (
+        <SuggestionCard
+          key={card.heroId}
+          card={card}
+          top={n === 0}
+          move={moves.get(card.heroId)}
+          onPicked={() => onPicked(card.heroId)}
+          onBanned={() => onBanned(card.heroId)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SuggestionCard({
+  card,
+  top,
+  move,
+  onPicked,
+  onBanned,
+}: {
+  card: Card;
+  top: boolean;
+  move: string | undefined;
+  onPicked: () => void;
+  onBanned: () => void;
+}) {
   const tone = { warn: "bg-warn/10 text-warn", bad: "bg-dire/10 text-dire", good: "bg-radiant/10 text-radiant" };
   return (
     <article className="flex flex-col gap-1.5 border-t border-line py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className={`text-lg font-semibold leading-tight tracking-[-0.01em] ${top ? "text-accent" : "text-fg"}`}>{card.name}</span>
+        <span className={`flex items-center gap-2 text-lg font-semibold leading-tight tracking-[-0.01em] ${top ? "text-accent" : "text-fg"}`}>
+          {card.name} <MoveMark move={move} />
+        </span>
         <span className="num text-xs text-subtle" title="Score in win-rate points">
           {card.score >= 0 ? "+" : ""}
           {card.score.toFixed(1)}
         </span>
       </div>
-      <ul className="flex flex-col gap-0.5 text-sm text-fg/90">
-        {card.reasons.slice(0, 3).map((r) => (
-          <li key={r} className={r.startsWith("Watch out") ? "text-subtle" : ""}>
-            · {r}
-          </li>
-        ))}
-      </ul>
+      <PickWhy suggestion={card} className="text-sm text-fg/90" />
       {card.notes.map((n) => (
         <p key={n.text} className={`rounded px-1.5 py-0.5 text-xs ${tone[n.kind]}`}>
           {n.text}

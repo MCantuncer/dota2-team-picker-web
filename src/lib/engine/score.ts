@@ -1,11 +1,12 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/score.ts). Keep in sync.
 import { hardCountersOf, type HardCounter } from "./hard-counters";
+import { list, namedPoints, ordinal, pickLines, points, RANK_NAMES, ROLE_NAMES, summaryOf, type Line } from "./reasons";
+import { blindPickRisk, openSlots, pickChance } from "./risk";
 import { guessEnemyPositions, LANE_OPPONENTS, positionFit, type PositionFit } from "./positions";
-import { NEED_LABELS, traitsOf, unmetNeeds } from "./traits";
+import { NEED_SHORT, traitsOf, unmetNeeds } from "./traits";
 import {
   phaseOf,
   POSITIONS,
-  RANK_GROUP_BRACKETS,
   rankGroup,
   type DraftInput,
   type HardCounterNote,
@@ -37,8 +38,8 @@ const WEIGHTS = {
   personal: 0.5,
   /** Points per extra position the hero can play, on the first pick. */
   flex: 0.6,
-  /** How much the worst counters still in the pool hurt, on the first pick. */
-  pickSafety: 0.5,
+  /** Extra weight on the synergy with your lane partner (0.5 = 1.5x), when its position is known. */
+  lanePartner: 0.5,
 };
 
 /** Games of evidence a value is pulled toward its prior with (Bayesian shrinkage). */
@@ -49,13 +50,28 @@ const PRIOR_GAMES = { heroWinRate: 300, matchup: 250, rankMatchup: 250, personal
  * this many. Fewer games would shrink every hero to 0 and lose the signal.
  */
 const MIN_PICK_PHASE_GAMES = 3000;
-const PHASE_NAMES = ["an early", "a 3rd", "a late"];
+const PHASE_NAMES = ["a first-round", "a second-round", "a last-round"];
+
+/** The meta line names a hero's rank among those that fit the position, down to this place. */
+const META_RANK_TOP = 10;
+/** Games at the rank a hero needs to be ranked there. */
+const META_RANK_GAMES = 500;
+/** Share of a hero's games in the position for it to be ranked among that position's heroes. */
+const META_RANK_FIT = 0.3;
 
 /**
  * Players take a hard counter on purpose when they see its target, so the enemy is this many times
  * likelier to pick it than its usual pick rate says. A first guess, to be tuned with the backtest.
  */
 const GAMBLE_PICK_BOOST = 2;
+
+/** Bans that lower a hero's blind pick risk by at least this many points are named as a reason. */
+const BAN_LIFT_REASON = 0.3;
+/** A hero this many points riskier than the other choices gets an "easy to punish" warning. */
+const RISK_WARNING = 0.5;
+
+/** Your lane partner's position, for each position. */
+const LANE_PARTNER: Record<Position, Position | undefined> = { 1: 5, 2: undefined, 3: 4, 4: 3, 5: 1 };
 
 /** Heroes played in a position less often than this are not suggested for it. */
 const MIN_POSITION_FIT = 0.15;
@@ -65,13 +81,17 @@ const FLEX_FIT = 0.2;
 const shrink = (gw: GamesWins | undefined, prior: number, priorGames: number) =>
   gw ? (gw.wins + prior * priorGames) / (gw.games + priorGames) : prior;
 
-const RANK_NAMES = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
-
 /** Precomputed lookups over a snapshot, built once and reused for every draft. */
 export class Engine {
   readonly heroes: HeroInfo[];
   private fits = new Map<number, PositionFit>();
-  private overallWr = new Map<number, number>();
+  /**
+   * Each hero's record over its matchup row: all the public matches the matchup and synergy counts
+   * come from, all ranks (key 0) and per rank group. Matchups are judged against this win rate and
+   * not the heroStats one (a different, ranked-only and more recent sample), or a hero that wins
+   * more in one sample than the other would look like it counters every enemy.
+   */
+  private rowTotals = new Map<RankGroup | 0, Map<number, GamesWins>>();
   private pickRates = new Map<number, number>();
   private hardCounters: Map<number, HardCounter[]>;
   /** True when the snapshot's pick phase counts hold enough games to score with. */
@@ -86,7 +106,10 @@ export class Engine {
     this.heroes = Object.values(data.heroes).sort((a, b) => a.id - b.id);
     for (const h of this.heroes) {
       this.fits.set(h.id, positionFit(h, data.laneRoles[h.id], data.positions?.[h.id]));
-      this.overallWr.set(h.id, this.winRate(h.id));
+    }
+    for (const group of [0, 1, 2, 3, 4] as const) {
+      const rows = group ? data.rankMatchups?.[group] : data.matchups;
+      this.rowTotals.set(group, new Map(this.heroes.map((h) => [h.id, totalOf(rows?.[h.id])])));
     }
     const picks = (id: number) => (data.bracketStats[id]?.picks ?? []).reduce((n, x) => n + x, 0);
     const games = this.heroes.reduce((n, h) => n + picks(h.id), 0) / 10;
@@ -140,7 +163,7 @@ export class Engine {
   }
 
   /**
-   * Shrinks the all-ranks record toward what the heroes' win rates predict.
+   * Shrinks the all-ranks record toward what the heroes' win rates in the same matches predict.
    * With a rank group, that group's record is then shrunk toward the
    * all-ranks edge, so a group with few games falls back to the all-ranks
    * number instead of to zero.
@@ -153,12 +176,30 @@ export class Engine {
     inGroup: GamesWins | undefined,
     group: RankGroup | undefined,
   ): number {
-    const expected = 0.5 + (this.overallWr.get(a)! - 0.5) + sign * (this.overallWr.get(b)! - 0.5);
+    // Against each other, each hero's win rate leaves out the games between them, so the matchup
+    // itself does not move the number it is compared with.
+    const other = (id: number) => (sign === -1 ? (id === a ? b : a) : undefined);
+    const wr = (id: number) => this.sampleWinRate(id, other(id), 0, 0.5);
+    const expected = 0.5 + (wr(a) - 0.5) + sign * (wr(b) - 0.5);
     const edge = shrink(all, expected, PRIOR_GAMES.matchup) - expected;
     if (!group) return edge * 100;
-    const idx = RANK_GROUP_BRACKETS[group].map((r) => r - 1);
-    const groupExpected = 0.5 + (this.winRateIn(a, idx) - 0.5) + sign * (this.winRateIn(b, idx) - 0.5);
+    const gwr = (id: number) => this.sampleWinRate(id, other(id), group, wr(id));
+    const groupExpected = 0.5 + (gwr(a) - 0.5) + sign * (gwr(b) - 0.5);
     return (shrink(inGroup, groupExpected + edge, PRIOR_GAMES.rankMatchup) - groupExpected) * 100;
+  }
+
+  /**
+   * A hero's win rate over its matchup row (all ranks, or one rank group), leaving out the games
+   * against `without`, shrunk toward `prior`. Every game is in the row once per enemy, so the
+   * games are divided by 5 to weigh the record by real games.
+   */
+  private sampleWinRate(id: number, without: number | undefined, group: RankGroup | 0, prior: number): number {
+    const total = this.rowTotals.get(group)?.get(id) ?? { games: 0, wins: 0 };
+    const rows = group ? this.data.rankMatchups?.[group] : this.data.matchups;
+    const left = without === undefined ? undefined : rows?.[id]?.[without];
+    const games = (total.games - (left?.games ?? 0)) / 5;
+    const wins = (total.wins - (left?.wins ?? 0)) / 5;
+    return shrink(games > 0 ? { games, wins } : undefined, prior, PRIOR_GAMES.heroWinRate);
   }
 
   /**
@@ -226,102 +267,121 @@ export class Engine {
     const needs = unmetNeeds(allies);
     const needWeight = WEIGHTS.teamNeed * ((allies.length + 1) / 5);
 
-    // Heroes the enemy can still pick, for judging how safe an early pick is.
+    // Heroes the enemy can still pick, for judging how safe a pick is while they still have picks.
     const pool = this.heroes.filter((h) => !taken.has(h.id));
-    const enemySlotsLeft = 5 - input.enemies.length;
     const phase = phaseOf(allyIds.length);
-    const vulnerability = this.usePickPhase ? new Map<number, number>() : this.vulnerability(pool, input.rankBracket);
-    const avgVulnerability = mean([...vulnerability.values()]);
+    const candidates = pool.filter((h) => this.fit(h.id)[pos] >= MIN_POSITION_FIT || favorites.has(h.id));
+    const risk = this.risks(candidates.map((h) => h.id), input);
+    const avgRisk = mean([...risk.values()].map((r) => r.risk));
+    const slots = openSlots(this, pool.map((h) => h.id), input.enemies);
+    const partner = LANE_PARTNER[pos];
+    const metaRank = this.metaRanks(pos, input.rankBracket);
+    const where = input.rankBracket ? ` at ${RANK_NAMES[input.rankBracket - 1]}` : "";
 
     const results: Suggestion[] = [];
-    for (const hero of pool) {
+    for (const hero of candidates) {
       const fit = this.fit(hero.id);
-      if (fit[pos] < MIN_POSITION_FIT && !favorites.has(hero.id)) continue;
 
-      const reasons: { text: string; value: number }[] = [];
+      const reasons: Line[] = [];
       const warnings: { text: string; value: number }[] = [];
+      const tags: string[] = [];
 
       // Counters: how this hero does against the enemies already picked.
       const edges = this.counterEdges(hero.id, input.enemies, laneChance, input.rankBracket);
       const counter = edges.reduce((s, x) => s + x.edge, 0);
-      const good = edges.filter((x) => x.edge >= 0.5).sort((a, b) => b.edge - a.edge);
-      const bad = edges.filter((x) => x.edge <= -0.5).sort((a, b) => a.edge - b.edge);
-      if (good.length) {
-        const lane = good.some((x) => x.lane) ? " (including your likely lane opponent)" : "";
-        reasons.push({ text: `Strong against ${this.names(good.map((x) => x.enemy))}${lane}`, value: counter });
-      }
-      if (bad.length) {
-        warnings.push({ text: `Struggles against ${this.names(bad.map((x) => x.enemy))}`, value: -bad[0]!.edge });
-      }
+      const named = (xs: typeof edges) =>
+        namedPoints(xs.map((x) => ({ name: this.hero(x.enemy).name, value: x.edge, note: x.lane ? "likely your lane" : undefined })));
+      const good = edges.filter((x) => x.edge >= 0.5);
+      const bad = edges.filter((x) => x.edge <= -0.5);
+      if (good.length) reasons.push({ text: `Beats ${named(good)}`, value: counter, kind: "draft" });
+      if (bad.length) warnings.push({ text: `Loses to ${named(bad)}`, value: -Math.min(...bad.map((x) => x.edge)) });
 
-      // Synergy with the allies already picked.
-      let synergy = 0;
-      const synergies = allyIds.map((a) => ({ a, edge: this.synergyEdge(hero.id, a, input.rankBracket) }));
-      for (const s of synergies) synergy += s.edge;
-      const friends = synergies.filter((s) => s.edge >= 0.5).sort((a, b) => b.edge - a.edge);
-      if (friends.length) reasons.push({ text: `Works well with ${this.names(friends.map((s) => s.a))}`, value: synergy });
+      // Synergy with the allies already picked; the lane partner counts extra.
+      const synergies = input.allies.map(({ heroId: a, position }) => {
+        const isPartner = partner !== undefined && position === partner;
+        const edge = this.synergyEdge(hero.id, a, input.rankBracket) * (isPartner ? 1 + WEIGHTS.lanePartner : 1);
+        return { name: this.hero(a).name, value: edge, note: isPartner ? "your lane partner" : undefined };
+      });
+      const synergy = synergies.reduce((s, x) => s + x.value, 0);
+      const friends = synergies.filter((x) => x.value >= 0.5);
+      if (friends.length) reasons.push({ text: `Works with ${namedPoints(friends)}`, value: synergy, kind: "draft" });
 
-      // Meta: the hero's win rate at the user's rank.
+      // Meta: the hero's win rate at the user's rank, and where that puts it for the position.
       const wr = this.winRate(hero.id, input.rankBracket);
       const meta = (wr - 0.5) * 100;
-      const where = input.rankBracket ? ` in ${RANK_NAMES[input.rankBracket - 1]}` : "";
-      if (meta >= 1) reasons.push({ text: `Strong in the current meta: ${(wr * 100).toFixed(1)}% win rate${where}`, value: meta });
-      else if (meta <= -2) warnings.push({ text: `Low win rate right now: ${(wr * 100).toFixed(1)}%${where}`, value: -meta });
+      const place = metaRank.get(hero.id);
+      if (meta >= 1) {
+        const text = place
+          ? `${place === 1 ? "Best" : `${ordinal(place)} best`} ${ROLE_NAMES[pos]}${where}: ${(wr * 100).toFixed(1)}% win rate`
+          : `Wins ${(wr * 100).toFixed(1)}% of games${where}`;
+        reasons.push({ text, value: meta, kind: "base" });
+      } else if (meta <= -2) warnings.push({ text: `Low win rate right now: ${(wr * 100).toFixed(1)}%${where}`, value: -meta });
 
-      // Position fit.
+      // Position fit: only heroes that fit are listed, so only a weak fit is worth a line.
       const positionScore = this.positionScore(hero.id, pos);
-      if (fit[pos] >= 0.5) reasons.push({ text: `A natural pos ${pos} (${Math.round(fit[pos] * 100)}% of games)`, value: positionScore });
-      else if (fit[pos] < 0.2) warnings.push({ text: `Rarely played as pos ${pos}`, value: -positionScore });
+      if (fit[pos] < 0.2) warnings.push({ text: `Rarely played as ${ROLE_NAMES[pos]} (${Math.round(fit[pos] * 100)}% of games)`, value: -positionScore });
 
       // Team needs.
       const covered = needs.filter((n) => traitsOf(hero).has(n));
       const teamNeeds = covered.length * needWeight;
-      if (covered.length && allies.length) reasons.push({ text: capitalize(covered.map((n) => NEED_LABELS[n]).join(", ")), value: teamNeeds });
+      if (covered.length && allies.length) {
+        const text = `Adds what your team lacks: ${list(covered.slice(0, 3).map((n) => NEED_SHORT[n]))} (${points(teamNeeds)})`;
+        reasons.push({ text, value: teamNeeds, kind: "draft" });
+      }
 
-      // Comfort: favorites and the user's own record on the hero.
+      // Comfort: favorites and the user's own record on the hero, shown as tags.
       let comfort = 0;
       if (favorites.has(hero.id)) {
         comfort += WEIGHTS.favorite;
-        reasons.push({ text: "One of your favorite heroes", value: WEIGHTS.favorite });
+        tags.push(`Favorite (${points(WEIGHTS.favorite)})`);
       }
       const mine = input.personal?.[hero.id];
       if (mine && mine.games > 0) {
         const personal = personalScore(mine);
         comfort += personal;
-        const text = `You have won ${mine.wins} of ${mine.games} games on this hero`;
-        if (personal >= 0.5) reasons.push({ text, value: personal });
-        else if (personal <= -0.5) warnings.push({ text, value: -personal });
+        tags.push(`Your record ${mine.wins}-${mine.games - mine.wins} (${points(personal)})`);
       }
 
       // Flex: early on, a hero that fits several positions hides your plan.
       const otherPositions = POSITIONS.filter((p) => p !== pos && fit[p] >= FLEX_FIT);
       const flex = otherPositions.length * WEIGHTS.flex * earliness;
-      if (flex >= 0.3) reasons.push({ text: `Flexible pick: can also play pos ${otherPositions.join(" or ")}`, value: flex });
+      if (flex >= 0.3) {
+        const roles = list(otherPositions.map((p) => ROLE_NAMES[p]));
+        reasons.push({ text: `Can also go ${roles}, so the enemy can't read your plan (${points(flex)})`, value: flex, kind: "base" });
+      }
 
-      // Pick safety: how the hero does when picked at this point of the draft, from the saved games.
-      // Without enough of them, early on, how hard the enemy can still counter it from match data.
-      let pickSafety = 0;
+      // Pick safety: how much the hero stands to lose to the heroes the enemy may still pick,
+      // compared with the other choices, so bans of its counters make it safer.
+      const mineRisk = risk.get(hero.id);
+      let pickSafety = mineRisk ? mineRisk.risk - avgRisk : 0;
+      if (mineRisk && mineRisk.banLift >= BAN_LIFT_REASON) {
+        const text = `Safer now: ${this.names(mineRisk.banned)} ${mineRisk.banned.length > 1 ? "are" : "is"} banned (${points(mineRisk.banLift)})`;
+        reasons.push({ text, value: mineRisk.banLift, kind: "draft" });
+      } else if (mineRisk && pickSafety >= RISK_WARNING) {
+        const text = `Hard to punish: few heroes still open beat it (${points(pickSafety)})`;
+        reasons.push({ text, value: pickSafety, kind: "draft" });
+      }
+      if (mineRisk && pickSafety <= -RISK_WARNING) {
+        warnings.push({ text: `Easy to punish: ${this.names(mineRisk.threats)} can still be picked (${points(pickSafety)})`, value: -pickSafety });
+      }
+
+      // How the hero does when picked at this point of the draft, from the saved games.
       const phaseEdge = this.pickPhaseEdge(hero.id, phase);
       if (phaseEdge !== undefined) {
-        pickSafety = phaseEdge;
-        if (phaseEdge >= 1) reasons.push({ text: `Wins more as ${PHASE_NAMES[phase]} pick`, value: phaseEdge });
+        pickSafety += phaseEdge;
+        if (phaseEdge >= 1) reasons.push({ text: `Wins more as ${PHASE_NAMES[phase]} pick (${points(phaseEdge)})`, value: phaseEdge, kind: "draft" });
         else if (phaseEdge <= -1) {
-          const text = phase === 0 ? "Easy to counter-pick later in the draft" : `Wins less as ${PHASE_NAMES[phase]} pick`;
+          const text = `${phase === 0 ? "Easy to counter-pick later in the draft" : `Wins less as ${PHASE_NAMES[phase]} pick`} (${points(phaseEdge)})`;
           warnings.push({ text, value: -phaseEdge });
         }
-      } else if (enemySlotsLeft > 0 && earliness > 0) {
-        const relative = vulnerability.get(hero.id)! - avgVulnerability;
-        pickSafety = relative * WEIGHTS.pickSafety * earliness * (enemySlotsLeft / 5);
-        if (pickSafety <= -1) warnings.push({ text: "Easy to counter-pick later in the draft", value: -pickSafety });
       }
 
       // A hard counter still open is a gamble, costing its gap times the chance the enemy takes it.
-      // A counter on the enemy team is already in the counter part.
+      // A counter on the enemy team is already in the counter part, and neither is in the risk above.
       const hardCounters = this.hardCounterNotes(hero.id, input);
       for (const note of hardCounters) {
         if (note.status !== "open") continue;
-        const chance = Math.min(1, (this.pickRate(note.counterId) / 2) * (enemySlotsLeft / 5) * GAMBLE_PICK_BOOST);
-        pickSafety -= note.gap * chance;
+        pickSafety -= note.gap * Math.min(1, pickChance(slots, note.counterId) * GAMBLE_PICK_BOOST);
       }
 
       const breakdown: ScoreBreakdown = {
@@ -335,15 +395,36 @@ export class Engine {
         pickSafety: round(pickSafety),
       };
       const score = round(Object.values(breakdown).reduce((s, x) => s + x, 0));
-      const top = reasons.sort((a, b) => b.value - a.value).slice(0, 3).map((r) => r.text);
-      const warn = warnings
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 1)
-        .map((w) => `Watch out: ${w.text.charAt(0).toLowerCase()}${w.text.slice(1)}`);
-      results.push({ heroId: hero.id, name: hero.name, score, breakdown, reasons: [...top, ...warn], hardCounters });
+      results.push({
+        heroId: hero.id,
+        name: hero.name,
+        score,
+        breakdown,
+        reasons: pickLines(reasons, warnings),
+        summary: summaryOf(breakdown),
+        tags,
+        hardCounters,
+      });
     }
 
     return results.sort((a, b) => b.score - a.score).slice(0, input.count ?? 8);
+  }
+
+  /**
+   * Each hero's place by win rate at the rank among the heroes mostly played in the position with
+   * enough games there, for the top META_RANK_TOP. Heroes rarely played there get no place.
+   */
+  private metaRanks(pos: Position, bracket?: RankBracket): Map<number, number> {
+    const games = (id: number) => {
+      const picks = this.data.bracketStats[id]?.picks ?? [];
+      return bracket ? (picks[bracket - 1] ?? 0) : picks.reduce((s, x) => s + x, 0);
+    };
+    const ranked = this.heroes
+      .filter((h) => this.fit(h.id)[pos] >= META_RANK_FIT && games(h.id) >= META_RANK_GAMES)
+      .map((h) => ({ id: h.id, wr: this.winRate(h.id, bracket) }))
+      .sort((a, b) => b.wr - a.wr)
+      .slice(0, META_RANK_TOP);
+    return new Map(ranked.map((h, i) => [h.id, i + 1]));
   }
 
   /**
@@ -367,12 +448,26 @@ export class Engine {
     return notes;
   }
 
-  /** Average edge of each hero against its 5 worst matchups still in the pool (negative = easy to counter). */
-  private vulnerability(pool: HeroInfo[], bracket?: RankBracket): Map<number, number> {
+  /**
+   * Blind pick risk of each candidate (see risk.ts), how much the bans lowered it and by which
+   * banned heroes, and the two heroes it is most at risk from. Hard counters are left out: the
+   * gamble counts them.
+   */
+  private risks(candidates: number[], input: DraftInput) {
+    const picked = new Set([...input.allies.map((a) => a.heroId), ...input.enemies]);
+    const bans = new Set((input.bans ?? []).filter((id) => !picked.has(id)));
+    const unpicked = this.heroes.map((h) => h.id).filter((id) => !picked.has(id));
+    const skip = new Set(candidates.flatMap((c) => (this.hardCounters.get(c) ?? []).map((hc) => `${c}-${hc.counter}`)));
+    const base = { candidates, enemies: input.enemies, myPosition: input.myPosition, rankBracket: input.rankBracket, skip };
+    const now = blindPickRisk(this, { ...base, pool: unpicked.filter((id) => !bans.has(id)) });
+    const unbanned = bans.size ? blindPickRisk(this, { ...base, pool: unpicked }) : now;
+    const top = (by: Map<number, number>, n: number, keep: (id: number) => boolean) =>
+      [...by].filter(([id]) => keep(id)).sort((x, y) => x[1] - y[1]).slice(0, n).map(([id]) => id);
     return new Map(
-      pool.map((hero) => {
-        const edges = pool.filter((h) => h.id !== hero.id).map((h) => this.matchupEdge(hero.id, h.id, bracket));
-        return [hero.id, mean(edges.sort((a, b) => a - b).slice(0, 5))];
+      candidates.map((c) => {
+        const r = now.get(c)!; // Every candidate was scored.
+        const before = unbanned.get(c)!;
+        return [c, { risk: r.risk, banLift: r.risk - before.risk, banned: top(before.by, 2, (id) => bans.has(id)), threats: top(r.by, 2, () => true) }];
       }),
     );
   }
@@ -386,10 +481,20 @@ export class Engine {
 /** Points for the user's own record on a hero, after shrinking small samples. */
 export const personalScore = (mine: GamesWins) => (shrink(mine, 0.5, PRIOR_GAMES.personal) - 0.5) * 100 * WEIGHTS.personal;
 
+/** Games and wins summed over a matchup row. */
+function totalOf(row: Record<string, GamesWins> | undefined): GamesWins {
+  let games = 0;
+  let wins = 0;
+  for (const r of Object.values(row ?? {})) {
+    games += r.games;
+    wins += r.wins;
+  }
+  return { games, wins };
+}
+
 const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const mean = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const round = (x: number) => Math.round(x * 100) / 100;
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function suggest(data: Snapshot, input: DraftInput): Suggestion[] {
   return new Engine(data).suggest(input);

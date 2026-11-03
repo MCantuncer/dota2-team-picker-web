@@ -168,6 +168,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"hero_benchmarks": {
+                  Row: {
+                    "benchmarks": NonNullable<Json>,"fetched_at": string,"hero_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "benchmarks": NonNullable<Json>,"fetched_at"?: string,"hero_id": number
+                  }
+                  Update: {
+                    "benchmarks"?: NonNullable<Json>,"fetched_at"?: string,"hero_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"match_files": {
                   Row: {
                     "match_id": number,"saved_at": string,"size_bytes": number
@@ -201,6 +215,20 @@ isOneToOne: true
       referencedRelation: "party_drafts"
       referencedColumns: ["id"]
     }
+                  ]
+                },"opendota_caller_calls": {
+                  Row: {
+                    "caller": string,"calls": number,"day": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "caller": string,"calls": number,"day": string
+                  }
+                  Update: {
+                    "caller"?: string,"calls"?: number,"day"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"opendota_calls": {
                   Row: {
@@ -404,16 +432,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"player_games": {
+                  Row: {
+                    "created_at": string,"game_mode": number,"hero_id": number,"imp": number | null,"is_strong": boolean | null,"is_win": boolean,"lobby_rank": number | null,"lobby_type": number,"match_id": number,"percentiles": Json | null,"position": number | null,"position_source": string | null,"started_at": string,"stat_values": Json | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"game_mode": number,"hero_id": number,"imp"?: number | null,"is_strong"?: boolean | null,"is_win": boolean,"lobby_rank"?: number | null,"lobby_type": number,"match_id": number,"percentiles"?: Json | null,"position"?: number | null,"position_source"?: string | null,"started_at": string,"stat_values"?: Json | null,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"game_mode"?: number,"hero_id"?: number,"imp"?: number | null,"is_strong"?: boolean | null,"is_win"?: boolean,"lobby_rank"?: number | null,"lobby_type"?: number,"match_id"?: number,"percentiles"?: Json | null,"position"?: number | null,"position_source"?: string | null,"started_at"?: string,"stat_values"?: Json | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "player_games_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"pool_suggestions": {
+                  Row: {
+                    "answered_at": string | null,"created_at": string,"decline_count": number,"declined_at": string | null,"evidence": NonNullable<Json>,"hero_id": number,"id": string,"position": number,"question": string,"reason": string,"snooze_until": string | null,"status": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answered_at"?: string | null,"created_at"?: string,"decline_count"?: number,"declined_at"?: string | null,"evidence": NonNullable<Json>,"hero_id": number,"id"?: string,"position": number,"question": string,"reason": string,"snooze_until"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "answered_at"?: string | null,"created_at"?: string,"decline_count"?: number,"declined_at"?: string | null,"evidence"?: NonNullable<Json>,"hero_id"?: number,"id"?: string,"position"?: number,"question"?: string,"reason"?: string,"snooze_until"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "pool_suggestions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"created_at": string,"display_name": string | null,"friend_code": string,"hero_stats": NonNullable<Json>,"id": string,"rank_tier": number | null,"steam_id": string | null,"steam_name": string | null,"synced_at": string | null,"updated_at": string,"user_type": string,"rank_bracket": number | null
+                    "avatar_url": string | null,"created_at": string,"display_name": string | null,"friend_code": string,"hero_stats": NonNullable<Json>,"id": string,"last_active_at": string | null,"pool_suggestions_off": boolean,"rank_tier": number | null,"steam_id": string | null,"steam_name": string | null,"synced_at": string | null,"trends_checked_at": string | null,"trends_state": string | null,"updated_at": string,"user_type": string,"rank_bracket": number | null
                   }
                   ComputedFields: "rank_bracket"
                   Insert: {
-                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string | null,"friend_code"?: string,"hero_stats"?: NonNullable<Json>,"id": string,"rank_tier"?: number | null,"steam_id"?: string | null,"steam_name"?: string | null,"synced_at"?: string | null,"updated_at"?: string,"user_type"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string | null,"friend_code"?: string,"hero_stats"?: NonNullable<Json>,"id": string,"last_active_at"?: string | null,"pool_suggestions_off"?: boolean,"rank_tier"?: number | null,"steam_id"?: string | null,"steam_name"?: string | null,"synced_at"?: string | null,"trends_checked_at"?: string | null,"trends_state"?: string | null,"updated_at"?: string,"user_type"?: string
                   }
                   Update: {
-                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string | null,"friend_code"?: string,"hero_stats"?: NonNullable<Json>,"id"?: string,"rank_tier"?: number | null,"steam_id"?: string | null,"steam_name"?: string | null,"synced_at"?: string | null,"updated_at"?: string,"user_type"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"display_name"?: string | null,"friend_code"?: string,"hero_stats"?: NonNullable<Json>,"id"?: string,"last_active_at"?: string | null,"pool_suggestions_off"?: boolean,"rank_tier"?: number | null,"steam_id"?: string | null,"steam_name"?: string | null,"synced_at"?: string | null,"trends_checked_at"?: string | null,"trends_state"?: string | null,"updated_at"?: string,"user_type"?: string
                   }
                   Relationships: [
                     
@@ -577,6 +645,9 @@ isOneToOne: false
 "answer_party_invite":
 { Args: { "accept": boolean,"party": string }; Returns: undefined
                            },
+"answer_pool_suggestion":
+{ Args: { "answer": string,"card": string }; Returns: string
+                           },
 "attach_draft_match":
 { Args: { "did_win": boolean,"draft": string,"lobby": number,"match": number,"mode": number,"our_players": Json }; Returns: boolean
                            },
@@ -601,6 +672,11 @@ isOneToOne: false
 "claim_match_reports":
 { Args: { "lease"?: string,"max_rows"?: number }; Returns: {
               "attempts": number,"created_at": string,"draft_id": string,"match_id": number,"parse_requested_at": string,"parse_requests": number,"won": boolean
+            }[]
+                           },
+"claim_trend_players":
+{ Args: { "max_rows"?: number }; Returns: {
+              "account_id": number,"has_recent_card": boolean,"hero_stats": Json,"pool": Json,"skip": (string)[],"user_id": string
             }[]
                            },
 "claim_unattached_drafts":
@@ -673,6 +749,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"mark_active":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "may_change_draft":
 { Args: { "draft": string }; Returns: boolean
                            },
@@ -752,11 +831,17 @@ isOneToOne: false
 "run_build_reports":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"run_refresh_trends":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "runs_team":
 { Args: { "team": string }; Returns: boolean
                            },
 "save_draft_suggestions":
 { Args: { "chance"?: number,"draft": string,"pos": number,"shown": (number)[],"shown_scores": (number)[] }; Returns: undefined
+                           },
+"save_trend_check":
+{ Args: { "games": Json,"new_card": Json,"qualifying": (string)[],"state": string,"target": string }; Returns: undefined
                            },
 "send_friend_request":
 { Args: { "target": string }; Returns: string
@@ -766,6 +851,9 @@ isOneToOne: false
                            },
 "set_party_position":
 { Args: { "want": number }; Returns: undefined
+                           },
+"set_pool_suggestions_off":
+{ Args: { "is_off": boolean }; Returns: undefined
                            },
 "stale_match_files":
 { Args: { "max_rows"?: number }; Returns: {
@@ -782,7 +870,7 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "take_opendota_calls":
-{ Args: { "daily_cap"?: number,"wanted": number }; Returns: boolean
+{ Args: { "caller_cap"?: number,"caller_name"?: string,"daily_cap"?: number,"wanted": number }; Returns: boolean
                            },
 "user_id_by_email":
 { Args: { "address": string }; Returns: string

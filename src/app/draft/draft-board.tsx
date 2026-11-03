@@ -5,6 +5,7 @@ import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
+import { MoveMark, PickWhy } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -15,6 +16,7 @@ import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBrack
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
@@ -150,7 +152,9 @@ export function DraftBoard({
   const mine = allies.find((e) => e.position === myPosition);
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
-  const suggestions =
+  // Your heroes for the position come first, then the best few outside your pool.
+  const favorites = [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])];
+  const ranked =
     engine && !mine
       ? engine.suggest({
           myPosition,
@@ -158,13 +162,19 @@ export function DraftBoard({
           enemies,
           bans,
           rankBracket: rank ?? undefined,
-          favorites: [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])],
+          favorites,
           personal: player.personal,
-          count: 8,
+          count: engine.heroes.length,
         })
       : [];
+  const { list: suggestions, outside } = poolFirst(ranked, new Set(favorites));
 
   const allyIds = allies.map((e) => e.heroId);
+  const moves = useRankMoves(
+    suggestions.map((s) => s.heroId),
+    JSON.stringify([allyIds, enemies, bans]),
+    String(myPosition),
+  );
   const bracket = rank ?? undefined;
   const chance = engine ? teamWinChance(engine, allyIds, enemies, bracket) : null;
 
@@ -496,11 +506,23 @@ export function DraftBoard({
               You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
             </p>
           ) : (
+            <>
+            {suggestions.length > 0 && (
+              <p className="text-sm text-subtle">
+                {reactingTo({
+                  enemies: enemies.map(hero).map((h) => h.name),
+                  allies: allyIds.map(hero).map((h) => h.name),
+                  bans: bans.length,
+                })}
+              </p>
+            )}
             <ol aria-label="Suggested heroes" className="flex flex-col">
               {suggestions.map((s, i) => (
                 <SuggestionCard
                   key={s.heroId}
                   suggestion={s}
+                  move={moves.get(s.heroId)}
+                  outsidePool={outside.has(s.heroId)}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
                   position={myPosition}
@@ -524,6 +546,7 @@ export function DraftBoard({
                 />
               ))}
             </ol>
+            </>
           )}
           <Announcer
             text={
@@ -696,6 +719,8 @@ function SuggestionCard({
   portrait,
   rank,
   position,
+  move,
+  outsidePool,
   gain,
   onPicked,
   onBanned,
@@ -704,6 +729,10 @@ function SuggestionCard({
   portrait?: string;
   rank: number;
   position: Position;
+  /** "New" or "Up 2" since the last pick or ban. */
+  move?: string;
+  /** Not one of the player's heroes for this position. */
+  outsidePool?: boolean;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -738,7 +767,10 @@ function SuggestionCard({
             className="pointer-events-none absolute -left-8 top-1/2 -z-10 hidden w-[52%] max-w-md -translate-y-1/2 sm:block"
           />
         )}
-        <span className="text-sm text-accent">Best Pick Right Now</span>
+        <span className="flex items-center gap-2 text-sm text-accent">
+          Best Pick Right Now <MoveMark move={move} />
+          {outsidePool && <OutsidePool />}
+        </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
           <span className="text-3xl font-semibold tracking-[-0.02em] text-accent" title="Score in win-rate points">
@@ -746,11 +778,7 @@ function SuggestionCard({
           </span>
           {gainText}
         </span>
-        <ul className="flex max-w-md flex-col gap-1.5 text-fg/85">
-          {s.reasons.slice(0, 2).map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
+        <PickWhy suggestion={s} className="max-w-md text-fg/85" />
         {counters}
         {onPicked && onBanned && (
           <div className="mt-2 flex gap-2">
@@ -773,10 +801,16 @@ function SuggestionCard({
       {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also Strong</span>}
       <span className="num text-subtle">{rank}</span>
       <Portrait hero={hero} src={portrait} size="strip" />
-      <span className="min-w-0">
-        <span className="block font-medium text-fg">{s.name}</span>
-        <span className="block text-sm text-subtle">{s.reasons[0]}</span>
-      </span>
+      <div className="min-w-0">
+        <span className="flex items-center gap-2 font-medium text-fg">
+          {s.name} <MoveMark move={move} />
+          {outsidePool && <OutsidePool />}
+        </span>
+        <details className="text-sm text-subtle">
+          <summary className="cursor-pointer truncate">{s.reasons[0] ?? "Why This Pick"}</summary>
+          <PickWhy suggestion={{ ...s, reasons: s.reasons.slice(1) }} className="mt-1 text-fg/85" />
+        </details>
+      </div>
       <span className="flex items-center gap-3">
         {/* On a mouse the row's buttons float over the reason on hover or keyboard focus, so they take no room; on touch they always show. */}
         {onPicked && onBanned && (
@@ -798,5 +832,13 @@ function SuggestionCard({
       </span>
       {s.hardCounters.length > 0 && <div className="col-span-2 col-start-3 flex flex-col gap-2">{counters}</div>}
     </li>
+  );
+}
+
+function OutsidePool() {
+  return (
+    <span className="chip text-xs" title="Not one of your heroes for this position">
+      Outside Pool
+    </span>
   );
 }
