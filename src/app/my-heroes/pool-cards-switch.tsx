@@ -32,8 +32,8 @@ export function PoolCardsSwitch({ initialOn, gamesHidden }: { initialOn: boolean
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-2 text-sm text-muted">
-        <input type="checkbox" checked={on} disabled={busy} onChange={(e) => change(e.target.checked)} className="size-4 accent-radiant" />
+      <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
+        <input type="checkbox" checked={on} disabled={busy} onChange={(e) => change(e.target.checked)} className="switch" />
         Suggest heroes from my recent games
       </label>
       {on && gamesHidden && (

@@ -143,8 +143,8 @@ export function PositionHeroes({
             {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
           </h2>
           <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="size-4 accent-radiant" />I
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
+              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="switch" />I
               play {pos.name}
             </label>
             {options}
