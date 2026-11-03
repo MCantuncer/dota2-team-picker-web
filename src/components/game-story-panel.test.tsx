@@ -33,6 +33,7 @@ const plan: GamePlan = {
         { heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage", answers: [], tip: "Don't focus them" },
         { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116] },
       ],
+      threatRows: [],
       build: {
         timings: "rank",
         start: [item(44, "Tango", 0), item(16, "Iron Branch", 0, { count: 2 })],
@@ -51,15 +52,25 @@ const plan: GamePlan = {
       job: "Win your lane.",
       fallbacks: [],
       enemies: [],
+      threatRows: [],
       build: { timings: "around", start: [], lane: [], core: [item(36, "Magic Wand", 8)], situational: [] },
     },
   ],
   teamFallbacks: ["Behind at 20? Defend high ground until Hero 1 has Black King Bar."],
   story: {
     headline: "Win before 30 minutes: their Hero 9 outscales us.",
+    ready: 17,
     chapters: [
-      { phase: "0 to 10 min", text: "Farm and trade evenly." },
-      { phase: "10 to 20 min", text: "Hero 1 has Black King Bar. Group up and take towers." },
+      { phase: "0 to 10 min", from: 0, to: 10, ours: [], theirs: [], action: "Farm and trade evenly.", text: "Farm and trade evenly." },
+      {
+        phase: "10 to 20 min",
+        from: 10,
+        to: 20,
+        ours: [{ hero: "Hero 1", item: "Black King Bar", minute: 17 }],
+        theirs: [{ hero: "Hero 8", item: "Blink Dagger", minute: 19 }],
+        action: "Group up and take towers before Hero 8's Blink Dagger.",
+        text: "Hero 1 has Black King Bar at 17. Group up and take towers.",
+      },
     ],
   },
 };
@@ -75,6 +86,15 @@ describe("GameStoryPanel", () => {
     expect(within(story).getByText(/Group up and take towers/)).toBeInTheDocument();
     expect(within(story).getByText(/Black King Bar at 21 min/)).toBeInTheDocument();
     expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
+  });
+
+  it("draws the Story as a minute line: our items, theirs, the ready mark and one action per chapter", () => {
+    renderPanel();
+    const timeline = screen.getByRole("img", { name: /^Item timings:/ });
+    expect(timeline).toHaveAccessibleName("Item timings: our Hero 1 Black King Bar at 17, their Hero 8 Blink Dagger at 19, ready to fight at 17.");
+    expect(within(timeline).getByText("10 to 20 min")).toBeInTheDocument();
+    expect(within(timeline).getByText("Ready to fight")).toBeInTheDocument();
+    expect(screen.getByText("Group up and take towers before Hero 8's Blink Dagger.")).toBeInTheDocument();
   });
 
   it("shows each item's minute and the minute after which a player is slower than most", () => {

@@ -593,6 +593,7 @@ export function DraftBoard({
           plan={gamePlan}
           heroName={(id) => hero(id).name}
           abilities={engine.data.heroAbilities}
+          items={engine.data.items}
           icons={icons}
           playerNames={POSITIONS.map((p) => {
             const member = party?.members.find((m) => m.position === p);
