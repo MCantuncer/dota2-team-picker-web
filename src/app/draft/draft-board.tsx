@@ -305,7 +305,7 @@ export function DraftBoard({
         {party && <span className="chip chip-accent micro">Party</span>}
         <div className="flex items-center gap-2">
           <span className="label-caps" id="my-position">
-            I play
+            Role
           </span>
           <div className="seg" role="group" aria-labelledby="my-position">
             {POSITIONS.map((p) => (
