@@ -26,12 +26,16 @@ const OUTSIDE_MAX = 3;
 
 /**
  * The player's own heroes for the position first, best first, then the best few outside the pool.
- * `ranked` is every suggestion, best first. With an empty pool, the top `POOL_MAX + OUTSIDE_MAX`.
+ * `ranked` is every suggestion, best first. With an empty pool, the top `poolMax` of all heroes.
  */
-export function poolFirst<T extends { heroId: number }>(ranked: T[], pool: Set<number>): { list: T[]; outside: Set<number> } {
-  if (!pool.size) return { list: ranked.slice(0, POOL_MAX), outside: new Set() };
-  const mine = ranked.filter((s) => pool.has(s.heroId)).slice(0, POOL_MAX);
-  const others = ranked.filter((s) => !pool.has(s.heroId)).slice(0, OUTSIDE_MAX);
+export function poolFirst<T extends { heroId: number }>(
+  ranked: T[],
+  pool: Set<number>,
+  { poolMax = POOL_MAX, outsideMax = OUTSIDE_MAX } = {},
+): { list: T[]; outside: Set<number> } {
+  if (!pool.size) return { list: ranked.slice(0, poolMax), outside: new Set() };
+  const mine = ranked.filter((s) => pool.has(s.heroId)).slice(0, poolMax);
+  const others = ranked.filter((s) => !pool.has(s.heroId)).slice(0, outsideMax);
   return { list: [...mine, ...others], outside: new Set(others.map((s) => s.heroId)) };
 }
 

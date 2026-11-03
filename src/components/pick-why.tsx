@@ -34,3 +34,12 @@ export function MoveMark({ move }: { move: string | undefined }) {
     </span>
   );
 }
+
+/** Beside a suggested hero that is not one of the player's heroes for the position. */
+export function OutsidePool({ title = "Not one of your heroes for this position" }: { title?: string }) {
+  return (
+    <span className="chip text-xs" title={title}>
+      Outside Pool
+    </span>
+  );
+}

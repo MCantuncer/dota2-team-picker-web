@@ -5,7 +5,7 @@ import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, PickWhy } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -854,13 +854,5 @@ function SuggestionCard({
       </span>
       {s.hardCounters.length > 0 && <div className="col-span-2 col-start-3 flex flex-col gap-2">{counters}</div>}
     </li>
-  );
-}
-
-function OutsidePool() {
-  return (
-    <span className="chip text-xs" title="Not one of your heroes for this position">
-      Outside Pool
-    </span>
   );
 }

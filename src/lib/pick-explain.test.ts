@@ -35,6 +35,11 @@ describe("poolFirst", () => {
     expect([...outside]).toEqual([10, 20, 40]);
   });
 
+  it("takes custom limits", () => {
+    const { list } = poolFirst(ranked, new Set([30, 50, 60]), { poolMax: 2, outsideMax: 1 });
+    expect(list.map((s) => s.heroId)).toEqual([30, 50, 10]);
+  });
+
   it("ranks every hero together when the pool is empty", () => {
     const { list, outside } = poolFirst(ranked, new Set());
     expect(list.map((s) => s.heroId)).toEqual([10, 20, 30, 40, 50, 60]);

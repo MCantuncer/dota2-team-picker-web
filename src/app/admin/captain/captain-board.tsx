@@ -7,14 +7,14 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroChip } from "@/components/hero-chip";
 import { HeroInput } from "@/components/hero-input";
 import { Kbd } from "@/components/kbd";
-import { MoveMark, PickWhy } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy } from "@/components/pick-why";
 import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
 import type { DraftRead } from "@/lib/draft-reader/reader";
 import { placeByPosition } from "@/lib/draft-reader/positions";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
-import { reactingTo, useRankMoves } from "@/lib/pick-explain";
+import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
@@ -61,6 +61,8 @@ const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft support", "Hard support
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const EMPTY_DRAFT: Draft = { picks: [null, null, null, null, null], enemies: [], bans: [] };
 const PER_FRIEND = 4;
+/** Heroes outside a member's pool shown after their pool heroes. */
+const OUTSIDE_PER_FRIEND = 2;
 const VIEW_KEY = "captain-suggestion-view";
 type View = "players" | "wcst";
 
@@ -68,7 +70,8 @@ interface Note {
   kind: "warn" | "bad" | "good";
   text: string;
 }
-type Card = Suggestion & { notes: Note[] };
+/** `outsidePool`: not one of the member's heroes for the position. */
+type Card = Suggestion & { notes: Note[]; outsidePool: boolean };
 
 /** Captain mode: one person enters the whole draft and gets picks to call for each member's open position. */
 export function CaptainBoard({
@@ -543,38 +546,45 @@ function DraftView({
   );
 }
 
-/** One column of suggestions per member who still has to pick. Each hero goes to the member it scores highest for. */
+/**
+ * One column of suggestions per member who still has to pick: their pool heroes for the position
+ * first, then a few others marked outside the pool. Each hero goes to one member: one whose pool
+ * has it, else the one it scores highest for.
+ */
 function suggestColumns(engine: Engine, members: Member[], slots: Slots, rank: number | null, draft: Draft) {
   const allies = draft.picks.flatMap((heroId, i) => (heroId != null ? [{ heroId, position: (i + 1) as Position }] : []));
   const open = slots.flatMap((memberId, i) => {
     const member = members.find((m) => m.id === memberId);
     return member && draft.picks[i] == null ? [{ member, position: (i + 1) as Position }] : [];
   });
-  const lists = open.map(({ member, position }) =>
-    engine
-      .suggest({
-        myPosition: position,
-        allies,
-        enemies: draft.enemies,
-        bans: draft.bans,
-        rankBracket: (rank ?? undefined) as RankBracket | undefined,
-        favorites: [...(member.heroes[position] ?? []), ...(member.heroes[0] ?? [])],
-        personal: member.personal,
-        count: 12,
-      })
-      .map((s) => ({ ...s, notes: counterNotes(engine, s.heroId, draft) })),
+  const pools = open.map(({ member, position }) => [...(member.heroes[position] ?? []), ...(member.heroes[0] ?? [])]);
+  const lists = open.map(({ member, position }, col) =>
+    engine.suggest({
+      myPosition: position,
+      allies,
+      enemies: draft.enemies,
+      bans: draft.bans,
+      rankBracket: (rank ?? undefined) as RankBracket | undefined,
+      favorites: pools[col],
+      personal: member.personal,
+      count: engine.heroes.length,
+    }),
   );
-  const best = new Map<number, { col: number; score: number }>();
+  const inPool = (col: number, heroId: number) => pools[col]!.includes(heroId);
+  const best = new Map<number, { col: number; pool: boolean; score: number }>();
   lists.forEach((list, col) =>
     list.forEach((s) => {
       const b = best.get(s.heroId);
-      if (!b || b.score < s.score) best.set(s.heroId, { col, score: s.score });
+      const pool = inPool(col, s.heroId);
+      if (!b || (pool && !b.pool) || (pool === b.pool && b.score < s.score)) best.set(s.heroId, { col, pool, score: s.score });
     }),
   );
-  return open.map((o, col) => ({
-    ...o,
-    cards: lists[col]!.filter((s) => best.get(s.heroId)!.col === col).slice(0, PER_FRIEND) as Card[],
-  }));
+  return open.map((o, col) => {
+    const mine = lists[col]!.filter((s) => best.get(s.heroId)!.col === col);
+    const { list, outside } = poolFirst(mine, new Set(pools[col]), { poolMax: PER_FRIEND, outsideMax: OUTSIDE_PER_FRIEND });
+    const cards: Card[] = list.map((s) => ({ ...s, notes: counterNotes(engine, s.heroId, draft), outsidePool: outside.has(s.heroId) }));
+    return { ...o, cards };
+  });
 }
 
 // ---------- super team ----------
@@ -787,6 +797,7 @@ function SuggestionCard({
       <div className="flex items-baseline justify-between gap-2">
         <span className={`flex items-center gap-2 text-lg font-semibold leading-tight tracking-[-0.01em] ${top ? "text-accent" : "text-fg"}`}>
           {card.name} <MoveMark move={move} />
+          {card.outsidePool && <OutsidePool title="Not one of this player's heroes for this position" />}
         </span>
         <span className="num text-xs text-subtle" title="Score in win-rate points">
           {card.score >= 0 ? "+" : ""}
