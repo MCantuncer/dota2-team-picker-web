@@ -35,7 +35,7 @@ export function AuthForm({ action, submitLabel, next, askName }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="btn btn-primary btn-lg mt-1"
+        className="btn btn-secondary btn-lg mt-1"
       >
         {pending ? "Please wait…" : submitLabel}
       </button>
@@ -46,11 +46,11 @@ export function AuthForm({ action, submitLabel, next, askName }: Props) {
 function Field({ label, required = true, ...input }: React.ComponentProps<"input"> & { label: string }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-fg/90">{label}</span>
+      <span className="text-subtle">{label}</span>
       <input
         {...input}
         required={required}
-        className="field h-10 text-base"
+        className="field field-lg"
       />
     </label>
   );
