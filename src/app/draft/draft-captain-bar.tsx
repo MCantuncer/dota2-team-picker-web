@@ -22,14 +22,16 @@ export function DraftCaptainBar({ party, userId, refresh }: { party: Party; user
 
   return (
     <div className="flex flex-col gap-2">
-      <DraftCaptain
-        party={party}
-        userId={userId}
-        busy={busy}
-        run={run}
-        become={() => supabase.rpc("become_captain")}
-        stepDown={() => supabase.rpc("step_down_captain")}
-      />
+      <div className="rounded-md bg-surface px-4 py-3">
+        <DraftCaptain
+          party={party}
+          userId={userId}
+          busy={busy}
+          run={run}
+          become={() => supabase.rpc("become_captain")}
+          stepDown={() => supabase.rpc("step_down_captain")}
+        />
+      </div>
       {error && (
         <p role="alert" className="notice notice-error text-sm">
           {error}

@@ -19,7 +19,7 @@ export function YourRecords({ records }: { records: Records }) {
   const teammates = records.teammates.slice(0, MAX_TEAMMATES);
 
   return (
-    <section aria-labelledby="your-records" className="card flex flex-col gap-3 p-4">
+    <section aria-labelledby="your-records" className="flex flex-col gap-3 border-t border-line pt-6">
       <h2 id="your-records" className="section-title">
         Your Records
       </h2>

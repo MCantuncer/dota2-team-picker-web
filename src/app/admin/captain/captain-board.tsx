@@ -309,9 +309,12 @@ function DraftView({
 
       <ScreenshotPaste heroes={engine.heroes} portraits={portraits} onRead={fromScreen} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <section aria-label="Our Team" className="rounded-lg border border-line border-t-radiant border-t-[3px] bg-surface p-3">
-          <h2 className="mb-2 text-base font-semibold">Our Team</h2>
+      <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+        <section aria-label="Our Team" className="border-t-2 border-radiant pt-3">
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+            <span aria-hidden className="size-2 rounded-full bg-radiant" />
+            Our Team
+          </h2>
           {draft.picks.map((pick, i) => {
             const member = memberById(slots[i] ?? null);
             return (
@@ -342,9 +345,10 @@ function DraftView({
           })}
         </section>
 
-        <section aria-label="Enemy team" className="rounded-lg border border-line border-t-dire border-t-[3px] bg-surface p-3">
-          <h2 className="mb-2 text-base font-semibold">
-            Enemy <span className="num text-xs text-subtle">{draft.enemies.length}/5</span>
+        <section aria-label="Enemy team" className="border-t-2 border-dire pt-3">
+          <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+            <span aria-hidden className="size-2 rounded-full bg-dire" />
+            Enemy <span className="num text-sm font-medium text-subtle">{draft.enemies.length} of 5</span>
           </h2>
           {draft.enemies.length < 5 && (
             <HeroInput
@@ -408,7 +412,7 @@ function DraftView({
       {/* Once all ten heroes are in, the game plan replaces the suggestions. */}
       <section aria-label="Suggestions" hidden={gamePlan !== null} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-base font-semibold">{view === "players" ? "Call these" : "Super team"}</h2>
+          <h2 className="text-lg font-semibold">{view === "players" ? "Call These" : "Super Team"}</h2>
           <div className="flex rounded-md bg-surface p-0.5 ring-1 ring-line-strong" role="tablist" aria-label="Suggestion view">
             {(["players", "wcst"] as const).map((v) => (
               <button
@@ -419,7 +423,7 @@ function DraftView({
                 title={v === "wcst" ? "Wombo-Combo Super Team: the best five heroes for your lineup, re-planned after every pick" : undefined}
                 className={`btn btn-sm h-7 px-3 text-xs ${view === v ? "bg-hover text-fg shadow-sm" : "text-muted hover:text-fg"}`}
               >
-                {v === "players" ? "Per player" : "WCST"}
+                {v === "players" ? "Per Player" : "WCST"}
               </button>
             ))}
           </div>
@@ -450,7 +454,7 @@ function DraftView({
                 bans: draft.bans.length,
               })}
             </p>
-            <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))]">
+            <div className="grid gap-x-6 gap-y-3 [grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))]">
               {columns.map((col) => (
                 <SuggestionColumn
                   key={col.position}
@@ -465,8 +469,8 @@ function DraftView({
         )}
       </section>
 
-      <section aria-label="Lineup" className="card p-3">
-        <h2 className="mb-2 text-base font-semibold">Current Team</h2>
+      <section aria-label="Lineup" className="border-t border-line pt-5">
+        <h2 className="mb-3 text-lg font-semibold">Current Team</h2>
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
           {slots.map((memberId, i) => (
             <label key={i} className="flex flex-col gap-1 text-xs text-muted">
@@ -671,7 +675,7 @@ function PlanCard({
         <span className={`ml-auto truncate font-semibold ${player ? "text-fg" : "text-subtle"}`}>{player ?? "No player"}</span>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-lg font-bold leading-tight">{slot.name}</span>
+        <span className="text-lg font-semibold leading-tight tracking-[-0.01em] text-fg">{slot.name}</span>
         {slot.locked ? (
           <span className="text-xs font-semibold text-radiant">Picked</span>
         ) : (
@@ -680,7 +684,7 @@ function PlanCard({
       </div>
       {!slot.locked && (
         <>
-          <ul className="flex flex-col gap-0.5 text-[13px] text-fg/90">
+          <ul className="flex flex-col gap-0.5 text-sm text-fg/90">
             {slot.reasons.slice(0, 2).map((r) => (
               <li key={r}>· {r}</li>
             ))}
@@ -748,7 +752,7 @@ function SuggestionColumn({
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="font-semibold">
-        {column.member.name} <span className="num text-xs text-subtle">Pos {column.position}</span>
+        {column.member.name} <span className="num text-sm font-normal text-subtle">Pos {column.position}</span>
       </div>
       {column.cards.map((card, n) => (
         <SuggestionCard
@@ -779,9 +783,9 @@ function SuggestionCard({
 }) {
   const tone = { warn: "bg-warn/10 text-warn", bad: "bg-dire/10 text-dire", good: "bg-radiant/10 text-radiant" };
   return (
-    <article className={`flex flex-col gap-1.5 rounded-lg border bg-surface p-2.5 ${top ? "border-warn/70" : "border-line"}`}>
+    <article className="flex flex-col gap-1.5 border-t border-line py-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="flex items-center gap-2 text-lg font-bold leading-tight">
+        <span className={`flex items-center gap-2 text-lg font-semibold leading-tight tracking-[-0.01em] ${top ? "text-accent" : "text-fg"}`}>
           {card.name} <MoveMark move={move} />
         </span>
         <span className="num text-xs text-subtle" title="Score in win-rate points">
@@ -789,14 +793,14 @@ function SuggestionCard({
           {card.score.toFixed(1)}
         </span>
       </div>
-      <PickWhy suggestion={card} className="text-[13px] text-fg/90" />
+      <PickWhy suggestion={card} className="text-sm text-fg/90" />
       {card.notes.map((n) => (
         <p key={n.text} className={`rounded px-1.5 py-0.5 text-xs ${tone[n.kind]}`}>
           {n.text}
         </p>
       ))}
       <div className="flex gap-1.5 pt-0.5">
-        <button onClick={onPicked} className="btn btn-primary btn-sm">
+        <button onClick={onPicked} className={`btn btn-sm ${top ? "btn-primary" : "btn-secondary"}`}>
           <Icon name="check" />
           Picked
         </button>
@@ -910,8 +914,8 @@ function TeamView({
         />
       </label>
 
-      <section aria-label="Invite" className="flex flex-col gap-2 card p-3">
-        <h2 className="text-base font-semibold">Invite a Friend</h2>
+      <section aria-label="Invite" className="flex flex-col gap-2 border-t border-line pt-5">
+        <h2 className="text-lg font-semibold">Invite a Friend</h2>
         <p className="text-sm text-muted">
           They get an email with a link, pick a name and password, then their positions and heroes. Teams can have
           any number of members; you choose who plays each game on the Draft tab.
@@ -938,7 +942,7 @@ function TeamView({
             className="btn btn-primary"
           >
             <Icon name="send" />
-            {sending ? "Sending…" : "Send invite"}
+            {sending ? "Sending…" : "Send Invite"}
           </button>
         </form>
         {sent && <p className="text-sm text-radiant">Invite sent to {sent}.</p>}
@@ -952,7 +956,7 @@ function TeamView({
                   Resend
                 </button>
                 <button onClick={() => copyLink(i)} className="btn btn-secondary btn-sm">
-                  {copied === i.id ? "Copied" : "Copy link"}
+                  {copied === i.id ? "Copied" : "Copy Link"}
                 </button>
                 <button onClick={() => cancel(i)} className="btn btn-secondary btn-sm">
                   Cancel

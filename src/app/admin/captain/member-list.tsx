@@ -39,7 +39,7 @@ export function MemberList({
 }) {
   return (
     <section aria-labelledby="members-heading" className="flex flex-col gap-2">
-      <h2 id="members-heading" className="text-base font-semibold">
+      <h2 id="members-heading" className="text-lg font-semibold">
         Members <span className="num text-xs text-subtle">{members.length}</span>
       </h2>
       {members.length ? (
@@ -56,7 +56,7 @@ export function MemberList({
           ))}
         </ul>
       ) : (
-        <p className="card p-4 text-sm text-muted">Nobody has joined yet. Invited friends show up here once they accept.</p>
+        <p className="border-y border-line py-4 text-sm text-muted">Nobody has joined yet. Invited friends show up here once they accept.</p>
       )}
     </section>
   );

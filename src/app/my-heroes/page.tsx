@@ -5,7 +5,7 @@ import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamLink } from "./steam-link";
 
-export const metadata: Metadata = { title: "My positions and heroes · Dota 2 Team Picker" };
+export const metadata: Metadata = { title: "My Heroes · Dota 2 Team Picker" };
 
 const STEAM_RESULTS: Record<string, { text: string; ok: boolean }> = {
   linked: { text: "Steam linked. Your rank and hero record now count in suggestions and your captain's draft.", ok: true },
@@ -73,9 +73,9 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   }
 
   return (
-    <main className="page flex flex-1 flex-col gap-5 py-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="page-title">{welcome ? "Welcome to the team" : "My positions and heroes"}</h1>
+    <main className="page flex flex-1 flex-col gap-8 py-10">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="page-title">{welcome ? "Welcome to the Team" : "My Heroes"}</h1>
         <p className="text-sm text-muted">
           Pick the positions you play, then your heroes for each one.{" "}
           {teamNames.length > 0 && <>Your captain in {teamNames.join(", ")} drafts from this list. </>}

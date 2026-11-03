@@ -17,7 +17,7 @@ describe("JoinPartyButton", () => {
   it("joins by the link's code and opens the lobby", async () => {
     rpc.mockResolvedValue({ data: "party-1", error: null });
     render(<JoinPartyButton code="0123456789abcdef" />);
-    await userEvent.click(screen.getByRole("button", { name: "Join party" }));
+    await userEvent.click(screen.getByRole("button", { name: "Join Party" }));
     expect(rpc).toHaveBeenCalledWith("join_party_by_link", { code: "0123456789abcdef" });
     expect(push).toHaveBeenCalledWith("/party");
   });
@@ -25,9 +25,9 @@ describe("JoinPartyButton", () => {
   it("shows why joining failed and stays on the page", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: "The party is full" } });
     render(<JoinPartyButton code="0123456789abcdef" />);
-    await userEvent.click(screen.getByRole("button", { name: "Join party" }));
+    await userEvent.click(screen.getByRole("button", { name: "Join Party" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The party is full");
-    expect(screen.getByRole("button", { name: "Join party" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Join Party" })).toBeEnabled();
     expect(push).not.toHaveBeenCalled();
   });
 });
