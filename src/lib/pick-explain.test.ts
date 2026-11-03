@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { poolFirst, rankMoves, reactingTo } from "./pick-explain";
+import { poolFirst, rankMoves, reactingTo, SAVED_SUGGESTIONS, toSaved } from "./pick-explain";
 
 describe("reactingTo", () => {
   it("says the list is a blind pick before anyone picks", () => {
@@ -44,5 +44,15 @@ describe("poolFirst", () => {
     const { list, outside } = poolFirst(ranked, new Set());
     expect(list.map((s) => s.heroId)).toEqual([10, 20, 30, 40, 50, 60]);
     expect(outside.size).toBe(0);
+  });
+});
+
+describe("toSaved", () => {
+  it("saves at most what the database allows, in the order shown", () => {
+    const shown = Array.from({ length: 11 }, (_, i) => ({ heroId: i + 1, score: 10 - i / 3 }));
+    const saved = toSaved(shown);
+    expect(saved.heroes).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(saved.heroes).toHaveLength(SAVED_SUGGESTIONS);
+    expect(saved.scores[1]).toBe(9.67);
   });
 });

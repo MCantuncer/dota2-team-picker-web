@@ -16,7 +16,7 @@ import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBrack
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { poolFirst, reactingTo, useRankMoves } from "@/lib/pick-explain";
+import { poolFirst, reactingTo, toSaved, useRankMoves } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
@@ -189,8 +189,7 @@ export function DraftBoard({
   const shown =
     party && suggestions.length
       ? JSON.stringify({
-          heroes: suggestions.map((s) => s.heroId),
-          scores: suggestions.map((s) => Math.round(s.score * 100) / 100),
+          ...toSaved(suggestions),
           chance: chance === null ? null : Math.round(chance * 1000) / 1000,
         })
       : null;

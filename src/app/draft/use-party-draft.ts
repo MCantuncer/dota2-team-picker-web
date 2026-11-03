@@ -121,7 +121,8 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
         shown_scores: scores,
         chance: chance ?? undefined,
       });
-      if (error) setError(`Suggestions not saved: ${error.message}`);
+      // The draft itself is fine; only the after-game comparison misses this list.
+      if (error) setError("Couldn't save the suggestions you saw, so the after-game card may leave them out. Your draft is saved.");
     },
     [supabase, draftId],
   );
