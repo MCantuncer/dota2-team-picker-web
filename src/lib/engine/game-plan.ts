@@ -1,7 +1,8 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/game-plan.ts). Keep in sync.
 import { SURE_POSITION_ODDS, chooseDangerHeroes, dangerLine } from "./danger";
 import { pickFallbacks, type Scaling } from "./fallbacks";
-import { enemyList, type EnemyNote } from "./enemy-list";
+import { withEffects } from "./item-effects";
+import { enemyList, threatRows, type EnemyNote, type ThreatRow } from "./enemy-list";
 import { laneAdjusted } from "./lane-items";
 import type { MatchupGame } from "./matchup-talents";
 import { skillPlan, type SkillPlan } from "./skill-plan";
@@ -69,6 +70,8 @@ export interface PlayerPlan {
   fallbacks: string[];
   /** The five enemies as this player meets them, in-lane first (see enemy-list.ts). */
   enemies: EnemyNote[];
+  /** The same enemies as rows, one per answer item or shared threat, so an answer is said once. */
+  threatRows: ThreatRow[];
   /** Skill order and talent tree with reasons, when the snapshot has this hero's abilities. */
   skills?: SkillPlan;
 }
@@ -304,10 +307,9 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
   const players = input.ours.map((p): PlayerPlan => {
     const usual = itemBuild(engine.data, p.heroId, p.position, input.theirs, bracket);
     const lane = lanes.find((l) => l.ours.includes(p.heroId))!; // Every position is in a lane.
-    const build =
-      usual && engine.data.items
-        ? laneAdjusted(usual, { verdict: lane.verdict, enemies: lane.theirs.map((id) => engine.hero(id)) }, engine.data.items)
-        : usual;
+    const items = engine.data.items;
+    const laned = usual && items ? laneAdjusted(usual, { verdict: lane.verdict, enemies: lane.theirs.map((id) => engine.hero(id)) }, items) : usual;
+    const build = laned && items ? withEffects(laned, input.theirs.map((id) => engine.hero(id)), items) : laned;
     const combo = ourCombos.find((c) => c.a === p.heroId || c.b === p.heroId);
     const partner = combo && name(combo.a === p.heroId ? combo.b : combo.a);
     const isInitiator = traitsOf(engine.hero(p.heroId)).has("initiation");
@@ -316,6 +318,17 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
     const answered = typeof matchups === "object" && matchups !== null;
     const games = answered ? (matchups[p.heroId] === undefined ? [] : matchups[p.heroId]) : matchups;
     const skills = skillPlan(engine.data, p.heroId, p.position, input.theirs.map(name), games);
+    const enemies = enemyList(
+      build,
+      input.theirs.map((id, i) => {
+        const position = [...theirByPos].find(([, h]) => h === id)?.[0];
+        return {
+          hero: engine.hero(id),
+          inLane: lane.theirs.includes(id),
+          laneSure: position !== undefined && (theirOdds[i]?.[position] ?? 0) >= SURE_POSITION_ODDS,
+        };
+      }),
+    );
     return {
       heroId: p.heroId,
       position: p.position,
@@ -330,17 +343,8 @@ export function gamePlan(engine: Engine, input: GamePlanInput): GamePlan {
         combo && `${combo.text} with ${partner}`,
       ),
       fallbacks: [],
-      enemies: enemyList(
-        build,
-        input.theirs.map((id, i) => {
-          const position = [...theirByPos].find(([, h]) => h === id)?.[0];
-          return {
-            hero: engine.hero(id),
-            inLane: lane.theirs.includes(id),
-            laneSure: position !== undefined && (theirOdds[i]?.[position] ?? 0) >= SURE_POSITION_ODDS,
-          };
-        }),
-      ),
+      enemies,
+      threatRows: threatRows(enemies),
       ...(skills ? { skills } : {}),
     };
   });

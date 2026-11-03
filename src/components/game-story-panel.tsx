@@ -4,6 +4,7 @@ import type { GamePlan, LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/g
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
 import type { HeroAbilities, Snapshot } from "@/lib/engine/types";
 import { SkillPlanCard } from "./skill-plan-card";
+import { StoryTimeline } from "./story-timeline";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
@@ -23,14 +24,19 @@ export interface GameStoryPanelProps {
   action?: ReactNode;
   /** Each hero's abilities, for the skill order icons. */
   abilities?: Snapshot["heroAbilities"];
+  /** Shop items, for the item art on the Story timeline. */
+  items?: Snapshot["items"];
 }
 
 /**
- * The Game Story for a finished draft, a one-minute read from our side: how we win, the game in four
- * timed chapters, the enemies who decide it, and each player's card with their items, minutes and
+ * The Game Story for a finished draft, a one-minute read from our side: how we win, the game as a minute
+ * line with both teams' key items and one thing to do per chapter, the enemies who decide it, and each player's card with their items, minutes and
  * what to do if it goes wrong. The viewer's card is open; teammates' cards open with one tap.
  */
-export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities }: GameStoryPanelProps) {
+export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items }: GameStoryPanelProps) {
+  // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
+  const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
+  const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
   const players = [...plan.players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   return (
@@ -43,17 +49,12 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
         <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{plan.story.headline}</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <div className="flex flex-col gap-2">
-          <h3 className="label-caps">The Story</h3>
-          <ol className="flex flex-col">
-            {plan.story.chapters.map((chapter) => (
-              <li key={chapter.phase} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 border-t border-line py-3 text-fg/85">
-                <span className="num text-accent">{chapter.phase}.</span> <span>{chapter.text}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <div className="flex flex-col gap-3">
+        <h3 className="label-caps">The Story</h3>
+        <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} />
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <h3 className="label-caps">Danger Heroes</h3>
           {plan.danger.length ? (
@@ -65,17 +66,17 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           ) : (
             <p className="text-sm text-muted">No enemy stands out.</p>
           )}
-          {plan.teamFallbacks.length > 0 && (
-            <>
-              <h3 className="label-caps mt-4">If the Game Goes Wrong</h3>
-              <ul className="flex flex-col gap-1.5 text-fg/85">
-                {plan.teamFallbacks.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </>
-          )}
         </div>
+        {plan.teamFallbacks.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h3 className="label-caps">If the Game Goes Wrong</h3>
+            <ul className="flex flex-col gap-1.5 text-fg/85">
+              {plan.teamFallbacks.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

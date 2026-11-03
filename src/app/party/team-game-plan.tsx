@@ -80,6 +80,7 @@ export function TeamGamePlan({
       heroName={(id) => engine.hero(id).name}
       icons={icons}
       abilities={engine.data.heroAbilities}
+      items={engine.data.items}
       playerNames={sent.players.map((id) => (id === userId ? "You" : id ? (names[id] ?? null) : null))}
       myPosition={myPosition}
       action={

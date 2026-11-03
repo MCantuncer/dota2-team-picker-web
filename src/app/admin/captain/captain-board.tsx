@@ -409,6 +409,7 @@ function DraftView({
           plan={gamePlan}
           heroName={name}
           abilities={engine.data.heroAbilities}
+          items={engine.data.items}
           icons={icons}
           playerNames={slots.map((id) => memberById(id)?.name ?? null)}
           action={

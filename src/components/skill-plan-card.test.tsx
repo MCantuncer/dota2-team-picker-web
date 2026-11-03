@@ -18,11 +18,8 @@ const plan: SkillPlan = {
       pick: 11,
       usual: 10,
       result: "recommended",
-      reason: "Against Lion or Zeus (any of them): +2 Mana Regen won 15 and lost 40, +15 Damage won 60 and lost 15.",
-      sides: [
-        { id: 10, wins: 15, losses: 40 },
-        { id: 11, wins: 60, losses: 15 },
-      ],
+      reason: "Take +15 Damage against Lion or Zeus: it did better than +2 Mana Regen, which most players take (55% of 110 recent games).",
+      odds: "5.6x the odds · 130 games",
     },
     {
       tier: 1,
@@ -37,7 +34,7 @@ const plan: SkillPlan = {
       reason: "No talent picks recorded for level 15 yet, so there is no usual pick.",
     },
   ],
-  note: "Games were picked as about half wins and half losses, so only the comparison between the two talents counts.",
+  note: "Odds compare the two talents in high-rank games against these heroes, adjusted toward all games when there are few.",
   live: "ready",
 };
 const abilities = {
@@ -60,7 +57,10 @@ describe("SkillPlanCard", () => {
     const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
     expect(tiers.map((li) => li.textContent?.slice(0, 8))).toEqual(["Level 15", "Level 10"]);
     expect(screen.getByText("(take this)").parentElement).toHaveTextContent("+15 Damage");
-    expect(within(tiers[1]!).getByText("Usual", { exact: false })).toHaveTextContent("15 won, 40 lost · Usual");
+    expect(within(tiers[1]!).getByText("Usual")).toBeInTheDocument();
+    // The odds, never raw wins and losses (Can 2026-11-02).
+    expect(within(tiers[1]!).getByText("5.6x the odds · 130 games")).toBeInTheDocument();
+    expect(tiers[1]!.textContent).not.toMatch(/\d+ won|lost/);
     expect(screen.getByText("Best for This Game")).toBeInTheDocument();
     // No usual pick at level 15, so neither side is marked.
     expect(within(tiers[0]!).queryByText("(take this)")).toBeNull();
