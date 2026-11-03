@@ -184,9 +184,14 @@ export function PartyLobby({
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
           <p className="flex-1 text-sm text-muted">You&apos;re not in a party. Start one and invite your friends and teammates.</p>
           {stacks.length > 0 && (
-            <label className="flex items-center gap-2 text-sm text-muted">
-              Stack
-              <select value={startStack} onChange={(e) => setStartStack(e.target.value)} className="field h-9 w-auto">
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <label htmlFor="start-stack">Stack</label>
+              <select
+                id="start-stack"
+                value={startStack}
+                onChange={(e) => setStartStack(e.target.value)}
+                className="field h-9 w-auto"
+              >
                 <option value="">No Stack</option>
                 {stacks.map((st) => (
                   <option key={st.id} value={st.id}>
@@ -194,7 +199,7 @@ export function PartyLobby({
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           )}
           <button
             onClick={() => run("Party not started", () => supabase.rpc("start_party", startStack ? { team: startStack } : {}))}
