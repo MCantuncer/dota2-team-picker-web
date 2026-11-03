@@ -86,6 +86,7 @@ export function SkillPlanCard({ plan, abilities }: { plan: SkillPlan; abilities?
               <span aria-hidden className="text-subtle"> · </span>
               <span className="text-fg/85">{tier.reason}</span>
             </p>
+            {tier.odds && <p className="num pl-12 text-xs text-muted">{tier.odds}</p>}
           </li>
         ))}
       </ol>
@@ -95,10 +96,9 @@ export function SkillPlanCard({ plan, abilities }: { plan: SkillPlan; abilities?
   );
 }
 
-/** One talent: its name, its wins and losses against these enemies, and whether to take it. */
+/** One talent: its name, and whether to take it or it is the usual pick. Never raw wins and losses (Can 2026-11-02). */
 function Option({ option, tier }: { option: { id: number; name: string }; tier: TalentTier }) {
   const picked = option.id === tier.pick;
-  const side = tier.sides?.find((s) => s.id === option.id);
   const isUsual = option.id === tier.usual && tier.pick !== tier.usual;
   return (
     <span
@@ -110,17 +110,7 @@ function Option({ option, tier }: { option: { id: number; name: string }; tier: 
         {option.name}
         {picked && <span className="sr-only"> (take this)</span>}
       </span>
-      {(side || isUsual) && (
-        <span className="micro text-muted">
-          {side && (
-            <span>
-              <span className="num text-xs">{side.wins}</span> won, <span className="num text-xs">{side.losses}</span> lost
-            </span>
-          )}
-          {side && isUsual && " · "}
-          {isUsual && "Usual"}
-        </span>
-      )}
+      {isUsual && <span className="micro text-muted">Usual</span>}
     </span>
   );
 }

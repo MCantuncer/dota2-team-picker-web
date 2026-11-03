@@ -53,7 +53,10 @@ export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
           ))}
           {story.ready !== undefined && (
             <div className="absolute top-28 h-8 w-0.5 bg-accent" style={{ left: `${at(story.ready)}%` }}>
-              <span className="absolute left-2 top-1.5 whitespace-nowrap text-xs font-semibold text-accent">Ready to fight</span>
+              {/* Near the end of the axis the label sits left of the mark so it stays inside. */}
+              <span className={`absolute top-1.5 whitespace-nowrap text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-2" : "left-2"}`}>
+                Ready to fight
+              </span>
             </div>
           )}
         </div>
