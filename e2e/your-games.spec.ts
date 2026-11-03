@@ -29,4 +29,17 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   await expect(games.getByRole("listitem")).toHaveCount(1);
   await expect(games).toContainText("2 deaths before 10 minutes");
   await expectAccessible(page);
+
+  // Each game opens its own feedback.
+  await games.getByRole("link", { name: /Monkey King lost/ }).click();
+  await expect(page).toHaveURL(/\/my-heroes\/games\/\d+$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Monkey King Lost");
+  await expect(page.getByRole("region", { name: "To Fix" })).toContainText("Keep a Town Portal Scroll");
+  await expect(page.getByRole("region", { name: "Lane at 10 Minutes" })).toContainText("-640 net worth");
+  await expect(page.getByRole("region", { name: /Deaths/ })).toContainText("rotation from mid");
+  await expectAccessible(page);
+
+  // Someone else's game, or one that isn't there, is a 404.
+  const missing = await page.goto("/my-heroes/games/1");
+  expect(missing?.status()).toBe(404);
 });

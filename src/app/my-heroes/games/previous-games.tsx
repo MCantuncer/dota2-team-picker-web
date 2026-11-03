@@ -126,7 +126,13 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
       <span aria-hidden className={`h-8 w-0.5 rounded-full ${game.isWin ? "bg-radiant" : "bg-dire"}`} />
       {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-xs" />}
       <div className="flex min-w-36 flex-col">
-        <span className="text-sm font-medium text-fg">{heroName}</span>
+        <Link
+          href={`/my-heroes/games/${game.matchId}`}
+          aria-label={`${heroName} ${game.isWin ? "won" : "lost"} on ${dateFormat.format(new Date(game.startedAt))}`}
+          className="text-sm font-medium text-fg hover:underline"
+        >
+          {heroName}
+        </Link>
         <span className="text-xs text-subtle">
           {game.position ? `Pos ${game.position} ${POSITION_NAMES[game.position - 1]}` : "Position unknown"}
         </span>

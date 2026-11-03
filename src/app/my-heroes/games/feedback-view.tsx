@@ -78,13 +78,14 @@ function FindingList({ id, title, tone, findings }: { id: string; title: string;
   );
 }
 
-function FindingCard({ finding }: { finding: Finding }) {
+/** One strength or problem; `open` shows its details from the start. */
+export function FindingCard({ finding, open = false }: { finding: Finding; open?: boolean }) {
   const isProblem = finding.tone === "problem";
   return (
     <article className={`card flex flex-col gap-2 border-l-2 p-4 ${isProblem ? "border-l-dire" : "border-l-radiant"}`}>
       <h3 className="text-base font-semibold text-fg">{finding.headline}</h3>
       {finding.pattern && <p className="text-sm text-muted">{finding.pattern}</p>}
-      <details className="group text-sm">
+      <details className="group text-sm" open={open}>
         <summary className="link w-fit cursor-pointer">Show Details</summary>
         <div className="mt-3 flex flex-col gap-3">
           {finding.happened.length > 0 && (
