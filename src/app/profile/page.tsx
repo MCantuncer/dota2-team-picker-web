@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
+import { RankMedal } from "@/components/rank-medal";
 import { rankName } from "@/lib/rank";
 import { createClient } from "@/lib/supabase/server";
 import { NameForm } from "./name-form";
@@ -39,16 +41,26 @@ export default async function ProfilePage() {
       <section className="flex flex-col gap-3">
         <h1 className="page-title">Your Profile</h1>
         <NameForm name={profile?.display_name ?? ""} />
-        <p className="text-sm text-subtle">
-          {isSteam ? "Signed in with Steam." : `Signed in with ${user.email}.`}
-        </p>
+        <p className="text-sm text-subtle">{isSteam ? "Signed in with Steam." : `Signed in with ${user.email}.`}</p>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Rank</h2>
+      <section aria-labelledby="rank-heading" className="flex flex-col gap-4 border-t border-line pt-6">
+        <h2 id="rank-heading" className="section-title">
+          Rank
+        </h2>
         {isSteam ? (
           <>
-            <p className="text-4xl font-semibold tracking-[-0.03em] text-accent">{rank ?? "Unknown"}</p>
+            <div className="flex items-center gap-4">
+              {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
+              <div className="flex flex-col gap-1">
+                <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
+                {profile?.synced_at && (
+                  <span className="text-xs text-subtle">
+                    Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
+                  </span>
+                )}
+              </div>
+            </div>
             {!rank && (
               <p className="max-w-prose text-sm text-muted">
                 OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
@@ -56,36 +68,34 @@ export default async function ProfilePage() {
               </p>
             )}
             {stats.length > 0 && (
-              <ul className="flex flex-wrap gap-3 text-sm text-fg/90">
+              <ul aria-label="Most played heroes" className="grid max-w-2xl divide-y divide-line border-y border-line">
                 {stats.map((s) => (
-                  <li key={s.hero!.id} className="rounded-md bg-surface px-3 py-1.5">
-                    {s.hero!.name}: {s.games} games, {Math.round((100 * s.wins) / s.games)}% won
+                  <li key={s.hero!.id} className="flex items-center gap-3 py-2 text-sm">
+                    <Image src={s.hero!.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />
+                    <span className="flex-1 font-medium text-fg">{s.hero!.name}</span>
+                    <span className="num text-muted">{s.games} games</span>
+                    <span className="num w-24 text-right text-fg">Won {Math.round((100 * s.wins) / s.games)}%</span>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="flex items-center gap-3">
-              <SyncButton />
-              {profile?.synced_at && (
-                <span className="text-xs text-subtle">
-                  Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
-                </span>
-              )}
-            </div>
+            <SyncButton />
           </>
         ) : (
           <p className="max-w-prose text-sm text-muted">
             Email accounts get suggestions from all ranks.{" "}
             <Link href="/my-heroes" className="link">
-              Link Your Steam Account
+              Link your Steam account
             </Link>{" "}
             to have suggestions tuned to your rank and the heroes you win with.
           </p>
         )}
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Positions and Heroes</h2>
+      <section aria-labelledby="heroes-heading" className="flex flex-col gap-2 border-t border-line pt-6">
+        <h2 id="heroes-heading" className="section-title">
+          Positions and Heroes
+        </h2>
         <p className="text-sm text-muted">
           Suggestions lean toward the heroes you pick for each position on{" "}
           <Link href="/my-heroes" className="link">
