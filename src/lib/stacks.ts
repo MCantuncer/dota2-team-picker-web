@@ -134,3 +134,14 @@ export interface StackCard {
 export function toStackCard(s: { id: string; name: string; owner_name: string | null; members: number; games: number }): StackCard {
   return { id: s.id, name: s.name, ownerName: s.owner_name ?? "Unnamed", members: s.members, games: s.games };
 }
+
+/** How many players are waiting to join a Stack you run. Throws when the query fails. */
+export async function countJoinRequests(supabase: SupabaseClient<Database>, teamId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("team_join_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId)
+    .eq("status", "pending");
+  if (error) throw new Error(`Could not load the join requests: ${error.message}`);
+  return count ?? 0;
+}

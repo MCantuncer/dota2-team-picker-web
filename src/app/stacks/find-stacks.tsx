@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
 import { toStackCard, type StackCard } from "@/lib/stacks";
@@ -78,7 +79,9 @@ export function FindStacks({
     return (
       <li key={s.id} className="flex flex-wrap items-center gap-3 py-2.5">
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-medium text-fg">{s.name}</span>
+          <Link href={`/stacks/${s.id}`} className="truncate font-medium text-fg hover:underline">
+            {s.name}
+          </Link>
           <span className="text-xs text-muted">
             {s.ownerName} · <span className="num">{s.members}</span> {s.members === 1 ? "player" : "players"}
             {s.games > 0 && (
