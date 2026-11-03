@@ -29,8 +29,16 @@ export class LiveReads {
   private last = new Set<string>();
   private landed = new Set<number>();
 
-  next(read: DraftRead, inDraft: Set<number>): DraftRead {
+  /**
+   * Notes every hero in the draft as landed. Called on each draft change too, so a hero added and
+   * removed by hand between two reads still counts as landed and stays out.
+   */
+  saw(inDraft: Set<number>) {
     for (const id of inDraft) this.landed.add(id);
+  }
+
+  next(read: DraftRead, inDraft: Set<number>): DraftRead {
+    this.saw(inDraft);
     const keys = new Set<string>();
     const keep = (key: string, heroId: number) => {
       keys.add(key);

@@ -40,9 +40,11 @@ export function useWatchDota(
   // Replies arrive long after the render that started watching; they must reach the latest draft.
   const latestOnRead = useRef(onRead);
   const latestInDraft = useRef(inDraft);
+  const live = useRef<LiveReads | null>(null);
   useEffect(() => {
     latestOnRead.current = onRead;
     latestInDraft.current = inDraft;
+    live.current?.saw(inDraft);
   });
 
   const stop = () => {
@@ -78,9 +80,11 @@ export function useWatchDota(
     try {
       const worker = new Worker(new URL("../../lib/draft-reader/watch.worker.ts", import.meta.url), { type: "module" });
       session.current = { stream, worker };
-      const live = new LiveReads();
-      worker.onmessage = ({ data }: MessageEvent<WatchReply>) => handle(data, live);
-      worker.onerror = (e) => handle({ error: e.message }, live);
+      const reads = new LiveReads();
+      reads.saw(latestInDraft.current);
+      live.current = reads;
+      worker.onmessage = ({ data }: MessageEvent<WatchReply>) => handle(data, reads);
+      worker.onerror = (e) => handle({ error: e.message }, reads);
       const [track] = stream.getVideoTracks();
       track.addEventListener("ended", () => {
         stop();

@@ -69,4 +69,12 @@ describe("LiveReads", () => {
     expect(picks(removed)).toEqual([]);
     expect(removed.bans).toEqual([]);
   });
+
+  it("keeps a hero out when it was added and removed between two reads", () => {
+    const live = new LiveReads();
+    live.next(withPick(5), none);
+    live.next(withPick(5), none);
+    live.saw(new Set([5, 3]));
+    expect(picks(live.next(withPick(5), none))).toEqual([]);
+  });
 });
