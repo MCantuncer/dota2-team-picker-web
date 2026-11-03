@@ -34,7 +34,7 @@ export interface GameStoryPanelProps {
  * what to do if it goes wrong. The viewer's card is open; teammates' cards open with one tap.
  */
 export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items }: GameStoryPanelProps) {
-  // The Story names heroes, so its art is found by name among this draft's heroes.
+  // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
   const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
   const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
   const players = [...plan.players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
