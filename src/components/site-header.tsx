@@ -3,11 +3,15 @@ import { Suspense } from "react";
 import { rankName } from "@/lib/rank";
 import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
+import { getHeroes } from "@/lib/heroes";
+import { dueCard, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { canOpenCaptainMode } from "@/lib/user-type";
 import { AccountMenu } from "./account-menu";
+import { ActivityMark } from "./activity-mark";
 import { Icon } from "./icon";
 import { LogoMark } from "./logo";
 import { CaptainPrompt } from "./captain-prompt";
+import { HeroPoolCard } from "./hero-pool-card";
 import { PartyInvitePopup } from "./party-invite-popup";
 import { PrimaryNav, type NavItem } from "./primary-nav";
 
@@ -80,6 +84,7 @@ async function HeaderSession() {
   if (await canOpenCaptainMode(user.id)) nav.push({ href: "/admin/captain", label: "Captain", icon: "crown" });
 
   const steamLinked = Boolean(profile?.steam_id);
+  const poolCard = steamLinked && poolCardsEnabled() ? await loadPoolCard(supabase, user.id) : null;
   const rank = rankName(profile?.rank_tier ?? null);
   const account = {
     name: profile?.display_name || user.email?.split("@")[0] || "Player",
@@ -111,6 +116,32 @@ async function HeaderSession() {
       </div>
       <PartyInvitePopup userId={user.id} />
       <CaptainPrompt userId={user.id} />
+      {steamLinked && <ActivityMark />}
+      {poolCard && <HeroPoolCard key={poolCard.card.id} {...poolCard} />}
     </>
   );
+}
+
+/** The hero pool card to show, with its hero's name and art. Any failure just shows no card. */
+async function loadPoolCard(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<{ card: PoolCard; heroName: string; heroImage: string | null } | null> {
+  const { data, error } = await supabase
+    .from("pool_suggestions")
+    .select("id, hero_id, position, status, question, reason, snooze_until")
+    .eq("user_id", userId)
+    .in("status", ["open", "snoozed"])
+    .order("created_at", { ascending: false })
+    .limit(5);
+  if (error) {
+    console.error("Header pool card:", error.message);
+    return null;
+  }
+  const card = dueCard(data, Date.now());
+  if (!card) return null;
+  const hero = await getHeroes()
+    .then((heroes) => heroes.find((h) => h.id === card.heroId))
+    .catch(() => undefined);
+  return { card, heroName: hero?.name ?? "This hero", heroImage: hero?.image ?? null };
 }

@@ -23,6 +23,8 @@ jobs:
       # site can build before the stack is up. The wait step checks they still match.
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+      # Hero pool cards are behind a flag in production until coverage looks good; tests always see them.
+      NEXT_PUBLIC_POOL_CARDS: "on"
     steps:
       - uses: actions/checkout@v7
       # The database schema lives in the backend repo. Test against the commit the site's copies are pinned to.

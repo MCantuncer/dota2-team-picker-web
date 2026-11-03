@@ -79,6 +79,12 @@ const PATHS = {
       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
     </>
   ),
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;

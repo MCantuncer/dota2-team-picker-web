@@ -76,6 +76,7 @@ export function PartyInvitePopup({ userId }: { userId: string }) {
   return (
     <div
       role="alertdialog"
+      data-urgent-prompt
       aria-labelledby="party-invite-title"
       aria-describedby="party-invite-detail"
       className="card fixed bottom-4 right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3 p-4"
