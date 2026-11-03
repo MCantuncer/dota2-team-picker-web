@@ -14,7 +14,7 @@ const RESULT_LABELS: Record<Exclude<TalentTier["result"], "leaning">, string> = 
 
 const STATE_LINES: Record<Exclude<SkillLive, "ready">, string> = {
   loading: "Loading games against these enemies…",
-  unavailable: "Games against these enemies aren't in yet, so the usual talents are shown.",
+  unavailable: "Games against these enemies aren't available, so the usual talents are shown.",
   "sign-in": "Sign in to compare talents against these enemies.",
 };
 

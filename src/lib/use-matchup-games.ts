@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 export const SETTLE_MS = 1500;
 /** Wait before asking again for games a teammate's browser is fetching (its STRATZ budget is 8 s). */
 export const RETRY_MS = 10000;
-/** Times to ask again after STRATZ was busy, for one draft on one open page. */
+/** Times to ask again after STRATZ was busy, for each settled request. */
 export const BUSY_RETRIES = 3;
 
 /** The HTTP status of a failed invoke, when Supabase gives one. */
@@ -58,7 +58,7 @@ async function lookup(request: MatchupRequest, isLive: () => boolean): Promise<L
 /**
  * Asks matchup-builds once the draft has settled, and again when the viewer signs in or out. When
  * STRATZ was busy, the games so far show and it asks again at the time the answer gives (up to
- * BUSY_RETRIES times). Undefined while waiting, then the games by hero (see MatchupGames).
+ * BUSY_RETRIES times); a retry that fails keeps the games already shown. Undefined while waiting, then the games by hero (see MatchupGames).
  */
 export function useMatchupGames(request: MatchupRequest | null): MatchupGames | undefined {
   const key = request ? JSON.stringify(request) : null;
@@ -87,7 +87,8 @@ export function useMatchupGames(request: MatchupRequest | null): MatchupGames | 
         })
         .then(({ games, retryIn }) => {
           if (!live) return;
-          setAnswer({ key: fullKey, games });
+          // A failed retry (an error or the hourly limit) keeps what the first answer showed.
+          if (!(retries > 0 && games === null)) setAnswer({ key: fullKey, games });
           if (retryIn !== null && retries < BUSY_RETRIES) {
             retries++;
             timer = setTimeout(ask, retryIn);

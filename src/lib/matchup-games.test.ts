@@ -54,6 +54,12 @@ describe("busyRetryIn", () => {
     expect(busyRetryIn(busy("2026-11-04T14:45:00Z"), now)).toBe(15 * 60 * 1000);
   });
 
+  it("prefers retryIn, which doesn't depend on this browser's clock", () => {
+    // retryAt says 15 minutes on this clock, but the server says 2.
+    expect(busyRetryIn({ ...busy("2026-11-04T14:45:00Z"), retryIn: 120 }, now)).toBe(120_000);
+    expect(busyRetryIn({ ...busy(), retryIn: 3600 }, now)).toBeNull();
+  });
+
   it("waits a little for a time already past", () => {
     expect(busyRetryIn(busy("2026-11-04T14:00:00Z"), now)).toBe(MIN_BUSY_WAIT_MS);
   });

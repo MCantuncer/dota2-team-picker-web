@@ -21,6 +21,8 @@ export interface MatchupAnswer {
   reasons?: string[];
   /** With the reason "stratz-busy": when asking again may fill the pending slices (ISO time). */
   retryAt?: string;
+  /** The same as seconds from the answer, preferred: it doesn't depend on this browser's clock. */
+  retryIn?: number;
 }
 
 /** The games by hero id, a hero's null when its lookup didn't finish, or "sign-in" for a signed-out viewer. */
@@ -74,7 +76,10 @@ export const MAX_BUSY_WAIT_MS = 30 * 60 * 1000;
  */
 export function busyRetryIn(answer: MatchupAnswer, now: number): number | null {
   if (!answer.pending?.length || !(answer.reasons ?? []).includes("stratz-busy")) return null;
-  const at = answer.retryAt ? Date.parse(answer.retryAt) : NaN;
-  if (!Number.isFinite(at) || at - now > MAX_BUSY_WAIT_MS) return null;
-  return Math.max(at - now, MIN_BUSY_WAIT_MS);
+  const wait =
+    typeof answer.retryIn === "number" && Number.isFinite(answer.retryIn)
+      ? answer.retryIn * 1000
+      : (answer.retryAt ? Date.parse(answer.retryAt) : NaN) - now;
+  if (!Number.isFinite(wait) || wait > MAX_BUSY_WAIT_MS) return null;
+  return Math.max(wait, MIN_BUSY_WAIT_MS);
 }
