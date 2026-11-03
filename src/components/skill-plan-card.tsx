@@ -20,7 +20,7 @@ const STATE_LINES: Record<Exclude<SkillLive, "ready">, string> = {
 
 const label = (tier: TalentTier) =>
   tier.result === "leaning"
-    ? `Leaning ${tier.options.find((o) => o.id !== tier.pick)?.name ?? "the Other"}`
+    ? `Leaning ${tier.options.find((o) => o.id !== tier.pick)?.name ?? "the other"}`
     : RESULT_LABELS[tier.result];
 
 /**
@@ -113,7 +113,7 @@ function Option({ option, tier }: { option: { id: number; name: string }; tier: 
       {(side || isUsual) && (
         <span className="micro text-muted">
           {side && (
-            <span title={`Against these enemies: won ${side.wins}, lost ${side.losses}`}>
+            <span>
               <span className="num text-xs">{side.wins}</span> won, <span className="num text-xs">{side.losses}</span> lost
             </span>
           )}

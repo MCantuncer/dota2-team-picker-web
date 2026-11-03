@@ -47,7 +47,8 @@ export function useMatchupGames(request: MatchupRequest | null): MatchupGames | 
   // The request for this key; a new object with the same content keeps the same request.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const stable = useMemo(() => request, [key]);
-  const [user, setUser] = useState<string | null>(null);
+  // Undefined until the first auth event, so the page load asks once, as the right viewer.
+  const [user, setUser] = useState<string | null | undefined>(undefined);
   const [answer, setAnswer] = useState<{ key: string; games: MatchupGames } | null>(null);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export function useMatchupGames(request: MatchupRequest | null): MatchupGames | 
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const fullKey = key && `${user ?? ""}|${key}`;
+  const fullKey = key && user !== undefined ? `${user ?? ""}|${key}` : null;
   useEffect(() => {
     if (!fullKey || !stable) return;
     let live = true;
@@ -75,6 +76,7 @@ export function useMatchupGames(request: MatchupRequest | null): MatchupGames | 
     };
   }, [fullKey, stable]);
 
-  if (!fullKey) return null;
+  if (!key) return null;
+  if (!fullKey) return undefined;
   return answer?.key === fullKey ? answer.games : undefined;
 }

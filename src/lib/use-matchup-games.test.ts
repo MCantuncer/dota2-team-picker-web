@@ -3,11 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MatchupRequest } from "@/lib/matchup-games";
 import { RETRY_MS, SETTLE_MS, useMatchupGames } from "@/lib/use-matchup-games";
 
+let sessionUser: { user: { id: string } } | null = { user: { id: "u" } };
 const invoke = vi.fn();
 const getSession = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
-    auth: { getSession, onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }) },
+    auth: {
+      getSession,
+      // Supabase sends the session as the first event soon after subscribing.
+      onAuthStateChange: (callback: (event: string, session: { user: { id: string } } | null) => void) => {
+        callback("INITIAL_SESSION", sessionUser);
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      },
+    },
     functions: { invoke },
   }),
 }));
@@ -32,6 +40,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   invoke.mockReset();
   getSession.mockReset().mockResolvedValue(signedIn);
+  sessionUser = { user: { id: "u" } };
 });
 afterEach(() => vi.useRealTimers());
 
@@ -86,6 +95,23 @@ describe("useMatchupGames", () => {
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(invoke.mock.calls[0]?.[1]).toEqual({ body: other });
     expect(result.current).toEqual({ 1: [], 2: [], 3: [], 4: [], 5: [] });
+  });
+
+  it("treats a 401 as signed out", async () => {
+    invoke.mockResolvedValue({ data: null, error: httpError(401) });
+    const { result } = renderHook(() => useMatchupGames(request));
+    await settle();
+    expect(result.current).toBe("sign-in");
+  });
+
+  it("skips the second ask and sets nothing when the card goes away during the wait", async () => {
+    invoke.mockResolvedValue({ data: { slices: [], pending: [{ hero: 1 }], reasons: ["fetching-elsewhere"] }, error: null });
+    const { result, unmount } = renderHook(() => useMatchupGames(request));
+    await settle();
+    unmount();
+    await settle(RETRY_MS);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(result.current).toBeUndefined();
   });
 
   it("is null without a finished draft", () => {
