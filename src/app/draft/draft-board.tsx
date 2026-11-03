@@ -659,7 +659,7 @@ function Slot({
         {children}
       </span>
       {onRemove && (
-        <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className="btn btn-icon btn-sm shrink-0 self-start text-muted">
+        <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className={`btn btn-icon btn-sm shrink-0 text-muted ${children ? "self-start" : ""}`}>
           ×
         </button>
       )}
