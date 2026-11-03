@@ -44,7 +44,7 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
     );
   }
 
-  // Art, the YOU tag and the records are extras: without them the report still shows every name and number.
+  // Art, the You tag and the records are extras: without them the report still shows every name and number.
   const [heroes, items, mine, records] = await Promise.all([
     getHeroes().catch(() => []),
     getItems().catch(() => new Map()),
@@ -80,7 +80,7 @@ function emptyMessage(report: Report): string {
 
 function ReportPageShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="page flex flex-1 flex-col gap-4 py-8">
+    <main className="page flex flex-1 flex-col gap-6 py-10">
       <h1 className="page-title">Game Report</h1>
       {children}
     </main>

@@ -12,7 +12,7 @@ test("a player reads the report of a game they played", async ({ page }) => {
   await page.goto(`/reports/${draftId}`);
   await expect(page.getByRole("heading", { name: "Game report" })).toBeVisible();
   await expect(page.getByText("Won in 34:26, 57 to 32 in kills.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Your team" }).getByText("YOU", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Your team" }).getByText("You", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Lanes at 10 minutes" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Your records" })).toHaveText(
     /No suggestions saved for the pick: 1 game, too few for a win rate\./,

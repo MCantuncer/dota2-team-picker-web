@@ -27,10 +27,10 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
   const hurt = [...(facts.damageTaken ?? []).map(damageLine), ...(facts.enemyBest ? [enemyBestLine(facts.enemyBest, name)] : [])];
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className={`card flex flex-col gap-2 border-t-3 p-4 ${facts.won ? "border-t-radiant-strong" : "border-t-dire-strong"}`}>
-        <span className={`chip micro self-start ${facts.won ? "text-radiant" : "text-dire"}`}>{facts.won ? "Won" : "Lost"}</span>
-        <p className="text-2xl font-semibold leading-7 tracking-[-0.02em] text-fg">{headline(facts)}</p>
+    <div className="flex flex-col gap-8">
+      <header className={`flex flex-col gap-2 border-t-2 pt-5 ${facts.won ? "border-t-radiant" : "border-t-dire"}`}>
+        <span className={`text-sm font-medium ${facts.won ? "text-radiant" : "text-dire"}`}>{facts.won ? "Won" : "Lost"}</span>
+        <p className="text-3xl font-semibold leading-9 tracking-[-0.02em] text-fg">{headline(facts)}</p>
         <p className="text-sm text-muted">
           You played {facts.side === "radiant" ? "Radiant" : "Dire"}.{" "}
           <a href={`https://www.opendota.com/matches/${facts.matchId}`} target="_blank" rel="noopener noreferrer" className="link">
@@ -39,11 +39,11 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
         </p>
       </header>
 
-      <section aria-labelledby="report-heroes" className="card flex flex-col gap-3 p-4">
+      <section aria-labelledby="report-heroes" className="flex flex-col gap-3">
         <h2 id="report-heroes" className="section-title">
           Your Team
         </h2>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col divide-y divide-line border-y border-line">
           {facts.heroes.map((hero) => (
             <HeroRow key={hero.heroId} hero={hero} art={art} isMine={hero.heroId === myHeroId} />
           ))}
@@ -51,10 +51,10 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
       </section>
 
       {facts.lanes && (
-        <LineSection id="report-lanes" title="Lanes at 10 minutes" lines={facts.lanes.map((l) => laneLine(l, name))} />
+        <LineSection id="report-lanes" title="Lanes at 10 Minutes" lines={facts.lanes.map((l) => laneLine(l, name))} />
       )}
-      {turning.length > 0 && <LineSection id="report-turning" title="Turning points" lines={turning} />}
-      {hurt.length > 0 && <LineSection id="report-hurt" title="What hurt you" lines={hurt} />}
+      {turning.length > 0 && <LineSection id="report-turning" title="Turning Points" lines={turning} />}
+      {hurt.length > 0 && <LineSection id="report-hurt" title="What Hurt You" lines={hurt} />}
       {facts.draft && facts.draft.length > 0 && (
         <LineSection id="report-draft" title="Draft" lines={facts.draft.map((d) => draftLine(d, name))} />
       )}
@@ -64,11 +64,11 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
 
 function LineSection({ id, title, lines }: { id: string; title: string; lines: string[] }) {
   return (
-    <section aria-labelledby={id} className="card flex flex-col gap-2 p-4">
+    <section aria-labelledby={id} className="flex flex-col gap-2 border-t border-line pt-5">
       <h2 id={id} className="section-title">
         {title}
       </h2>
-      <ul className="flex flex-col gap-1 text-sm">
+      <ul className="flex max-w-3xl flex-col gap-1.5 text-sm">
         {lines.map((line) => (
           <li key={line}>{line}</li>
         ))}
@@ -87,7 +87,7 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
   });
 
   return (
-    <li className="flex items-start gap-3 rounded-sm bg-raised p-3">
+    <li className="flex items-start gap-4 py-3">
       <span className="relative shrink-0">
         {info?.image ? (
           <Image src={info.image} alt="" width={80} height={45} className="h-11.25 w-20 rounded-xs object-cover" />
@@ -97,9 +97,7 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
           </span>
         )}
         {isMine && (
-          <span className="micro absolute right-0 top-0 rounded-bl-xs rounded-tr-xs bg-radiant px-1 font-semibold text-bg">
-            YOU
-          </span>
+          <span className="absolute right-0.5 top-0.5 rounded-xs bg-radiant px-1 text-xs font-semibold leading-4 text-bg">You</span>
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">

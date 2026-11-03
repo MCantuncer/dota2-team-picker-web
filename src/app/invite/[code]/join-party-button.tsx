@@ -25,7 +25,7 @@ export function JoinPartyButton({ code }: { code: string }) {
   return (
     <div className="flex flex-col gap-2">
       <button onClick={join} disabled={busy} className="btn btn-primary self-start">
-        {busy ? "Joining…" : "Join party"}
+        {busy ? "Joining…" : "Join Party"}
       </button>
       {error && (
         <p role="alert" className="text-sm text-dire">
