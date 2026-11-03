@@ -20,37 +20,15 @@ import { poolFirst, reactingTo, useRankMoves, weakHere, worstMatchup } from "@/l
 import { planTeam, type PlanSlot, type PlannedSlot, type TeamPlan } from "@/lib/engine/plan";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
-import type { GamesWins, HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
+import type { HeroInfo, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { createClient } from "@/lib/supabase/client";
 import { ScreenshotPaste } from "@/app/draft/screenshot-paste";
-import { MemberList } from "./member-list";
+import { MemberList } from "@/components/stacks/member-list";
+import type { Invite, Member } from "@/lib/stacks";
 import { SendGamePlan } from "./send-game-plan";
 import { TeamPicker, type TeamRef } from "./team-picker";
 
-/**
- * A team member as the captain sees them: favorite positions, heroes per position (0 = any),
- * and their rank and record per hero when their Steam account is linked.
- */
-export interface Member {
-  id: string;
-  /** Co-captains can run this team's draft and invites; only the owner sets this. */
-  role: "player" | "co_captain";
-  name: string;
-  positions: number[];
-  heroes: Record<number, number[]>;
-  rank: RankBracket | null;
-  /** OpenDota rank tier with stars (54 = Legend 4), for display. */
-  rankTier: number | null;
-  avatarUrl: string | null;
-  /** Steam nickname when their Steam account is linked. */
-  steamName: string | null;
-  personal: Record<number, GamesWins>;
-}
-
-export interface Invite {
-  id: string;
-  email: string;
-}
+export type { Invite, Member };
 
 type Slots = (string | null)[];
 interface Draft {

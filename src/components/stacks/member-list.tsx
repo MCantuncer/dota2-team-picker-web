@@ -7,7 +7,7 @@ import { Avatar } from "@/components/account-menu";
 import { RankMedal } from "@/components/rank-medal";
 import { SteamLogo } from "@/components/steam-button";
 import { rankName } from "@/lib/rank";
-import type { Member } from "./captain-board";
+import type { Member } from "@/lib/stacks";
 
 /** Hero name and icon URL; the icon is missing when the hero list couldn't be loaded. */
 export interface HeroFace {
@@ -20,9 +20,9 @@ const POSITION_SHORT = ["Carry", "Mid", "Off", "Soft sup", "Hard sup"];
 const PREVIEW = 3;
 
 /**
- * The team's members as slim rows: who they are, their rank, and their top heroes per position.
+ * The Stack's members as slim rows: who they are, their rank, and their top heroes per position.
  * Clicking a row opens their full pool; removing someone sits in a menu with a confirm step.
- * The team's owner can also make a member co-captain; a co-captain can only remove players.
+ * The owner can also make a member a Manager; a Manager can only remove players.
  */
 export function MemberList({
   members,
@@ -101,7 +101,7 @@ function MemberRow({
               <span className="truncate font-medium leading-tight text-fg">{m.name}</span>
               {m.role === "co_captain" && (
                 <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-px text-xs font-semibold text-accent ring-1 ring-accent/40">
-                  Co-captain
+                  Manager
                 </span>
               )}
             </span>
@@ -319,7 +319,7 @@ function MemberMenu({
             }}
             className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-fg outline-none hover:bg-hover focus-visible:bg-hover"
           >
-            {role === "co_captain" ? "Make player" : "Make co-captain"}
+            {role === "co_captain" ? "Make Player" : "Make Manager"}
           </button>
         )}
         {onRemove && (
