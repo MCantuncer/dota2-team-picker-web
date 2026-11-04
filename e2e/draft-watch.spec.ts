@@ -29,3 +29,23 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   await page.getByRole("button", { name: "Stop" }).click();
   await expect(page.getByRole("button", { name: "Watch as Radiant" })).toBeVisible();
 });
+
+test("Watch Dota reads the enemy's last pick at strategy time, and the Game Story follows", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  await fakeDotaWindow(page, "draft-strategy-ten-picked.png");
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch as Radiant" }).click();
+  const enemy = page.getByRole("region", { name: "Enemy" });
+  // Lich is their last pick: Ranked All Pick shows it only once strategy time starts.
+  for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny", "Lich"])
+    await expect(enemy.getByText(name)).toBeVisible({ timeout: 45_000 });
+
+  // Our first slot is the player's own persona art, which is typed in; the Story waits for all ten.
+  const plan = page.getByRole("region", { name: "Game Story" });
+  await expect(plan).toHaveCount(0);
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("snap");
+  await ally.press("Enter");
+  await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
+});

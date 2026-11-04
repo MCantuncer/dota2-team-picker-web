@@ -288,11 +288,12 @@ export async function seedReportFeedback(email: string, draftId: string) {
 }
 
 /**
- * Stands in for the browser's share prompt: a canvas showing a hero select screenshot (both teams and
- * nine bans) plays the Dota window for Watch Dota.
+ * Stands in for the browser's share prompt: a canvas showing a hero select screenshot plays the Dota
+ * window for Watch Dota. The default shows nine picks and the bans; "draft-strategy-ten-picked.png" is
+ * strategy time, the first moment the enemy's last pick shows.
  */
-export async function fakeDotaWindow(page: Page) {
-  const screenshot = readFileSync(join(__dirname, "fixtures", "draft-nine-picked.png")).toString("base64");
+export async function fakeDotaWindow(page: Page, fixture = "draft-nine-picked.png") {
+  const screenshot = readFileSync(join(__dirname, "fixtures", fixture)).toString("base64");
   await page.addInitScript((base64) => {
     navigator.mediaDevices.getDisplayMedia = async () => {
       const image = new Image();

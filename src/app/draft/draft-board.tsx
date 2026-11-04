@@ -703,11 +703,6 @@ export function DraftBoard({
         </section>
       </div>
 
-      {gamePlan && enemies.length < TEAM_SIZE && (
-        <p className="notice text-sm">
-          Their last pick shows at strategy time. This Game Story updates when it is in.
-        </p>
-      )}
       {gamePlan && resolved.some((a) => a.isGuess) && (
         <p className="notice notice-warn text-sm">
           This game plan uses guessed positions for some of My Team. Set them above if they are wrong.

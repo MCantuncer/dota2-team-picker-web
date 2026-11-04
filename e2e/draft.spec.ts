@@ -162,7 +162,7 @@ test("a party draft saves what each player was shown and ends with the after-gam
   await expectAccessible(page);
 });
 
-test("the draft screen shows the game plan once our five and four of theirs are in", async ({ page }) => {
+test("the draft screen shows the game plan once both teams are in", async ({ page }) => {
   await page.goto("/draft");
   const ally = page.getByLabel("My team pick, e.g. cm5");
   await expect(ally).toBeVisible();
@@ -171,19 +171,12 @@ test("the draft screen shows the game plan once our five and four of theirs are 
     await ally.press("Enter");
   }
   const enemy = page.getByLabel("Enemy pick");
-  for (const pick of ["pa", "sf", "axe", "wd"]) {
+  for (const pick of ["pa", "sf", "axe", "wd", "lich"]) {
     await enemy.fill(pick);
     await enemy.press("Enter");
   }
 
-  // Ranked All Pick hides their last pick until strategy time, so the Story starts with four.
   const plan = page.getByRole("region", { name: "Game Story" });
-  await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
-  const waiting = page.getByText("Their last pick shows at strategy time.");
-  await expect(waiting).toBeVisible();
-  await enemy.fill("lich");
-  await enemy.press("Enter");
-  await expect(waiting).toHaveCount(0);
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
   await expect(plan.getByRole("tab", { name: /Pos [1-5]/ })).toHaveCount(5);
   await expectAccessible(page);
