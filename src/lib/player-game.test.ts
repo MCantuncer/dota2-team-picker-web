@@ -23,6 +23,8 @@ const row = (over: Record<string, unknown> = {}) => ({
       heroDamage: 21000,
       towerDamage: 900,
       heroHealing: 0,
+      level: 22,
+      teamfightShare: 0.334,
       benchmarks: { goldPerMin: 41.6, xpPerMin: 50, lastHitsPerMin: 45, heroDamagePerMin: 30 },
     },
     lastHitsAt10: 38,
@@ -71,7 +73,14 @@ describe("readGameDetail", () => {
   it("reads the numbers, lane, deaths and findings, skipping odd items", () => {
     const game = readGameDetail(row());
     expect(game?.kills).toBe(4);
-    expect(game?.stats).toMatchObject({ xpPerMin: 600, lastHits: 240, goldPerMinBeat: 42, heroDamageBeat: 30 });
+    expect(game?.stats).toMatchObject({
+      xpPerMin: 600,
+      lastHits: 240,
+      goldPerMinBeat: 42,
+      heroDamageBeat: 30,
+      level: 22,
+      killShare: 33,
+    });
     expect(game?.lane).toEqual({ lastHits: 38, denies: 4, netWorthDiff: -820 });
     expect(game?.deathList?.map((d) => [d.time, d.killerHeroId, d.isKillerFromMid, d.buildingsLost])).toEqual([
       [380, 106, true, []],

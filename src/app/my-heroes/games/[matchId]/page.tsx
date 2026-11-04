@@ -37,7 +37,7 @@ export default async function GamePage({ params }: PageProps<"/my-heroes/games/[
   } else {
     const game = readGameDetail(row.data);
     if (!game) notFound();
-    body = <GameView game={game} heroes={new Map(heroes.map((h) => [h.id, { name: h.name, icon: h.icon }]))} />;
+    body = <GameView game={game} heroes={new Map(heroes.map((h) => [h.id, { name: h.name, icon: h.icon, image: h.image }]))} />;
   }
 
   return (
