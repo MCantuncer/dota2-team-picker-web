@@ -19,6 +19,9 @@ export interface GameStats {
   heroDamage: number | null;
   towerDamage: number | null;
   heroHealing: number | null;
+  level: number | null;
+  /** Percent (0 to 100) of the team's kills this player took part in, when parsed. */
+  killShare: number | null;
   /** Percent (0 to 100) of the hero's players this game beat, when parsed. */
   goldPerMinBeat: number | null;
   heroDamageBeat: number | null;
@@ -79,6 +82,11 @@ export function readGameDetail(row: unknown): GameDetail | null {
       heroDamage: int(card.heroDamage),
       towerDamage: int(card.towerDamage),
       heroHealing: int(card.heroHealing),
+      level: int(card.level),
+      killShare:
+        typeof card.teamfightShare === "number" && card.teamfightShare >= 0 && card.teamfightShare <= 1
+          ? Math.round(card.teamfightShare * 100)
+          : null,
       goldPerMinBeat: int(bench.goldPerMin),
       heroDamageBeat: int(bench.heroDamagePerMin),
     },

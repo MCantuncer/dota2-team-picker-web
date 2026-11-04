@@ -24,6 +24,8 @@ const game = (over: Partial<GameDetail> = {}): GameDetail => ({
     heroDamage: 21000,
     towerDamage: 900,
     heroHealing: 0,
+    level: 22,
+    killShare: 33,
     goldPerMinBeat: 42,
     heroDamageBeat: null,
   },
@@ -63,17 +65,22 @@ const heroes = new Map([
 describe("GameView", () => {
   it("shows the result, numbers, points to fix, lane and deaths", () => {
     render(<GameView game={game()} heroes={heroes} />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Monkey King Lost");
-    expect(screen.getByText(/Pos 1 Carry · 2 Nov 2026 · 34:05/)).toBeTruthy();
-    expect(screen.getByRole("region", { name: "Numbers" }).textContent).toContain("Beat 42%");
-    expect(screen.getByRole("region", { name: "Numbers" }).textContent).not.toContain("Healing");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Monkey King");
+    expect(screen.getByText("Lost")).toBeTruthy();
+    expect(screen.getByText(/Pos 1 Carry/).textContent).toMatch(/Pos 1 Carry\s*\|\s*2 Nov 2026\s*\|\s*34:05/);
+    const numbers = screen.getByRole("region", { name: "Numbers" }).textContent;
+    expect(numbers).toContain("Better than 42% of Monkey King games");
+    expect(numbers).toContain("In 33% of your team's kills");
+    expect(numbers).not.toContain("Healing");
     const fix = screen.getByRole("region", { name: "To Fix" });
     expect(fix.textContent).toContain("Keep a Town Portal Scroll.");
-    expect(screen.getByRole("region", { name: "Went Well" }).textContent).toContain("Nothing stood out.");
-    expect(screen.getByRole("region", { name: "Lane at 10 Minutes" }).textContent).toContain("-820 net worth");
+    expect(screen.getByRole("region", { name: "Went Well" }).textContent).toContain("Nothing stood out as a strength");
+    expect(screen.getByRole("region", { name: "Lane at 10 Minutes" }).textContent).toContain("820 net worth behind");
     const deaths = screen.getByRole("region", { name: /Deaths/ });
-    expect(deaths.textContent).toContain("810 gold lost and 1:10 dead in total");
-    expect(deaths.textContent).toContain("Killed by Ember Spirit (rotation from mid)");
+    expect(deaths.textContent).toContain("810 gold lost and 1:10 dead");
+    expect(deaths.textContent).toContain("Ember SpiritRotation from Mid");
+    expect(deaths.textContent).toContain("Creeps or a tower");
+    expect(screen.getByRole("img", { name: "2 deaths on the game clock, 1 of them before 10 minutes" })).toBeTruthy();
     expect(deaths.textContent).toContain("Lost while dead: Tier 2 Mid Tower");
     expect(screen.queryByRole("link", { name: "Party Report" })).toBeNull();
   });

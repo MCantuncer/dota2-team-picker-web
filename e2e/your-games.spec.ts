@@ -33,10 +33,10 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   // Each game opens its own feedback.
   await games.getByRole("link", { name: /Monkey King lost/ }).click();
   await expect(page).toHaveURL(/\/my-heroes\/games\/\d+$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Monkey King Lost");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Monkey King");
   await expect(page.getByRole("region", { name: "To Fix" })).toContainText("Keep a Town Portal Scroll");
-  await expect(page.getByRole("region", { name: "Lane at 10 Minutes" })).toContainText("-640 net worth");
-  await expect(page.getByRole("region", { name: /Deaths/ })).toContainText("rotation from mid");
+  await expect(page.getByRole("region", { name: "Lane at 10 Minutes" })).toContainText("640 net worth behind");
+  await expect(page.getByRole("region", { name: /Deaths/ })).toContainText("Rotation from Mid");
   await expectAccessible(page);
 
   // Someone else's game, or one that isn't there, is a 404.
