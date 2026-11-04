@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getHeroes } from "@/lib/heroes";
 import { liveCards, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +6,8 @@ import { PoolCardsSwitch } from "./pool-cards-switch";
 import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamLink } from "./steam-link";
+import { YourGamesCard } from "./your-games-card";
+import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
 
 export const metadata: Metadata = { title: "My Heroes · Dota 2 Team Picker" };
 
@@ -66,6 +67,25 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     else suggestions = liveCards(data);
   }
 
+  // Your Games card: extra, so a failed read only leaves its numbers out.
+  let gamesRecord: PlayerRecord | null = null;
+  const feedbackCounts = { strengths: 0, problems: 0 };
+  if (profile?.steam_id) {
+    const [games, feedback] = await Promise.all([
+      supabase.from("player_game_facts").select(RECORD_SELECT).eq("user_id", user.id),
+      supabase.from("player_feedback").select("findings").eq("user_id", user.id).maybeSingle(),
+    ]);
+    if (games.error) console.error("My Heroes games record:", games.error.message);
+    else gamesRecord = playerRecord(games.data, new Date());
+    if (feedback.error) console.error("My Heroes feedback:", feedback.error.message);
+    else if (Array.isArray(feedback.data?.findings)) {
+      for (const f of feedback.data.findings as { tone?: unknown }[]) {
+        if (f?.tone === "strength") feedbackCounts.strengths += 1;
+        if (f?.tone === "problem") feedbackCounts.problems += 1;
+      }
+    }
+  }
+
   let steamAccount: SteamAccount | null = null;
   if (profile?.steam_id) {
     const heroById = new Map(heroes.map((h) => [h.id, h]));
@@ -101,21 +121,17 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
       </div>
       <SteamLink account={steamAccount} result={steamResult} />
       {steamAccount && (
-        <Link href="/my-heroes/games" className="card flex items-center justify-between gap-4 p-4 hover:border-line-hover">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-base font-semibold text-fg">Your Games</span>
-            <span className="text-sm text-muted">Strengths and problems from your recent matches.</span>
-          </span>
-          <span aria-hidden className="text-muted">
-            →
-          </span>
-        </Link>
+        <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
       )}
       <PositionHeroes
         // A fresh list after the switch changes, since the cards are copied into state.
         key={suggestions.map((s) => s.id).join(",")}
         suggestions={suggestions}
-        options={showCards && <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />}
+        options={
+          showCards && (
+            <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />
+          )
+        }
         userId={user.id}
         heroes={heroes}
         initialPositions={(positions ?? []).map((p) => p.position)}

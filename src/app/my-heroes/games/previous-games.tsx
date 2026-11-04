@@ -15,6 +15,8 @@ const STATUS_NOTES: Record<GameRow["status"], string | null> = {
 export interface HeroArt {
   name: string;
   icon?: string;
+  /** The 16:9 portrait. */
+  image?: string;
 }
 
 /**

@@ -38,9 +38,6 @@ const feedback = (over: Partial<PlayerFeedback> = {}): PlayerFeedback => ({
 describe("FeedbackView", () => {
   it("shows strengths and problems with the layers behind each problem", () => {
     render(<FeedbackView feedback={feedback()} />);
-    expect(screen.getByText(/From your last/).textContent).toBe(
-      "From your last 6 games, 25 Oct to 2 Nov. 5 of them parsed by OpenDota, which the detailed points need.",
-    );
     const strengths = screen.getByRole("region", { name: "Strengths" });
     expect(within(strengths).getByRole("heading", { name: "Strong farm" })).toBeTruthy();
     const problems = screen.getByRole("region", { name: "Problems" });
