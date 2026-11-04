@@ -11,6 +11,7 @@ import { Icon } from "./icon";
 import { LogoMark } from "./logo";
 import { CaptainPrompt } from "./captain-prompt";
 import { HeroPoolCard } from "./hero-pool-card";
+import { PartyChip } from "./party-chip";
 import { PartyInvitePopup } from "./party-invite-popup";
 import { PrimaryNav, type NavItem } from "./primary-nav";
 
@@ -111,15 +112,7 @@ async function HeaderSession() {
     <>
       <PrimaryNav items={nav} />
       <div className="ml-auto flex items-center gap-3">
-        {party && (
-          <Link
-            href="/party"
-            className="hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted ring-1 ring-inset ring-line-strong hover:text-fg md:flex"
-          >
-            <span aria-hidden className="live-dot text-radiant" />
-            In a party <span className="num text-fg">{party.members.length}/5</span>
-          </Link>
-        )}
+        <PartyChip size={party ? party.members.length : null} />
         <Link href="/draft" className="btn btn-primary btn-sm hidden md:inline-flex">
           <Icon name="plus" />
           New Draft

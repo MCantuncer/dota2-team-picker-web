@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
 import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } from "@/lib/party";
@@ -56,6 +57,11 @@ function seatHero(pool: Pool, member: PartyMember): number | null {
   return positions.length ? (byPos[positions[0]!]![0] ?? null) : null;
 }
 
+/** What the header chip shows of a party: which one, and how many players. */
+function partyShape(party: Party | null): string {
+  return party ? `${party.id}:${party.members.length}` : "";
+}
+
 /** The lobby: five seats, your position for this game, and invites and the invite link for the leader. */
 export function PartyLobby({
   userId,
@@ -76,6 +82,7 @@ export function PartyLobby({
   heroArt: Record<number, { name: string; image: string }>;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [party, setParty] = useState(initialParty);
   const [pool, setPool] = useState<Pool>({});
   const [invited, setInvited] = useState<Set<string>>(new Set());
@@ -83,6 +90,7 @@ export function PartyLobby({
   const [error, setError] = useState<string | null>(null);
   const [startStack, setStartStack] = useState("");
   const partyId = party?.id ?? null;
+  const shownShape = useRef(partyShape(initialParty));
   const getLink = useCallback((fresh: boolean) => fetchPartyLink(supabase, fresh), [supabase]);
 
   const refresh = useCallback(async () => {
@@ -90,11 +98,17 @@ export function PartyLobby({
     if (error) return setError(`Party not loaded: ${error.message}`);
     const next = toParty(data);
     setParty(next);
+    // The header's party chip is drawn on the server, so redraw it when the party or its size changes.
+    const shape = partyShape(next);
+    if (shape !== shownShape.current) {
+      shownShape.current = shape;
+      router.refresh();
+    }
     if (!next) return setInvited(new Set());
     setPool(await loadPool(supabase, userId));
     const { data: invites } = await supabase.from("party_invites").select("user_id").eq("party_id", next.id).eq("status", "pending");
     setInvited(new Set((invites ?? []).map((i) => i.user_id as string)));
-  }, [supabase, userId]);
+  }, [supabase, userId, router]);
 
   // Seat art after the first paint; refresh() reloads it as players join or move.
   useEffect(() => {
