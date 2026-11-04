@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FaceStack } from "./face-stack";
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
 
@@ -128,13 +129,13 @@ function Threats({ player, heroName, icons }: Art & { player: PlayerPlan }) {
           const answer = items.find((i) => i.itemId === row.answer);
           const key = row.enemies.map((e) => e.heroId).join("-");
           return (
-            <li key={key} className="grid grid-cols-[minmax(0,4rem)_minmax(0,1fr)_2.75rem] items-center gap-3.5 border-t border-line py-3.5">
-              <span className="flex flex-wrap gap-0.5">
-                {row.enemies.map((e) => (
-                  // The names are written beside the faces, so the faces carry no names of their own.
-                  <Face key={e.heroId} id={e.heroId} heroName={heroName} icons={icons} large={row.enemies.length === 1} decorative />
-                ))}
-              </span>
+            <li key={key} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.75rem] items-center gap-3.5 border-t border-line py-3.5">
+              {/* The names are written beside the faces, so the faces carry no names of their own. */}
+              {row.enemies.length === 1 ? (
+                <Face id={row.enemies[0].heroId} heroName={heroName} icons={icons} large decorative />
+              ) : (
+                <FaceStack icons={row.enemies.flatMap((e) => icons[e.heroId] ?? [])} />
+              )}
               <div className="min-w-0">
                 <b className="block text-[0.9375rem] font-semibold text-fg">
                   {row.enemies.map((e, i) => (

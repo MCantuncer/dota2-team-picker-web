@@ -7,7 +7,7 @@ import { StoryTimeline } from "./story-timeline";
 export interface GameStoryPanelProps {
   plan: GamePlan;
   heroName: (id: number) => string;
-  /** Square hero icons by hero id; heroes without one show their name only. */
+  /** Wide hero portraits (16:9) by hero id; heroes without one show their name only. */
   icons: Record<number, string>;
   /** Who plays each position (index 0 = pos 1), when known. */
   playerNames: (string | null)[];

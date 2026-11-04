@@ -102,16 +102,14 @@ const isDraft = (v: unknown): v is DraftEntry[] =>
 export function DraftBoard({
   player,
   portraits,
-  icons,
   signedIn,
   party,
   userId = null,
   stacks = NO_STACKS,
 }: {
   player: Player;
+  /** Wide hero portraits (16:9), for the board and the Game Story. */
   portraits: Record<number, string>;
-  /** Small square hero icons, for the game plan. */
-  icons: Record<number, string>;
   signedIn: boolean;
   party: PartyInfo | null;
   /** The signed-in player, for the Stack lineup. */
@@ -716,7 +714,7 @@ export function DraftBoard({
           heroName={(id) => hero(id).name}
           abilities={engine.data.heroAbilities}
           items={engine.data.items}
-          icons={icons}
+          icons={portraits}
           playerNames={POSITIONS.map((p) => {
             const member = planMembers.find((m) => m.position === p);
             return member ? (member.id === (party?.userId ?? userId) ? "You" : (planNames[member.id] ?? null)) : null;

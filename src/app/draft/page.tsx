@@ -82,11 +82,10 @@ export default async function DraftPage() {
   }
   const heroList = await heroesPromise;
   const portraits = Object.fromEntries(heroList.map((h) => [h.id, h.image]));
-  const icons = Object.fromEntries(heroList.map((h) => [h.id, h.icon]));
 
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
-      <DraftBoard player={player} portraits={portraits} icons={icons} signedIn={Boolean(user)} party={party} userId={user?.id ?? null} stacks={stacks} />
+      <DraftBoard player={player} portraits={portraits} signedIn={Boolean(user)} party={party} userId={user?.id ?? null} stacks={stacks} />
     </main>
   );
 }
