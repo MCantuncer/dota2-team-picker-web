@@ -19,7 +19,7 @@ const SLOT_LEFT = {
   radiant: [722, 886, 1050, 1215, 1380],
   dire: [1905, 2073, 2238, 2403, 2568],
 };
-const SLOT = { insetX: 12, w: 126, y: 12, h: 80 };
+const SLOT = { insetX: 8, w: 134, y: 16, h: 72 };
 
 /** The hero grid: four attribute blocks, heroes in name order, row by row. */
 const GRID_LEFT = { str: 618, agi: 1045, int: 1473, all: 1900 };

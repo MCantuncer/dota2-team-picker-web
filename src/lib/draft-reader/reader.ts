@@ -14,6 +14,8 @@ export interface SlotRead {
   heroId: number | null;
   /** True when something is in the slot but no hero matched well enough, such as persona art. */
   unsure: boolean;
+  /** The closest hero and how well it matched (1 is identical), for the watch log. */
+  best?: { heroId: number; score: number };
 }
 
 export interface DraftRead {
@@ -91,12 +93,13 @@ export class DraftReader {
       if (score > best) [second, best, bestRef] = [best, score, ref];
       else if (score > second) second = score;
     }
+    const closest = { heroId: bestRef.id, score: best };
     if (best >= SURE_MATCH && best - second >= SURE_MARGIN) {
       // A grey preview of a hero the player is still choosing: not picked yet.
-      if (colour < LOCKED_COLOUR * bestRef.colour) return { heroId: null, unsure: false };
-      return { heroId: bestRef.id, unsure: false };
+      if (colour < LOCKED_COLOUR * bestRef.colour) return { heroId: null, unsure: false, best: closest };
+      return { heroId: bestRef.id, unsure: false, best: closest };
     }
-    return { heroId: null, unsure: best >= EMPTY_BELOW };
+    return { heroId: null, unsure: best >= EMPTY_BELOW, best: closest };
   }
 
   private readBans(px: Pixels): number[] {
