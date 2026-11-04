@@ -1,7 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import { GameStoryPanel } from "./game-story-panel";
+import { sentence } from "./player-items";
 
 const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number; count?: number } = {}) => ({
   itemId,
@@ -33,14 +35,17 @@ const plan: GamePlan = {
         { heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage", answers: [], tip: "Don't focus them" },
         { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116] },
       ],
-      threatRows: [],
+      threatRows: [
+        { enemies: [{ heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage" }], tip: "Don't focus them" },
+        { enemies: [{ heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables" }], answer: 116 },
+      ],
       build: {
         timings: "rank",
         start: [item(44, "Tango", 0), item(16, "Iron Branch", 0, { count: 2 })],
         lane: [item(75, "Wraith Band", 2), item(36, "Magic Wand", 3)],
         core: [
-          item(50, "Phase Boots", 9),
-          item(116, "Black King Bar", 17, { reason: "Against Hero 8: buy it early", lateMinute: 20 }),
+          { ...item(50, "Phase Boots", 9), phase: "lane" as const },
+          { ...item(116, "Black King Bar", 17, { reason: "Against Hero 8: buy it early", lateMinute: 20 }), effect: "Spell immunity for the big fights.", against: [8] },
         ],
         bootsOr: item(63, "Power Treads", 8),
         situational: [{ ...item(145, "Monkey King Bar", 30), draft: true, replaces: 116 }],
@@ -97,52 +102,84 @@ describe("GameStoryPanel", () => {
     expect(screen.getByText("Group up and take towers before Hero 8's Blink Dagger.")).toBeInTheDocument();
   });
 
-  it("shows each item's minute and the minute after which a player is slower than most", () => {
-    renderPanel(1);
-    const carry = screen.getByRole("listitem", { name: "Hero 1, position 1" });
-    expect(within(carry).getByText(/Can/)).toBeInTheDocument();
-    expect(within(carry).getByText("Hard lane")).toBeInTheDocument();
-    expect(within(carry).getByText("17m")).toBeInTheDocument();
-    expect(within(carry).getByText("20m")).toBeInTheDocument();
-    expect(within(carry).getByTitle(/Black King Bar, usually by 17 min, slower than most after 20 min/)).toBeInTheDocument();
-    expect(within(carry).getByText("Against Hero 8: buy it early")).toBeInTheDocument();
-    expect(within(carry).getByText(/Lane lost\?/)).toBeInTheDocument();
-  });
-
-  it("shows start copies, lane minutes and the other boots", () => {
-    renderPanel(1);
-    const carry = screen.getByRole("listitem", { name: "Hero 1, position 1" });
-    expect(within(carry).getByAltText("2 Iron Branch")).toBeInTheDocument();
-    expect(within(carry).getByText("x2")).toBeInTheDocument();
-    expect(within(carry).getByTitle(/Wraith Band, usually by 2 min/)).toBeInTheDocument();
-    expect(within(carry).getByText(/Or Power Treads at/)).toBeInTheDocument();
-  });
-
-  it("lists who to watch, lane enemies first, with the items that answer them or a tip", () => {
-    renderPanel(1);
-    const carry = screen.getByRole("listitem", { name: "Hero 1, position 1" });
-    const watch = within(carry).getAllByRole("listitem").filter((li) => /Tank who|Stuns and/.test(li.textContent ?? ""));
-    expect(watch[0]).toHaveTextContent("Hero 9 Lane, guessed Tank who soaks your damage. Don't focus them.");
-    expect(watch[1]).toHaveTextContent("Hero 8 Stuns and disables. Buy Black King Bar.");
-    expect(within(carry).getByTitle(/Monkey King Bar.*instead of Black King Bar/)).toBeInTheDocument();
-  });
-
-  it("marks rough minutes when there are no real timings", () => {
-    renderPanel();
-    const mid = screen.getByRole("listitem", { name: "Hero 2, position 2" });
-    expect(within(mid).getByText("Core, rough minutes")).toBeInTheDocument();
-    expect(within(mid).getByText("~8m")).toBeInTheDocument();
-  });
-
-  it("puts the viewer's own card first and open, and folds the others", () => {
+  it("opens on the viewer's own hero and its Item Build, so the page starts with their items", () => {
     renderPanel(2);
-    const cards = screen.getAllByRole("listitem", { name: /position/ });
-    expect(cards[0]).toHaveAccessibleName("Hero 2, position 2");
-    expect(cards[0]!.querySelector("details")).toHaveAttribute("open");
-    expect(cards[1]!.querySelector("details")).not.toHaveAttribute("open");
+    const players = screen.getByRole("tablist", { name: "Players" });
+    const tabs = within(players).getAllByRole("tab");
+    expect(tabs[0]).toHaveTextContent("Hero 2");
+    expect(tabs[0]).toHaveTextContent("You");
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(within(screen.getByRole("tablist", { name: "Hero 2 view" })).getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
+    // The viewer's hero comes before the team's Story.
+    const order = screen.getByText("Item Journey").compareDocumentPosition(screen.getByText("The Team"));
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("shows Skills and Talents only on cards with a skill plan", () => {
+  it("shows each step's minute, the minute it is late after, and why it is in this game", () => {
+    renderPanel(1);
+    expect(screen.getByText("17 min, late after 20")).toBeInTheDocument();
+    expect(screen.getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
+    // Lane items are steps too, and the other boots sit under the boots.
+    expect(screen.getByText("Wraith Band")).toBeInTheDocument();
+    expect(screen.getByText(/Or Power Treads at/)).toBeInTheDocument();
+  });
+
+  it("keeps the viewer's hero open when their position arrives after the first render", () => {
+    const { rerender } = renderPanel();
+    rerender(<GameStoryPanel plan={plan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={["Can", null]} myPosition={2} />);
+    expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("shows the other boots once, under the core boots, and why an If Needed item replaces one", () => {
+    renderPanel(1);
+    expect(screen.getAllByText(/Or Power Treads at/)).toHaveLength(1);
+    expect(screen.getByText("Instead of Black King Bar.")).toBeInTheDocument();
+  });
+
+  it("shows start items as icons only, names on hover", () => {
+    renderPanel(1);
+    const start = screen.getByRole("list", { name: "Start items" });
+    expect(within(start).getByAltText("2 Iron Branch")).toBeInTheDocument();
+    expect(within(start).getByTitle("Tango")).toBeInTheDocument();
+    expect(within(start).queryByText("Tango")).toBeNull();
+  });
+
+  it("lists their threats with the item that answers them, or what to do", () => {
+    renderPanel(1);
+    const threats = within(screen.getByRole("complementary")).getAllByRole("listitem");
+    expect(threats[0]).toHaveTextContent("Hero 9 Lane, guessedTank who soaks your damage. Don't focus them.");
+    expect(threats[1]).toHaveTextContent("Hero 8Stuns and disables.Answer:");
+    expect(within(threats[1]!).getByAltText("Black King Bar")).toBeInTheDocument();
+  });
+
+  it("marks rough minutes when there are no real timings", async () => {
+    const user = userEvent.setup();
+    renderPanel(1);
+    await user.click(screen.getByRole("tab", { name: /Hero 2/ }));
+    expect(screen.getByText("~8 min")).toBeInTheDocument();
+    expect(screen.getByText("Rough minutes from all games")).toBeInTheDocument();
+  });
+
+  it("moves between players and views with the arrow keys", async () => {
+    const user = userEvent.setup();
+    renderPanel(1);
+    screen.getByRole("tab", { name: /Hero 1/ }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveFocus();
+  });
+
+  it("shows the lane, the job and the fallbacks under Game Story", async () => {
+    const user = userEvent.setup();
+    renderPanel(1);
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
+    expect(screen.getByText("Hard lane")).toBeInTheDocument();
+    expect(screen.getByText("Farm and carry the late game.")).toBeInTheDocument();
+    expect(screen.getByText(/Lane lost\?/)).toBeInTheDocument();
+  });
+
+  it("shows the skill plan under Skills and Talents, or says there is none", async () => {
+    const user = userEvent.setup();
     const skills = {
       levels: null,
       names: {},
@@ -152,12 +189,23 @@ describe("GameStoryPanel", () => {
     };
     const withSkills = { ...plan, players: plan.players.map((p, i) => (i === 0 ? { ...p, skills } : p)) };
     render(<GameStoryPanel plan={withSkills} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} />);
-    expect(screen.getAllByText("Skills and Talents")).toHaveLength(1);
+    await user.click(screen.getByRole("tab", { name: "Skills and Talents" }));
     expect(screen.getByText(skills.buildReason)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Hero 2/ }));
+    expect(screen.getByText("No skill data for this hero yet.")).toBeInTheDocument();
   });
 
   it("never cuts text off", () => {
     const { container } = renderPanel(1);
     expect(container.querySelector(".truncate, [class*='line-clamp'], [class*='text-ellipsis']")).toBeNull();
+  });
+});
+
+describe("sentence", () => {
+  it("ends a line with one period, and keeps a question or exclamation", () => {
+    expect(sentence("Against Hero 8: buy it early")).toBe("Against Hero 8: buy it early.");
+    expect(sentence("Spell immunity.")).toBe("Spell immunity.");
+    expect(sentence("Behind at 20?")).toBe("Behind at 20?");
+    expect(sentence("Fight now: ")).toBe("Fight now.");
   });
 });
