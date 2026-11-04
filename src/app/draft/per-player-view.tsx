@@ -98,7 +98,15 @@ function Column({
             top={i === 0}
             playerName={name}
             portrait={portrait(s.heroId, s.name)}
-            face={(id) => portrait(id, heroes.find((h) => h.id === id)?.name ?? "", "chip")}
+            face={(id) => {
+              const heroName = heroes.find((h) => h.id === id)?.name ?? "";
+              // The name on hover; screen readers get it from the row's line.
+              return (
+                <span title={heroName} className="block">
+                  {portrait(id, heroName, "chip")}
+                </span>
+              );
+            }}
             heroes={heroes}
             badges={
               <>
