@@ -6,6 +6,9 @@ import { useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
 import { RankMedal } from "@/components/rank-medal";
+import { bannerHero, StackBanner } from "@/components/stacks/stack-banner";
+import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
+import type { Seat } from "@/lib/stack-seats";
 import { createClient } from "@/lib/supabase/client";
 
 export interface StackSummary {
@@ -22,14 +25,6 @@ export interface StackSummary {
   myRequest: string | null;
 }
 
-export interface StackMember {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  role: "owner" | "co_captain" | "player";
-  rankTier: number | null;
-}
-
 /** Someone waiting for the owner or a Manager to let them in. */
 export interface JoinRequest {
   id: string;
@@ -41,86 +36,81 @@ export interface JoinRequest {
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
-const ROLE_LABEL: Record<StackMember["role"], string> = { owner: "Owner", co_captain: "Manager", player: "Player" };
-
-type Tab = "members" | "requests" | "activity";
-
-/** A Stack's page: who is in it, who wants in (for the owner and Managers) and its latest activity. */
+/**
+ * A Stack's page: its banner, the Lineup (for its players), who wants in (for the owner and Managers) and its
+ * latest activity.
+ */
 export function StackView({
   stack,
-  members,
+  seats,
+  art = {},
+  youId,
   requests: initialRequests,
 }: {
   stack: StackSummary;
-  members: StackMember[];
+  /** Its players; empty when you are not in it. */
+  seats: Seat[];
+  /** Hero names and portraits by id. */
+  art?: Record<number, HeroArt>;
+  youId: string;
   requests: JoinRequest[];
 }) {
   const runs = stack.myRole === "owner" || stack.myRole === "co_captain";
   const [requests, setRequests] = useState(initialRequests);
-  const [tab, setTab] = useState<Tab>(runs && initialRequests.length ? "requests" : "members");
   const [error, setError] = useState<string | null>(null);
-  const tabs: { id: Tab; label: string; count?: number }[] = [
-    { id: "members", label: "Members" },
-    ...(runs ? [{ id: "requests" as const, label: "Players Who Want to Join", count: requests.length }] : []),
-    { id: "activity", label: "Latest Activity" },
-  ];
-
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
-      <Link href="/stacks" className="btn btn-ghost btn-sm self-start text-muted">
+    <div className="flex max-w-6xl flex-col gap-8">
+      <Link href="/stacks" className="btn btn-ghost btn-sm -mb-4 self-start text-muted">
+        <Icon name="chevronLeft" />
         Back to Stacks
       </Link>
-      <header className="flex flex-wrap items-start gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <h1 className="page-title truncate">{stack.name}</h1>
-          <p className="text-sm text-muted">
-            Owned by {stack.ownerName} · <span className="num">{stack.members}</span>{" "}
-            {stack.members === 1 ? "player" : "players"} · <span className="num">{stack.games}</span>{" "}
-            {stack.games === 1 ? "game" : "games"} together in 2 weeks
-          </p>
-        </div>
-        <JoinControl stack={stack} onError={setError} />
-      </header>
+      <StackBanner
+        stack={stack}
+        seats={seats}
+        players={seats.length || stack.members}
+        hero={bannerHero(seats, youId, art)}
+        stackPage={false}
+        heading="h1"
+        actions={<JoinControl stack={stack} onError={setError} />}
+        onError={setError}
+      />
       {stack.myRole === "owner" && <OpenToggle stack={stack} onError={setError} />}
       {error && <p className="text-sm text-dire">{error}</p>}
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-1 border-b border-line" role="tablist" aria-label="Stack">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              id={`tab-${t.id}`}
-              role="tab"
-              aria-selected={tab === t.id}
-              aria-controls={`panel-${t.id}`}
-              onClick={() => setTab(t.id)}
-              className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium ${
-                tab === t.id ? "border-fg text-fg" : "border-transparent text-muted hover:text-fg"
-              }`}
-            >
-              {t.label}
-              {t.count ? (
-                <span className="num rounded-full bg-hover px-1.5 text-xs text-fg" aria-label={`${t.count} waiting`}>
-                  {t.count}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-          {tab === "members" && <Members stack={stack} members={members} />}
-          {tab === "requests" && (
-            <Requests
-              requests={requests}
-              onAnswered={(id) => setRequests((cur) => cur.filter((r) => r.id !== id))}
-              onError={setError}
-            />
-          )}
-          {tab === "activity" && (
-            <p className="text-sm text-muted">Games this Stack plays together will show up here.</p>
-          )}
-        </div>
-      </div>
+      {stack.myRole ? (
+        <StackLineup seats={seats} hero={(id) => art[id] ?? { name: `Hero ${id}` }} youId={youId} />
+      ) : (
+        <p className="flex items-center gap-2 text-sm text-muted">
+          <Icon name="shield" />
+          Only players in this Stack see who is in it.
+        </p>
+      )}
+
+      {runs && (
+        <section aria-labelledby="requests-heading" className="flex flex-col gap-3.5">
+          <h2 id="requests-heading" className="section-title flex items-center gap-2">
+            <Icon name="userPlus" />
+            Players Who Want to Join
+            {requests.length > 0 && (
+              <span className="chip chip-accent num" aria-label={`${requests.length} waiting`}>
+                {requests.length}
+              </span>
+            )}
+          </h2>
+          <Requests
+            requests={requests}
+            onAnswered={(id) => setRequests((cur) => cur.filter((r) => r.id !== id))}
+            onError={setError}
+          />
+        </section>
+      )}
+      <section aria-labelledby="activity-heading" className="flex flex-col gap-3.5">
+        <h2 id="activity-heading" className="section-title flex items-center gap-2">
+          <Icon name="clock" />
+          Latest Activity
+        </h2>
+        <p className="text-sm text-muted">Games this Stack plays together will show up here.</p>
+      </section>
     </div>
   );
 }
@@ -165,7 +155,8 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
 
   if (stack.myRole === "owner") {
     return (
-      <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary">
+      <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary btn-lg">
+        <Icon name="users" large />
         Manage Stack
       </Link>
     );
@@ -174,11 +165,12 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
     return (
       <div className="flex items-center gap-2">
         {stack.myRole === "co_captain" && (
-          <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary">
+          <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary btn-lg">
+            <Icon name="users" large />
             Manage Stack
           </Link>
         )}
-        <button onClick={leave} disabled={busy} className="btn btn-secondary">
+        <button onClick={leave} disabled={busy} className="btn btn-secondary btn-lg">
           Leave
         </button>
       </div>
@@ -188,7 +180,7 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
     return (
       <div className="flex items-center gap-2">
         <span className="text-sm text-subtle">Asked, waiting for the owner</span>
-        <button onClick={() => cancel(request)} disabled={busy} className="btn btn-secondary">
+        <button onClick={() => cancel(request)} disabled={busy} className="btn btn-secondary btn-lg">
           Cancel
         </button>
       </div>
@@ -196,8 +188,8 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
   }
   if (!stack.openToRequests) return null;
   return (
-    <button onClick={ask} disabled={busy} className="btn btn-primary">
-      <Icon name="userPlus" />
+    <button onClick={ask} disabled={busy} className="btn btn-primary btn-lg">
+      <Icon name="userPlus" large />
       Ask to Join
     </button>
   );
@@ -219,31 +211,13 @@ function OpenToggle({ stack, onError }: { stack: StackSummary; onError: (e: stri
   };
 
   return (
-    <label className="flex items-center gap-2 text-sm">
+    <label className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
       <input type="checkbox" checked={open} disabled={busy} onChange={(e) => toggle(e.target.checked)} />
       <span>Open to Requests</span>
       <span className="text-muted">
         {open ? "Anyone can find this Stack and ask to join." : "Hidden from Find a Stack."}
       </span>
     </label>
-  );
-}
-
-function Members({ stack, members }: { stack: StackSummary; members: StackMember[] }) {
-  if (!stack.myRole) {
-    return <p className="text-sm text-muted">Only players in this Stack see who is in it.</p>;
-  }
-  return (
-    <ul className="divide-y divide-line border-y border-line">
-      {members.map((m) => (
-        <li key={m.id} className="flex items-center gap-3 py-2.5">
-          <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: false }} size={32} />
-          <span className="min-w-0 flex-1 truncate font-medium text-fg">{m.name}</span>
-          {m.rankTier ? <RankMedal rankTier={m.rankTier} size={28} /> : null}
-          <span className="w-16 text-right text-xs text-muted">{ROLE_LABEL[m.role]}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

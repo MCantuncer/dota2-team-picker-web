@@ -84,16 +84,16 @@ test("a player finds an open Stack, asks to join, and the owner accepts", async 
   // The owner sees the request on the Stacks page and accepts it on the Stack page.
   await page.reload();
   await page.getByRole("link", { name: /Stack Page/ }).click();
-  await expect(page.getByRole("tab", { name: /Players Who Want to Join/ })).toHaveAttribute("aria-selected", "true");
+  const waiting = page.getByRole("region", { name: /Players Who Want to Join/ });
+  await expect(waiting).toBeVisible();
   await expectAccessible(page);
-  const asked = page.getByRole("tabpanel").getByRole("listitem").filter({ hasText: "Axe" });
+  const asked = waiting.getByRole("listitem").filter({ hasText: "Axe" });
   await asked.getByRole("button", { name: "Accept" }).click();
   await expect(asked).toHaveCount(0);
-  await page.getByRole("tab", { name: "Members" }).click();
-  await expect(page.getByRole("tabpanel").getByText("Axe")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Lineup" }).getByText("Axe")).toBeVisible();
 
   await stranger.reload();
   await expect(stranger.getByRole("button", { name: "Leave" })).toBeVisible();
-  await expect(stranger.getByRole("tabpanel").getByText("Lina")).toBeVisible();
+  await expect(stranger.getByRole("region", { name: "Lineup" }).getByText("Lina")).toBeVisible();
   await strangerContext.close();
 });

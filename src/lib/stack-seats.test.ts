@@ -43,6 +43,14 @@ describe("toSeats", () => {
     expect(seats[1].role).toBe("owner");
     expect(seats[3].shared).toBe(false);
   });
+
+  it("gives an owner who also has a member row one seat, as the owner", () => {
+    const seats = toSeats([person("can", "owner"), person("deniz"), person("can")], [], () => null);
+    expect(seats.map((s) => [s.id, s.role])).toEqual([
+      ["can", "owner"],
+      ["deniz", "player"],
+    ]);
+  });
 });
 
 describe("averageRankTier", () => {

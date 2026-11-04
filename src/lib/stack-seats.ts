@@ -55,7 +55,7 @@ export function mainPosition(positions: number[], heroes: Record<number, number[
 
 /**
  * The Stack's players in Lineup order: by main position 1 to 5, players without one last, in Stack order
- * otherwise. Heroes and positions come only from `pools` (what row level security lets you see).
+ * otherwise, each player once. Heroes and positions come only from `pools` (what row level security lets you see).
  */
 export function toSeats(
   people: StackPerson[],
@@ -63,7 +63,9 @@ export function toSeats(
   avatar: (url: string | null) => string | null,
 ): Seat[] {
   const shared = new Map(pools.map((p) => [p.user_id, p]));
-  const seats = people.map((m, i) => {
+  // The owner can also have a member row; they get one seat, as the owner (stack_members lists the owner first).
+  const unique = people.filter((m, i) => people.findIndex((o) => o.user_id === m.user_id) === i);
+  const seats = unique.map((m, i) => {
     const pool = shared.get(m.user_id);
     const heroes = heroesByPosition(pool?.favorites);
     const positions = (pool?.positions ?? []).filter(isPosition).sort((a, b) => a - b);

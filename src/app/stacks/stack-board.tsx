@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
 import { MemberList, type HeroFace } from "@/components/stacks/member-list";
-import { StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
+import { bannerHero, StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
 import { StackCrest } from "@/components/stacks/stack-crest";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
 import type { Seat } from "@/lib/stack-seats";
@@ -310,11 +310,4 @@ function CreateStack({ userId, compact = false }: { userId: string; compact?: bo
       {error && <span className="text-sm text-dire">{error}</span>}
     </form>
   );
-}
-
-/** The render behind the banner: the owner's top hero when you may see it, otherwise your own. */
-function bannerHero(seats: Seat[], userId: string, art: Record<number, HeroArt>) {
-  const pick = (s?: Seat) => (s?.heroes[0] ? art[s.heroes[0]] : undefined);
-  const hero = pick(seats.find((s) => s.role === "owner")) ?? pick(seats.find((s) => s.id === userId));
-  return hero?.image ? { name: hero.name, image: hero.image } : undefined;
 }
