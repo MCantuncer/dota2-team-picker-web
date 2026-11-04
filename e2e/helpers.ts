@@ -287,3 +287,35 @@ export async function fakeDotaWindow(page: Page) {
     };
   }, screenshot);
 }
+
+/**
+ * A Stack owned by a signed-up user, with players who never open the site: each gets an account
+ * with the given name, joins as a member and, if given, a favorite position. Returns the Stack id.
+ */
+export async function seedStack(ownerEmail: string, name: string, players: { name: string; position?: number; role?: "player" | "co_captain" }[]) {
+  const db = admin();
+  const { data: owner, error } = await db.rpc("user_id_by_email", { address: ownerEmail });
+  if (error) throw error;
+  if (!owner) throw new Error(`No user ${ownerEmail}`);
+  const { data: team, error: teamError } = await db.from("teams").insert({ owner_id: owner, name }).select("id").single();
+  if (teamError) throw teamError;
+  for (const p of players) {
+    const { data: created, error: userError } = await db.auth.admin.createUser({
+      email: uniqueEmail("stack-mate"),
+      password: PASSWORD,
+      email_confirm: true,
+    });
+    if (userError) throw userError;
+    const id = created.user.id;
+    const steps = [
+      db.from("profiles").update({ display_name: p.name }).eq("id", id),
+      db.from("team_members").insert({ team_id: team.id, user_id: id, role: p.role ?? "player" }),
+      ...(p.position ? [db.from("favorite_positions").insert({ user_id: id, position: p.position })] : []),
+    ];
+    for (const step of steps) {
+      const { error: stepError } = await step;
+      if (stepError) throw stepError;
+    }
+  }
+  return team.id;
+}
