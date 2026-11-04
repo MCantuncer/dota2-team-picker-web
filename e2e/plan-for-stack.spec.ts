@@ -36,11 +36,21 @@ test("a Stack owner plans a draft for Stack mates who aren't online", async ({ p
   await expect(lineup.getByRole("checkbox", { name: "Tusk" })).toBeChecked();
   await planFor.getByLabel("Plan For").selectOption({ label: "Just Me" });
   await expect(page.getByRole("button", { name: "Per Player" })).toHaveCount(0);
+
+  // Solo Queue and a Stack replace each other, and the last one chosen comes back on reload.
+  await planFor.getByLabel("Plan For").selectOption({ label: "Solo Queue" });
+  await expect(lineup).toHaveCount(0);
+  await planFor.getByLabel("Plan For").selectOption({ label: "Night Owls" });
+  await expect(lineup.getByRole("checkbox", { name: "You" })).toBeChecked();
+  await page.reload();
+  await expect(planFor.getByLabel("Plan For")).toHaveValue(/^(?!solo-queue$)/);
+  await expect(lineup.getByRole("checkbox", { name: "You" })).toBeChecked();
 });
 
-test("a player who doesn't run a Stack sees no Plan For", async ({ page }) => {
+test("a player who doesn't run a Stack gets only Just Me and Solo Queue in Plan For", async ({ page }) => {
   await signUp(page, uniqueEmail("plan-solo"), "Rubick");
   await page.goto("/draft");
   await expect(page.getByRole("heading", { name: "Draft", level: 1 })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Plan For" })).toHaveCount(0);
+  const options = page.getByRole("region", { name: "Plan For" }).getByLabel("Plan For").locator("option");
+  await expect(options).toHaveText(["Just Me", "Solo Queue"]);
 });

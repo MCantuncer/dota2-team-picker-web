@@ -1,13 +1,15 @@
 "use client";
 
 import type { Position } from "@/lib/engine/types";
+import { SOLO_QUEUE } from "@/lib/solo-queue";
 import { LINEUP_MAX, type LineupEntry, type LineupPerson } from "@/lib/stack-lineup";
 import { PositionPicker } from "./position-picker";
 import type { PlannableStack } from "./use-stack-lineup";
 
 /**
  * Plan For: pick a Stack you run, tick who plays this game (up to five, online or not) and where.
- * "Just Me" keeps the plain solo draft.
+ * "Just Me" keeps the plain solo draft. "Solo Queue" adds picks for the teammates you get, as if
+ * they can play any hero (`stackId` is SOLO_QUEUE then).
  */
 export function StackLineup({
   stacks,
@@ -29,6 +31,8 @@ export function StackLineup({
   onMove: (id: string, position: Position) => void;
 }) {
   const full = picks.length >= LINEUP_MAX;
+  const isSoloQueue = stackId === SOLO_QUEUE;
+  const isStack = Boolean(stackId) && !isSoloQueue;
   return (
     <section aria-label="Plan For" className="flex flex-col gap-3 border-b border-line pb-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -37,13 +41,17 @@ export function StackLineup({
         </label>
         <select id="plan-for" value={stackId} onChange={(e) => onChoose(e.target.value)} className="field btn-sm w-auto">
           <option value="">Just Me</option>
+          <option value={SOLO_QUEUE}>Solo Queue</option>
           {stacks.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}
         </select>
-        {stackId && (
+        {isSoloQueue && (
+          <span className="text-sm text-muted">Picks for every teammate too, ranked on this draft as if they can play any hero.</span>
+        )}
+        {isStack && (
           <span className="text-sm text-muted">
             Tick who plays this game, online or not. <span className="num">{picks.length}</span> of {LINEUP_MAX}.
           </span>
@@ -54,8 +62,8 @@ export function StackLineup({
           {notice}
         </p>
       )}
-      {stackId && !people && !notice && <p className="text-sm text-muted">Loading the Stack…</p>}
-      {stackId && people && (
+      {isStack && !people && !notice && <p className="text-sm text-muted">Loading the Stack…</p>}
+      {isStack && people && (
         <ul aria-label="Playing This Game" className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {people.map((p) => {
             const pick = picks.find((e) => e.id === p.id);
@@ -77,7 +85,7 @@ export function StackLineup({
           })}
         </ul>
       )}
-      {stackId && people && people.length < 2 && (
+      {isStack && people && people.length < 2 && (
         <p className="text-sm text-muted">Nobody else is in this Stack yet. Invite people from its Stack page.</p>
       )}
     </section>
