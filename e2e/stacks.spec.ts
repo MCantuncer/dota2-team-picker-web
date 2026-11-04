@@ -16,7 +16,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await expectAccessible(page);
   await page.getByPlaceholder("Stack name, e.g. Friday Five").fill("Night Owls");
   await page.getByRole("button", { name: "Create Stack" }).click();
-  await expect(page.getByLabel("Stack Name")).toHaveValue("Night Owls");
+  await expect(page.getByRole("heading", { name: "Night Owls", exact: true, level: 2 })).toBeVisible();
 
   // Inviting a friend waits for their answer.
   const invites = page.getByRole("region", { name: "Invite Friends" });
@@ -32,7 +32,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await expect(pal.getByRole("region", { name: "Stacks You Play In" }).getByText("Night Owls")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("region", { name: /^Members/ }).getByText("Tusk")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Lineup" }).getByText("Tusk")).toBeVisible();
 
   // The owner starts a party for the Stack and invites from it in one click.
   await page.goto("/party");
@@ -52,7 +52,7 @@ test("a player finds an open Stack, asks to join, and the owner accepts", async 
   await page.goto("/stacks");
   await page.getByPlaceholder("Stack name, e.g. Friday Five").fill(name);
   await page.getByRole("button", { name: "Create Stack" }).click();
-  await expect(page.getByLabel("Stack Name")).toHaveValue(name);
+  await expect(page.getByRole("heading", { name, exact: true, level: 2 })).toBeVisible();
 
   const strangerContext = await browser.newContext();
   const stranger = await strangerContext.newPage();
