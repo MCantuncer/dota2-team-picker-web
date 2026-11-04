@@ -7,6 +7,7 @@ import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
 import { MemberList, type HeroFace } from "@/components/stacks/member-list";
 import { StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
+import { StackCrest } from "@/components/stacks/stack-crest";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
 import type { Seat } from "@/lib/stack-seats";
 import type { FriendInvite, Invite, Member, StackRef } from "@/lib/stacks";
@@ -141,7 +142,7 @@ export function StackBoard({
                   seats={seats}
                   hero={bannerHero(seats, userId, art)}
                   waiting={waiting}
-                  inviteHref="#friend-invites-heading"
+                  inviteHref="#invite-heading"
                   onError={setError}
                 />
               )}
@@ -157,8 +158,15 @@ export function StackBoard({
                   }
                 />
               )}
-              <FriendInvites stackId={current.id} friends={friends} members={members} initial={friendInvites} onError={setError} />
-              <EmailInvites stackId={current.id} initial={emailInvites} onError={setError} />
+              <section aria-labelledby="invite-heading" className="flex flex-col gap-3.5">
+                <h2 id="invite-heading" className="section-title">
+                  Invite Players
+                </h2>
+                <div className="grid grid-cols-1 divide-line rounded-md ring-1 ring-inset ring-line max-md:divide-y md:grid-cols-2 md:divide-x">
+                  <FriendInvites stackId={current.id} friends={friends} members={members} initial={friendInvites} onError={setError} />
+                  <EmailInvites stackId={current.id} initial={emailInvites} onError={setError} />
+                </div>
+              </section>
               {(allHeroes || !seats.length) && (
                 <MemberList
                   members={members}
@@ -172,18 +180,22 @@ export function StackBoard({
           )}
 
           {joined.length > 0 && (
-            <section aria-labelledby="joined-heading" className="flex flex-col gap-2">
-              <h2 id="joined-heading" className="text-lg font-semibold">
+            <section aria-labelledby="joined-heading" className="flex flex-col gap-3.5">
+              <h2 id="joined-heading" className="section-title">
                 Stacks You Play In
               </h2>
-              <ul className="divide-y divide-line border-y border-line">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {joined.map((s) => (
-                  <li key={s.id} className="flex items-center gap-3 py-2.5">
+                  <li key={s.id} className="flex items-center gap-3 rounded-md bg-surface p-3 ring-1 ring-inset ring-line">
+                    <StackCrest name={s.name} />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <Link href={`/stacks/${s.id}`} className="truncate font-medium text-fg hover:underline">
+                      <Link href={`/stacks/${s.id}`} className="truncate font-semibold text-fg hover:underline">
                         {s.name}
                       </Link>
-                      <span className="text-xs text-muted">Owned by {s.ownerName}</span>
+                      <span className="flex items-center gap-1 text-sm text-subtle">
+                        <Icon name="crown" />
+                        <span className="truncate">{s.ownerName}</span>
+                      </span>
                     </span>
                     <button onClick={() => leave(s)} className="btn btn-secondary btn-sm">
                       Leave

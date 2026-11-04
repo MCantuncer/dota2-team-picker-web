@@ -17,7 +17,11 @@ describe("FindStacks", () => {
   it("lists Hot Stacks with their games together", () => {
     render(<FindStacks hot={[owls]} all={[]} mine={[]} requests={{}} />);
     const hot = screen.getByRole("region", { name: "Hot Stacks" });
-    expect(within(hot).getByRole("listitem")).toHaveTextContent("Ana · 4 players · 6 games together in 2 weeks");
+    const card = within(hot).getByRole("listitem");
+    expect(card).toHaveTextContent("Hot");
+    expect(card).toHaveTextContent("Ana");
+    expect(card).toHaveTextContent("4 Players");
+    expect(card).toHaveTextContent("6 Games in 2 Weeks");
   });
 
   it("asks to join and can take the request back", async () => {
