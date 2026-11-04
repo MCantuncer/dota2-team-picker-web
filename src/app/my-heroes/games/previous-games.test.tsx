@@ -15,7 +15,7 @@ const game = (over: Partial<GameRow> = {}): GameRow => ({
   deaths: 2,
   assists: 7,
   goldPerMin: 712,
-  note: { tone: "problem", text: "2 deaths before 10 minutes" },
+  note: { kind: "early_deaths", tone: "problem", text: "2 deaths before 10 minutes" },
   ...over,
 });
 const heroes = new Map([

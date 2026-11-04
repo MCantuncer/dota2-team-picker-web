@@ -12,7 +12,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   summary: { card: { kills: 9, deaths: 2, assists: 7, goldPerMin: 712.4 } },
   findings: [
     { tone: "strength", headline: "Strong farm" },
-    { tone: "problem", headline: "2 deaths before 10 minutes" },
+    { kind: "early_deaths", tone: "problem", headline: "2 deaths before 10 minutes" },
   ],
   ...over,
 });
@@ -31,8 +31,13 @@ describe("readGameRow", () => {
       deaths: 2,
       assists: 7,
       goldPerMin: 712,
-      note: { tone: "problem", text: "2 deaths before 10 minutes" },
+      note: { kind: "early_deaths", tone: "problem", text: "2 deaths before 10 minutes" },
     });
+  });
+
+  it("leaves out a kind it doesn't know", () => {
+    const g = readGameRow(row({ findings: [{ kind: "new_kind", tone: "problem", headline: "Something" }] }));
+    expect(g?.note).toEqual({ kind: null, tone: "problem", text: "Something" });
   });
 
   it("shows what it can from a row without a summary or findings", () => {

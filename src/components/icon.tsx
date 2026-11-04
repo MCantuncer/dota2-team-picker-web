@@ -144,17 +144,80 @@ const PATHS = {
       <path d="M12 17h.01" />
     </>
   ),
+  /** Deaths, in game feedback. */
+  skull: (
+    <>
+      <path d="m12.5 17-.5-1-.5 1h1z" />
+      <path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="9" cy="12" r="1" />
+    </>
+  ),
+  /** Farm (gold and last hits), in game feedback. */
+  coins: (
+    <>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+      <path d="M7 6h1v4" />
+      <path d="m16.71 13.88.7.71-2.82 2.82" />
+    </>
+  ),
+  /** Towers and buildings. */
+  castle: (
+    <>
+      <path d="M10 5V3" />
+      <path d="M14 5V3" />
+      <path d="M15 21v-3a3 3 0 0 0-6 0v3" />
+      <path d="M18 3v8" />
+      <path d="M18 5H6" />
+      <path d="M22 11H2" />
+      <path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9" />
+      <path d="M6 3v8" />
+    </>
+  ),
+  /** Healing, in game feedback. */
+  heart: (
+    <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+  ),
+  /** Better than last week. */
+  trendUp: (
+    <>
+      <path d="M16 7h6v6" />
+      <path d="m22 7-8.5 8.5-5-5L2 17" />
+    </>
+  ),
+  chevronRight: <path d="m9 18 6-6-6-6" />,
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  external: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3" />
+    </>
+  ),
+  /** Your Games: a bar chart. */
+  chart: (
+    <>
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="M18 17V9" />
+      <path d="M13 17V5" />
+      <path d="M8 17v-3" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;
 
-/** A 16px outline icon in the current text colour. Decorative: the button's label carries the meaning. */
-export function Icon({ name }: { name: IconName }) {
+/**
+ * An outline icon in the current text colour: 16px, or 20px (`large`) in icon tiles and large buttons. Decorative:
+ * the label next to it carries the meaning.
+ */
+export function Icon({ name, large = false }: { name: IconName; large?: boolean }) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden
-      className="size-4 shrink-0"
+      className={`${large ? "size-5" : "size-4"} shrink-0`}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.75}

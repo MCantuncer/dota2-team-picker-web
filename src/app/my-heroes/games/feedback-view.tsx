@@ -1,4 +1,6 @@
+import { Icon } from "@/components/icon";
 import type { Finding, PlayerFeedback } from "@/lib/player-feedback";
+import { FindingIcon } from "./finding-icon";
 
 /** Games a strength or problem needs behind it (backend MIN_TREND_GAMES). */
 export const MIN_GAMES = 4;
@@ -34,7 +36,10 @@ export function FeedbackView({ feedback }: { feedback: PlayerFeedback }) {
           </h2>
           <ul className="flex flex-wrap gap-2">
             {feedback.improved.map((i) => (
-              <li key={i.kind} className="rounded-sm bg-radiant-tint px-2.5 py-1 text-sm text-fg">
+              <li key={i.kind} className="flex items-center gap-1.5 rounded-sm bg-radiant-tint px-2.5 py-1 text-sm text-fg">
+                <span className="text-radiant">
+                  <Icon name="trendUp" />
+                </span>
                 {i.headline}: gone this week
               </li>
             ))}
@@ -82,35 +87,38 @@ function FindingList({ id, title, tone, findings }: { id: string; title: string;
 export function FindingCard({ finding, open = false }: { finding: Finding; open?: boolean }) {
   const isProblem = finding.tone === "problem";
   return (
-    <article className={`card flex flex-col gap-2 border-l-2 p-4 ${isProblem ? "border-l-dire" : "border-l-radiant"}`}>
-      <h3 className="text-base font-semibold text-fg">{finding.headline}</h3>
-      {finding.pattern && <p className="text-sm text-muted">{finding.pattern}</p>}
-      <details className="group text-sm" open={open}>
-        <summary className="link w-fit cursor-pointer">Show Details</summary>
-        <div className="mt-3 flex flex-col gap-3">
-          {finding.happened.length > 0 && (
-            <Part title="What Happened">
-              <ul className="flex flex-col gap-1">
-                {finding.happened.map((line, i) => (
-                  <li key={i} className="num text-muted">
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            </Part>
-          )}
-          {finding.cost && (
-            <Part title={isProblem ? "What It Cost" : "What It Gave You"}>
-              <p className="text-muted">{finding.cost}</p>
-            </Part>
-          )}
-          {finding.change && (
-            <Part title="What to Change">
-              <p className="text-fg">{finding.change}</p>
-            </Part>
-          )}
-        </div>
-      </details>
+    <article className={`card flex gap-3.5 p-4 ${isProblem ? "border-line-strong" : ""}`}>
+      <FindingIcon kind={finding.kind} tone={finding.tone} tile />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <h3 className="text-base font-semibold text-fg">{finding.headline}</h3>
+        {finding.pattern && <p className="text-sm text-muted">{finding.pattern}</p>}
+        <details className="group text-sm" open={open}>
+          <summary className="link w-fit cursor-pointer">Show Details</summary>
+          <div className="mt-3 flex flex-col gap-3">
+            {finding.happened.length > 0 && (
+              <Part title="What Happened">
+                <ul className="flex flex-col gap-1">
+                  {finding.happened.map((line, i) => (
+                    <li key={i} className="num text-muted">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </Part>
+            )}
+            {finding.cost && (
+              <Part title={isProblem ? "What It Cost" : "What It Gave You"}>
+                <p className="text-muted">{finding.cost}</p>
+              </Part>
+            )}
+            {finding.change && (
+              <Part title="What to Change">
+                <p className="text-fg">{finding.change}</p>
+              </Part>
+            )}
+          </div>
+        </details>
+      </div>
     </article>
   );
 }
