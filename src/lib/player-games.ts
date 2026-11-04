@@ -4,7 +4,11 @@
  * is checked here field by field, so an odd or older row shows what it can instead of breaking.
  */
 
+import type { FindingKind } from "./player-feedback";
+
 export const GAMES_PER_PAGE = 20;
+const KINDS: FindingKind[] = ["early_deaths", "deaths", "laning", "farm", "damage", "healing", "towers"];
+
 /** The columns the list reads. */
 export const PLAYER_GAMES_SELECT = "match_id, hero_id, position, is_win, started_at, duration_s, status, summary, findings";
 
@@ -23,7 +27,7 @@ export interface GameRow {
   assists: number | null;
   goldPerMin: number | null;
   /** The game's strongest point in a few words, when one stood out. */
-  note: { tone: "strength" | "problem"; text: string } | null;
+  note: { kind: FindingKind | null; tone: "strength" | "problem"; text: string } | null;
 }
 
 export interface GameFilters {
@@ -68,12 +72,14 @@ export function readGameRow(row: unknown): GameRow | null {
 function noteOf(findings: unknown): GameRow["note"] {
   if (!Array.isArray(findings)) return null;
   const valid = findings.filter(
-    (f): f is { tone: "strength" | "problem"; headline: string } =>
+    (f): f is { kind?: unknown; tone: "strength" | "problem"; headline: string } =>
       isObj(f) && (f.tone === "strength" || f.tone === "problem") && typeof f.headline === "string" && f.headline !== "",
   );
   // A problem is what the player most needs to see on a row.
   const pick = valid.find((f) => f.tone === "problem") ?? valid[0];
-  return pick ? { tone: pick.tone, text: pick.headline } : null;
+  if (!pick) return null;
+  const kind = KINDS.includes(pick.kind as FindingKind) ? (pick.kind as FindingKind) : null;
+  return { kind, tone: pick.tone, text: pick.headline };
 }
 
 /** Filters from the page's search params; anything odd is ignored. */

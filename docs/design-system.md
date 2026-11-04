@@ -127,6 +127,10 @@ or class in its own small PR, then use it.
 - **Why rows** (Per Player cards): one raised row per reason. It leads with the 40x22 portraits of the heroes it names
   (up to three, overlapping, then a +N badge), or a 40x22 `hover` tile with the score part's icon in `radiant` (`warn` for Watch Out), then the part
   in `.micro`, the line, and its points in `.num` on the right.
+- **Finding icons** (`FindingIcon`, Your Games): one icon per kind of strength or problem, the same everywhere: skull
+  for deaths, coins for farm, swords for laning, flame for damage, heart for healing, castle for towers. On cards a
+  40px `radiant-tint` or `dire-tint` tile with the 20px icon in `radiant` or `dire`; on list rows the bare 16px icon in
+  that colour before the line.
 - **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
   bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
   Support (5). The tile takes the text colour: copper when selected, `subtle` otherwise. Always next to the position name.

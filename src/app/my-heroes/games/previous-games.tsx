@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FindingIcon } from "./finding-icon";
 import { filterQuery, type GameFilters, gameLength, type GameRow, GAMES_PER_PAGE } from "@/lib/player-games";
 
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
@@ -148,7 +149,10 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
       </span>
       <span className="min-w-0 flex-1 text-sm">
         {game.note ? (
-          <span className={game.note.tone === "problem" ? "text-dire" : "text-radiant"}>{game.note.text}</span>
+          <span className={`flex items-center gap-2 ${game.note.tone === "problem" ? "text-dire" : "text-radiant"}`}>
+            <FindingIcon kind={game.note.kind} tone={game.note.tone} />
+            {game.note.text}
+          </span>
         ) : status ? (
           <span className="text-subtle">{status}</span>
         ) : (
