@@ -33,7 +33,7 @@ const plan: GamePlan = {
       fallbacks: ["Lane lost? Leave the lane at 5 to 6 min for the jungle."],
       enemies: [
         { heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage", answers: [], tip: "Don't focus them" },
-        { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116] },
+        { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116], spell: { key: "lion_voodoo", name: "Hex", line: "No spells, no items", kind: "magic" } },
       ],
       threatRows: [
         { enemies: [{ heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage" }], tip: "Don't focus them" },
@@ -144,11 +144,11 @@ describe("GameStoryPanel", () => {
     expect(within(start).queryByText("Tango")).toBeNull();
   });
 
-  it("lists their threats with the item that answers them, or what to do", () => {
+  it("lists each enemy by their worst spell, with the item that answers it, or what to do", () => {
     renderPanel(1);
     const threats = within(screen.getByRole("complementary")).getAllByRole("listitem");
     expect(threats[0]).toHaveTextContent("Hero 9 Lane, guessedTank who soaks your damage. Don't focus them.");
-    expect(threats[1]).toHaveTextContent("Hero 8Stuns and disables.Answer:");
+    expect(threats[1]).toHaveTextContent("Hex Hero 8No spells, no items.Answer:");
     expect(within(threats[1]!).getByAltText("Black King Bar")).toBeInTheDocument();
   });
 
