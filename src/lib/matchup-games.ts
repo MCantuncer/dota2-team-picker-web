@@ -19,6 +19,10 @@ export interface MatchupAnswer {
   slices: { hero: number; games: MatchupGame[] }[];
   pending?: { hero: number }[];
   reasons?: string[];
+  /** With the reason "stratz-busy": when asking again may fill the pending slices (ISO time). */
+  retryAt?: string;
+  /** The same as seconds from the answer, preferred: it doesn't depend on this browser's clock. */
+  retryIn?: number;
 }
 
 /** The games by hero id, a hero's null when its lookup didn't finish, or "sign-in" for a signed-out viewer. */
@@ -59,4 +63,23 @@ export function gamesByHero(request: MatchupRequest, answer: MatchupAnswer): Rec
  */
 export function worthRetrying(answer: MatchupAnswer): boolean {
   return Boolean(answer.pending?.length) && (answer.reasons ?? []).includes("fetching-elsewhere");
+}
+
+/** Asking again after STRATZ was busy waits at least this long, so a time already past doesn't loop. */
+export const MIN_BUSY_WAIT_MS = 5_000;
+/** A busy time further out than this isn't waited for: the viewer has likely moved on. */
+export const MAX_BUSY_WAIT_MS = 30 * 60 * 1000;
+
+/**
+ * How long to wait before asking again when STRATZ was busy (the data refresh was using it, or it
+ * refused a call), or null when that isn't why slices are pending or the time is too far out.
+ */
+export function busyRetryIn(answer: MatchupAnswer, now: number): number | null {
+  if (!answer.pending?.length || !(answer.reasons ?? []).includes("stratz-busy")) return null;
+  const wait =
+    typeof answer.retryIn === "number" && Number.isFinite(answer.retryIn)
+      ? answer.retryIn * 1000
+      : (answer.retryAt ? Date.parse(answer.retryAt) : NaN) - now;
+  if (!Number.isFinite(wait) || wait > MAX_BUSY_WAIT_MS) return null;
+  return Math.max(wait, MIN_BUSY_WAIT_MS);
 }

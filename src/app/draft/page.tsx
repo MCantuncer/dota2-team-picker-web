@@ -4,6 +4,7 @@ import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
+import type { PlannableStack } from "./use-stack-lineup";
 
 export const metadata: Metadata = { title: "Draft · Dota 2 Team Picker" };
 
@@ -21,6 +22,8 @@ export default async function DraftPage() {
   const heroesPromise = getHeroes().catch(() => []);
   let player: Player = { heroes: {}, positions: [], rank: null, personal: {} };
   let party: PartyInfo | null = null;
+  // Stacks the player runs (owner or Manager), to plan a draft for out of a party.
+  let stacks: PlannableStack[] = [];
   if (user) {
     const [
       { data: positions, error: posError },
@@ -50,6 +53,23 @@ export default async function DraftPage() {
       };
     }
 
+    if (!party) {
+      const [owned, managed] = await Promise.all([
+        supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
+        supabase.from("team_members").select("teams(id, name)").eq("user_id", user.id).eq("role", "co_captain"),
+      ]);
+      // Plan For is an extra: without it the solo draft still works.
+      if (owned.error ?? managed.error) console.error("Draft Stacks:", (owned.error ?? managed.error)!.message);
+      else
+        stacks = [
+          ...(owned.data ?? []),
+          // One team per membership row (teams.id is the key), typed loosely by the client.
+          ...(managed.data ?? [])
+            .map((m) => m.teams as unknown as PlannableStack | null)
+            .filter((t): t is PlannableStack => t !== null),
+        ];
+    }
+
     const heroes: Record<number, number[]> = {};
     for (const f of favorites ?? []) (heroes[f.position] ??= []).push(f.hero_id);
     player = {
@@ -66,7 +86,7 @@ export default async function DraftPage() {
 
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
-      <DraftBoard player={player} portraits={portraits} icons={icons} signedIn={Boolean(user)} party={party} />
+      <DraftBoard player={player} portraits={portraits} icons={icons} signedIn={Boolean(user)} party={party} userId={user?.id ?? null} stacks={stacks} />
     </main>
   );
 }

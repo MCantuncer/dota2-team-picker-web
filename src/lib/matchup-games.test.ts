@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SkillBuildSlice } from "@/lib/engine/types";
-import { gamesByHero, matchupRequest, worthRetrying } from "@/lib/matchup-games";
+import { busyRetryIn, gamesByHero, matchupRequest, MAX_BUSY_WAIT_MS, MIN_BUSY_WAIT_MS, worthRetrying } from "@/lib/matchup-games";
 
 const slice = (gameVersionId: number): SkillBuildSlice => ({ at: "2026-11-01T00:00:00Z", gameVersionId, matches: 50, talents: [] });
 const snapshot = { skillBuilds: { 18: { 3: slice(183) }, 1: { 1: slice(184) } } };
@@ -43,5 +43,31 @@ describe("worthRetrying", () => {
     expect(worthRetrying({ slices: [], pending: [{ hero: 1 }], reasons: ["time"] })).toBe(false);
     expect(worthRetrying({ slices: [], pending: [{ hero: 1 }], reasons: ["user-limit"] })).toBe(false);
     expect(worthRetrying({ slices: [], pending: [], reasons: ["fetching-elsewhere"] })).toBe(false);
+  });
+});
+
+describe("busyRetryIn", () => {
+  const now = Date.parse("2026-11-04T14:30:00Z");
+  const busy = (retryAt?: string) => ({ slices: [], pending: [{ hero: 1 }], reasons: ["stratz-busy"], retryAt });
+
+  it("waits until the time the answer gives", () => {
+    expect(busyRetryIn(busy("2026-11-04T14:45:00Z"), now)).toBe(15 * 60 * 1000);
+  });
+
+  it("prefers retryIn, which doesn't depend on this browser's clock", () => {
+    // retryAt says 15 minutes on this clock, but the server says 2.
+    expect(busyRetryIn({ ...busy("2026-11-04T14:45:00Z"), retryIn: 120 }, now)).toBe(120_000);
+    expect(busyRetryIn({ ...busy(), retryIn: 3600 }, now)).toBeNull();
+  });
+
+  it("waits a little for a time already past", () => {
+    expect(busyRetryIn(busy("2026-11-04T14:00:00Z"), now)).toBe(MIN_BUSY_WAIT_MS);
+  });
+
+  it("doesn't wait for a time too far out, a missing time or another reason", () => {
+    expect(busyRetryIn(busy(new Date(now + MAX_BUSY_WAIT_MS + 1).toISOString()), now)).toBeNull();
+    expect(busyRetryIn(busy(), now)).toBeNull();
+    expect(busyRetryIn({ ...busy("2026-11-04T14:45:00Z"), reasons: ["time"] }, now)).toBeNull();
+    expect(busyRetryIn({ ...busy("2026-11-04T14:45:00Z"), pending: [] }, now)).toBeNull();
   });
 });

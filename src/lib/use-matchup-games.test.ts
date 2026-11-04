@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MatchupRequest } from "@/lib/matchup-games";
-import { RETRY_MS, SETTLE_MS, useMatchupGames } from "@/lib/use-matchup-games";
+import { BUSY_RETRIES, RETRY_MS, SETTLE_MS, useMatchupGames } from "@/lib/use-matchup-games";
 
 let sessionUser: { user: { id: string } } | null = { user: { id: "u" } };
 const invoke = vi.fn();
@@ -112,6 +112,76 @@ describe("useMatchupGames", () => {
     await settle(RETRY_MS);
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(result.current).toBeUndefined();
+  });
+
+  it("shows what it has while STRATZ is busy, then asks again at the time given", async () => {
+    const busy = () => ({
+      data: { slices: [], pending: [{ hero: 1 }], reasons: ["stratz-busy"], retryAt: new Date(Date.now() + 60_000).toISOString() },
+      error: null,
+    });
+    invoke.mockImplementationOnce(() => Promise.resolve(busy())).mockResolvedValueOnce({ data: { slices: [{ hero: 1, games: [game] }] }, error: null });
+    const { result } = renderHook(() => useMatchupGames(request));
+    await settle();
+    expect(result.current).toMatchObject({ 1: null, 2: [] });
+    await settle(59_000);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    await settle(1_000);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(result.current).toMatchObject({ 1: [game] });
+  });
+
+  const busyAnswer = (retryIn?: number) => ({
+    data: { slices: [{ hero: 2, games: [game] }], pending: [{ hero: 1 }], reasons: ["stratz-busy"], retryIn },
+    error: null,
+  });
+
+  it("stops asking after a few busy answers", async () => {
+    invoke.mockImplementation(() => Promise.resolve(busyAnswer(60)));
+    renderHook(() => useMatchupGames(request));
+    await settle();
+    for (let i = 0; i < BUSY_RETRIES + 2; i++) await settle(60_000);
+    expect(invoke).toHaveBeenCalledTimes(1 + BUSY_RETRIES);
+  });
+
+  it("doesn't ask again when the card goes away or the draft changes before the retry", async () => {
+    invoke.mockImplementation(() => Promise.resolve(busyAnswer(60)));
+    const { unmount } = renderHook(() => useMatchupGames(request));
+    await settle();
+    unmount();
+    await settle(60_000);
+    expect(invoke).toHaveBeenCalledTimes(1);
+
+    invoke.mockClear();
+    const other = { ...request, theirs: [6, 7, 8, 9, 11] };
+    const { rerender } = renderHook(({ r }) => useMatchupGames(r), { initialProps: { r: request } });
+    await settle();
+    rerender({ r: other });
+    await settle();
+    await settle(60_000);
+    // The first draft, the second, and the second's own retry: never the first's retry.
+    // The invoke mock is untyped; the hook always sends { body: request }.
+    expect(invoke.mock.calls.map((c) => (c[1] as { body: MatchupRequest }).body.theirs.at(-1))).toEqual([10, 11, 11]);
+  });
+
+  it("keeps the games already shown when a retry fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    invoke.mockResolvedValueOnce(busyAnswer(60)).mockResolvedValueOnce({ data: null, error: httpError(500) });
+    const { result } = renderHook(() => useMatchupGames(request));
+    await settle();
+    await settle(60_000);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(result.current).toMatchObject({ 1: null, 2: [game] });
+  });
+
+  it("doesn't ask again for a busy answer with no time, or one too far out", async () => {
+    for (const retryIn of [undefined, 3600]) {
+      invoke.mockReset().mockResolvedValue(busyAnswer(retryIn));
+      const { unmount } = renderHook(() => useMatchupGames(request));
+      await settle();
+      await settle(61 * 60_000);
+      expect(invoke).toHaveBeenCalledTimes(1);
+      unmount();
+    }
   });
 
   it("is null without a finished draft", () => {
