@@ -219,7 +219,7 @@ function HeroCard({
       <div id={panelId} hidden={!open} className="@container px-2 pb-4">
         {open && (
           <>
-            <div className="grid gap-x-6 gap-y-4 pl-[4.75rem] @lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+            <div className="grid gap-x-6 gap-y-4 sm:pl-[4.75rem] @lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs text-subtle">Why</h4>
                 <ul className="flex flex-col gap-1">
@@ -239,13 +239,16 @@ function HeroCard({
               </div>
               <ScoreParts breakdown={s.breakdown} place={s.place} />
             </div>
-            <div className="mt-4 flex gap-1.5 pl-[4.75rem]">{actions(false)}</div>
+            <div className="mt-4 flex gap-1.5 sm:pl-[4.75rem]">{actions(false)}</div>
           </>
         )}
       </div>
     </li>
   );
 }
+
+/** Faces shown on a Why row; the line still names every hero. */
+const MAX_FACES = 3;
 
 const KIND_ICONS: Record<ReasonKind, IconName> = {
   Counters: "swords",
@@ -264,21 +267,33 @@ const KIND_ICONS: Record<ReasonKind, IconName> = {
  * the line, and its points on the right. A warning row is amber.
  */
 function Reason({ row, face }: { row: ReturnType<typeof reasonRow>; face: (heroId: number) => ReactNode }) {
-  const faces = row.heroIds.slice(0, 2);
+  const faces = row.heroIds.slice(0, MAX_FACES);
+  const more = row.heroIds.length - faces.length;
   return (
     <li
-      className={`grid grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-sm py-1.5 pl-1.5 pr-3 ${
+      className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-sm py-1.5 pl-1.5 pr-3 ${
         row.warn ? "bg-warn-tint" : "bg-raised"
       }`}
     >
       {faces.length ? (
-        // Two named heroes overlap, so every row's text starts at the same place.
-        <span className="flex w-[3.75rem]">
+        // Named heroes overlap like a stack, so every row's text starts at the same place; past three, a +N badge.
+        <span className="relative flex w-[5.5rem]">
           {faces.map((id, n) => (
-            <span key={id} className={n ? "-ml-5 rounded-xs ring-2 ring-raised" : ""}>
+            <span
+              key={id}
+              className={n ? `-ml-4 rounded-xs ring-2 ${row.warn ? "ring-warn-tint" : "ring-raised"}` : ""}
+            >
               {face(id)}
             </span>
           ))}
+          {more > 0 && (
+            <span
+              className="micro absolute -bottom-1 -right-1 rounded-xs bg-hover-strong px-1 text-fg"
+              title={`${more} more`}
+            >
+              +{more}
+            </span>
+          )}
         </span>
       ) : (
         <span

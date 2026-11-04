@@ -125,7 +125,7 @@ or class in its own small PR, then use it.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
 - **Why rows** (Per Player cards): one raised row per reason. It leads with the 40x22 portraits of the heroes it names
-  (two overlap), or a 40x22 `hover` tile with the score part's icon in `radiant` (`warn` for Watch Out), then the part
+  (up to three, overlapping, then a +N badge), or a 40x22 `hover` tile with the score part's icon in `radiant` (`warn` for Watch Out), then the part
   in `.micro`, the line, and its points in `.num` on the right.
 - **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
   bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
