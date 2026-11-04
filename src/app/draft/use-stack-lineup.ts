@@ -76,9 +76,18 @@ export function useStackLineup(userId: string | null, stacks: PlannableStack[]) 
   useEffect(() => {
     if (!userId) return;
     const saved = read(userId);
+    // "Draft for <Stack>" on the Stacks page opens /draft?stack=<id>: plan for that Stack unless it is already the saved one.
+    const wanted = new URLSearchParams(window.location.search).get("stack");
+    if (wanted && wanted !== saved?.stackId && stacks.some((s) => s.id === wanted)) {
+      tickMe.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStackId(wanted);
+      setPicks([]);
+      setRestored(true);
+      return;
+    }
     const id = saved && stacks.some((s) => s.id === saved.stackId) ? saved.stackId : "";
     // Reading browser storage after mount is the one way to restore it without a server mismatch.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStackId(id);
     setPicks(id ? saved!.picks : []);
     setRestored(true);

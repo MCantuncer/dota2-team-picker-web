@@ -40,6 +40,16 @@ describe("useStackLineup", () => {
     expect(result.current.people!.map((p) => p.name)).toEqual(["You", "Tusk"]);
   });
 
+  it("plans for the Stack named in the address, from Draft for <Stack>", async () => {
+    window.history.replaceState(null, "", "/draft?stack=s1");
+    respond([member("me", "Mirana", "owner")], [stats("me", [2])]);
+    const { result } = renderHook(() => useStackLineup("me", stacks));
+    await waitFor(() => expect(result.current.plan).not.toBeNull());
+    expect(result.current.stackId).toBe("s1");
+    expect(result.current.picks).toEqual([{ id: "me", position: 2 }]);
+    window.history.replaceState(null, "", "/");
+  });
+
   it("shows people whose heroes aren't shared, but they can't play", async () => {
     // A Manager: the owner is in the Stack but stack_player_stats leaves them out.
     respond([member("own", "Mirana", "owner"), member("me", "Lina", "co_captain")], [stats("me")]);

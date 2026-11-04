@@ -6,6 +6,9 @@ import { useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
 import { MemberList, type HeroFace } from "@/components/stacks/member-list";
+import { StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
+import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
+import type { Seat } from "@/lib/stack-seats";
 import type { FriendInvite, Invite, Member, StackRef } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/client";
 import { EmailInvites, FriendInvites } from "./stack-invites";
@@ -46,6 +49,9 @@ export function StackBoard({
   openInvites,
   friends,
   icons,
+  art = {},
+  banner = null,
+  seats = [],
   waiting = 0,
 }: {
   userId: string;
@@ -59,6 +65,12 @@ export function StackBoard({
   openInvites: OpenInvite[];
   friends: Friend[];
   icons: Record<number, HeroFace>;
+  /** 16:9 portraits for the Lineup. */
+  art?: Record<number, HeroArt>;
+  /** The open Stack's head; null when it couldn't be read. */
+  banner?: BannerStack | null;
+  /** The open Stack's players in Lineup order. */
+  seats?: Seat[];
   /** Players asking to join the open Stack. */
   waiting?: number;
 }) {
@@ -66,6 +78,7 @@ export function StackBoard({
   const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
   const [error, setError] = useState<string | null>(null);
+  const [allHeroes, setAllHeroes] = useState(false);
   const none = !stacks.length && !joined.length;
 
   const remove = async (m: Member) => {
@@ -91,7 +104,7 @@ export function StackBoard({
   };
 
   return (
-    <div className="flex max-w-4xl flex-col gap-8">
+    <div className="flex max-w-6xl flex-col gap-8">
       {openInvites.length > 0 && <InvitesToYou invites={openInvites} onError={setError} />}
       {error && <p className="text-sm text-dire">{error}</p>}
 
@@ -122,26 +135,39 @@ export function StackBoard({
 
           {current && (
             <div className="flex flex-col gap-8">
-              <div className="flex flex-wrap items-end gap-3">
-                <StackName key={current.id} stack={current} onError={setError} />
-                <Link href={`/stacks/${current.id}`} className="btn btn-secondary">
-                  Stack Page
-                  {waiting > 0 && (
-                    <span className="rounded-full bg-accent px-1.5 py-px text-xs font-semibold tabular-nums text-on-accent">
-                      {waiting} {waiting === 1 ? "wants" : "want"} to join
-                    </span>
-                  )}
-                </Link>
-              </div>
+              {banner && (
+                <StackBanner
+                  stack={banner}
+                  seats={seats}
+                  hero={bannerHero(seats, userId, art)}
+                  waiting={waiting}
+                  inviteHref="#friend-invites-heading"
+                  onError={setError}
+                />
+              )}
+              {seats.length > 0 && (
+                <StackLineup
+                  seats={seats}
+                  hero={(id) => art[id] ?? { name: `Hero ${id}` }}
+                  youId={userId}
+                  action={
+                    <button type="button" onClick={() => setAllHeroes((o) => !o)} aria-expanded={allHeroes} className="btn btn-ghost btn-sm">
+                      {allHeroes ? "Hide All Heroes" : "Show All Heroes"}
+                    </button>
+                  }
+                />
+              )}
               <FriendInvites stackId={current.id} friends={friends} members={members} initial={friendInvites} onError={setError} />
               <EmailInvites stackId={current.id} initial={emailInvites} onError={setError} />
-              <MemberList
-                members={members}
-                hero={(id) => icons[id] ?? { name: `Hero ${id}` }}
-                isOwner={current.owned}
-                onRemove={remove}
-                onRole={setRole}
-              />
+              {(allHeroes || !seats.length) && (
+                <MemberList
+                  members={members}
+                  hero={(id) => icons[id] ?? { name: `Hero ${id}` }}
+                  isOwner={current.owned}
+                  onRemove={remove}
+                  onRole={setRole}
+                />
+              )}
             </div>
           )}
 
@@ -274,35 +300,9 @@ function CreateStack({ userId, compact = false }: { userId: string; compact?: bo
   );
 }
 
-/** The Stack's name; only the owner can change it. */
-function StackName({ stack, onError }: { stack: StackRef; onError: (e: string | null) => void }) {
-  const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
-  const [name, setName] = useState(stack.name);
-
-  const rename = async () => {
-    const trimmed = name.trim();
-    if (!trimmed || trimmed === stack.name) return;
-    const { error } = await supabase.from("teams").update({ name: trimmed }).eq("id", stack.id);
-    if (error) return onError(`Stack name not saved: ${error.message}`);
-    onError(null);
-    router.refresh();
-  };
-
-  return (
-    <label className="flex max-w-sm flex-col gap-1 text-xs text-muted">
-      Stack Name
-      <input
-        id="stack-name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onBlur={rename}
-        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-        readOnly={!stack.owned}
-        title={stack.owned ? undefined : "Only the owner can rename the Stack"}
-        maxLength={40}
-        className="field"
-      />
-    </label>
-  );
+/** The render behind the banner: the owner's top hero when you may see it, otherwise your own. */
+function bannerHero(seats: Seat[], userId: string, art: Record<number, HeroArt>) {
+  const pick = (s?: Seat) => (s?.heroes[0] ? art[s.heroes[0]] : undefined);
+  const hero = pick(seats.find((s) => s.role === "owner")) ?? pick(seats.find((s) => s.id === userId));
+  return hero?.image ? { name: hero.name, image: hero.image } : undefined;
 }

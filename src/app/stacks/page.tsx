@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getHeroes } from "@/lib/heroes";
+import type { BannerStack } from "@/components/stacks/stack-banner";
+import { toSeats } from "@/lib/stack-seats";
 import { countJoinRequests, loadInvites, loadMembers, steamAvatarOnly, toStackCard, type StackRef } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/server";
 import { FindStacks } from "./find-stacks";
@@ -40,15 +42,35 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
   }
 
   const current = run.find((s) => s.id === wanted) ?? (wanted ? undefined : run[0]);
-  const [members, stackInvites, heroes, waiting] = current
+  const [members, stackInvites, heroes, waiting, view] = current
     ? await Promise.all([
         loadMembers(supabase, current.id),
         loadInvites(supabase, current.id),
-        // Hero icons are decoration: if OpenDota is down the member list falls back to hero names.
+        // Hero art is decoration: if OpenDota is down the lineup falls back to avatars and names.
         getHeroes().catch(() => []),
         countJoinRequests(supabase, current.id),
+        Promise.all([
+          supabase.rpc("stack_page", { team: current.id }),
+          supabase.rpc("stack_members", { team: current.id }),
+          supabase.rpc("stack_player_stats", { team: current.id }),
+        ]),
       ])
-    : [[], { emails: [], friends: [] }, [], 0];
+    : [[], { emails: [], friends: [] }, [], 0, null];
+  const viewFailed = view?.[0].error ?? view?.[1].error ?? view?.[2].error;
+  if (viewFailed) throw new Error(`Could not load your stacks: ${viewFailed.message}`);
+  const summary = view?.[0].data?.[0];
+  const seats = view ? toSeats(view[1].data ?? [], view[2].data ?? [], steamAvatarOnly) : [];
+  const banner: BannerStack | null =
+    current && summary
+      ? {
+          id: current.id,
+          name: current.name,
+          ownerName: summary.owner_name ?? "Unnamed",
+          games: summary.games,
+          openToRequests: summary.open_to_requests,
+          myRole: current.owned ? "owner" : "co_captain",
+        }
+      : null;
 
   const openInvites: OpenInvite[] = (invites.data ?? []).map((i) => ({
     id: i.invite_id,
@@ -63,10 +85,14 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
 
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="page-title">Stacks</h1>
-        <p className="text-sm text-muted">A Stack is your saved group. A party is who&apos;s playing this game.</p>
-      </div>
+      {banner ? (
+        <h1 className="sr-only">Stacks</h1>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <h1 className="page-title">Stacks</h1>
+          <p className="text-sm text-muted">A Stack is your saved group. A party is who&apos;s playing this game.</p>
+        </div>
+      )}
       <StackBoard
         key={current?.id ?? "none"}
         userId={user.id}
@@ -79,6 +105,9 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         openInvites={openInvites}
         friends={friendList}
         icons={Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, icon: h.icon }]))}
+        art={Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, image: h.image }]))}
+        banner={banner}
+        seats={seats}
         waiting={waiting}
       />
       <FindStacks

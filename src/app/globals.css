@@ -467,6 +467,31 @@ body {
     box-shadow: inset 0 0 0 1px var(--accent-deep);
   }
 
+  /*
+   * Stack banner: the Stack's name over faint Radiant and Dire corners and a hairline split, with one hero render
+   * on the right (.stack-render). The render is the owner's top hero, softened so the name in front stays readable.
+   */
+  .stack-banner {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background:
+      linear-gradient(115deg, transparent 69.9%, var(--line-strong) 70%, transparent 70.15%),
+      linear-gradient(135deg, transparent 58%, color-mix(in srgb, var(--radiant) 5%, transparent) 58%),
+      linear-gradient(315deg, transparent 72%, color-mix(in srgb, var(--dire) 5%, transparent) 72%),
+      var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .stack-render {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    filter: saturate(0.7) brightness(0.85);
+    /* Round fade: keeps the hero's body and drops the spell effects some renders carry in their corners. */
+    mask-image: radial-gradient(closest-side at 50% 50%, #000 50%, transparent 88%);
+  }
+
   /* Segmented control (tabs such as Draft / Team). Mark the chosen item aria-selected or aria-pressed. */
   .seg {
     display: inline-flex;

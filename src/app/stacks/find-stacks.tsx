@@ -111,7 +111,7 @@ export function FindStacks({
   };
 
   return (
-    <div className="flex max-w-4xl flex-col gap-8 border-t border-line pt-8">
+    <div className="flex max-w-6xl flex-col gap-8 border-t border-line pt-8">
       <div className="flex flex-col gap-1.5">
         <h2 className="text-xl font-semibold">Find a Stack</h2>
         <p className="text-sm text-muted">Ask to join and the owner answers on the site.</p>
