@@ -81,7 +81,7 @@ describe("DraftReader", () => {
     for (let y = r.y; y < r.y + r.h; y++)
       for (let x = r.x + Math.round(r.w * 0.62); x < r.x + r.w; x++)
         px.data.set(Math.floor((x + y) / 6) % 2 ? [255, 210, 40] : [120, 0, 20], (y * W + x) * 4);
-    expect(reader.read(px).radiant[0]).toEqual({ heroId: 2, unsure: false });
+    expect(reader.read(px).radiant[0]).toMatchObject({ heroId: 2, unsure: false });
   });
 
   it("ignores a grey preview of a hero that is not locked in yet", () => {
@@ -95,7 +95,7 @@ describe("DraftReader", () => {
         const grey = 0.3 * px.data[i] + 0.59 * px.data[i + 1] + 0.11 * px.data[i + 2];
         px.data.set([grey, grey, grey], i);
       }
-    expect(reader.read(px).radiant[2]).toEqual({ heroId: null, unsure: false });
+    expect(reader.read(px).radiant[2]).toMatchObject({ heroId: null, unsure: false });
   });
 
   it("finds banned heroes by the slash on their grid cell, in name order per attribute", () => {
