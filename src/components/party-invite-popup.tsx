@@ -68,8 +68,9 @@ export function PartyInvitePopup({ userId }: { userId: string }) {
     if (error) return setError(error.message);
     setInvite(null);
     if (accept) {
-      if (pathname === "/party") router.refresh();
-      else router.push("/party");
+      if (pathname !== "/party") router.push("/party");
+      // Also redraws the header's party chip, which page changes alone leave as it was.
+      router.refresh();
     }
   };
 
