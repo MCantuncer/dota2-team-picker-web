@@ -213,10 +213,10 @@ function HeroCard({
       <div id={panelId} hidden={!open} className="@container px-2 pb-4">
         {open && (
           <>
-            <div className="grid gap-x-6 gap-y-4 pl-[4.75rem] @lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+            <div className="grid gap-x-6 gap-y-4 pl-[4.75rem] @lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs text-subtle">Why</h4>
-                <ul className="flex flex-col gap-1.5">
+                <ul className="flex flex-col gap-1">
                   {s.reasons.map((r) => (
                     <Reason key={r} text={r} />
                   ))}
@@ -243,16 +243,42 @@ function HeroCard({
   );
 }
 
-/** A reason with a coloured rule: green for what helps, amber for a warning. */
+/** Which score part a reason line explains, from how the engine words it, so each row is labeled like its bar. */
+const KINDS: [RegExp, string][] = [
+  [/^Beats /, "Counters"],
+  [/^Works with /, "Synergy"],
+  [/^Adds what your team lacks: /, "Team Needs"],
+  [/^Can also go /, "Flex"],
+  [/^(Safer now|Hard to punish)/, "Pick Safety"],
+  [/^Wins (more|less) as /, "Pick Order"],
+  [/(best \w[\w ]*?:|^Wins [\d.]+% of games)/, "Meta"],
+];
+
+/** A reason as a labeled row: the part it explains on the left, the line on the right; a warning is amber. */
 function Reason({ text }: { text: string }) {
   const warn = text.startsWith("Watch out");
-  const shown = warn ? text.replace(/^Watch out:\s*/, "") : text;
+  let shown = warn ? text.replace(/^Watch out:\s*/, "") : text;
+  let kind = warn ? "Watch Out" : "Draft";
+  if (!warn) {
+    const hit = KINDS.find(([re]) => re.test(shown));
+    if (hit) {
+      kind = hit[1];
+      // "Adds what your team lacks: wave clear" reads as "Team Needs: Wave clear".
+      if (kind === "Team Needs") shown = shown.replace(hit[0], "");
+    }
+  }
   return (
     <li
-      className={`border-l-2 pl-2.5 text-sm ${warn ? "border-warn text-warn" : "border-radiant text-fg/90"}`}
+      className={`grid grid-cols-[5.25rem_minmax(0,1fr)] items-baseline gap-x-3 rounded-sm px-3 py-1.5 text-sm ${
+        warn ? "bg-warn-tint" : "bg-raised"
+      }`}
     >
-      {warn && <span className="sr-only">Watch out: </span>}
-      {shown.charAt(0).toUpperCase() + shown.slice(1)}
+      <span className={`text-xs ${warn ? "text-warn" : "text-subtle"}`}>
+        {kind}
+      </span>
+      <span className={warn ? "text-warn" : "text-fg/90"}>
+        {shown.charAt(0).toUpperCase() + shown.slice(1)}
+      </span>
     </li>
   );
 }

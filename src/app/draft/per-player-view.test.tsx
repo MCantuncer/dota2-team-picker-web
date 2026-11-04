@@ -33,6 +33,7 @@ describe("PerPlayerView", () => {
               suggestion(11, "Shadow Fiend", [
                 "Beats Pudge mid (+1.8)",
                 "Your record 12-8",
+                "Watch out: loses to Lina (-1.2)",
               ]),
               suggestion(17, "Storm Spirit", ["Fast into Lina (+0.9)", "x"]),
             ],
@@ -62,6 +63,11 @@ describe("PerPlayerView", () => {
     await userEvent.click(storm);
     expect(storm).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("X")).toBeVisible();
+    expect(screen.getByText("Watch Out")).toBeVisible();
+    expect(screen.getByText("Loses to Lina (-1.2)")).toBeVisible();
+    // Rows are labeled with the score part they explain; warnings read as Watch Out.
+    expect(screen.getAllByText("Counters").length).toBeGreaterThan(0);
+
     expect(screen.getByText("Outside Pool")).toBeVisible();
 
     await userEvent.click(
