@@ -54,7 +54,7 @@ describe("SkillPlanCard", () => {
     const names = { ...plan.names, 2: "Great Cleave", 3: "God's Strength", 4: "Warcry" };
     render(<SkillPlanCard plan={{ ...order, names }} abilities={abilities} />);
     const grid = screen.getByRole("table", { name: "Skill order" });
-    const rows = within(grid).getAllByRole("rowheader").map((th) => th.textContent?.replace(/^[+T](?=[A-Z])/, ""));
+    const rows = within(grid).getAllByRole("rowheader").map((th) => th.textContent?.replace(/^\+(?=[A-Z])/, ""));
     expect(rows).toEqual([
       "Storm Hammer, levels 1, 3, 5, 7",
       "Great Cleave, levels 2, 4, 8, 9",

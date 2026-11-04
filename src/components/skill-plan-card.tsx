@@ -6,6 +6,7 @@ import type { SkillLive, SkillPlan, TalentTier } from "@/lib/engine/skill-plan";
 import type { HeroAbilities } from "@/lib/engine/types";
 import { HeroRender } from "./hero-render";
 
+const TALENT_ICON = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/icons/talents.svg";
 const ABILITY_CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/";
 
 const STATE_LINES: Record<Exclude<SkillLive, "ready">, string> = {
@@ -200,11 +201,16 @@ function SkillGrid({ rows, levels }: { rows: SkillRow[]; levels: number }) {
             <tr key={row.id}>
               <th scope="row" className="sticky left-0 z-10 bg-bg pr-2 text-left font-normal sm:pr-3">
                 <span className="flex items-center gap-2.5">
-                  {row.key ? (
+                  {row.kind === "talents" ? (
+                    // Valve's own talent tree mark, as in the game's skill build. An SVG, so it isn't resized.
+                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-raised">
+                      <Image src={TALENT_ICON} alt="" width={24} height={25} unoptimized className="size-6 opacity-90" />
+                    </span>
+                  ) : row.key ? (
                     <Image src={`${ABILITY_CDN}${row.key}.png`} alt="" width={36} height={36} className="size-9 shrink-0 rounded-xs" />
                   ) : (
                     <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-raised text-muted">
-                      {row.kind === "talents" ? "T" : "+"}
+                      +
                     </span>
                   )}
                   <span className="sr-only whitespace-nowrap text-sm text-fg sm:not-sr-only">{row.name}</span>
