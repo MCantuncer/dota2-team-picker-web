@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Icon } from "@/components/icon";
 import type { Facts, HeroCard } from "@/lib/report-facts";
 import {
   damageLine,
@@ -21,7 +23,18 @@ export interface ReportArt {
  * A post-game report: the result, then each of our heroes, then the parts that need a parsed
  * replay (lanes, turning points, what hurt, the draft). A part the facts don't have is left out.
  */
-export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: ReportArt; myHeroId: number | null }) {
+export function ReportView({
+  facts,
+  art,
+  myHeroId,
+  feedbackHref = null,
+}: {
+  facts: Facts;
+  art: ReportArt;
+  myHeroId: number | null;
+  /** The player's own game page, once the feedback job has read this game. */
+  feedbackHref?: string | null;
+}) {
   const name = (id: number) => art.heroes.get(id)?.name ?? `Hero ${id}`;
   const turning = [...(facts.swings ?? []).map(swingLine), ...(facts.fights ?? []).map((f) => fightLine(f, name))];
   const hurt = [...(facts.damageTaken ?? []).map(damageLine), ...(facts.enemyBest ? [enemyBestLine(facts.enemyBest, name)] : [])];
@@ -37,6 +50,12 @@ export function ReportView({ facts, art, myHeroId }: { facts: Facts; art: Report
             Match <span className="num">{facts.matchId}</span> on OpenDota
           </a>
         </p>
+        {feedbackHref && (
+          <Link href={feedbackHref} className="btn btn-secondary btn-sm self-start">
+            Your Feedback
+            <Icon name="chevronRight" />
+          </Link>
+        )}
       </header>
 
       <section aria-labelledby="report-heroes" className="flex flex-col gap-3">
