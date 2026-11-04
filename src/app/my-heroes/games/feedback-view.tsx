@@ -5,30 +5,15 @@ import { FindingIcon } from "./finding-icon";
 /** Games a strength or problem needs behind it (backend MIN_TREND_GAMES). */
 export const MIN_GAMES = 4;
 
-const dateFormat = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-const day = (iso: string | null) => (iso ? dateFormat.format(new Date(iso)) : null);
-
 /**
  * The player's strengths and problems over their recent games. Each item shows its headline and
  * pattern; the moments, the cost and what to change open below it.
  */
 export function FeedbackView({ feedback }: { feedback: PlayerFeedback }) {
-  const first = day(feedback.firstGameAt);
-  const last = day(feedback.lastGameAt);
-  const range = first && last && first !== last ? `${first} to ${last}` : last;
   const hasFindings = feedback.strengths.length + feedback.problems.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="text-sm text-muted">
-        From your last <span className="num text-fg">{feedback.games}</span> games{range ? `, ${range}` : ""}.{" "}
-        <span className="num">{feedback.parsedGames}</span> of them parsed by OpenDota, which the detailed points need.
-      </p>
-
       {feedback.improved.length > 0 && (
         <section aria-labelledby="feedback-improved" className="flex flex-col gap-2">
           <h2 id="feedback-improved" className="label-caps">
