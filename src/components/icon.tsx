@@ -1,7 +1,8 @@
 /**
  * The few action icons the site uses, drawn in the current text colour so they always match their button: dark on
  * gold, light on slate, red on a quiet danger button. Paths from Lucide (ISC licence, lucide.dev), outline style.
- * Only for actions where an icon makes the button faster to spot; see docs/design-system.md.
+ * For actions where an icon makes the button faster to spot, and as the marker of a score part on a Why row;
+ * see docs/design-system.md.
  */
 const PATHS = {
   check: <path d="M20 6 9 17l-5-5" />,
@@ -51,7 +52,9 @@ const PATHS = {
       <path d="M8.5 14h7" />
     </>
   ),
-  star: <path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.6 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6a2 2 0 0 0-.6 1.9l.9 5.1a.5.5 0 0 1-.8.6l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.6l.9-5.1a2 2 0 0 0-.6-1.9L2.1 9.8a.5.5 0 0 1 .3-.9l5.2-.8a2 2 0 0 0 1.6-1.1z" />,
+  star: (
+    <path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.6 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6a2 2 0 0 0-.6 1.9l.9 5.1a.5.5 0 0 1-.8.6l-4.6-2.4a2 2 0 0 0-1.9 0l-4.6 2.4a.5.5 0 0 1-.8-.6l.9-5.1a2 2 0 0 0-.6-1.9L2.1 9.8a.5.5 0 0 1 .3-.9l5.2-.8a2 2 0 0 0 1.6-1.1z" />
+  ),
   users: (
     <>
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -103,6 +106,42 @@ const PATHS = {
     <>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </>
+  ),
+  /** Why rows: Meta (win rate at your rank). */
+  trend: (
+    <>
+      <path d="M22 7 13.5 15.5 8.5 10.5 2 17" />
+      <path d="M16 7h6v6" />
+    </>
+  ),
+  /** Why rows: Flex (the hero can go other positions). */
+  shuffle: (
+    <>
+      <path d="m18 14 4 4-4 4" />
+      <path d="m18 2 4 4-4 4" />
+      <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" />
+      <path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.4.6" />
+      <path d="M22 18h-6.1c-1.3 0-2.5-.6-3.3-1.7l-.4-.6" />
+    </>
+  ),
+  /** Why rows: Pick Safety. */
+  shield: (
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+  ),
+  /** Why rows: Pick Order. */
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </>
+  ),
+  /** Why rows: Watch Out, always in `warn`. */
+  alert: (
+    <>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
     </>
   ),
 };

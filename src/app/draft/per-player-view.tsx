@@ -1,13 +1,14 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
-import { Icon } from "@/components/icon";
+import { Icon, type IconName } from "@/components/icon";
 import { MoveMark, OutsidePool, WeakHere } from "@/components/pick-why";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, ScoreBreakdown, Suggestion } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
 import type { PlayerColumn } from "@/lib/per-player";
 import { useRankMoves } from "@/lib/pick-explain";
+import { reasonRow, type ReasonKind } from "@/lib/reason-rows";
 
 /**
  * Per Player: the planner's view of what each party member who still has to pick should take.
@@ -15,10 +16,19 @@ import { useRankMoves } from "@/lib/pick-explain";
  * by side only when each column still has room. Each hero is a card that opens to show why: every reason the
  * engine found and the score parts behind it. The top hero starts open.
  */
+/** A hero's portrait: the 64x36 strip on a card, the 40x22 chip on a Why row. */
+type Portrait = (
+  heroId: number,
+  name: string,
+  size?: "strip" | "chip",
+) => ReactNode;
+type HeroName = { id: number; name: string };
+
 export function PerPlayerView({
   columns,
   names,
   draftKey,
+  heroes,
   portrait,
   onPicked,
   onBanned,
@@ -27,7 +37,9 @@ export function PerPlayerView({
   names: Record<string, string>;
   /** Changes with every pick or ban, so each column can mark heroes that moved. */
   draftKey: string;
-  portrait: (heroId: number, name: string) => ReactNode;
+  /** Every hero, to put a face on the heroes a reason names. */
+  heroes: HeroName[];
+  portrait: Portrait;
   onPicked: (heroId: number, position: Position) => void;
   onBanned: (heroId: number) => void;
 }) {
@@ -43,6 +55,7 @@ export function PerPlayerView({
           column={c}
           name={names[c.playerId] ?? "Unnamed"}
           draftKey={draftKey}
+          heroes={heroes}
           portrait={portrait}
           onPicked={onPicked}
           onBanned={onBanned}
@@ -56,6 +69,7 @@ function Column({
   column: c,
   name,
   draftKey,
+  heroes,
   portrait,
   onPicked,
   onBanned,
@@ -63,7 +77,8 @@ function Column({
   column: PlayerColumn;
   name: string;
   draftKey: string;
-  portrait: (heroId: number, name: string) => ReactNode;
+  heroes: HeroName[];
+  portrait: Portrait;
   onPicked: (heroId: number, position: Position) => void;
   onBanned: (heroId: number) => void;
 }) {
@@ -93,6 +108,10 @@ function Column({
             top={i === 0}
             playerName={name}
             portrait={portrait(s.heroId, s.name)}
+            face={(id) =>
+              portrait(id, heroes.find((h) => h.id === id)?.name ?? "", "chip")
+            }
+            heroes={heroes}
             badges={
               <>
                 <MoveMark move={moves.get(s.heroId)} />
@@ -122,6 +141,8 @@ function HeroCard({
   top,
   playerName,
   portrait,
+  face,
+  heroes,
   badges,
   onPicked,
   onBanned,
@@ -130,6 +151,8 @@ function HeroCard({
   top: boolean;
   playerName: string;
   portrait: ReactNode;
+  face: (heroId: number) => ReactNode;
+  heroes: HeroName[];
   badges: ReactNode;
   onPicked: () => void;
   onBanned: () => void;
@@ -218,7 +241,11 @@ function HeroCard({
                 <h4 className="text-xs text-subtle">Why</h4>
                 <ul className="flex flex-col gap-1">
                   {s.reasons.map((r) => (
-                    <Reason key={r} text={r} />
+                    <Reason
+                      key={r}
+                      row={reasonRow(r, heroes, s.breakdown)}
+                      face={face}
+                    />
                   ))}
                 </ul>
                 {s.tags.length > 0 && (
@@ -243,42 +270,73 @@ function HeroCard({
   );
 }
 
-/** Which score part a reason line explains, from how the engine words it, so each row is labeled like its bar. */
-const KINDS: [RegExp, string][] = [
-  [/^Beats /, "Counters"],
-  [/^Works with /, "Synergy"],
-  [/^Adds what your team lacks: /, "Team Needs"],
-  [/^Can also go /, "Flex"],
-  [/^(Safer now|Hard to punish)/, "Pick Safety"],
-  [/^Wins (more|less) as /, "Pick Order"],
-  [/(best \w[\w ]*?:|^Wins [\d.]+% of games)/, "Meta"],
-];
+const KIND_ICONS: Record<ReasonKind, IconName> = {
+  Counters: "swords",
+  Synergy: "users",
+  Meta: "trend",
+  "Team Needs": "plus",
+  Flex: "shuffle",
+  "Pick Safety": "shield",
+  "Pick Order": "clock",
+  "Watch Out": "alert",
+  Draft: "check",
+};
 
-/** A reason as a labeled row: the part it explains on the left, the line on the right; a warning is amber. */
-function Reason({ text }: { text: string }) {
-  const warn = text.startsWith("Watch out");
-  let shown = warn ? text.replace(/^Watch out:\s*/, "") : text;
-  let kind = warn ? "Watch Out" : "Draft";
-  if (!warn) {
-    const hit = KINDS.find(([re]) => re.test(shown));
-    if (hit) {
-      kind = hit[1];
-      // "Adds what your team lacks: wave clear" reads as "Team Needs: Wave clear".
-      if (kind === "Team Needs") shown = shown.replace(hit[0], "");
-    }
-  }
+/**
+ * A reason as a row: the faces of the heroes it names (or the score part's icon when it names none), the part and
+ * the line, and its points on the right. A warning row is amber.
+ */
+function Reason({
+  row,
+  face,
+}: {
+  row: ReturnType<typeof reasonRow>;
+  face: (heroId: number) => ReactNode;
+}) {
+  const faces = row.heroIds.slice(0, 2);
   return (
     <li
-      className={`grid grid-cols-[5.25rem_minmax(0,1fr)] items-baseline gap-x-3 rounded-sm px-3 py-1.5 text-sm ${
-        warn ? "bg-warn-tint" : "bg-raised"
+      className={`grid grid-cols-[3.75rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-sm py-1.5 pl-1.5 pr-3 ${
+        row.warn ? "bg-warn-tint" : "bg-raised"
       }`}
     >
-      <span className={`text-xs ${warn ? "text-warn" : "text-subtle"}`}>
-        {kind}
+      {faces.length ? (
+        // Two named heroes overlap, so every row's text starts at the same place.
+        <span className="flex w-[3.75rem]">
+          {faces.map((id, n) => (
+            <span
+              key={id}
+              className={n ? "-ml-5 rounded-xs ring-2 ring-raised" : ""}
+            >
+              {face(id)}
+            </span>
+          ))}
+        </span>
+      ) : (
+        <span
+          className={`flex h-5.5 w-10 items-center justify-center rounded-xs bg-hover ${row.warn ? "text-warn" : "text-radiant"}`}
+        >
+          <Icon name={KIND_ICONS[row.kind]} />
+        </span>
+      )}
+      <span className="flex min-w-0 flex-col">
+        <span
+          className={`micro flex items-center gap-1 ${row.warn ? "text-warn" : "text-subtle"}`}
+        >
+          {faces.length > 0 && <Icon name={KIND_ICONS[row.kind]} />}
+          {row.kind}
+        </span>
+        <span className={`text-sm ${row.warn ? "text-warn" : "text-fg/90"}`}>
+          {row.text}
+        </span>
       </span>
-      <span className={warn ? "text-warn" : "text-fg/90"}>
-        {shown.charAt(0).toUpperCase() + shown.slice(1)}
-      </span>
+      {row.points !== null && (
+        <span
+          className={`num ${row.points >= 0 && !row.warn ? "text-radiant" : "text-warn"}`}
+        >
+          {signed(row.points)}
+        </span>
+      )}
     </li>
   );
 }

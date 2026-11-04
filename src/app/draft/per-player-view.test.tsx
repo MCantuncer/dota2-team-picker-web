@@ -43,6 +43,7 @@ describe("PerPlayerView", () => {
         ]}
         names={{ ali: "Ali" }}
         draftKey="[]"
+        heroes={[{ id: 25, name: "Lina" }]}
         portrait={() => null}
         onPicked={onPicked}
         onBanned={onBanned}
@@ -64,7 +65,8 @@ describe("PerPlayerView", () => {
     expect(storm).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("X")).toBeVisible();
     expect(screen.getByText("Watch Out")).toBeVisible();
-    expect(screen.getByText("Loses to Lina (-1.2)")).toBeVisible();
+    expect(screen.getByText("Loses to Lina")).toBeVisible();
+    expect(screen.getByText("-1.2")).toBeVisible();
     // Rows are labeled with the score part they explain; warnings read as Watch Out.
     expect(screen.getAllByText("Counters").length).toBeGreaterThan(0);
 
@@ -86,6 +88,7 @@ describe("PerPlayerView", () => {
         columns={[]}
         names={{}}
         draftKey="[]"
+        heroes={[{ id: 25, name: "Lina" }]}
         portrait={() => null}
         onPicked={vi.fn()}
         onBanned={vi.fn()}
