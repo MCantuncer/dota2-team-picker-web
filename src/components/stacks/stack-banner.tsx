@@ -21,8 +21,8 @@ export interface BannerStack {
   /** Games its players played together in the last 14 days. */
   games: number;
   openToRequests: boolean;
-  /** Your part in it: owner, Manager (co_captain) or player. */
-  myRole: "owner" | "co_captain" | "player";
+  /** Your part in it: owner, Manager (co_captain) or player; null when you are not in it. */
+  myRole: "owner" | "co_captain" | "player" | null;
 }
 
 /**
@@ -38,6 +38,8 @@ export function StackBanner({
   stackPage = true,
   inviteHref,
   heading = "h2",
+  players = seats.length,
+  actions,
   onError,
 }: {
   stack: BannerStack;
@@ -51,9 +53,13 @@ export function StackBanner({
   stackPage?: boolean;
   /** Where the Invite button goes, for the owner and Managers. */
   inviteHref?: string;
+  /** How many players it has, when you can't see who they are. */
+  players?: number;
+  /** More buttons after the banner's own, such as Ask to Join or Leave. */
+  actions?: ReactNode;
   onError: (e: string | null) => void;
 }) {
-  const runs = stack.myRole !== "player";
+  const runs = stack.myRole === "owner" || stack.myRole === "co_captain";
   const average = averageRankTier(seats.map((s) => s.rankTier));
   const render = renderOf(hero?.image);
 
@@ -99,9 +105,9 @@ export function StackBanner({
       <StackTitle stack={stack} heading={heading} canRename={stack.myRole === "owner"} onError={onError} />
 
       <ul aria-label="About this Stack" className="flex flex-wrap gap-2.5">
-        <Stat icon={<Icon name="users" />} label={`${seats.length} ${seats.length === 1 ? "player" : "players"}`}>
-          <b className="num text-base text-fg">{seats.length}</b>
-          <span>{seats.length === 1 ? "Player" : "Players"}</span>
+        <Stat icon={<Icon name="users" />} label={`${players} ${players === 1 ? "player" : "players"}`}>
+          <b className="num text-base text-fg">{players}</b>
+          <span>{players === 1 ? "Player" : "Players"}</span>
           <span aria-hidden className="ml-1 flex">
             {seats.slice(0, MAX_AVATARS).map((s, i) => (
               <span
@@ -176,6 +182,7 @@ export function StackBanner({
             <Icon name="userPlus" large />
           </a>
         )}
+        {actions}
       </div>
     </section>
   );
@@ -271,4 +278,11 @@ function StackTitle({
       )}
     </div>
   );
+}
+
+/** The hero the banner shows: the owner's top hero, else your own, when you may see it. */
+export function bannerHero(seats: Seat[], youId: string, art: Record<number, { name: string; image?: string }>) {
+  const pick = (s?: Seat) => (s?.heroes[0] ? art[s.heroes[0]] : undefined);
+  const hero = pick(seats.find((s) => s.role === "owner")) ?? pick(seats.find((s) => s.id === youId));
+  return hero?.image ? { name: hero.name, image: hero.image } : undefined;
 }

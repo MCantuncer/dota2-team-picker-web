@@ -79,7 +79,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
             className="object-cover"
           />
         ) : (
-          <div className="grid h-full min-h-20 place-items-center">
+          <div className="flex h-full min-h-20 flex-col items-center justify-center gap-1.5">
             <Avatar
               account={{
                 name: s.name,
@@ -89,6 +89,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
               }}
               size={44}
             />
+            {s.shared && <span className="micro text-subtle">No heroes saved</span>}
           </div>
         )}
         {top && (
