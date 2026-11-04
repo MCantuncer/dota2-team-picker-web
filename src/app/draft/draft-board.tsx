@@ -34,6 +34,8 @@ import { PositionPicker } from "./position-picker";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
+import { StackLineup } from "./stack-lineup";
+import { useStackLineup, type PlannableStack } from "./use-stack-lineup";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -62,6 +64,7 @@ const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
+const NO_STACKS: PlannableStack[] = [];
 const NOTICE = { enemy: "notice-error", open: "notice-warn", out: "notice-done" } as const;
 
 /** A signed score with one decimal and a real minus sign. */
@@ -102,6 +105,8 @@ export function DraftBoard({
   icons,
   signedIn,
   party,
+  userId = null,
+  stacks = NO_STACKS,
 }: {
   player: Player;
   portraits: Record<number, string>;
@@ -109,6 +114,10 @@ export function DraftBoard({
   icons: Record<number, string>;
   signedIn: boolean;
   party: PartyInfo | null;
+  /** The signed-in player, for the Stack lineup. */
+  userId?: string | null;
+  /** Stacks the player runs, to plan a draft for when they aren't in a party. */
+  stacks?: PlannableStack[];
 }) {
   const [engine, setEngine] = useState<Engine | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -118,11 +127,19 @@ export function DraftBoard({
   // before the page renders (it is in the background while Dota is in front), and the second must build
   // on the first.
   const latestSolo = useRef<DraftEntry[]>([]);
-  const [myPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
+  const [soloPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null);
-  // Every member's favorite heroes: the whole party sees the planner's Team Plan.
-  const pool = party ? live.pool : null;
+  // Out of a party, the player can plan for a Stack they run, online or not. The party always wins.
+  const lineup = useStackLineup(party ? null : userId, party ? NO_STACKS : stacks);
+  const lineupPlan = party ? null : lineup.plan;
+  // Who the plan is for: the live party, or the Stack lineup. Every member's favorite heroes, so the
+  // whole party sees the planner's Team Plan.
+  const pool = party ? live.pool : (lineupPlan?.pool ?? null);
+  const planPlayers = party ? live.players : (lineupPlan?.players ?? {});
+  const planNames = party ? party.names : (lineupPlan?.names ?? {});
+  // In a lineup, the player's position is the one they have there.
+  const myPosition = lineupPlan?.myPosition ?? soloPosition;
   const captainId = party ? (live.party?.captain.id ?? null) : null;
   // The planner runs the party's screen: the Draft Captain, else the leader. Everyone else watches it.
   const planner = party ? live.planner : null;
@@ -131,7 +148,10 @@ export function DraftBoard({
   // With a draft captain, only they enter the draft; everyone else watches it fill in.
   const locked = captainId !== null && captainId !== party?.userId;
   const captainName = captainId ? (live.party?.members.find((m) => m.id === captainId)?.name ?? "The captain") : null;
-  const [view, setView] = useState<"mine" | "players" | "team">("mine");
+  const [chosenView, setView] = useState<"mine" | "players" | "team">("mine");
+  // Planning for a Stack without playing yourself: there are no picks of your own to show.
+  const notPlaying = lineupPlan !== null && lineupPlan.myPosition === null;
+  const view = notPlaying && chosenView === "mine" ? "players" : chosenView;
   const draft = party ? shared.draft : soloDraft;
   const [soloRank, setSoloRank] = useState<RankBracket | null>(player.rank);
   const [rankError, setRankError] = useState<string | null>(null);
@@ -183,7 +203,8 @@ export function DraftBoard({
   const mine = allies.find((e) => e.position === myPosition);
   // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
   const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
-  const reserved = party && lobbyPositions.length ? lobbyPositions : [myPosition];
+  const lineupPositions = (lineupPlan?.members ?? []).flatMap((m) => (m.position ? [m.position] : []));
+  const reserved = party && lobbyPositions.length ? lobbyPositions : lineupPositions.length ? lineupPositions : [myPosition];
   const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
@@ -276,6 +297,7 @@ export function DraftBoard({
   /** Puts an ally in a position, swapping with whoever held it, so no two allies share one. */
   const placeAlly = (heroId: number, position: Position | null) => act(...positionActions(resolved, heroId, position));
   const choosePosition = (p: Position) => {
+    if (lineupPlan?.myPosition && userId) return lineup.move(userId, p);
     setMyPosition(p);
     writeStorage(POSITION_KEY, p);
   };
@@ -285,7 +307,9 @@ export function DraftBoard({
 
   const planMembers: PlanMember[] = live.party
     ? live.party.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null }))
-    : (party?.members ?? []);
+    : party
+      ? party.members
+      : (lineupPlan?.members ?? []);
   // The team plan (WCST) for the whole party, planned only while it is on screen.
   // Watchers always see the planner's Team Plan; the planner switches between it and their own picks.
   const teamPlan =
@@ -302,7 +326,7 @@ export function DraftBoard({
     pool && isPlanner && view === "players"
       ? perPlayerColumns(engine, {
           slots: toPlanSlots(planMembers, pool, allies),
-          personal: Object.fromEntries(Object.entries(live.players).map(([id, p]) => [id, p.personal])),
+          personal: Object.fromEntries(Object.entries(planPlayers).map(([id, p]) => [id, p.personal])),
           enemies,
           bans,
           rankBracket: bracket,
@@ -440,6 +464,19 @@ export function DraftBoard({
           </div>
         )}
       </div>
+
+      {!party && stacks.length > 0 && (
+        <StackLineup
+          stacks={stacks}
+          stackId={lineup.stackId}
+          people={lineup.people}
+          picks={lineup.picks}
+          notice={lineup.notice}
+          onChoose={lineup.choose}
+          onToggle={lineup.toggle}
+          onMove={lineup.move}
+        />
+      )}
 
       {!isPlanner && (
         <section aria-labelledby="picks-title" className="flex flex-col gap-3">
@@ -622,9 +659,11 @@ export function DraftBoard({
             </h2>
             {pool && isPlanner && (
               <div className="seg" role="group" aria-label="Suggestions for">
-                <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
-                  My Picks
-                </button>
+                {!notPlaying && (
+                  <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
+                    My Picks
+                  </button>
+                )}
                 <button aria-pressed={view === "players"} onClick={() => setView("players")} className="seg-item">
                   Per Player
                 </button>
@@ -637,7 +676,7 @@ export function DraftBoard({
           {teamPlan ? (
             <PartyPlan
               plan={teamPlan}
-              names={party!.names}
+              names={planNames}
               portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
               onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
               onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
@@ -645,7 +684,7 @@ export function DraftBoard({
           ) : playerColumns ? (
             <PerPlayerView
               columns={playerColumns}
-              names={party!.names}
+              names={planNames}
               draftKey={JSON.stringify([allyIds, enemies, bans])}
               portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="strip" />}
               onPicked={(heroId, position) => placeAlly(heroId, position)}
@@ -678,8 +717,8 @@ export function DraftBoard({
           items={engine.data.items}
           icons={icons}
           playerNames={POSITIONS.map((p) => {
-            const member = party?.members.find((m) => m.position === p);
-            return member ? (member.id === party!.userId ? "You" : (party!.names[member.id] ?? null)) : null;
+            const member = planMembers.find((m) => m.position === p);
+            return member ? (member.id === (party?.userId ?? userId) ? "You" : (planNames[member.id] ?? null)) : null;
           })}
           myPosition={myPosition}
         />
