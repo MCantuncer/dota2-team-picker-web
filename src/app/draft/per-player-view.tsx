@@ -17,11 +17,7 @@ import { reasonRow, type ReasonKind } from "@/lib/reason-rows";
  * engine found and the score parts behind it. The top hero starts open.
  */
 /** A hero's portrait: the 64x36 strip on a card, the 40x22 chip on a Why row. */
-type Portrait = (
-  heroId: number,
-  name: string,
-  size?: "strip" | "chip",
-) => ReactNode;
+type Portrait = (heroId: number, name: string, size?: "strip" | "chip") => ReactNode;
 type HeroName = { id: number; name: string };
 
 export function PerPlayerView({
@@ -43,10 +39,7 @@ export function PerPlayerView({
   onPicked: (heroId: number, position: Position) => void;
   onBanned: (heroId: number) => void;
 }) {
-  if (!columns.length)
-    return (
-      <p className="text-sm text-muted">Everyone in the party has a hero.</p>
-    );
+  if (!columns.length) return <p className="text-sm text-muted">Everyone in the party has a hero.</p>;
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] gap-x-8 gap-y-8">
       {columns.map((c) => (
@@ -90,10 +83,7 @@ function Column({
   const headingId = `per-player-${c.playerId}`;
   return (
     <section aria-labelledby={headingId} className="flex min-w-0 flex-col">
-      <h3
-        id={headingId}
-        className="flex items-baseline gap-2 pb-2 font-semibold text-fg"
-      >
+      <h3 id={headingId} className="flex items-baseline gap-2 pb-2 font-semibold text-fg">
         <span className="truncate">{name}</span>{" "}
         <span className="num text-sm font-normal text-subtle">
           Pos {c.position} {POSITION_NAMES[c.position]}
@@ -108,18 +98,12 @@ function Column({
             top={i === 0}
             playerName={name}
             portrait={portrait(s.heroId, s.name)}
-            face={(id) =>
-              portrait(id, heroes.find((h) => h.id === id)?.name ?? "", "chip")
-            }
+            face={(id) => portrait(id, heroes.find((h) => h.id === id)?.name ?? "", "chip")}
             heroes={heroes}
             badges={
               <>
                 <MoveMark move={moves.get(s.heroId)} />
-                {c.outside.has(s.heroId) && (
-                  <OutsidePool
-                    title={`Not one of ${name}'s heroes for this position`}
-                  />
-                )}
+                {c.outside.has(s.heroId) && <OutsidePool title={`Not one of ${name}'s heroes for this position`} />}
                 {c.weak.has(s.heroId) && <WeakHere />}
               </>
             }
@@ -181,9 +165,7 @@ function HeroCard({
   );
 
   return (
-    <li
-      className={`group relative border-t border-line ${open ? "bg-surface" : ""}`}
-    >
+    <li className={`group relative border-t border-line ${open ? "bg-surface" : ""}`}>
       <button
         type="button"
         aria-expanded={open}
@@ -193,21 +175,14 @@ function HeroCard({
       >
         {portrait}
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span
-            className={`flex flex-wrap items-center gap-2 font-semibold ${top ? "text-accent" : "text-fg"}`}
-          >
+          <span className={`flex flex-wrap items-center gap-2 font-semibold ${top ? "text-accent" : "text-fg"}`}>
             {s.name}
             {badges}
           </span>
-          {!open && s.reasons[0] && (
-            <span className="truncate text-sm text-muted">{s.reasons[0]}</span>
-          )}
+          {!open && s.reasons[0] && <span className="truncate text-sm text-muted">{s.reasons[0]}</span>}
         </span>
         <span className="flex items-center gap-2">
-          <span
-            className="num w-12 text-right text-sm text-fg"
-            title="Score in win-rate points"
-          >
+          <span className="num w-12 text-right text-sm text-fg" title="Score in win-rate points">
             {signed(s.score)}
           </span>
           <svg
@@ -241,11 +216,7 @@ function HeroCard({
                 <h4 className="text-xs text-subtle">Why</h4>
                 <ul className="flex flex-col gap-1">
                   {s.reasons.map((r) => (
-                    <Reason
-                      key={r}
-                      row={reasonRow(r, heroes, s.breakdown)}
-                      face={face}
-                    />
+                    <Reason key={r} row={reasonRow(r, heroes, s.breakdown)} face={face} />
                   ))}
                 </ul>
                 {s.tags.length > 0 && (
@@ -260,9 +231,7 @@ function HeroCard({
               </div>
               <ScoreParts breakdown={s.breakdown} place={s.place} />
             </div>
-            <div className="mt-4 flex gap-1.5 pl-[4.75rem]">
-              {actions(false)}
-            </div>
+            <div className="mt-4 flex gap-1.5 pl-[4.75rem]">{actions(false)}</div>
           </>
         )}
       </div>
@@ -286,13 +255,7 @@ const KIND_ICONS: Record<ReasonKind, IconName> = {
  * A reason as a row: the faces of the heroes it names (or the score part's icon when it names none), the part and
  * the line, and its points on the right. A warning row is amber.
  */
-function Reason({
-  row,
-  face,
-}: {
-  row: ReturnType<typeof reasonRow>;
-  face: (heroId: number) => ReactNode;
-}) {
+function Reason({ row, face }: { row: ReturnType<typeof reasonRow>; face: (heroId: number) => ReactNode }) {
   const faces = row.heroIds.slice(0, 2);
   return (
     <li
@@ -304,10 +267,7 @@ function Reason({
         // Two named heroes overlap, so every row's text starts at the same place.
         <span className="flex w-[3.75rem]">
           {faces.map((id, n) => (
-            <span
-              key={id}
-              className={n ? "-ml-5 rounded-xs ring-2 ring-raised" : ""}
-            >
+            <span key={id} className={n ? "-ml-5 rounded-xs ring-2 ring-raised" : ""}>
               {face(id)}
             </span>
           ))}
@@ -320,20 +280,14 @@ function Reason({
         </span>
       )}
       <span className="flex min-w-0 flex-col">
-        <span
-          className={`micro flex items-center gap-1 ${row.warn ? "text-warn" : "text-subtle"}`}
-        >
+        <span className={`micro flex items-center gap-1 ${row.warn ? "text-warn" : "text-subtle"}`}>
           {faces.length > 0 && <Icon name={KIND_ICONS[row.kind]} />}
           {row.kind}
         </span>
-        <span className={`text-sm ${row.warn ? "text-warn" : "text-fg/90"}`}>
-          {row.text}
-        </span>
+        <span className={`text-sm ${row.warn ? "text-warn" : "text-fg/90"}`}>{row.text}</span>
       </span>
       {row.points !== null && (
-        <span
-          className={`num ${row.points >= 0 && !row.warn ? "text-radiant" : "text-warn"}`}
-        >
+        <span className={`num ${row.points >= 0 && !row.warn ? "text-radiant" : "text-warn"}`}>
           {signed(row.points)}
         </span>
       )}
@@ -353,13 +307,7 @@ const PART_NAMES: Record<keyof ScoreBreakdown, string> = {
 };
 
 /** One bar per score part that moves the score, biggest first, on a shared scale. */
-function ScoreParts({
-  breakdown,
-  place,
-}: {
-  breakdown?: ScoreBreakdown;
-  place?: { rank: number; of: number };
-}) {
+function ScoreParts({ breakdown, place }: { breakdown?: ScoreBreakdown; place?: { rank: number; of: number } }) {
   if (!breakdown) return null;
   const parts = (Object.keys(PART_NAMES) as (keyof ScoreBreakdown)[])
     .map((k) => ({ k, v: breakdown[k] }))
@@ -380,10 +328,7 @@ function ScoreParts({
       </h4>
       <ul className="flex flex-col gap-1.5">
         {parts.map((p) => (
-          <li
-            key={p.k}
-            className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-xs"
-          >
+          <li key={p.k} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-xs">
             <span className="text-muted">{PART_NAMES[p.k]}</span>
             <span className="h-1.5 rounded-full bg-raised">
               <span
@@ -393,11 +338,7 @@ function ScoreParts({
                 }}
               />
             </span>
-            <span
-              className={`num text-right ${p.v >= 0 ? "text-fg" : "text-dire"}`}
-            >
-              {signed(p.v)}
-            </span>
+            <span className={`num text-right ${p.v >= 0 ? "text-fg" : "text-dire"}`}>{signed(p.v)}</span>
           </li>
         ))}
       </ul>

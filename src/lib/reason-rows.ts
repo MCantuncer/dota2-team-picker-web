@@ -43,11 +43,7 @@ const PART: Partial<Record<ReasonKind, keyof ScoreBreakdown>> = {
  * (Lina, Pudge), the line without its numbers ("Beats Lina and Pudge (likely your lane)") and its total (+3.9).
  * The engine's wording stays the source of truth: a line it words in a new way still shows, as a Draft row.
  */
-export function reasonRow(
-  line: string,
-  heroes: { id: number; name: string }[],
-  breakdown?: ScoreBreakdown,
-): ReasonRow {
+export function reasonRow(line: string, heroes: { id: number; name: string }[], breakdown?: ScoreBreakdown): ReasonRow {
   const warn = line.startsWith("Watch out");
   let text = warn ? line.replace(/^Watch out:\s*/, "") : line;
   text = text.charAt(0).toUpperCase() + text.slice(1);
@@ -58,27 +54,18 @@ export function reasonRow(
     if (hit) kind = hit[1];
   }
   if (kind === "Team Needs")
-    text = text
-      .replace(/^Adds what your team lacks: /, "")
-      .replace(/^./, (c) => c.toUpperCase());
+    text = text.replace(/^Adds what your team lacks: /, "").replace(/^./, (c) => c.toUpperCase());
 
   // Points: every "(+2.2" or "(-0.9" in the line, summed. A note after a number ("likely your lane") stays beside
   // the hero it belongs to.
-  const found = [...text.matchAll(/\(([+-]\d+(?:\.\d+)?)/g)].map((m) =>
-    Number(m[1]),
-  );
+  const found = [...text.matchAll(/\(([+-]\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]));
   text = text
-    .replace(
-      /\s*\(([+-]\d+(?:\.\d+)?)(?:,\s*([^)]*))?\)/g,
-      (_, _n, note: string | undefined) => (note ? ` (${note})` : ""),
+    .replace(/\s*\(([+-]\d+(?:\.\d+)?)(?:,\s*([^)]*))?\)/g, (_, _n, note: string | undefined) =>
+      note ? ` (${note})` : "",
     )
     .trim();
   const part = PART[kind];
-  const points = found.length
-    ? round(found.reduce((s, x) => s + x, 0))
-    : part && breakdown
-      ? breakdown[part]
-      : null;
+  const points = found.length ? round(found.reduce((s, x) => s + x, 0)) : part && breakdown ? breakdown[part] : null;
 
   // Heroes: longest names first, so "Shadow Shaman" never matches as "Shadow" something else.
   const byLength = [...heroes].sort((a, b) => b.name.length - a.name.length);
@@ -89,10 +76,7 @@ export function reasonRow(
     const m = re.exec(rest);
     if (m) {
       at.push({ id: h.id, index: m.index });
-      rest =
-        rest.slice(0, m.index) +
-        " ".repeat(h.name.length) +
-        rest.slice(m.index + h.name.length);
+      rest = rest.slice(0, m.index) + " ".repeat(h.name.length) + rest.slice(m.index + h.name.length);
     }
   }
   const heroIds = at.sort((a, b) => a.index - b.index).map((x) => x.id);

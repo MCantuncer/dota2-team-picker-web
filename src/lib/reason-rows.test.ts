@@ -10,9 +10,7 @@ const heroes = [
 
 describe("reasonRow", () => {
   it("names the heroes, drops the numbers from the line and sums them", () => {
-    expect(
-      reasonRow("Beats Lina (+2.2) and Pudge (+1.7, likely your lane)", heroes),
-    ).toEqual({
+    expect(reasonRow("Beats Lina (+2.2) and Pudge (+1.7, likely your lane)", heroes)).toEqual({
       kind: "Counters",
       heroIds: [25, 14],
       text: "Beats Lina and Pudge (likely your lane)",
@@ -22,10 +20,7 @@ describe("reasonRow", () => {
   });
 
   it("keeps the lane partner note beside its hero", () => {
-    const row = reasonRow(
-      "Works with Crystal Maiden (+0.9, your lane partner) and Mars (+0.5)",
-      heroes,
-    );
+    const row = reasonRow("Works with Crystal Maiden (+0.9, your lane partner) and Mars (+0.5)", heroes);
     expect(row).toMatchObject({
       kind: "Synergy",
       heroIds: [5, 129],
@@ -35,9 +30,7 @@ describe("reasonRow", () => {
   });
 
   it("reads a warning as Watch Out with its negative points", () => {
-    expect(
-      reasonRow("Watch out: loses to Pudge (-0.9, likely your lane)", heroes),
-    ).toMatchObject({
+    expect(reasonRow("Watch out: loses to Pudge (-0.9, likely your lane)", heroes)).toMatchObject({
       kind: "Watch Out",
       heroIds: [14],
       text: "Loses to Pudge (likely your lane)",
@@ -57,15 +50,19 @@ describe("reasonRow", () => {
       flex: 0,
       pickSafety: 0,
     };
-    expect(
-      reasonRow("8th best carry at Ancient: 51.7% win rate", heroes, breakdown),
-    ).toMatchObject({ kind: "Meta", heroIds: [], points: 1.7 });
+    expect(reasonRow("8th best carry at Ancient: 51.7% win rate", heroes, breakdown)).toMatchObject({
+      kind: "Meta",
+      heroIds: [],
+      points: 1.7,
+    });
   });
 
   it("shortens a team needs line and keeps a line it does not know", () => {
-    expect(
-      reasonRow("Adds what your team lacks: wave clear (+0.7)", heroes),
-    ).toMatchObject({ kind: "Team Needs", text: "Wave clear", points: 0.7 });
+    expect(reasonRow("Adds what your team lacks: wave clear (+0.7)", heroes)).toMatchObject({
+      kind: "Team Needs",
+      text: "Wave clear",
+      points: 0.7,
+    });
     expect(reasonRow("Something new", heroes)).toMatchObject({
       kind: "Draft",
       text: "Something new",

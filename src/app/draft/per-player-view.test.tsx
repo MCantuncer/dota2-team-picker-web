@@ -4,11 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Suggestion } from "@/lib/engine/types";
 import { PerPlayerView } from "./per-player-view";
 
-const suggestion = (
-  heroId: number,
-  name: string,
-  reasons: string[],
-): Suggestion =>
+const suggestion = (heroId: number, name: string, reasons: string[]): Suggestion =>
   ({
     heroId,
     name,
@@ -50,9 +46,7 @@ describe("PerPlayerView", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: /Ali Pos 2 Mid/ }),
-    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Ali Pos 2 Mid/ })).toBeVisible();
     expect(screen.getByText("Your record 12-8")).toBeVisible();
     // A closed card shows its main reason; opening it shows the rest.
     expect(screen.getByText("Fast into Lina (+0.9)")).toBeVisible();
@@ -72,13 +66,9 @@ describe("PerPlayerView", () => {
 
     expect(screen.getByText("Outside Pool")).toBeVisible();
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Picked Storm Spirit for Ali" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Picked Storm Spirit for Ali" }));
     expect(onPicked).toHaveBeenCalledWith(17, 2);
-    await userEvent.click(
-      screen.getByRole("button", { name: "Banned Shadow Fiend" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Banned Shadow Fiend" }));
     expect(onBanned).toHaveBeenCalledWith(11);
   });
 
