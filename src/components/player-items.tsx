@@ -1,9 +1,9 @@
 import Image from "next/image";
-import { FaceStack } from "./face-stack";
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
+const ABILITY_CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/";
 
 interface Art {
   heroName: (id: number) => string;
@@ -116,39 +116,45 @@ function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
   );
 }
 
-/** Their Threats: each group of enemies, what they bring, and the item that answers them or what to do. */
+/**
+ * Their Threats: one row per enemy, led by the spell that hurts you most (Can 2026-11-04, the approved
+ * mockup): the hero's face with the spell's art, the spell and what it does, and the item in this
+ * player's path that answers it, or what to do when none does.
+ */
 function Threats({ player, heroName, icons }: Art & { player: PlayerPlan }) {
   const items = player.build ? [...player.build.core, ...player.build.situational, ...player.build.lane, ...player.build.start] : [];
-  if (!player.threatRows.length) return null;
+  if (!player.enemies.length) return null;
   return (
     <aside className="flex flex-col">
       <h3 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">Their Threats</h3>
       <p className="text-sm text-muted">What hurts you in this game, and the answer</p>
       <ul className="mt-3.5 flex flex-col">
-        {player.threatRows.map((row) => {
-          const answer = items.find((i) => i.itemId === row.answer);
-          const key = row.enemies.map((e) => e.heroId).join("-");
+        {player.enemies.map((e) => {
+          const answer = items.find((i) => e.answers.includes(i.itemId));
+          const line = e.spell ? e.spell.line : e.threat;
           return (
-            <li key={key} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.75rem] items-center gap-3.5 border-t border-line py-3.5">
-              {/* The names are written beside the faces, so the faces carry no names of their own. */}
-              {row.enemies.length === 1 ? (
-                <Face id={row.enemies[0].heroId} heroName={heroName} icons={icons} large decorative />
-              ) : (
-                <FaceStack icons={row.enemies.flatMap((e) => icons[e.heroId] ?? [])} />
-              )}
+            <li key={e.heroId} className="grid grid-cols-[4.75rem_minmax(0,1fr)_2.75rem] items-center gap-3.5 border-t border-line py-3.5">
+              {/* The hero and spell are named beside the art, so the art carries no names of its own. */}
+              <span className="relative block w-16" aria-hidden>
+                <Face id={e.heroId} heroName={heroName} icons={icons} large decorative />
+                {e.spell && (
+                  <Image
+                    src={`${ABILITY_CDN}${e.spell.key}.png`}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="absolute -bottom-1.5 -right-2.5 size-6 rounded-xs ring-2 ring-bg"
+                  />
+                )}
+              </span>
               <div className="min-w-0">
                 <b className="block text-[0.9375rem] font-semibold text-fg">
-                  {row.enemies.map((e, i) => (
-                    <span key={e.heroId}>
-                      {i > 0 && ", "}
-                      {heroName(e.heroId)}
-                      {e.inLane && <span className="text-xs font-normal text-muted"> {e.laneSure ? "Lane" : "Lane, guessed"}</span>}
-                    </span>
-                  ))}
+                  {e.spell?.name ?? heroName(e.heroId)}
+                  {e.spell && <span className="text-xs font-normal text-muted"> {heroName(e.heroId)}</span>}
+                  {e.inLane && <span className="text-xs font-normal text-muted">{e.spell ? ", " : " "}{e.laneSure ? "Lane" : "Lane, guessed"}</span>}
                 </b>
-                <span className="text-sm text-muted">
-                  {[...unique(row.enemies.map((e) => e.threat)), ...(!answer && row.tip ? [row.tip] : [])].map(sentence).join(" ")}
-                </span>
+                {/* The trait tip speaks of the hero in general, so it only stands in when there is no spell line. */}
+                <span className="text-sm text-muted">{[line, ...(!answer && !e.spell && e.tip ? [e.tip] : [])].map(sentence).join(" ")}</span>
               </div>
               {answer ? (
                 <span title={answer.name}>
@@ -191,7 +197,6 @@ export function minuteText(item: Pick<BuildItem, "minute" | "lateMinute">, rough
   return item.lateMinute !== undefined ? `${item.minute} min, late after ${item.lateMinute}` : `${item.minute} min`;
 }
 
-const unique = (xs: string[]) => [...new Set(xs)];
 
 /** One sentence: trailing spaces and a final period or colon trimmed, then one period, unless it ends in ? or !. */
 export function sentence(text: string): string {

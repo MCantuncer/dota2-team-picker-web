@@ -24,6 +24,12 @@ export interface MatchupGame {
   version: number;
   /** Skill points in order: ability, talent or attribute bonus ids. */
   points: number[];
+  /** Purchases in order, [item id, seconds]; missing on rows cached before 2026-11-04 (see item-odds.ts). */
+  items?: [number, number][];
+  /** Game length in seconds. */
+  duration?: number;
+  /** Networth lead of our hero's team per minute, negative when behind; empty when STRATZ has none. */
+  lead?: number[];
 }
 
 /** How sure the comparison is that the other talent is better against these enemies. */
@@ -72,7 +78,7 @@ const GAMES_PER_ACCOUNT = 2;
  * enemies came back for both), and at most GAMES_PER_ACCOUNT wins and as many losses per Steam
  * account. The cap is per result so wins and losses are picked the same way whatever the order.
  */
-export function poolGames(games: MatchupGame[]): MatchupGame[] {
+export function poolGames<G extends MatchupGame>(games: G[]): G[] {
   const seen = new Set<number>();
   const perAccount = new Map<string, number>();
   return games.filter((g) => {
@@ -87,9 +93,15 @@ export function poolGames(games: MatchupGame[]): MatchupGame[] {
 
 /**
  * The talent a game took in this tier: the first of the pair in its points. Past level 25 players
- * learn the skipped talents too, so a long game has both; only the first was the choice.
+ * learn the skipped talents too, so a long game has both; only the first was the choice. STRATZ
+ * sends some points as 0 (a talent it couldn't name); one before the pair may have been the real
+ * choice, so the game doesn't count in this tier.
  */
-const tookFirst = (points: number[], pair: Set<number>) => points.find((id) => pair.has(id));
+export function tookFirst(points: number[], pair: Set<number>): number | undefined {
+  const at = points.findIndex((id) => pair.has(id));
+  if (at < 0 || points.slice(0, at).includes(0)) return undefined;
+  return points[at];
+}
 
 const logOdds = (wins: number, losses: number) => Math.log((wins + 0.5) / (losses + 0.5));
 
