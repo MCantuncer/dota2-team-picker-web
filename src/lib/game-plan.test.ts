@@ -15,10 +15,14 @@ const snapshot: Snapshot = {
 };
 
 describe("finishedDraftPlan", () => {
-  it("is null until all ten heroes are in", () => {
+  it("is null until all five of ours and four of theirs are in", () => {
     const engine = new Engine(snapshot);
     expect(finishedDraftPlan(engine, [1, 2, 3, 4, null], [6, 7, 8, 9, 10])).toBeNull();
-    expect(finishedDraftPlan(engine, [1, 2, 3, 4, 5], [6, 7, 8, 9])).toBeNull();
+    expect(finishedDraftPlan(engine, [1, 2, 3, 4, 5], [6, 7, 8])).toBeNull();
+  });
+
+  it("plans before the enemy's last pick shows", () => {
+    expect(finishedDraftPlan(new Engine(snapshot), [1, 2, 3, 4, 5], [6, 7, 8, 9])?.players).toHaveLength(5);
   });
 
   it("plans the game with our picks in position order", () => {
