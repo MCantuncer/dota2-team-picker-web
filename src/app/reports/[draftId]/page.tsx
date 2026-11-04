@@ -45,14 +45,17 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
   }
 
   // Art, the You tag and the records are extras: without them the report still shows every name and number.
-  const [heroes, items, mine, records] = await Promise.all([
+  const [heroes, items, mine, records, feedback] = await Promise.all([
     getHeroes().catch(() => []),
     getItems().catch(() => new Map()),
     supabase.from("draft_players").select("hero_id").eq("draft_id", report.draftId).eq("user_id", user.id).maybeSingle(),
     getRecords(supabase).catch(() => null),
+    // The player's own feedback on this game, linked by the backend once its job reads the match.
+    supabase.from("player_game_facts").select("match_id").eq("draft_id", report.draftId).eq("user_id", user.id).maybeSingle(),
   ]);
   const art: ReportArt = { heroes: new Map(heroes.map((h) => [h.id, { name: h.name, image: h.image }])), items };
   const myHeroId = mine.error ? null : (mine.data?.hero_id ?? null);
+  const feedbackHref = !feedback.error && feedback.data ? `/my-heroes/games/${feedback.data.match_id}` : null;
 
   return (
     <ReportPageShell>
@@ -64,7 +67,7 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
       {report.status === "basic" && (
         <p className="notice text-sm">OpenDota didn&apos;t parse this replay, so lanes, fights and damage are left out.</p>
       )}
-      <ReportView facts={report.facts} art={art} myHeroId={myHeroId} />
+      <ReportView facts={report.facts} art={art} myHeroId={myHeroId} feedbackHref={feedbackHref} />
       {records && <YourRecords records={records} />}
       <p className="text-xs text-muted">The match data behind this report is kept for 90 days.</p>
     </ReportPageShell>

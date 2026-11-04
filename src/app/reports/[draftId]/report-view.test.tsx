@@ -35,6 +35,13 @@ describe("ReportView", () => {
     expect(screen.getByRole("region", { name: "What Hurt You" })).toHaveTextContent("Right-clicks: 33% of the damage you took.");
   });
 
+  it("links to the player's own game page only when there is one", () => {
+    const { rerender } = render(<ReportView facts={facts} art={art} myHeroId={145} />);
+    expect(screen.queryByRole("link", { name: "Your Feedback" })).not.toBeInTheDocument();
+    rerender(<ReportView facts={facts} art={art} myHeroId={145} feedbackHref="/my-heroes/games/9072422905" />);
+    expect(screen.getByRole("link", { name: "Your Feedback" })).toHaveAttribute("href", "/my-heroes/games/9072422905");
+  });
+
   it("leaves out what a basic report doesn't have", () => {
     const basic = { ...facts, isBasic: true, swings: null, lanes: null, fights: null, damageTaken: null, enemyBest: null, draft: null };
     render(<ReportView facts={basic} art={art} myHeroId={null} />);

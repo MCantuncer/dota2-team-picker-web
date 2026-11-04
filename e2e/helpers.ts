@@ -267,6 +267,26 @@ export async function seedReport(email: string, report: { status: string; facts:
   return draft.id;
 }
 
+/** Seeds the player's own feedback row for the reported game, linked to its party draft like the backend does. */
+export async function seedReportFeedback(email: string, draftId: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: factError } = await db.from("player_game_facts").insert({
+    user_id: id,
+    match_id: 9072422905, // The match seedReport plays.
+    draft_id: draftId,
+    hero_id: 145,
+    position: 1,
+    is_win: true,
+    started_at: new Date().toISOString(),
+    duration_s: 2066,
+    status: "waiting_parse",
+  });
+  if (factError) throw factError;
+}
+
 /**
  * Stands in for the browser's share prompt: a canvas showing a hero select screenshot (both teams and
  * nine bans) plays the Dota window for Watch Dota.
