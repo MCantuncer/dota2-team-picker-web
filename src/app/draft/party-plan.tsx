@@ -7,8 +7,8 @@ import type { Position } from "@/lib/engine/types";
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 
 /**
- * The leader's team plan (WCST): the best five heroes for the party, from each player's hero pool,
- * re-planned after every pick. Picked heroes stay; each open slot shows two backups.
+ * The planner's team plan (WCST): the best five heroes for the party, from each player's hero pool,
+ * re-planned after every pick. Everyone in the party sees it; only the planner gets the buttons. Picked heroes stay; each open slot shows two backups.
  */
 export function PartyPlan({
   plan,
@@ -21,8 +21,9 @@ export function PartyPlan({
   /** Display names by user id. */
   names: Record<string, string>;
   portrait: (heroId: number, name: string) => React.ReactNode;
-  onPicked: (heroId: number, position: Position) => void;
-  onBanned: (heroId: number) => void;
+  /** Left out for players watching the planner's screen: they see the plan without the buttons. */
+  onPicked?: (heroId: number, position: Position) => void;
+  onBanned?: (heroId: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -71,16 +72,18 @@ export function PartyPlan({
                       ))}
                     </p>
                   )}
-                  <div className="mt-auto flex gap-2 pt-1">
-                    <button onClick={() => onPicked(slot.heroId, slot.position)} className="btn btn-primary btn-sm">
-                      <Icon name="check" />
-                      Picked
-                    </button>
-                    <button onClick={() => onBanned(slot.heroId)} className="btn btn-secondary btn-sm">
-                      <Icon name="ban" />
-                      Banned
-                    </button>
-                  </div>
+                  {onPicked && onBanned && (
+                    <div className="mt-auto flex gap-2 pt-1">
+                      <button onClick={() => onPicked(slot.heroId, slot.position)} className="btn btn-primary btn-sm">
+                        <Icon name="check" />
+                        Picked
+                      </button>
+                      <button onClick={() => onBanned(slot.heroId)} className="btn btn-secondary btn-sm">
+                        <Icon name="ban" />
+                        Banned
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </li>

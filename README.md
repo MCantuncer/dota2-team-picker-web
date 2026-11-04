@@ -53,7 +53,7 @@ reports, without blocking anything, when backend main has newer versions.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
 full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,
-profile, private-page redirects and Captain mode, with automatic accessibility checks on every page.
+profile, private-page redirects, parties and the Draft Room, with automatic accessibility checks on every page.
 
 CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
 backend copy check, dependency review (fails on a new package with a known high or critical

@@ -21,12 +21,15 @@ import { pickGain, teamWinChance } from "@/lib/win";
 import { poolFirst, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
+import { createClient } from "@/lib/supabase/client";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
+import { perPlayerColumns } from "@/lib/per-player";
 import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { DraftCaptainBar } from "./draft-captain-bar";
 import { PartyPlan } from "./party-plan";
+import { PerPlayerView } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
@@ -117,16 +120,34 @@ export function DraftBoard({
   const latestSolo = useRef<DraftEntry[]>([]);
   const [myPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
-  const live = useLiveParty(party?.party ?? null, party?.userId ?? null);
-  // The party's favorite heroes, only for whoever plans the team (the captain, or the leader).
+  const live = useLiveParty(party?.party ?? null);
+  // Every member's favorite heroes: the whole party sees the planner's Team Plan.
   const pool = party ? live.pool : null;
   const captainId = party ? (live.party?.captain.id ?? null) : null;
+  // The planner runs the party's screen: the Draft Captain, else the leader. Everyone else watches it.
+  const planner = party ? live.planner : null;
+  const isPlanner = !party || planner === party.userId;
+  const plannerName = planner ? (live.party?.members.find((m) => m.id === planner)?.name ?? "The planner") : null;
   // With a draft captain, only they enter the draft; everyone else watches it fill in.
   const locked = captainId !== null && captainId !== party?.userId;
   const captainName = captainId ? (live.party?.members.find((m) => m.id === captainId)?.name ?? "The captain") : null;
-  const [view, setView] = useState<"mine" | "team">("mine");
+  const [view, setView] = useState<"mine" | "players" | "team">("mine");
   const draft = party ? shared.draft : soloDraft;
-  const [rank, setRank] = useState<RankBracket | null>(player.rank);
+  const [soloRank, setSoloRank] = useState<RankBracket | null>(player.rank);
+  const [rankError, setRankError] = useState<string | null>(null);
+  // In a party every screen uses the party rank: the one the planner set, else the planner's own.
+  const rank = party
+    ? (live.partyRank ?? (isPlanner ? player.rank : (live.players[planner ?? ""]?.rank ?? null)))
+    : soloRank;
+  const setRank = async (next: RankBracket | null) => {
+    if (!party) return setSoloRank(next);
+    if (!isPlanner) return;
+    // null goes back to the planner's own rank; the generated types can't mark the argument nullable.
+    const { error } = await createClient().rpc("set_party_rank", { bracket: next as number });
+    if (error) return setRankError(`Party rank not saved: ${error.message}`);
+    setRankError(null);
+    await live.refresh();
+  };
   const allyRef = useRef<HTMLInputElement>(null);
   const bansRef = useRef<HTMLInputElement>(null);
   const picksTitleRef = useRef<HTMLHeadingElement>(null);
@@ -266,10 +287,22 @@ export function DraftBoard({
     ? live.party.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null }))
     : (party?.members ?? []);
   // The team plan (WCST) for the whole party, planned only while it is on screen.
+  // Watchers always see the planner's Team Plan; the planner switches between it and their own picks.
   const teamPlan =
-    pool && view === "team"
+    pool && (view === "team" || !isPlanner)
       ? planTeam(engine, {
           slots: toPlanSlots(planMembers, pool, allies),
+          enemies,
+          bans,
+          rankBracket: bracket,
+        })
+      : null;
+  // Per Player: what each member who still has to pick should take, one hero per player.
+  const playerColumns =
+    pool && isPlanner && view === "players"
+      ? perPlayerColumns(engine, {
+          slots: toPlanSlots(planMembers, pool, allies),
+          personal: Object.fromEntries(Object.entries(live.players).map(([id, p]) => [id, p.personal])),
           enemies,
           bans,
           rankBracket: bracket,
@@ -298,6 +331,61 @@ export function DraftBoard({
     if (id != null) act({ kind: "remove", heroId: id });
   };
 
+  // Your own part of the draft: picks for your position, or your hero once it is in.
+  const myPart = mine ? (
+            <p className="text-sm text-muted">
+              You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
+            </p>
+          ) : (
+            <>
+            {suggestions.length > 0 && (
+              <p className="text-sm text-subtle">
+                {reactingTo({
+                  enemies: enemies.map(hero).map((h) => h.name),
+                  allies: allyIds.map(hero).map((h) => h.name),
+                  bans: bans.length,
+                })}
+              </p>
+            )}
+            <ol aria-label="Suggested heroes" className="flex flex-col">
+              {suggestions.map((s, i) => (
+                <SuggestionCard
+                  key={s.heroId}
+                  suggestion={s}
+                  move={moves.get(s.heroId)}
+                  outsidePool={outside.has(s.heroId)}
+                  weakHere={weak.has(s.heroId)}
+                  portrait={portraits[s.heroId]}
+                  rank={i + 1}
+                  position={myPosition}
+                  gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
+                  onPicked={
+                    locked
+                      ? undefined
+                      : () => {
+                          placeAlly(s.heroId, myPosition);
+                          refocus("ally");
+                        }
+                  }
+                  onBanned={
+                    locked
+                      ? undefined
+                      : () => {
+                          act({ kind: "ban", heroId: s.heroId });
+                          refocus("bans");
+                        }
+                  }
+                />
+              ))}
+            </ol>
+            </>
+          );
+  const picksHeading = (
+    <>
+      Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
+    </>
+  );
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-line pb-4">
@@ -319,10 +407,12 @@ export function DraftBoard({
           <span className="label-caps">Rank</span>
           <select
             value={rank ?? ""}
-            onChange={(e) => setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
+            onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
+            disabled={!isPlanner}
+            title={isPlanner ? undefined : `${plannerName} sets the party rank`}
             className="field btn-sm"
           >
-            <option value="">All ranks</option>
+            <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
             {RANKS.map((r, i) => (
               <option key={r} value={i + 1}>
                 {r}
@@ -351,7 +441,29 @@ export function DraftBoard({
         )}
       </div>
 
+      {!isPlanner && (
+        <section aria-labelledby="picks-title" className="flex flex-col gap-3">
+          <h2 id="picks-title" ref={picksTitleRef} tabIndex={-1} className="section-title">
+            {picksHeading}
+          </h2>
+          {myPart}
+        </section>
+      )}
+
+      {!isPlanner && (
+        <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface px-4 py-3">
+          <Icon name="users" />
+          <span className="font-semibold text-fg">Watching {plannerName}&apos;s Draft</span>
+          <span className="text-sm text-muted">Their Team Plan and party rank, live. Every screen in the party shows the same numbers.</span>
+        </div>
+      )}
+
       {party && live.party && <DraftCaptainBar party={live.party} userId={party.userId} refresh={live.refresh} />}
+      {rankError && (
+        <p role="alert" className="notice notice-error text-sm">
+          {rankError}
+        </p>
+      )}
 
       {locked ? (
         <p className="text-xs text-subtle">
@@ -496,21 +608,25 @@ export function DraftBoard({
           )}
         </section>
 
-        <section aria-labelledby="picks-title" className="flex flex-col gap-3 md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+        <section
+          aria-labelledby={isPlanner ? "picks-title" : "plan-title"}
+          className="flex flex-col gap-3 md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <h2 id="picks-title" ref={picksTitleRef} tabIndex={-1} className="section-title">
-              {teamPlan ? (
-                "Team plan"
-              ) : (
-                <>
-                  Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
-                </>
-              )}
+            <h2
+              id={isPlanner ? "picks-title" : "plan-title"}
+              ref={isPlanner ? picksTitleRef : undefined}
+              tabIndex={-1}
+              className="section-title"
+            >
+              {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
             </h2>
-            {pool && (
+            {pool && isPlanner && (
               <div className="seg" role="group" aria-label="Suggestions for">
                 <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
                   My Picks
+                </button>
+                <button aria-pressed={view === "players"} onClick={() => setView("players")} className="seg-item">
+                  Per Player
                 </button>
                 <button aria-pressed={view === "team"} onClick={() => setView("team")} className="seg-item">
                   Team Plan
@@ -523,61 +639,27 @@ export function DraftBoard({
               plan={teamPlan}
               names={party!.names}
               portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
+              onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
+              onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
+            />
+          ) : playerColumns ? (
+            <PerPlayerView
+              columns={playerColumns}
+              names={party!.names}
+              draftKey={JSON.stringify([allyIds, enemies, bans])}
+              portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="strip" />}
               onPicked={(heroId, position) => placeAlly(heroId, position)}
               onBanned={(heroId) => act({ kind: "ban", heroId })}
             />
-          ) : mine ? (
-            <p className="text-sm text-muted">
-              You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
-            </p>
+          ) : isPlanner ? (
+            myPart
           ) : (
-            <>
-            {suggestions.length > 0 && (
-              <p className="text-sm text-subtle">
-                {reactingTo({
-                  enemies: enemies.map(hero).map((h) => h.name),
-                  allies: allyIds.map(hero).map((h) => h.name),
-                  bans: bans.length,
-                })}
-              </p>
-            )}
-            <ol aria-label="Suggested heroes" className="flex flex-col">
-              {suggestions.map((s, i) => (
-                <SuggestionCard
-                  key={s.heroId}
-                  suggestion={s}
-                  move={moves.get(s.heroId)}
-                  outsidePool={outside.has(s.heroId)}
-                  weakHere={weak.has(s.heroId)}
-                  portrait={portraits[s.heroId]}
-                  rank={i + 1}
-                  position={myPosition}
-                  gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
-                  onPicked={
-                    locked
-                      ? undefined
-                      : () => {
-                          placeAlly(s.heroId, myPosition);
-                          refocus("ally");
-                        }
-                  }
-                  onBanned={
-                    locked
-                      ? undefined
-                      : () => {
-                          act({ kind: "ban", heroId: s.heroId });
-                          refocus("bans");
-                        }
-                  }
-                />
-              ))}
-            </ol>
-            </>
+            <p className="text-sm text-muted">Loading the Team Plan…</p>
           )}
           <Announcer
             text={
               entered +
-              (teamPlan ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
+              ((teamPlan || playerColumns) && isPlanner ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
             }
           />
         </section>
