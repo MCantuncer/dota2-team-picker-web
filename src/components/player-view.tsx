@@ -94,7 +94,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           {view === "Game Story" && <PlayerStory player={player} lane={lane} heroName={heroName} icons={icons} />}
           {view === "Skills and Talents" &&
             (player.skills ? (
-              <SkillPlanCard plan={player.skills} abilities={abilities?.[player.heroId]} />
+              <SkillPlanCard key={player.position} plan={player.skills} abilities={abilities?.[player.heroId]} portrait={icons[player.heroId]} />
             ) : (
               <p className="text-sm text-muted">No skill data for this hero yet.</p>
             ))}
