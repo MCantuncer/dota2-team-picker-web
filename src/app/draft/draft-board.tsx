@@ -686,7 +686,8 @@ export function DraftBoard({
               columns={playerColumns}
               names={planNames}
               draftKey={JSON.stringify([allyIds, enemies, bans])}
-              portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="strip" />}
+              heroes={engine.heroes}
+              portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
               onPicked={(heroId, position) => placeAlly(heroId, position)}
               onBanned={(heroId) => act({ kind: "ban", heroId })}
             />
@@ -831,6 +832,7 @@ function Slot({
 }
 
 const SIZES = {
+  chip: { w: 40, h: 22, className: "h-5.5 w-10" },
   strip: { w: 64, h: 36, className: "h-9 w-16" },
   slot: { w: 96, h: 54, className: "h-13.5 w-24" },
   card: { w: 112, h: 63, className: "h-15.75 w-28" },
