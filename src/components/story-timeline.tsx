@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FaceStack } from "./face-stack";
 import type { Chapter, Spike, Story } from "@/lib/engine/story";
 import type { ItemInfo } from "@/lib/engine/types";
 import { axisPosition, minuteText, namedHeroes, spreadMarks, timelineLabel } from "@/lib/story-axis";
@@ -64,8 +65,8 @@ export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
         <ol className="grid" style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}>
           {chapters.map((c) => (
             <li key={c.phase} className="flex items-start gap-2.5 border-t border-line pr-3 pt-3 text-[0.9375rem] font-medium leading-snug text-fg">
-              <Faces names={namedHeroes(c.action, Object.keys(heroIcons))} heroIcons={heroIcons} />
-              <span>{c.action}</span>
+              <FaceStack icons={namedHeroes(c.action, Object.keys(heroIcons)).flatMap((name) => heroIcons[name] ?? [])} />
+              <span className="min-w-0">{c.action}</span>
             </li>
           ))}
         </ol>
@@ -90,18 +91,6 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
       </span>
       <span className="text-xs leading-tight text-muted">{spike.item}</span>
     </div>
-  );
-}
-
-function Faces({ names, heroIcons }: { names: string[]; heroIcons: Record<string, string> }) {
-  if (!names.length) return null;
-  return (
-    <span className="flex flex-none gap-0.5 pt-px">
-      {names.map((name) => {
-        const icon = heroIcons[name];
-        return icon ? <Image key={name} src={icon} alt="" width={40} height={22} className="h-[1.375rem] w-10 rounded-xs object-cover" /> : null;
-      })}
-    </span>
   );
 }
 
