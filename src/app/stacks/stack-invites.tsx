@@ -47,12 +47,14 @@ export function FriendInvites({
   };
 
   return (
-    <section aria-labelledby="friend-invites-heading" className="flex flex-col gap-2 border-t border-line pt-5">
-      <h2 id="friend-invites-heading" className="text-lg font-semibold">
-        Invite Friends
-      </h2>
+    <section aria-labelledby="friend-invites-heading" className="flex min-w-0 flex-col gap-2 p-4 sm:p-5">
+      <h3 id="friend-invites-heading" className="flex items-center gap-2 font-semibold text-fg">
+        <Icon name="users" />
+        Friends
+      </h3>
+      <p className="text-sm text-subtle">They get the invite on the site and accept it there.</p>
       {list.length ? (
-        <ul className="divide-y divide-line border-y border-line">
+        <ul className="divide-y divide-line border-t border-line">
           {list.map((f) => {
             const inviteId = waiting.get(f.id);
             return (
@@ -135,17 +137,18 @@ export function EmailInvites({
   };
 
   return (
-    <section aria-labelledby="email-invites-heading" className="flex flex-col gap-2 border-t border-line pt-5">
-      <h2 id="email-invites-heading" className="text-lg font-semibold">
-        Invite by Email
-      </h2>
-      <p className="text-sm text-muted">For someone not on the site yet. They get a link, pick a name and password, then join.</p>
+    <section aria-labelledby="email-invites-heading" className="flex min-w-0 flex-col gap-2 p-4 sm:p-5">
+      <h3 id="email-invites-heading" className="flex items-center gap-2 font-semibold text-fg">
+        <Icon name="send" />
+        By Email
+      </h3>
+      <p className="text-sm text-subtle">For someone not on the site yet. They get a link, pick a name and password, then join.</p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           if (email.trim()) void invite(email.trim());
         }}
-        className="flex gap-2"
+        className="flex flex-wrap gap-2"
       >
         <label htmlFor="invite-email" className="sr-only">
           Email address
@@ -157,7 +160,7 @@ export function EmailInvites({
           onChange={(e) => setEmail(e.target.value)}
           placeholder="friend@example.com"
           autoComplete="off"
-          className="field flex-1"
+          className="field min-w-0 flex-1 basis-48"
         />
         <button type="submit" disabled={sending} className="btn btn-primary">
           <Icon name="send" />

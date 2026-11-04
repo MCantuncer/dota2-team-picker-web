@@ -19,7 +19,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await expect(page.getByRole("heading", { name: "Night Owls", exact: true, level: 2 })).toBeVisible();
 
   // Inviting a friend waits for their answer.
-  const invites = page.getByRole("region", { name: "Invite Friends" });
+  const invites = page.getByRole("region", { name: "Friends", exact: true });
   await invites.getByRole("button", { name: "Invite" }).click();
   await expect(invites.getByText("Waiting")).toBeVisible();
   await expectAccessible(page);

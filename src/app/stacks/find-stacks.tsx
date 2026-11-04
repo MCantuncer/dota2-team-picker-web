@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
+import { StackCrest } from "@/components/stacks/stack-crest";
 import { toStackCard, type StackCard } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/client";
 
@@ -74,62 +75,81 @@ export function FindStacks({
     setRequests((cur) => Object.fromEntries(Object.entries(cur).filter(([id]) => id !== stack.id)));
   };
 
-  const row = (s: StackCard) => {
+  const card = (s: StackCard, hot = false) => {
     const request = requests[s.id];
     return (
-      <li key={s.id} className="flex flex-wrap items-center gap-3 py-2.5">
-        <span className="flex min-w-0 flex-1 flex-col">
-          <Link href={`/stacks/${s.id}`} className="truncate font-medium text-fg hover:underline">
-            {s.name}
-          </Link>
-          <span className="text-xs text-muted">
-            {s.ownerName} · <span className="num">{s.members}</span> {s.members === 1 ? "player" : "players"}
-            {s.games > 0 && (
-              <>
-                {" "}
-                · <span className="num">{s.games}</span> {s.games === 1 ? "game" : "games"} together in 2 weeks
-              </>
-            )}
+      <li key={s.id} className="flex min-w-0 flex-col gap-3 rounded-md bg-surface p-4 ring-1 ring-inset ring-line">
+        <span className="flex items-start gap-3">
+          <StackCrest name={s.name} />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <Link href={`/stacks/${s.id}`} className="truncate font-semibold text-fg hover:underline">
+              {s.name}
+            </Link>
+            <span className="flex items-center gap-1 text-sm text-subtle">
+              <Icon name="crown" />
+              <span className="truncate">{s.ownerName}</span>
+            </span>
           </span>
+          {hot && (
+            <span className="chip chip-accent shrink-0">
+              <Icon name="flame" />
+              Hot
+            </span>
+          )}
         </span>
-        {own.has(s.id) ? (
-          <span className="text-xs text-subtle">Your Stack</span>
-        ) : request ? (
-          <>
-            <span className="text-xs text-subtle">Asked</span>
-            <button onClick={() => cancel(s, request)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
-              Cancel
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+          <span className="flex items-center gap-1.5">
+            <Icon name="users" />
+            <span className="num text-fg">{s.members}</span> {s.members === 1 ? "Player" : "Players"}
+          </span>
+          {s.games > 0 && (
+            <span className="flex items-center gap-1.5">
+              <Icon name="swords" />
+              <span className="num text-fg">{s.games}</span> {s.games === 1 ? "Game" : "Games"} in 2 Weeks
+            </span>
+          )}
+        </span>
+        <span className="mt-auto flex min-h-8 items-center justify-end gap-2">
+          {own.has(s.id) ? (
+            <span className="chip">Your Stack</span>
+          ) : request ? (
+            <>
+              <span className="text-xs text-subtle">Asked</span>
+              <button onClick={() => cancel(s, request)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button onClick={() => ask(s)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
+              Ask to Join
             </button>
-          </>
-        ) : (
-          <button onClick={() => ask(s)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
-            Ask to Join
-          </button>
-        )}
+          )}
+        </span>
       </li>
     );
   };
+  const grid = "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className="flex max-w-6xl flex-col gap-8 border-t border-line pt-8">
       <div className="flex flex-col gap-1.5">
-        <h2 className="text-xl font-semibold">Find a Stack</h2>
+        <h2 className="section-title">Find a Stack</h2>
         <p className="text-sm text-muted">Ask to join and the owner answers on the site.</p>
       </div>
       {error && <p className="text-sm text-dire">{error}</p>}
 
       {hot.length > 0 && (
         <section aria-labelledby="hot-heading" className="flex flex-col gap-2">
-          <h3 id="hot-heading" className="flex items-center gap-2 text-lg font-semibold">
+          <h3 id="hot-heading" className="flex items-center gap-2 font-semibold text-fg">
             <Icon name="flame" />
             Hot Stacks
           </h3>
-          <ul className="divide-y divide-line border-y border-line">{hot.map(row)}</ul>
+          <ul className={grid}>{hot.map((s) => card(s, true))}</ul>
         </section>
       )}
 
       <section aria-labelledby="all-heading" className="flex flex-col gap-3">
-        <h3 id="all-heading" className="text-lg font-semibold">
+        <h3 id="all-heading" className="font-semibold text-fg">
           All Stacks
         </h3>
         <form
@@ -158,7 +178,7 @@ export function FindStacks({
           </button>
         </form>
         {list.length ? (
-          <ul className="divide-y divide-line border-y border-line">{list.map(row)}</ul>
+          <ul className={grid}>{list.map((s) => card(s))}</ul>
         ) : (
           <p className="text-sm text-muted">
             {shownSearch ? `No open Stack matches "${shownSearch}".` : "No open Stacks yet. Yours could be the first."}
