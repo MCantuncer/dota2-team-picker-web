@@ -18,23 +18,13 @@ import {
   toggleTag,
 } from "@/lib/game-check-in";
 import { POSITION_NAMES } from "@/lib/draft";
-
-const PICK_ICONS: Record<PicksFeel, { icon: IconName; tone: string }> = {
-  good: { icon: "thumbs-up", tone: "text-radiant" },
-  okay: { icon: "circle-minus", tone: "text-muted" },
-  bad: { icon: "thumbs-down", tone: "text-dire" },
-};
+import { ANSWER_TILE, PICK_ICONS } from "@/components/answer-tile";
 
 const STORY_ICONS: Record<StoryFeel, { icon: IconName; tone: string }> = {
   helped: { icon: "check", tone: "text-radiant" },
   partly: { icon: "minus", tone: "text-muted" },
   off: { icon: "x", tone: "text-dire" },
 };
-
-/** A 72px answer tile; pressed shows the gold ring. */
-const TILE =
-  "relative flex h-18 flex-col items-center justify-center gap-2 rounded-md border border-line-strong bg-raised px-1 text-sm text-muted " +
-  "transition-colors hover:border-line-hover aria-pressed:border-accent aria-pressed:bg-accent-tint aria-pressed:text-fg";
 
 /**
  * The game check-in on the Draft page, in the After the Game slot: the result (found on OpenDota, or the
@@ -99,7 +89,7 @@ export function CheckInCard({
         <div className="flex grow flex-col justify-center gap-3 px-6 py-5 md:px-8">
           <h2
             id="check-in-title"
-            className={`page-title ${result === true ? "text-radiant" : result === false ? "text-dire" : ""}`}
+            className={`page-title ${found ? (game.won ? "text-radiant" : "text-dire") : ""}`}
           >
             {found ? (game.won ? "Victory" : "Defeat") : "Game Over"}
           </h2>
@@ -156,7 +146,7 @@ export function CheckInCard({
                 key={f.value}
                 aria-pressed={picks === f.value}
                 onClick={() => setPicks(picks === f.value ? null : f.value)}
-                className={TILE}
+                className={ANSWER_TILE}
               >
                 <span className={PICK_ICONS[f.value].tone}>
                   <Icon name={PICK_ICONS[f.value].icon} large />
@@ -175,7 +165,7 @@ export function CheckInCard({
                   key={f.value}
                   aria-pressed={story === f.value}
                   onClick={() => setStory(story === f.value ? null : f.value)}
-                  className={TILE}
+                  className={ANSWER_TILE}
                 >
                   <span className={STORY_ICONS[f.value].tone}>
                     <Icon name={STORY_ICONS[f.value].icon} large />
@@ -194,7 +184,7 @@ export function CheckInCard({
                 key={t.value}
                 aria-pressed={tags.includes(t.value)}
                 onClick={() => setTags(toggleTag(tags, t.value))}
-                className={`${TILE} gap-1.5 text-xs`}
+                className={`${ANSWER_TILE} gap-1.5 text-xs`}
               >
                 <Icon name={t.icon} large />
                 <span className="text-center leading-4">{t.label}</span>

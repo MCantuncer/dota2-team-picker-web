@@ -117,3 +117,23 @@ test("a new board offers the last game's check-in, and Skip closes it", async ({
   await expect(line).toHaveCount(0);
   expect(await savedCheckIns(email)).toEqual([expect.objectContaining({ answered_at: null, skipped_at: expect.any(String) })]);
 });
+
+test("away from the Draft page, a player without Steam is asked an hour after the start", async ({ page }) => {
+  const email = uniqueEmail("site");
+  await signUp(page, email, "Elsewhere");
+  await startAGame(page);
+  await backdateGameStart(email, 70);
+
+  await page.goto("/my-heroes");
+  const card = page.getByRole("region", { name: "How Did It Go?" });
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "Victory" }).click();
+  await card.getByRole("button", { name: "Okay" }).click();
+  await expect(card.getByText("Thanks. Your answer tunes the picks.")).toBeVisible();
+  expect(await savedCheckIns(email)).toEqual([expect.objectContaining({ played: true, player_won: true, picks_feel: "okay" })]);
+
+  // Answered: not asked again.
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "My Heroes" })).toBeVisible();
+  await expect(card).toHaveCount(0);
+});
