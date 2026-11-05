@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CheckInAnswer, DueCheckIn } from "@/lib/game-check-in";
+import { type CheckInAnswer, type DueCheckIn, toDueCheckIn } from "@/lib/game-check-in";
 import { createClient } from "@/lib/supabase/client";
 
 /** While a game is on, look for its result this often (the backend job finds it; this only reads). */
@@ -20,20 +20,7 @@ export function useDueCheckIn(on: boolean, polling: boolean) {
     const { data, error } = await supabase.rpc("due_check_in", { surface: "draft" });
     if (error) return console.error("Reading the game check-in failed", error);
     const row = data?.[0];
-    setDue(
-      row
-        ? {
-            id: row.id,
-            allies: row.allies,
-            enemies: row.enemies,
-            myHero: row.my_hero ?? null,
-            myPosition: row.my_position,
-            storyShown: row.story_shown,
-            matchId: row.match_id ?? null,
-            won: row.won ?? null,
-          }
-        : null,
-    );
+    setDue(row ? toDueCheckIn(row) : null);
   }, [supabase]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@
  */
 import type { DraftEntry } from "./draft";
 import { TEAM_SIZE } from "./draft";
+import type { Database } from "./supabase/database.types";
 
 /** The check-in is behind a flag until Can turns it on (NEXT_PUBLIC_GAME_CHECKIN=on). */
 export function gameCheckInEnabled(): boolean {
@@ -171,4 +172,18 @@ export function toggleTag(tags: CheckInTag[], tag: CheckInTag): CheckInTag[] {
 export function missingAnswer(game: DueCheckIn, answer: CheckInAnswer): string | null {
   if (answer.played && game.won === null && answer.won === null) return "Tell us if you won or lost.";
   return null;
+}
+
+/** A `due_check_in` row as the page uses it. */
+export function toDueCheckIn(row: Database["public"]["Functions"]["due_check_in"]["Returns"][number]): DueCheckIn {
+  return {
+    id: row.id,
+    allies: row.allies,
+    enemies: row.enemies,
+    myHero: row.my_hero ?? null,
+    myPosition: row.my_position,
+    storyShown: row.story_shown,
+    matchId: row.match_id ?? null,
+    won: row.won ?? null,
+  };
 }

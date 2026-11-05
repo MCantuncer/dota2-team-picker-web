@@ -5,11 +5,13 @@ import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroes } from "@/lib/heroes";
 import { dueCard, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
+import { type DueCheckIn, gameCheckInEnabled, toDueCheckIn } from "@/lib/game-check-in";
 import { AccountMenu } from "./account-menu";
 import { ActivityMark } from "./activity-mark";
 import { Icon } from "./icon";
 import { LogoMark } from "./logo";
 import { CaptainPrompt } from "./captain-prompt";
+import { CheckInPrompt } from "./check-in-prompt";
 import { HeroPoolCard } from "./hero-pool-card";
 import { PartyChip } from "./party-chip";
 import { PartyInvitePopup } from "./party-invite-popup";
@@ -99,6 +101,8 @@ async function HeaderSession() {
 
   const steamLinked = Boolean(profile?.steam_id);
   const poolCard = steamLinked && poolCardsEnabled() ? await loadPoolCard(supabase, user.id) : null;
+  // One card at a time: the hero pool card first.
+  const checkIn = !poolCard && gameCheckInEnabled() ? await loadCheckIn(supabase) : null;
   const rank = rankName(profile?.rank_tier ?? null);
   const account = {
     name: profile?.display_name || user.email?.split("@")[0] || "Player",
@@ -124,6 +128,7 @@ async function HeaderSession() {
       <CaptainPrompt userId={user.id} />
       {steamLinked && <ActivityMark />}
       {poolCard && <HeroPoolCard key={poolCard.card.id} {...poolCard} />}
+      {checkIn && <CheckInPrompt key={checkIn.game.id} {...checkIn} />}
     </>
   );
 }
@@ -150,4 +155,25 @@ async function loadPoolCard(
     .then((heroes) => heroes.find((h) => h.id === card.heroId))
     .catch(() => undefined);
   return { card, heroName: hero?.name ?? "This hero", heroImage: hero?.image ?? null };
+}
+
+/** The last game to ask about away from the Draft page, with its hero's name and art. Any failure just shows no card. */
+async function loadCheckIn(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<{ game: DueCheckIn; heroName: string | null; heroImage: string | null } | null> {
+  const { data, error } = await supabase.rpc("due_check_in", { surface: "site" });
+  if (error) {
+    console.error("Header check-in:", error.message);
+    return null;
+  }
+  const row = data?.[0];
+  if (!row) return null;
+  const game = toDueCheckIn(row);
+  const hero =
+    game.myHero === null
+      ? undefined
+      : await getHeroes()
+          .then((heroes) => heroes.find((h) => h.id === game.myHero))
+          .catch(() => undefined);
+  return { game, heroName: hero?.name ?? null, heroImage: hero?.image ?? null };
 }
