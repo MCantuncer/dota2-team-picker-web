@@ -6,6 +6,7 @@ import { RankMedal } from "@/components/rank-medal";
 import { rankName } from "@/lib/rank";
 import { createClient } from "@/lib/supabase/server";
 import { NameForm } from "./name-form";
+import { ShareHeroesSwitch } from "./share-heroes-switch";
 import { SyncButton } from "./sync-button";
 
 export const metadata = { title: "Profile · Dota 2 Team Picker" };
@@ -23,7 +24,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login?next=/profile");
 
   const [{ data: profile }, heroes] = await Promise.all([
-    supabase.from("profiles").select("display_name, steam_id, rank_tier, hero_stats, synced_at").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, steam_id, rank_tier, hero_stats, synced_at, share_heroes_with_friends").eq("id", user.id).single(),
     getHeroes(),
   ]);
 
@@ -90,6 +91,14 @@ export default async function ProfilePage() {
             to have suggestions tuned to your rank and the heroes you win with.
           </p>
         )}
+      </section>
+
+      <section aria-labelledby="privacy-heading" className="flex flex-col gap-3 border-t border-line pt-6">
+        <h2 id="privacy-heading" className="section-title">
+          Privacy
+        </h2>
+        {/* Until the profile loads, show sharing as off rather than claim it is on. */}
+        <ShareHeroesSwitch initialOn={profile?.share_heroes_with_friends ?? false} />
       </section>
 
       <section aria-labelledby="heroes-heading" className="flex flex-col gap-2 border-t border-line pt-6">
