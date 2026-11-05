@@ -86,6 +86,18 @@ describe("TeamSeats", () => {
     ]);
   });
 
+  it("moves the highlighted row with the mouse, so hover and Enter pick the same person", async () => {
+    const calls = setup([{ id: SOLO_ME, position: 2 }]);
+    await userEvent.click(screen.getAllByRole("button", { name: "Add Player to Pos 4" })[0]);
+    const list = screen.getByRole("listbox");
+    expect(within(list).getByRole("option", { name: /Ana/ })).toHaveAttribute("aria-selected", "true");
+    await userEvent.hover(within(list).getByRole("option", { name: /Bo/ }));
+    expect(within(list).getByRole("option", { name: /Ana/ })).toHaveAttribute("aria-selected", "false");
+    expect(within(list).getByRole("option", { name: /Bo/ })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Enter}");
+    expect(calls.place).toHaveBeenCalledWith("b", 4);
+  });
+
   it("closes the picker with Escape and removes a seated player", async () => {
     const calls = setup([
       { id: SOLO_ME, position: 2 },
