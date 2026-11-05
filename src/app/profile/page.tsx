@@ -1,40 +1,48 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { RankMedal } from "@/components/rank-medal";
+import { heroInsights, type HeroSort } from "@/lib/hero-insights";
 import { rankName } from "@/lib/rank";
+import { FORM_GAMES, recentForm } from "@/lib/recent-form";
 import { createClient } from "@/lib/supabase/server";
+import { HeroInsightsView } from "./hero-insights-view";
 import { NameForm } from "./name-form";
+import { RecentFormCard } from "./recent-form-card";
 import { SyncButton } from "./sync-button";
 
 export const metadata = { title: "Profile · Dota 2 Team Picker" };
 
-interface GamesWins {
-  games: number;
-  wins: number;
-}
-
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
+  const sort: HeroSort = (await searchParams).sort === "won" ? "won" : "games";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/profile");
 
-  const [{ data: profile }, heroes] = await Promise.all([
+  const [{ data: profile }, heroes, pool, games] = await Promise.all([
     supabase.from("profiles").select("display_name, steam_id, rank_tier, hero_stats, synced_at").eq("id", user.id).single(),
     getHeroes(),
+    // Extras: without them the heroes still show, just without pool positions or recent form.
+    supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0),
+    supabase
+      .from("player_game_facts")
+      .select("is_win, started_at")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false })
+      .limit(FORM_GAMES),
   ]);
 
   const isSteam = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);
-  const heroById = new Map(heroes.map((h) => [h.id, h]));
-  const stats = Object.entries((profile?.hero_stats ?? {}) as unknown as Record<string, GamesWins>)
-    .map(([id, s]) => ({ hero: heroById.get(Number(id)), ...s }))
-    .filter((s) => s.hero)
-    .sort((a, b) => b.games - a.games)
-    .slice(0, 5);
+  const heroById = new Map(heroes.map((h) => [h.id, { name: h.name, image: h.image }]));
+  const insights = heroInsights(profile?.hero_stats, sort);
+  const positions = new Map<number, number[]>();
+  if (pool.error) console.error("Profile pool:", pool.error.message);
+  for (const f of pool.data ?? []) positions.set(f.hero_id, [...(positions.get(f.hero_id) ?? []), f.position].sort());
+  if (games.error) console.error("Profile recent form:", games.error.message);
+  const form = games.error ? null : recentForm(games.data);
 
   return (
     <main className="page flex flex-col gap-10 py-10">
@@ -50,36 +58,29 @@ export default async function ProfilePage() {
         </h2>
         {isSteam ? (
           <>
-            <div className="flex items-center gap-4">
-              {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
-              <div className="flex flex-col gap-1">
-                <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
-                {profile?.synced_at && (
-                  <span className="text-xs text-subtle">
-                    Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
-                  </span>
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:items-start">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
+                  <div className="flex flex-col gap-1">
+                    <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
+                    {profile?.synced_at && (
+                      <span className="text-xs text-subtle">
+                        Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!rank && (
+                  <p className="max-w-prose text-sm text-muted">
+                    OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
+                    <em>Expose Public Match Data</em>, play a match, then refresh.
+                  </p>
                 )}
+                <SyncButton />
               </div>
+              <RecentFormCard form={form} />
             </div>
-            {!rank && (
-              <p className="max-w-prose text-sm text-muted">
-                OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
-                <em>Expose Public Match Data</em>, play a match, then refresh.
-              </p>
-            )}
-            {stats.length > 0 && (
-              <ul aria-label="Most played heroes" className="grid max-w-2xl divide-y divide-line border-y border-line">
-                {stats.map((s) => (
-                  <li key={s.hero!.id} className="flex items-center gap-3 py-2 text-sm">
-                    <Image src={s.hero!.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />
-                    <span className="flex-1 font-medium text-fg">{s.hero!.name}</span>
-                    <span className="num text-muted">{s.games} games</span>
-                    <span className="num w-24 text-right text-fg">Won {Math.round((100 * s.wins) / s.games)}%</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <SyncButton />
           </>
         ) : (
           <p className="max-w-prose text-sm text-muted">
@@ -92,8 +93,10 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <section aria-labelledby="heroes-heading" className="flex flex-col gap-2 border-t border-line pt-6">
-        <h2 id="heroes-heading" className="section-title">
+      {isSteam && insights && <HeroInsightsView insights={insights} heroes={heroById} pool={positions} sort={sort} />}
+
+      <section aria-labelledby="pool-heading" className="flex flex-col gap-2 border-t border-line pt-6">
+        <h2 id="pool-heading" className="section-title">
           Positions and Heroes
         </h2>
         <p className="text-sm text-muted">
