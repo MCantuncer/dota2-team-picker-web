@@ -32,6 +32,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       # Hero pool cards are behind a flag in production until coverage looks good; tests always see them.
       NEXT_PUBLIC_POOL_CARDS: "on"
+      # So is the game check-in after a draft.
+      NEXT_PUBLIC_GAME_CHECKIN: "on"
     steps:
       - uses: actions/checkout@v7
       # The database schema lives in the backend repo. Test against the newest backend commit whose database

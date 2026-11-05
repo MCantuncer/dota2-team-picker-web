@@ -158,6 +158,8 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
 
   return {
     ready: draftId !== null,
+    /** The party's open draft. */
+    draftId,
     draft,
     actors: actorsOf(rows),
     lastMine: userId ? lastEntryBy(rows, confirmed, userId) : null,
