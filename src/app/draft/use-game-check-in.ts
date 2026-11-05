@@ -21,6 +21,7 @@ export function useGameCheckIn(board: CheckInBoard | null) {
     id: string;
     boardId: string;
     startedAt: string | null;
+    answered: boolean;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -34,17 +35,22 @@ export function useGameCheckIn(board: CheckInBoard | null) {
     const timer = setTimeout(async () => {
       // The generated types list every SQL argument as non-null; key, party_draft and my_hero take null.
       const { data: id, error } = await supabase.rpc("save_game_check_in", board as unknown as SaveArgs);
+      // An answered game can't change any more (55000): keep it as answered.
+      if (error?.code === "55000") {
+        lastSaved.current = body;
+        return;
+      }
       if (error || !id) return console.error("Saving the game failed", error);
       lastSaved.current = body;
       if (saved?.id === id) return;
       // A board saved before (a reload, or a party mate's save) may be started already.
       const { data: row, error: readError } = await supabase
         .from("game_check_ins")
-        .select("started_at")
+        .select("started_at, answered_at")
         .eq("id", id)
         .maybeSingle();
       if (readError) console.error("Reading the saved game failed", readError);
-      setSaved({ id, boardId, startedAt: row?.started_at ?? null });
+      setSaved({ id, boardId, startedAt: row?.started_at ?? null, answered: Boolean(row?.answered_at) });
     }, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
     // `board` is compared through `body`, its JSON.
@@ -73,6 +79,10 @@ export function useGameCheckIn(board: CheckInBoard | null) {
     /** The saved game's id, once the full board is saved. */
     id: current?.id ?? null,
     startedAt: current?.startedAt ?? null,
+    /** True once the player answered the check-in for this board. */
+    answered: current?.answered ?? false,
+    /** Marks the board's game as answered here, after the check-in is sent. */
+    markAnswered: () => current && setSaved({ ...current, answered: true }),
     busy,
     error,
     start: () => setStarted(true),

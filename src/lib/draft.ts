@@ -115,3 +115,6 @@ export function lastEntryBy(rows: ActionRow[], draft: DraftEntry[], userId: stri
   }
   return null;
 }
+
+/** The five positions' names, Pos 1 first. */
+export const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];

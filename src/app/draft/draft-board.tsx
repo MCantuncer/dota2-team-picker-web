@@ -9,7 +9,7 @@ import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why"
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
-import { applyAction, heroesOf, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
+import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
@@ -39,7 +39,17 @@ import { useStackLineup, type PlannableStack } from "./use-stack-lineup";
 import { useSoloQueue } from "./use-solo-queue";
 import { StartGame } from "./start-game";
 import { useGameCheckIn } from "./use-game-check-in";
-import { forgetSoloBoardKey, gameCheckInEnabled, isFullBoard, soloBoardKey, toCheckInBoard } from "@/lib/game-check-in";
+import { useCheckInActions, useDueCheckIn } from "./use-check-in";
+import { CheckInCard } from "./check-in-card";
+import { LastGameLine } from "./last-game-line";
+import {
+  type DueCheckIn,
+  forgetSoloBoardKey,
+  gameCheckInEnabled,
+  isFullBoard,
+  soloBoardKey,
+  toCheckInBoard,
+} from "@/lib/game-check-in";
 import { isTeammate, SOLO_ME, SOLO_QUEUE, soloQueuePlan } from "@/lib/solo-queue";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
@@ -65,7 +75,6 @@ export interface PartyInfo {
   party: Party;
 }
 
-const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
@@ -287,6 +296,47 @@ export function DraftBoard({
       : null;
   const game = useGameCheckIn(checkInBoard);
 
+  // The check-in: for this board's game once it is due (20 minutes after Start Game, or the result is in)
+  // or the player pressed Game Over; on an empty board, the last unanswered game, opened by Answer Now.
+  const checkInOn = gameCheckInEnabled() && signedIn;
+  const dueCheckIn = useDueCheckIn(checkInOn, game.startedAt !== null);
+  const checkInActions = useCheckInActions();
+  const [openCheckIn, setOpenCheckIn] = useState<string | null>(null);
+  const [checkInDone, setCheckInDone] = useState(false);
+  const due = dueCheckIn.due;
+  const thisGame: DueCheckIn | null =
+    checkInBoard && game.id && game.startedAt && !game.answered
+      ? due?.id === game.id
+        ? due
+        : {
+            id: game.id,
+            allies: checkInBoard.allies,
+            enemies: checkInBoard.enemies,
+            myHero: checkInBoard.my_hero,
+            myPosition: checkInBoard.my_position,
+            storyShown: checkInBoard.story_shown,
+            matchId: party ? (shared.result?.matchId ?? null) : null,
+            won: party ? (shared.result?.won ?? null) : null,
+          }
+      : null;
+  const checkInGame =
+    thisGame && (openCheckIn === thisGame.id || due?.id === thisGame.id)
+      ? thisGame
+      : !draft.length && due && openCheckIn === due.id
+        ? due
+        : null;
+  const lastGame = !draft.length && due && openCheckIn !== due.id ? due : null;
+  const openCheckInNow = (id: string) => {
+    setOpenCheckIn(id);
+    requestAnimationFrame(() => document.getElementById("check-in-title")?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  };
+  const closeCheckIn = (id: string, answered: boolean) => {
+    if (id === game.id) game.markAnswered();
+    setOpenCheckIn(null);
+    dueCheckIn.clear();
+    setCheckInDone(answered);
+  };
+
   const change = (next: DraftEntry[]) => {
     const current = latestSolo.current;
     if (next === current) return;
@@ -315,6 +365,7 @@ export function DraftBoard({
     writeStorage(DRAFT_KEY, prev);
   };
   const startOver = () => {
+    setCheckInDone(false);
     if (party) void shared.newDraft();
     else {
       change([]);
@@ -393,7 +444,7 @@ export function DraftBoard({
   };
 
   // Your own part of the draft: picks for your position, or your hero once it is in.
-  const myPart = checkInBoard ? (
+  const myPart = checkInBoard && !game.answered ? (
     <StartGame
       heroName={mine ? hero(mine.heroId).name : null}
       ready={game.id !== null}
@@ -402,6 +453,12 @@ export function DraftBoard({
       error={game.error}
       onStart={() => void game.start()}
       onStop={() => void game.stop()}
+      onOver={() => {
+        if (!game.id) return;
+        // In a party, ask the job to look for the result now.
+        if (party && !shared.result) void shared.findResult();
+        openCheckInNow(game.id);
+      }}
     />
   ) : mine ? (
             <p className="text-sm text-muted">
@@ -491,6 +548,7 @@ export function DraftBoard({
             ))}
           </select>
         </label>
+        {lastGame && <LastGameLine game={lastGame} heroOf={hero} portraits={portraits} onAnswer={() => openCheckInNow(lastGame.id)} />}
         {!locked && (
           <div className="ml-auto flex gap-2">
             <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
@@ -779,8 +837,31 @@ export function DraftBoard({
         />
       )}
 
-      {party && allies.length === TEAM_SIZE && (
-        <AfterGame result={shared.result} checking={shared.checking} onFind={shared.findResult} />
+      {checkInGame ? (
+        <CheckInCard
+          key={checkInGame.id}
+          game={checkInGame}
+          heroOf={hero}
+          portraits={portraits}
+          onSend={async (answer) => {
+            const error = await checkInActions.answer(checkInGame.id, answer);
+            if (!error) closeCheckIn(checkInGame.id, true);
+            return error;
+          }}
+          onSkip={async () => {
+            const error = await checkInActions.skip(checkInGame.id);
+            if (!error) closeCheckIn(checkInGame.id, false);
+            return error;
+          }}
+        />
+      ) : (
+        party &&
+        allies.length === TEAM_SIZE && <AfterGame result={shared.result} checking={shared.checking} onFind={shared.findResult} />
+      )}
+      {checkInDone && (
+        <p role="status" className="notice notice-done text-sm">
+          Thanks. Your answers tune the picks and the Game Story.
+        </p>
       )}
     </>
   );
