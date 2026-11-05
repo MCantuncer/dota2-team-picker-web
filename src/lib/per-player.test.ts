@@ -66,4 +66,16 @@ describe("perPlayerColumns", () => {
     expect(shown).not.toContain(19);
     expect(shown).not.toContain(20);
   });
+
+  it("gives a player with no pool six heroes, ranked on the draft with none marked Outside Pool", () => {
+    const cols = perPlayerColumns(engine, {
+      ...base,
+      slots: [{ position: 1, playerId: "teammate-1" }, { position: 2, playerId: "me", favorites: [140] }, { position: 3 }, { position: 4 }, { position: 5 }],
+    });
+    const mate = cols.find((c) => c.playerId === "teammate-1")!;
+    expect(mate.suggestions).toHaveLength(6);
+    expect(mate.outside.size).toBe(0);
+    const scores = mate.suggestions.map((s) => s.score);
+    expect(scores).toEqual([...scores].sort((x, y) => y - x));
+  });
 });

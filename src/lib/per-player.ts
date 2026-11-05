@@ -6,6 +6,8 @@ import { poolFirst, weakHere, worstMatchup } from "@/lib/pick-explain";
 /** Pool heroes shown per player, then the best few outside their pool. */
 const POOL_MAX = 4;
 const OUTSIDE_MAX = 2;
+/** A player with no pool (a Solo Queue teammate) gets the same column length, all ranked on the draft. */
+const NO_POOL_MAX = POOL_MAX + OUTSIDE_MAX;
 
 /** One player who still has to pick, with their suggestions for the position they play. */
 export interface PlayerColumn {
@@ -71,8 +73,9 @@ export function perPlayerColumns(
 
   return open.map((s, col) => {
     const own = lists[col]!.filter((x) => best.get(x.heroId)!.col === col);
-    const { list, outside, weak } = poolFirst(own, new Set(s.favorites ?? []), {
-      poolMax: POOL_MAX,
+    const pool = new Set(s.favorites ?? []);
+    const { list, outside, weak } = poolFirst(own, pool, {
+      poolMax: pool.size ? POOL_MAX : NO_POOL_MAX,
       outsideMax: OUTSIDE_MAX,
       weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket)),
     });
