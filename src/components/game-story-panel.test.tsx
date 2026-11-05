@@ -63,7 +63,7 @@ const plan: GamePlan = {
   ],
   teamFallbacks: ["Behind at 20? Defend high ground until Hero 1 has Black King Bar."],
   story: {
-    headline: "Win before 30 minutes: their Hero 9 outscales us.",
+    headline: "Fight from 14 min, before Hero 9 has Battle Fury at 18.",
     ready: 17,
     chapters: [
       { phase: "0 to 10 min", from: 0, to: 10, ours: [], theirs: [], action: "Farm and trade evenly.", text: "Farm and trade evenly." },
@@ -87,7 +87,7 @@ describe("GameStoryPanel", () => {
   it("tells the story: headline, chapters, danger heroes and the team's fallbacks", () => {
     renderPanel();
     const story = screen.getByRole("region", { name: "Game Story" });
-    expect(within(story).getByText("Win before 30 minutes: their Hero 9 outscales us.")).toBeInTheDocument();
+    expect(within(story).getByText("Fight from 14 min, before Hero 9 has Battle Fury at 18.")).toBeInTheDocument();
     expect(within(story).getByText(/Group up and take towers/)).toBeInTheDocument();
     expect(within(story).getByText(/Black King Bar at 21 min/)).toBeInTheDocument();
     expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
