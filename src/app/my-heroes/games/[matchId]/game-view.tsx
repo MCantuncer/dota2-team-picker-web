@@ -33,7 +33,7 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
 
   return (
     <div className="flex flex-col gap-10">
-      <header className="relative isolate flex min-h-44 flex-col gap-4">
+      <header className="relative isolate flex min-h-32 flex-col gap-3">
         <HeroRender
           portrait={hero?.image}
           className="absolute -right-16 -top-16 -z-10 w-[min(28rem,75vw)] opacity-70 sm:-right-4 sm:opacity-100"
@@ -48,40 +48,42 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
             {game.isWin ? "Won" : "Lost"}
           </span>
         </div>
-        <p className="num flex flex-wrap items-center gap-2.5 text-sm text-muted">
-          {game.position ? (
-            <>
-              <PositionIcon position={game.position} size={18} className="text-muted" />
-              Pos {game.position} {POSITION_NAMES[game.position - 1]}
-            </>
-          ) : (
-            "Position unknown"
-          )}
-          <span aria-hidden className="text-line-hover">
-            |
-          </span>
-          {dateFormat.format(new Date(game.startedAt))}
-          <span aria-hidden className="text-line-hover">
-            |
-          </span>
-          {gameLength(game.durationS)}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {game.draftId && (
-            <Link href={`/reports/${game.draftId}`} className="btn btn-secondary">
-              <Icon name="users" />
-              Party Report
-            </Link>
-          )}
-          <a
-            href={`https://www.opendota.com/matches/${game.matchId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-ghost"
-          >
-            OpenDota
-            <Icon name="external" />
-          </a>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <p className="num flex flex-wrap items-center gap-2.5 text-sm text-muted">
+            {game.position ? (
+              <>
+                <PositionIcon position={game.position} size={18} className="text-muted" />
+                Pos {game.position} {POSITION_NAMES[game.position - 1]}
+              </>
+            ) : (
+              "Position unknown"
+            )}
+            <span aria-hidden className="text-line-hover">
+              |
+            </span>
+            {dateFormat.format(new Date(game.startedAt))}
+            <span aria-hidden className="text-line-hover">
+              |
+            </span>
+            {gameLength(game.durationS)}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {game.draftId && (
+              <Link href={`/reports/${game.draftId}`} className="btn btn-secondary">
+                <Icon name="users" />
+                Party Report
+              </Link>
+            )}
+            <a
+              href={`https://www.opendota.com/matches/${game.matchId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+            >
+              OpenDota
+              <Icon name="external" />
+            </a>
+          </div>
         </div>
       </header>
 
@@ -95,9 +97,14 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
 
       {game.status === "parsed" &&
         (hasFindings ? (
-          <div className="grid gap-8 lg:grid-cols-2">
-            <FindingList id="game-strengths" title="Went Well" tone="strength" findings={game.strengths} />
-            <FindingList id="game-problems" title="To Fix" tone="problem" findings={game.problems} />
+          // A side with nothing in it is left out rather than shown as an empty box.
+          <div className={`grid gap-8 ${game.strengths.length > 0 && game.problems.length > 0 ? "lg:grid-cols-2" : ""}`}>
+            {game.strengths.length > 0 && (
+              <FindingList id="game-strengths" title="Went Well" tone="strength" findings={game.strengths} />
+            )}
+            {game.problems.length > 0 && (
+              <FindingList id="game-problems" title="To Fix" tone="problem" findings={game.problems} />
+            )}
           </div>
         ) : (
           <p role="status" className="notice">
@@ -198,19 +205,13 @@ function FindingList({ id, title, tone, findings }: { id: string; title: string;
         <span aria-hidden className={`size-2 rounded-full ${tone === "strength" ? "bg-radiant" : "bg-dire"}`} />
         {title}
       </h2>
-      {findings.length === 0 ? (
-        <p className="rounded-md border border-dashed border-line-strong p-4 text-sm text-subtle">
-          {tone === "strength" ? "Nothing stood out as a strength in this game." : "Nothing stood out to fix."}
-        </p>
-      ) : (
-        <ol className="flex flex-col gap-3">
-          {findings.map((f) => (
-            <li key={f.kind}>
-              <FindingCard finding={f} open />
-            </li>
-          ))}
-        </ol>
-      )}
+      <ol className="flex flex-col gap-3">
+        {findings.map((f) => (
+          <li key={f.kind}>
+            <FindingCard finding={f} open />
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

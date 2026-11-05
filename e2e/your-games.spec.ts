@@ -13,6 +13,9 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   await page.goto("/my-heroes");
   await page.getByRole("link", { name: /Your Games/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Your Games" })).toBeVisible();
+  // The intro names the games the feedback comes from, and the squares show each result.
+  await expect(page.getByText(/worked out from your 2 ranked and normal games (on|between) /)).toBeVisible();
+  await expect(page.getByText("Last 2 results: won 1")).toBeVisible();
 
   const problems = page.getByRole("region", { name: "Problems" });
   await expect(problems.getByRole("heading", { name: "Early deaths are costing your lanes" })).toBeVisible();
