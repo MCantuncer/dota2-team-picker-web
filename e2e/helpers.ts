@@ -205,6 +205,23 @@ export async function seedFeedback(email: string) {
   if (gamesError) throw gamesError;
 }
 
+/** Gives a Steam user a six month hero record and a rank, as the profile sync saves them. */
+export async function seedHeroStats(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: saveError } = await db
+    .from("profiles")
+    .update({
+      rank_tier: 61,
+      synced_at: new Date().toISOString(),
+      hero_stats: { "14": { games: 67, wins: 38 }, "74": { games: 50, wins: 16 }, "76": { games: 46, wins: 29 }, "114": { games: 30, wins: 14 } },
+    })
+    .eq("id", id);
+  if (saveError) throw saveError;
+}
+
 /** Makes two signed-up users friends, so one can invite the other to a party. */
 export async function befriend(emailA: string, emailB: string) {
   const db = admin();
