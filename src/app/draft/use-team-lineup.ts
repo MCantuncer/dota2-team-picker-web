@@ -12,7 +12,6 @@ import {
   removeSeat,
   teamPlan,
   teamStorageKey,
-  toggleSeat,
   toTeamPeople,
   type LineupRow,
   type SavedTeam,
@@ -76,7 +75,6 @@ export function useTeamLineup({
   const key = teamStorageKey(userId);
   const [mode, setMode] = useState<"me" | "team">("me");
   const [seats, setSeats] = useState<Seat[]>([]);
-  const [stackId, setStackId] = useState("");
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
@@ -105,13 +103,11 @@ export function useTeamLineup({
       // Reading the address and browser storage after mount is the one way to avoid a server mismatch.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode("team");
-      setStackId(wanted);
       setSeats([{ id: SOLO_ME, position: seatPosition.current }]);
     } else {
       if (wanted) forgetStackParam();
       setMode(saved?.mode ?? "me");
       setSeats(saved?.seats ?? []);
-      setStackId(saved?.stackId && stacks.some((s) => s.id === saved.stackId) ? saved.stackId : "");
     }
     // Signed out there is nobody to load, so the saved seats are all there is.
     setTrusted(!userId);
@@ -150,8 +146,8 @@ export function useTeamLineup({
   }, [enabled, restored, mode, userId, load]);
 
   useEffect(() => {
-    if (enabled && restored && trusted) write(key, { mode, seats, ...(stackId ? { stackId } : {}) });
-  }, [enabled, restored, trusted, key, mode, seats, stackId]);
+    if (enabled && restored && trusted) write(key, { mode, seats });
+  }, [enabled, restored, trusted, key, mode, seats]);
 
   const people = loaded?.people ?? null;
   const plan =
@@ -172,22 +168,29 @@ export function useTeamLineup({
     /** Who can be seated, once loaded; null signed out or before the first load. */
     people,
     notice,
-    /** The Stack the Plan For list shows. */
-    stackId,
-    /** Just Me: the plain solo draft. */
-    justMe: () => {
-      setMode("me");
-      setStackId("");
-    },
-    /** Team with only the player seated (what Solo Queue was), or showing one Stack's people. */
-    team: (showStack = "") => {
+    /** Who can be seated: their heroes per position, for the seat art. */
+    pool: loaded?.pool ?? {},
+    /** Just Me: the plain solo draft. Team seats are kept for next time. */
+    justMe: () => setMode("me"),
+    /** Team, keeping the seats from last time, or just the player when there are none. */
+    team: () => {
       setMode("team");
-      setStackId(showStack);
-      setSeats([{ id: SOLO_ME, position: seatPosition.current }]);
+      setSeats((s) => (s.length ? s : [{ id: SOLO_ME, position: seatPosition.current }]));
     },
-    toggle: (person: Pick<TeamPerson, "id" | "positions" | "canAdd">) => setSeats((s) => toggleSeat(s, person)),
-    move: (id: string, position: Position) => setSeats((s) => place(s, id, position)),
+    /** Seats someone, or moves them (swapping with whoever sat there). */
+    place: (id: string, position: Position) => setSeats((s) => place(s, id, position)),
     remove: (id: string) => setSeats((s) => removeSeat(s, id)),
+    /** Fills open seats from a Stack and says who didn't fit. */
+    fill: (fromStack: string) => {
+      if (!loaded) return;
+      const result = fillFromStack(seatsNow.current, loaded.people, fromStack);
+      setSeats(result.seats);
+      setNotice(
+        result.left.length
+          ? `${result.left.map((p) => p.name).join(", ")} didn't fit: all seats are taken.`
+          : null,
+      );
+    },
     /** Set in Team: every position planned, open seats as teammates. */
     plan,
   };

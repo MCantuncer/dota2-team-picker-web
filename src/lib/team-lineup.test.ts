@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { isTeammate, SOLO_ME } from "./solo-queue";
 import {
   cleanSeats,
+  defaultPosition,
   fillFromStack,
   isSavedTeam,
   place,
@@ -51,7 +52,6 @@ describe("readSavedTeam", () => {
     expect(readSavedTeam(store, "u1", 2)).toEqual({
       mode: "team",
       seats: [{ id: SOLO_ME, position: 4 }, { id: "tusk", position: 3 }],
-      stackId: "s1",
     });
     expect(store.getItem("stack-lineup:u1")).toBeNull();
     expect(store.getItem("solo-queue:u1")).toBeNull();
@@ -73,6 +73,14 @@ describe("readSavedTeam", () => {
     expect(readSavedTeam(store, "u1", 1)).toBeNull();
     store.setItem(teamStorageKey("u1"), JSON.stringify({ mode: "team", seats: [{ id: "a", position: 9 }] }));
     expect(readSavedTeam(store, "u1", 1)).toBeNull();
+  });
+});
+
+describe("defaultPosition", () => {
+  it("takes their first favorite free position, else the first free one", () => {
+    expect(defaultPosition({ positions: [3, 4] }, new Set([3]))).toBe(4);
+    expect(defaultPosition({ positions: [3] }, new Set([3, 1]))).toBe(2);
+    expect(defaultPosition({ positions: [] }, new Set())).toBe(1);
   });
 });
 

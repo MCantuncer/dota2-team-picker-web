@@ -237,6 +237,38 @@ export async function befriend(emailA: string, emailB: string) {
   if (error) throw error;
 }
 
+/**
+ * Makes a new user with this name a friend of the signed-up user (or a pending request from them),
+ * as if they had accepted, optionally with sharing turned off. Returns their id.
+ */
+export async function seedFriend(
+  email: string,
+  name: string,
+  { position, shares = true, status = "accepted" }: { position?: number; shares?: boolean; status?: "accepted" | "pending" } = {},
+) {
+  const db = admin();
+  const { data: me, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!me) throw new Error(`No user ${email}`);
+  const { data: created, error: userError } = await db.auth.admin.createUser({
+    email: uniqueEmail("friend"),
+    password: PASSWORD,
+    email_confirm: true,
+  });
+  if (userError) throw userError;
+  const id = created.user.id;
+  const steps = [
+    db.from("profiles").update({ display_name: name, share_heroes_with_friends: shares }).eq("id", id),
+    db.from("friendships").insert({ requester_id: id, addressee_id: me, status }),
+    ...(position ? [db.from("favorite_positions").insert({ user_id: id, position })] : []),
+  ];
+  for (const step of steps) {
+    const { error: stepError } = await step;
+    if (stepError) throw stepError;
+  }
+  return id;
+}
+
 export async function signUp(page: Page, email: string, name: string) {
   await page.goto("/signup?next=/profile");
   await page.getByLabel("Name").fill(name);

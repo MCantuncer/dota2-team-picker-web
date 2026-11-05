@@ -14,15 +14,16 @@ test("a Stack owner plans a draft for Stack mates who aren't online", async ({ p
 
   await page.goto("/draft");
   const planFor = page.getByRole("region", { name: "Plan For" });
-  await planFor.getByLabel("Plan For").selectOption({ label: "Night Owls" });
-  const lineup = planFor.getByRole("list", { name: "Playing This Game" });
-  await expect(lineup.getByRole("checkbox", { name: "You" })).toBeChecked();
+  await planFor.getByRole("button", { name: "Team", exact: true }).click();
+  const seats = planFor.getByRole("list", { name: "Team Seats" });
+  await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toHaveCount(1);
 
-  // Tusk is ticked at their favorite position; a sixth player can't be ticked.
-  await lineup.getByRole("checkbox", { name: "Tusk" }).check();
-  await expect(lineup.getByRole("radio", { name: "Pos 3, Offlane, chosen" })).toBeVisible();
-  for (const name of ["Lina", "Axe", "Lion"]) await lineup.getByRole("checkbox", { name }).check();
-  await expect(lineup.getByRole("checkbox", { name: "Pudge" })).toBeDisabled();
+  // Fill From Stack seats people at their favorite free positions, in the order they joined, and says who didn't fit.
+  await planFor.getByLabel("Fill From Stack").selectOption({ label: "Night Owls" });
+  await expect(seats.getByRole("listitem").nth(2)).toContainText("Tusk");
+  await expect(seats.getByRole("listitem").nth(1)).toContainText("Lina");
+  await expect(planFor.getByRole("status")).toHaveText("Pudge didn't fit: all seats are taken.");
+  await expect(planFor).toContainText("5 of 5 seats filled");
   await expectAccessible(page);
 
   await page.getByRole("button", { name: "Per Player" }).click();
@@ -31,26 +32,31 @@ test("a Stack owner plans a draft for Stack mates who aren't online", async ({ p
   await expect(page.getByRole("heading", { name: "Team Plan" })).toBeVisible();
   await expectAccessible(page);
 
-  // The lineup is kept on reload; Just Me brings back the plain solo screen.
+  // Seats are kept on reload; Just Me brings back the plain solo screen, and Team brings the seats back.
   await page.reload();
-  await expect(lineup.getByRole("checkbox", { name: "Tusk" })).toBeChecked();
-  await planFor.getByLabel("Plan For").selectOption({ label: "Just Me" });
+  await expect(seats.getByRole("listitem").nth(2)).toContainText("Tusk");
+  await planFor.getByRole("button", { name: "Just Me" }).click();
+  await expect(seats).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Per Player" })).toHaveCount(0);
-
-  // Solo Queue and a Stack replace each other, and the last one chosen comes back on reload.
-  await planFor.getByLabel("Plan For").selectOption({ label: "Solo Queue" });
-  await expect(lineup).toHaveCount(0);
-  await planFor.getByLabel("Plan For").selectOption({ label: "Night Owls" });
-  await expect(lineup.getByRole("checkbox", { name: "You" })).toBeChecked();
-  await page.reload();
-  await expect(planFor.getByLabel("Plan For")).toHaveValue(/^(?!solo-queue$)/);
-  await expect(lineup.getByRole("checkbox", { name: "You" })).toBeChecked();
+  await planFor.getByRole("button", { name: "Team", exact: true }).click();
+  await expect(seats.getByRole("listitem").nth(2)).toContainText("Tusk");
 });
 
-test("a player who doesn't run a Stack gets only Just Me and Solo Queue in Plan For", async ({ page }) => {
+test("a Stack page's Draft link starts a Team with that Stack", async ({ page }) => {
+  const email = uniqueEmail("plan-link");
+  await signUp(page, email, "Mirana");
+  const stackId = await seedStack(email, "Night Owls", [{ name: "Tusk", position: 3 }]);
+  await page.goto(`/draft?stack=${stackId}`);
+  const seats = page.getByRole("list", { name: "Team Seats" });
+  await expect(seats.getByRole("listitem").nth(2)).toContainText("Tusk");
+  await expect(page).toHaveURL((url) => !url.searchParams.has("stack"));
+});
+
+test("a player who doesn't run a Stack gets no Fill From Stack", async ({ page }) => {
   await signUp(page, uniqueEmail("plan-solo"), "Rubick");
   await page.goto("/draft");
-  await expect(page.getByRole("heading", { name: "Draft", level: 1 })).toBeVisible();
-  const options = page.getByRole("region", { name: "Plan For" }).getByLabel("Plan For").locator("option");
-  await expect(options).toHaveText(["Just Me", "Solo Queue"]);
+  const planFor = page.getByRole("region", { name: "Plan For" });
+  await planFor.getByRole("button", { name: "Team", exact: true }).click();
+  await expect(planFor.getByRole("list", { name: "Team Seats" })).toBeVisible();
+  await expect(planFor.getByLabel("Fill From Stack")).toHaveCount(0);
 });
