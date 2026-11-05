@@ -168,7 +168,8 @@ export function AddPlayer({
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className={`truncate font-semibold ${o.disabled ? "text-muted" : "text-fg"}`}>{o.name}</span>
-                <span className="text-xs text-subtle">{o.meta}</span>
+                {/* Muted, not subtle: the chosen row sits on --hover, where subtle text is under 4.5:1. */}
+                <span className="text-xs text-muted">{o.meta}</span>
               </span>
               {!o.disabled && (
                 <span aria-hidden className={`btn btn-sm shrink-0 ${on ? "btn-primary" : "btn-secondary"}`}>
