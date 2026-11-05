@@ -4,7 +4,7 @@ import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
-import type { PlannableStack } from "./use-stack-lineup";
+import type { PlannableStack } from "./use-team-lineup";
 
 export const metadata: Metadata = { title: "Draft · Dota 2 Team Picker" };
 
