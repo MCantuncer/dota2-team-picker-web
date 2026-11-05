@@ -35,8 +35,7 @@ import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
 import { StackLineup } from "./stack-lineup";
-import { useStackLineup, type PlannableStack } from "./use-stack-lineup";
-import { useSoloQueue } from "./use-solo-queue";
+import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { StartGame } from "./start-game";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
@@ -50,7 +49,9 @@ import {
   soloBoardKey,
   toCheckInBoard,
 } from "@/lib/game-check-in";
-import { isTeammate, SOLO_ME, SOLO_QUEUE, soloQueuePlan } from "@/lib/solo-queue";
+import { isTeammate, SOLO_ME, SOLO_QUEUE } from "@/lib/solo-queue";
+import { stackPeople } from "@/lib/team-lineup";
+import type { LineupPerson } from "@/lib/stack-lineup";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -143,11 +144,16 @@ export function DraftBoard({
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null);
   // Out of a party, the player can plan for a Stack they run, online or not. The party always wins.
-  const lineup = useStackLineup(party ? null : userId, party ? NO_STACKS : stacks);
-  // Solo Queue: the player's own picks plus picks for each teammate, who can play any hero.
-  const soloQueue = useSoloQueue(userId, !party);
-  const soloPlan = soloQueue.on ? soloQueuePlan({ myPosition: soloPosition, myHeroes: player.heroes, personal: player.personal }) : null;
-  const lineupPlan = party ? null : (soloPlan ?? lineup.plan);
+  // Team: any mix of Stack mates and friends, online or not; open seats are teammates who can play any hero.
+  const lineup = useTeamLineup({
+    userId: party ? null : userId,
+    enabled: !party,
+    stacks: party ? NO_STACKS : stacks,
+    myPosition: soloPosition,
+    myHeroes: player.heroes,
+    personal: player.personal,
+  });
+  const lineupPlan = party ? null : lineup.plan;
   // Who the plan is for: the live party, or the Stack lineup. Every member's favorite heroes, so the
   // whole party sees the planner's Team Plan.
   const pool = party ? live.pool : (lineupPlan?.pool ?? null);
@@ -218,10 +224,9 @@ export function DraftBoard({
   const mine = allies.find((e) => e.position === myPosition);
   // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
   const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
-  const lineupPositions = (lineupPlan?.members ?? []).flatMap((m) => (m.position ? [m.position] : []));
-  // Solo Queue holds only the player's position: random teammates go where their hero fits best.
-  const reserved =
-    party && lobbyPositions.length ? lobbyPositions : !soloPlan && lineupPositions.length ? lineupPositions : [myPosition];
+  // Team holds the seated players' positions; teammates in open seats go where their hero fits best.
+  const seatedPositions = lineup.seats.map((s) => s.position);
+  const reserved = party && lobbyPositions.length ? lobbyPositions : lineupPlan ? seatedPositions : [myPosition];
   const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
@@ -381,11 +386,24 @@ export function DraftBoard({
   /** Puts an ally in a position, swapping with whoever held it, so no two allies share one. */
   const placeAlly = (heroId: number, position: Position | null) => act(...positionActions(resolved, heroId, position));
   const choosePosition = (p: Position) => {
-    // A Stack lineup keeps the player's position in the lineup; Solo Queue works it out from this one.
-    if (!soloPlan && lineupPlan?.myPosition && userId) return lineup.move(userId, p);
+    // In Team the player's seat moves too, swapping with whoever sat there.
+    if (lineupPlan?.myPosition) lineup.move(SOLO_ME, p);
     setMyPosition(p);
     writeStorage(POSITION_KEY, p);
   };
+
+  // The Plan For list for the Stack shown: the player, then its people in the order they joined.
+  const shownStack = lineup.mode === "team" ? lineup.stackId : "";
+  const listedPeople: LineupPerson[] | null =
+    shownStack && lineup.people
+      ? [
+          { id: SOLO_ME, name: "You", positions: player.positions, canPlay: true },
+          ...lineup.people
+            .filter((p) => !p.canAdd && p.stacks.some((st) => st.id === shownStack))
+            .map((p) => ({ id: p.id, name: p.name, positions: p.positions, canPlay: false })),
+          ...stackPeople(lineup.people, shownStack).map((p) => ({ id: p.id, name: p.name, positions: p.positions, canPlay: true })),
+        ]
+      : null;
 
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
@@ -395,9 +413,9 @@ export function DraftBoard({
     : party
       ? party.members
       : (lineupPlan?.members ?? []);
-  // Solo Queue fills every position, so an ally typed without a position takes its guessed one, the
-  // same as on My Team, and never the player's own.
-  const planAllies: DraftEntry[] = soloPlan
+  // Team fills every position, so an ally typed without a position takes its guessed one, the
+  // same as on My Team, and never a seated player's.
+  const planAllies: DraftEntry[] = lineupPlan
     ? resolved.map((a) => ({ kind: "ally", heroId: a.heroId, position: a.position }))
     : allies;
   // The team plan (WCST) for the whole party, planned only while it is on screen.
@@ -573,18 +591,17 @@ export function DraftBoard({
       {!party && (
         <StackLineup
           stacks={stacks}
-          stackId={soloQueue.on ? SOLO_QUEUE : lineup.stackId}
-          people={lineup.people}
-          picks={lineup.picks}
+          stackId={lineup.mode === "me" ? "" : lineup.stackId || SOLO_QUEUE}
+          people={listedPeople}
+          picks={lineup.seats.filter((seat) => listedPeople?.some((p) => p.id === seat.id))}
           notice={lineup.notice}
           onChoose={(id) => {
-            const isSoloQueue = id === SOLO_QUEUE;
-            soloQueue.set(isSoloQueue);
-            lineup.choose(isSoloQueue ? "" : id);
-            // The teammates' picks are what Solo Queue adds, so show them straight away.
-            if (isSoloQueue) setView("players");
+            if (!id) return lineup.justMe();
+            lineup.team(id === SOLO_QUEUE ? "" : id);
+            // The teammates' picks are what Team adds, so show them straight away.
+            if (id === SOLO_QUEUE) setView("players");
           }}
-          onToggle={lineup.toggle}
+          onToggle={(p) => lineup.toggle({ id: p.id, positions: p.positions, canAdd: p.canPlay })}
           onMove={lineup.move}
         />
       )}
@@ -831,7 +848,7 @@ export function DraftBoard({
           playerNames={POSITIONS.map((p) => {
             const member = planMembers.find((m) => m.position === p);
             if (!member || isTeammate(member.id)) return null;
-            return member.id === (party?.userId ?? (soloPlan ? SOLO_ME : userId)) ? "You" : (planNames[member.id] ?? null);
+            return member.id === (party?.userId ?? SOLO_ME) ? "You" : (planNames[member.id] ?? null);
           })}
           myPosition={myPosition}
         />

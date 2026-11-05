@@ -4,7 +4,7 @@ import type { Position } from "@/lib/engine/types";
 import { SOLO_QUEUE } from "@/lib/solo-queue";
 import { LINEUP_MAX, type LineupEntry, type LineupPerson } from "@/lib/stack-lineup";
 import { PositionPicker } from "./position-picker";
-import type { PlannableStack } from "./use-stack-lineup";
+import type { PlannableStack } from "./use-team-lineup";
 
 /**
  * Plan For: pick a Stack you run, tick who plays this game (up to five, online or not) and where.
