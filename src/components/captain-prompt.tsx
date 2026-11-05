@@ -56,7 +56,13 @@ export function CaptainPrompt({ userId }: { userId: string }) {
   // The captain's heartbeat, while any page of the site is open.
   useEffect(() => {
     if (!isCaptain) return;
-    const beat = () => void supabase.rpc("captain_heartbeat");
+    // `then` sends the query: a Supabase query left unawaited is never sent.
+    const beat = () => {
+      supabase.rpc("captain_heartbeat").then(
+        () => undefined,
+        () => undefined,
+      );
+    };
     beat();
     const interval = setInterval(beat, HEARTBEAT_MS);
     const onVisible = () => {

@@ -10,8 +10,12 @@ import { createClient } from "@/lib/supabase/client";
 export function ActivityMark() {
   const supabase = useMemo(() => createClient(), []);
   useEffect(() => {
-    // Only a hint for the job: a failure changes nothing on the page.
-    void supabase.rpc("mark_active");
+    // A Supabase query is only sent once it is awaited or `then` is called, so `void` alone
+    // would never reach the database. Only a hint for the job: a failure changes nothing here.
+    supabase.rpc("mark_active").then(
+      () => undefined,
+      () => undefined,
+    );
   }, [supabase]);
   return null;
 }
