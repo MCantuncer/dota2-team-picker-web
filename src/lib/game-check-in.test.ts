@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftEntry } from "./draft";
-import { isFullBoard, startedAgo, toCheckInBoard } from "./game-check-in";
+import { type DueCheckIn, isFullBoard, missingAnswer, startedAgo, toCheckInBoard, toggleTag } from "./game-check-in";
 
 const ally = (heroId: number, position: DraftEntry["position"] = null): DraftEntry => ({ heroId, kind: "ally", position });
 const enemy = (heroId: number): DraftEntry => ({
@@ -82,5 +82,33 @@ describe("startedAgo", () => {
     expect(startedAgo(start, Date.parse(start) + 20_000)).toBe("Started just now");
     expect(startedAgo(start, Date.parse(start) + 14 * 60_000)).toBe("Started 14 min ago");
     expect(startedAgo(start, Date.parse(start) + 75 * 60_000)).toBe("Started 1 h 15 min ago");
+  });
+});
+
+describe("toggleTag", () => {
+  it("adds and removes tags, three at most", () => {
+    expect(toggleTag([], "laning")).toEqual(["laning"]);
+    expect(toggleTag(["laning", "items"], "laning")).toEqual(["items"]);
+    expect(toggleTag(["laning", "items", "teammates"], "late_game")).toEqual(["laning", "items", "teammates"]);
+  });
+});
+
+describe("missingAnswer", () => {
+  const game: DueCheckIn = {
+    id: "g",
+    allies: [],
+    enemies: [],
+    myHero: null,
+    myPosition: 1,
+    storyShown: false,
+    matchId: null,
+    won: null,
+  };
+  const answer = { played: true, won: null, picks: null, story: null, tags: [], note: "" };
+  it("needs who won only when no result was found and the game was played", () => {
+    expect(missingAnswer(game, answer)).toBe("Tell us if you won or lost.");
+    expect(missingAnswer(game, { ...answer, won: false })).toBeNull();
+    expect(missingAnswer(game, { ...answer, played: false })).toBeNull();
+    expect(missingAnswer({ ...game, matchId: 1, won: true }, answer)).toBeNull();
   });
 });

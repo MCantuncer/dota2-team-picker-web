@@ -340,3 +340,30 @@ export async function seedStack(ownerEmail: string, name: string, players: { nam
   }
   return team.id;
 }
+
+/** Moves the user's started games back in time, as if Start Game was pressed `minutes` ago. */
+export async function backdateGameStart(email: string, minutes: number) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: updateError } = await db
+    .from("game_check_ins")
+    .update({ started_at: new Date(Date.now() - minutes * 60_000).toISOString() })
+    .eq("user_id", id)
+    .not("started_at", "is", null);
+  if (updateError) throw updateError;
+}
+
+/** The user's saved games with their check-in answers. */
+export async function savedCheckIns(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  const { data, error: readError } = await db
+    .from("game_check_ins")
+    .select("played, player_won, picks_feel, tags, note, answered_at, skipped_at")
+    .eq("user_id", id!);
+  if (readError) throw readError;
+  return data;
+}

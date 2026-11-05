@@ -104,3 +104,71 @@ export function startedAgo(startedAt: string, now: number): string {
   const hours = Math.floor(minutes / 60);
   return `Started ${hours} h ${minutes % 60} min ago`;
 }
+
+/** A started game waiting for its check-in, as `due_check_in` returns it (or built from the board on Game Over). */
+export interface DueCheckIn {
+  id: string;
+  allies: number[];
+  enemies: number[];
+  myHero: number | null;
+  myPosition: number;
+  storyShown: boolean;
+  /** The result, once found on OpenDota. */
+  matchId: number | null;
+  won: boolean | null;
+}
+
+/** The player's answers, as `answer_check_in` takes them. */
+export interface CheckInAnswer {
+  played: boolean;
+  /** Only when no result was found. */
+  won: boolean | null;
+  picks: PicksFeel | null;
+  story: StoryFeel | null;
+  tags: CheckInTag[];
+  note: string;
+}
+
+export type PicksFeel = "good" | "okay" | "bad";
+export type StoryFeel = "helped" | "partly" | "off";
+
+export const PICKS_FEELS: { value: PicksFeel; label: string }[] = [
+  { value: "good", label: "Good" },
+  { value: "okay", label: "Okay" },
+  { value: "bad", label: "Bad" },
+];
+
+export const STORY_FEELS: { value: StoryFeel; label: string }[] = [
+  { value: "helped", label: "Helped" },
+  { value: "partly", label: "Partly" },
+  { value: "off", label: "Didn't Fit" },
+];
+
+/** What decided the game, at most `MAX_TAGS`. The values match the backend's fixed list. */
+export const CHECK_IN_TAGS = [
+  { value: "our_draft", label: "Our Draft", icon: "helmet" },
+  { value: "their_draft", label: "Their Draft", icon: "skull" },
+  { value: "laning", label: "Laning", icon: "swords" },
+  { value: "mid_game", label: "Fights", icon: "flame" },
+  { value: "late_game", label: "Late Game", icon: "clock" },
+  { value: "items", label: "Items", icon: "coins" },
+  { value: "teammates", label: "Teammates", icon: "users" },
+  { value: "story_timings", label: "Story Timings", icon: "alert" },
+] as const;
+
+export type CheckInTag = (typeof CHECK_IN_TAGS)[number]["value"];
+
+export const MAX_TAGS = 3;
+export const MAX_NOTE = 280;
+
+/** Adds or removes a tag, keeping at most `MAX_TAGS`. */
+export function toggleTag(tags: CheckInTag[], tag: CheckInTag): CheckInTag[] {
+  if (tags.includes(tag)) return tags.filter((t) => t !== tag);
+  return tags.length < MAX_TAGS ? [...tags, tag] : tags;
+}
+
+/** What the player must still answer before Send: who won, when no result was found. */
+export function missingAnswer(game: DueCheckIn, answer: CheckInAnswer): string | null {
+  if (answer.played && game.won === null && answer.won === null) return "Tell us if you won or lost.";
+  return null;
+}
