@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { HeroInsightsView } from "./hero-insights-view";
 import { NameForm } from "./name-form";
 import { RecentFormCard } from "./recent-form-card";
+import { ShareHeroesSwitch } from "./share-heroes-switch";
 import { SyncButton } from "./sync-button";
 
 export const metadata = { title: "Profile · Dota 2 Team Picker" };
@@ -26,7 +27,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   const [{ data: profile }, heroes, pool, games] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, steam_id, rank_tier, hero_stats, hero_games, synced_at")
+      .select("display_name, steam_id, rank_tier, hero_stats, hero_games, synced_at, share_heroes_with_friends")
       .eq("id", user.id)
       .single(),
     getHeroes(),
@@ -111,6 +112,14 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           period={period}
         />
       )}
+
+      <section aria-labelledby="privacy-heading" className="flex flex-col gap-3 border-t border-line pt-6">
+        <h2 id="privacy-heading" className="section-title">
+          Privacy
+        </h2>
+        {/* Until the profile loads, show sharing as off rather than claim it is on. */}
+        <ShareHeroesSwitch initialOn={profile?.share_heroes_with_friends ?? false} />
+      </section>
 
       <section aria-labelledby="pool-heading" className="flex flex-col gap-2 border-t border-line pt-6">
         <h2 id="pool-heading" className="section-title">

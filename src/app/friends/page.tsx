@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { FriendsBoard, type Friend, type Suggestion } from "./friends-board";
@@ -42,7 +43,14 @@ export default async function FriendsPage() {
       <div className="flex flex-col gap-1.5">
         <h1 className="page-title">Friends</h1>
         <p className="text-sm text-muted">
-          Add the people you play with, then invite them to a party.
+          Add the people you play with, then invite them to a party or plan a draft for them.
+        </p>
+        <p className="text-sm text-muted">
+          Friends share their heroes with each other for drafting. You can turn this off on your{" "}
+          <Link href="/profile" className="link">
+            Profile
+          </Link>
+          .
         </p>
       </div>
       <FriendsBoard
