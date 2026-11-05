@@ -32,11 +32,13 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
   const hasFindings = game.strengths.length + game.problems.length > 0;
 
   return (
-    <div className="flex flex-col gap-10">
-      <header className="relative isolate flex min-h-32 flex-col gap-3">
+    // The render is placed against this wrapper, behind everything in it, so a short header never
+    // lets it paint over the Numbers below.
+    <div className="relative isolate flex flex-col gap-10">
+      <header className="flex min-h-32 flex-col gap-3">
         <HeroRender
           portrait={hero?.image}
-          className="absolute -right-16 -top-16 -z-10 w-[min(28rem,75vw)] opacity-70 sm:-right-4 sm:opacity-100"
+          className="absolute -right-16 -top-16 -z-10 w-[min(24rem,70vw)] opacity-70 sm:-right-4 sm:opacity-100"
         />
         <div className="flex flex-wrap items-center gap-3.5">
           <h1 className="page-title">{name(game.heroId)}</h1>
@@ -127,6 +129,10 @@ interface Tile {
   note?: string | null;
 }
 
+// The last tile stretches over the free cells of its row, so the grid never ends in an empty block.
+const SPAN_SM = ["", "sm:col-span-4", "sm:col-span-3", "sm:col-span-2"];
+const lastTileSpan = (count: number) => `${count % 2 === 1 ? "col-span-2" : ""} ${SPAN_SM[count % 4]}`;
+
 function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
   const s = game.stats;
   const fmt = (n: number | null) => (n === null ? null : number.format(n));
@@ -169,8 +175,11 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
         Numbers
       </h2>
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
-        {shown.map((t) => (
-          <div key={t.label} className="flex min-w-0 flex-col gap-1.5 bg-surface p-4">
+        {shown.map((t, i) => (
+          <div
+            key={t.label}
+            className={`flex min-w-0 flex-col gap-1.5 bg-surface p-4 ${i === shown.length - 1 ? lastTileSpan(shown.length) : ""}`}
+          >
             <dt className="flex items-center gap-1.5 text-sm text-subtle">
               {t.icon && <Icon name={t.icon} />}
               {t.label}
