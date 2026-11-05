@@ -39,3 +39,17 @@ test("my heroes opens for a signed-in user", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expectAccessible(page);
 });
+
+test("friends sharing is on by default and stays off once turned off", async ({ page }) => {
+  await signUp(page, uniqueEmail("share"), "Rubick");
+  const share = page.getByRole("checkbox", { name: "Share My Heroes With Friends" });
+  await expect(share).toBeChecked();
+  await expectAccessible(page);
+
+  await share.click();
+  await expect(share).not.toBeChecked();
+  await expect(page.getByText(/planned as if you can play any hero/)).toBeVisible();
+  await expect(share).toBeEnabled();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Share My Heroes With Friends" })).not.toBeChecked();
+});
