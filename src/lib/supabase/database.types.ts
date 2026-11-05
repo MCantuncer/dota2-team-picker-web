@@ -168,6 +168,34 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"game_check_ins": {
+                  Row: {
+                    "allies": (number)[],"ally_positions": (number)[],"answered_at": string | null,"bans": (number)[],"client_key": string | null,"empty_finds": number,"enemies": (number)[],"filled_at": string,"find_tries": number,"id": string,"match_id": number | null,"my_hero": number | null,"my_position": number,"note": string | null,"party_draft_id": string | null,"picks_feel": string | null,"played": boolean | null,"player_won": boolean | null,"profile_hidden": boolean,"result_checked_at": string | null,"shown": (number)[],"skipped_at": string | null,"snoozed_until": string | null,"snoozes": number,"started_at": string | null,"story_feel": string | null,"story_shown": boolean,"tags": (string)[],"updated_at": string,"user_id": string,"won": boolean | null,"check_in_result": {
+              "match_id": number,"won": boolean
+            } | null
+                  }
+                  ComputedFields: "check_in_result"
+                  Insert: {
+                    "allies": (number)[],"ally_positions": (number)[],"answered_at"?: string | null,"bans"?: (number)[],"client_key"?: string | null,"empty_finds"?: number,"enemies": (number)[],"filled_at"?: string,"find_tries"?: number,"id"?: string,"match_id"?: number | null,"my_hero"?: number | null,"my_position": number,"note"?: string | null,"party_draft_id"?: string | null,"picks_feel"?: string | null,"played"?: boolean | null,"player_won"?: boolean | null,"profile_hidden"?: boolean,"result_checked_at"?: string | null,"shown"?: (number)[],"skipped_at"?: string | null,"snoozed_until"?: string | null,"snoozes"?: number,"started_at"?: string | null,"story_feel"?: string | null,"story_shown"?: boolean,"tags"?: (string)[],"updated_at"?: string,"user_id": string,"won"?: boolean | null
+                  }
+                  Update: {
+                    "allies"?: (number)[],"ally_positions"?: (number)[],"answered_at"?: string | null,"bans"?: (number)[],"client_key"?: string | null,"empty_finds"?: number,"enemies"?: (number)[],"filled_at"?: string,"find_tries"?: number,"id"?: string,"match_id"?: number | null,"my_hero"?: number | null,"my_position"?: number,"note"?: string | null,"party_draft_id"?: string | null,"picks_feel"?: string | null,"played"?: boolean | null,"player_won"?: boolean | null,"profile_hidden"?: boolean,"result_checked_at"?: string | null,"shown"?: (number)[],"skipped_at"?: string | null,"snoozed_until"?: string | null,"snoozes"?: number,"started_at"?: string | null,"story_feel"?: string | null,"story_shown"?: boolean,"tags"?: (string)[],"updated_at"?: string,"user_id"?: string,"won"?: boolean | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "game_check_ins_party_draft_id_fkey"
+      columns: ["party_draft_id"]
+isOneToOne: false
+      referencedRelation: "party_drafts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "game_check_ins_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"hero_benchmarks": {
                   Row: {
                     "benchmarks": NonNullable<Json>,"fetched_at": string,"hero_id": number
@@ -816,6 +844,9 @@ isOneToOne: false
 "answer_captain_request":
 { Args: { "accept": boolean }; Returns: undefined
                            },
+"answer_check_in":
+{ Args: { "check_in": string,"decided"?: (string)[],"did_win"?: boolean,"note"?: string,"picks"?: string,"played"?: boolean,"story"?: string }; Returns: undefined
+                           },
 "answer_join_request":
 { Args: { "accept": boolean,"request": string }; Returns: undefined
                            },
@@ -860,6 +891,11 @@ isOneToOne: false
 "captain_timing":
 { Args: { "what": string }; Returns: string
                            },
+"check_in_result":
+{ Args: { "c": Omit<Database["public"]['Tables']["game_check_ins"]['Row'], Database["public"]['Tables']["game_check_ins"]['ComputedFields']> }; Returns: {
+              "match_id": number,"won": boolean
+            }[]
+                           },
 "claim_invite_send":
 { Args: { "address": string,"sender": string,"team": string }; Returns: string
                            },
@@ -871,6 +907,11 @@ isOneToOne: false
 "claim_matchup_fetches":
 { Args: { "version": number,"wanted": Json }; Returns: Json
                            },
+"claim_solo_check_ins":
+{ Args: { "max_rows"?: number }; Returns: {
+              "account_id": number,"allies": (number)[],"id": string,"my_hero": number,"started_at": string
+            }[]
+                           },
 "claim_trend_players":
 { Args: { "max_rows"?: number }; Returns: {
               "account_id": number,"has_recent_card": boolean,"hero_stats": Json,"pool": Json,"skip": (string)[],"user_id": string
@@ -881,16 +922,30 @@ isOneToOne: false
               "account_ids": (number)[],"allies": (number)[],"created_at": string,"draft_id": string
             }[]
                            },
+"distinct_heroes":
+{ Args: { "heroes": (number)[] }; Returns: boolean
+                           },
 "draft_state":
 { Args: { "draft": string }; Returns: {
               "hero_id": number,"kind": string,"position": number
             }[]
                            },
+"due_check_in":
+{ Args: { "surface": string }; Returns: {
+              "allies": (number)[],"enemies": (number)[],"id": string,"match_id": number,"my_hero": number,"my_position": number,"party_draft_id": string,"started_at": string,"story_shown": boolean,"won": boolean
+            }[]
+                           },
 "end_party_draft":
 { Args: { "draft": string }; Returns: undefined
                            },
+"find_is_due":
+{ Args: { "base": string,"checked": string,"max_tries": number,"tries": number }; Returns: boolean
+                           },
 "forget_match_files":
 { Args: { "matches": (number)[] }; Returns: number
+                           },
+"forget_old_check_ins":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "forget_old_matchups":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -997,6 +1052,9 @@ isOneToOne: false
               "invite_id": string,"inviter_avatar_url": string,"inviter_name": string,"members": number,"sent_at": string,"team_id": string,"team_name": string
             }[]
                            },
+"note_check_in_no_games":
+{ Args: { "check_in": string }; Returns: undefined
+                           },
 "note_stratz_busy":
 { Args: { "until": string }; Returns: undefined
                            },
@@ -1062,6 +1120,9 @@ isOneToOne: false
 "save_draft_suggestions":
 { Args: { "chance"?: number,"draft": string,"pos": number,"shown": (number)[],"shown_scores": (number)[] }; Returns: undefined
                            },
+"save_game_check_in":
+{ Args: { "allies": (number)[],"ally_positions": (number)[],"bans": (number)[],"enemies": (number)[],"key": string,"my_hero": number,"my_position": number,"party_draft": string,"shown": (number)[],"story_shown": boolean }; Returns: string
+                           },
 "save_matchup_guides":
 { Args: { "slices": Json,"version": number }; Returns: number
                            },
@@ -1070,6 +1131,12 @@ isOneToOne: false
                            },
 "send_friend_request":
 { Args: { "target": string }; Returns: string
+                           },
+"set_check_in_result":
+{ Args: { "check_in": string,"did_win": boolean,"match": number }; Returns: boolean
+                           },
+"set_game_started":
+{ Args: { "check_in": string,"started": boolean }; Returns: string
                            },
 "set_party_captain":
 { Args: { "party": string,"who": string }; Returns: undefined
@@ -1082,6 +1149,12 @@ isOneToOne: false
                            },
 "set_pool_suggestions_off":
 { Args: { "is_off": boolean }; Returns: undefined
+                           },
+"skip_check_in":
+{ Args: { "check_in": string }; Returns: undefined
+                           },
+"snooze_check_in":
+{ Args: { "check_in": string }; Returns: undefined
                            },
 "stack_games":
 { Args: { "teams": (string)[] }; Returns: {

@@ -37,6 +37,9 @@ import { usePartyDraft } from "./use-party-draft";
 import { StackLineup } from "./stack-lineup";
 import { useStackLineup, type PlannableStack } from "./use-stack-lineup";
 import { useSoloQueue } from "./use-solo-queue";
+import { StartGame } from "./start-game";
+import { useGameCheckIn } from "./use-game-check-in";
+import { forgetSoloBoardKey, gameCheckInEnabled, isFullBoard, soloBoardKey, toCheckInBoard } from "@/lib/game-check-in";
 import { isTeammate, SOLO_ME, SOLO_QUEUE, soloQueuePlan } from "@/lib/solo-queue";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
@@ -262,6 +265,28 @@ export function DraftBoard({
     return () => clearTimeout(timer);
   }, [shown, myPosition, saveSuggestions]);
 
+  // Once both teams are in with every ally's position, the game plan for our side.
+  const gamePlan = engine ? finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups) : null;
+
+  // The list this player saw last before their pick, kept for the saved game.
+  const shownNow = suggestions.slice(0, 8).map((s) => s.heroId);
+  const [lastShown, setLastShown] = useState<number[]>([]);
+  if (shownNow.length && shownNow.join() !== lastShown.join()) setLastShown(shownNow);
+  // A full board is saved as a game for the check-in, while signed in and the flag is on.
+  const checkInBoard =
+    gameCheckInEnabled() && signedIn && isFullBoard(draft) && (!party || shared.draftId)
+      ? toCheckInBoard({
+          draft,
+          key: party ? null : soloBoardKey(),
+          partyDraftId: party ? shared.draftId : null,
+          myPosition,
+          myHero: mine?.heroId ?? null,
+          shown: lastShown,
+          storyShown: gamePlan !== null,
+        })
+      : null;
+  const game = useGameCheckIn(checkInBoard);
+
   const change = (next: DraftEntry[]) => {
     const current = latestSolo.current;
     if (next === current) return;
@@ -291,7 +316,10 @@ export function DraftBoard({
   };
   const startOver = () => {
     if (party) void shared.newDraft();
-    else change([]);
+    else {
+      change([]);
+      forgetSoloBoardKey();
+    }
   };
   /** Who entered a hero in the party draft. */
   const enteredBy = (heroId: number) => {
@@ -353,8 +381,6 @@ export function DraftBoard({
 
   const taken = new Set(draft.map((e) => e.heroId));
   const hero = (id: number) => engine.hero(id);
-  // Once both teams are in with every ally's position, the game plan for our side.
-  const gamePlan = finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups);
   // Players watching the captain's draft hear each hero as it goes in.
   const last = locked ? draft.at(-1) : undefined;
   const entered = last
@@ -367,7 +393,17 @@ export function DraftBoard({
   };
 
   // Your own part of the draft: picks for your position, or your hero once it is in.
-  const myPart = mine ? (
+  const myPart = checkInBoard ? (
+    <StartGame
+      heroName={mine ? hero(mine.heroId).name : null}
+      ready={game.id !== null}
+      startedAt={game.startedAt}
+      busy={game.busy}
+      error={game.error}
+      onStart={() => void game.start()}
+      onStop={() => void game.stop()}
+    />
+  ) : mine ? (
             <p className="text-sm text-muted">
               You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
             </p>
