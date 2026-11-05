@@ -1,6 +1,8 @@
 /**
- * What the Profile page says about the player's heroes, from the per-hero record OpenDota
- * keeps for the last six months (profiles.hero_stats). Pure: no network or database.
+ * What the Profile page says about the player's heroes, from what the profile sync saves from
+ * OpenDota: per-hero totals for six months in profiles.hero_stats, and the same six months game
+ * by game in profiles.hero_games, which shorter periods are counted from. Pure: no network or
+ * database.
  */
 
 export interface GamesWins {
@@ -8,10 +10,48 @@ export interface GamesWins {
   wins: number;
 }
 
-/** The period the record covers, as the sync reads it (backend `_shared/opendota.ts`). */
-export const HERO_STATS_MONTHS = 6;
-/** A hero needs this many games before it can be called best or worst. */
-export const MIN_GAMES = 10;
+/** The periods the Profile can show. Six months is as far back as the sync reads. */
+export const PERIODS = [
+  { days: 7, label: "Week", words: "the last 7 days", minGames: 3 },
+  { days: 30, label: "Month", words: "the last 30 days", minGames: 5 },
+  { days: 90, label: "3 Months", words: "the last 3 months", minGames: 8 },
+  { days: 180, label: "6 Months", words: "the last 6 months", minGames: 10 },
+] as const;
+export type Period = (typeof PERIODS)[number];
+export const DEFAULT_PERIOD: Period = PERIODS[3];
+
+/** The period in `?period=`, or six months. */
+export function readPeriod(value: unknown): Period {
+  return PERIODS.find((p) => String(p.days) === value) ?? DEFAULT_PERIOD;
+}
+
+const DAY_SECONDS = 24 * 60 * 60;
+
+/**
+ * The per-hero record for a period, shaped like hero_stats. Six months is hero_stats itself;
+ * a shorter period is counted from hero_games ([hero id, won 1 or 0, start time in Unix
+ * seconds] per game). Undefined while hero_games has not been saved yet: it is empty but
+ * hero_stats has games.
+ */
+export function recordFor(period: Period, heroStats: unknown, heroGames: unknown, now: number = Date.now()): unknown {
+  if (period.days === DEFAULT_PERIOD.days) return heroStats;
+  const games = Array.isArray(heroGames) ? heroGames : [];
+  if (games.length === 0 && heroInsights(heroStats) !== null) return undefined;
+  const since = now / 1000 - period.days * DAY_SECONDS;
+  const record: Record<string, GamesWins> = {};
+  for (const game of games) {
+    if (!Array.isArray(game)) continue;
+    const [heroId, won, startTime] = game as unknown[];
+    if (typeof heroId !== "number" || typeof startTime !== "number" || startTime < since) continue;
+    const line = (record[String(heroId)] ??= { games: 0, wins: 0 });
+    line.games += 1;
+    if (won === 1) line.wins += 1;
+  }
+  return record;
+}
+
+/** A hero needs this many games in six months before it can be called best or worst. */
+export const MIN_GAMES = DEFAULT_PERIOD.minGames;
 /** Heroes listed in the table. */
 export const LIST_SIZE = 10;
 
@@ -54,7 +94,7 @@ const isRecord = (v: unknown): v is GamesWins =>
   (v as GamesWins).wins <= (v as GamesWins).games;
 
 /** Reads hero_stats ({ "14": { games, wins } }), skipping odd entries. */
-export function heroInsights(raw: unknown, sort: HeroSort = "games"): HeroInsights | null {
+export function heroInsights(raw: unknown, sort: HeroSort = "games", minGames: number = MIN_GAMES): HeroInsights | null {
   if (typeof raw !== "object" || raw === null) return null;
   const records = Object.entries(raw as Record<string, unknown>).flatMap(([id, v]) =>
     /^\d+$/.test(id) && isRecord(v) ? [{ heroId: Number(id), games: v.games, wins: v.wins }] : [],
@@ -72,7 +112,7 @@ export function heroInsights(raw: unknown, sort: HeroSort = "games"): HeroInsigh
     };
   });
   const byGames = [...all].sort((a, b) => b.games - a.games || b.wins - a.wins);
-  const enough = byGames.filter((l) => l.games >= MIN_GAMES);
+  const enough = byGames.filter((l) => l.games >= minGames);
   const byRate = [...enough].sort((a, b) => b.wins / b.games - a.wins / a.games || b.games - a.games);
   const gain = (l: HeroLine) => (l.wins / l.games - average / 100) * l.games;
   const byGain = [...enough].sort((a, b) => gain(b) - gain(a));

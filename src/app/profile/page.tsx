@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { RankMedal } from "@/components/rank-medal";
-import { heroInsights, type HeroSort } from "@/lib/hero-insights";
+import { heroInsights, type HeroSort, readPeriod, recordFor } from "@/lib/hero-insights";
 import { rankName } from "@/lib/rank";
 import { FORM_GAMES, recentForm } from "@/lib/recent-form";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +15,9 @@ import { SyncButton } from "./sync-button";
 export const metadata = { title: "Profile · Dota 2 Team Picker" };
 
 export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
-  const sort: HeroSort = (await searchParams).sort === "won" ? "won" : "games";
+  const params = await searchParams;
+  const sort: HeroSort = params.sort === "won" ? "won" : "games";
+  const period = readPeriod(params.period);
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,7 +25,11 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   if (!user) redirect("/login?next=/profile");
 
   const [{ data: profile }, heroes, pool, games] = await Promise.all([
-    supabase.from("profiles").select("display_name, steam_id, rank_tier, hero_stats, synced_at, share_heroes_with_friends").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("display_name, steam_id, rank_tier, hero_stats, hero_games, synced_at, share_heroes_with_friends")
+      .eq("id", user.id)
+      .single(),
     getHeroes(),
     // Extras: without them the heroes still show, just without pool positions or recent form.
     supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0),
@@ -38,7 +44,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   const isSteam = Boolean(profile?.steam_id);
   const rank = rankName(profile?.rank_tier ?? null);
   const heroById = new Map(heroes.map((h) => [h.id, { name: h.name, image: h.image }]));
-  const insights = heroInsights(profile?.hero_stats, sort);
+  // A shorter period is missing until the first sync that saves the game list.
+  const record = recordFor(period, profile?.hero_stats, profile?.hero_games);
+  const insights = record === undefined ? null : heroInsights(record, sort, period.minGames);
   const positions = new Map<number, number[]>();
   if (pool.error) console.error("Profile pool:", pool.error.message);
   for (const f of pool.data ?? []) positions.set(f.hero_id, [...(positions.get(f.hero_id) ?? []), f.position].sort());
@@ -94,7 +102,16 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         )}
       </section>
 
-      {isSteam && insights && <HeroInsightsView insights={insights} heroes={heroById} pool={positions} sort={sort} />}
+      {isSteam && (profile?.synced_at || insights) && (
+        <HeroInsightsView
+          insights={insights}
+          loaded={record !== undefined}
+          heroes={heroById}
+          pool={positions}
+          sort={sort}
+          period={period}
+        />
+      )}
 
       <section aria-labelledby="privacy-heading" className="flex flex-col gap-3 border-t border-line pt-6">
         <h2 id="privacy-heading" className="section-title">

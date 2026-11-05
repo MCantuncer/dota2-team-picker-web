@@ -208,6 +208,8 @@ export async function seedFeedback(email: string) {
 /** Gives a Steam user a six month hero record and a rank, as the profile sync saves them. */
 export async function seedHeroStats(email: string) {
   const db = admin();
+  const DAY = 24 * 60 * 60;
+  const now = Math.floor(Date.now() / 1000);
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
   if (error) throw error;
   if (!id) throw new Error(`No user ${email}`);
@@ -217,6 +219,14 @@ export async function seedHeroStats(email: string) {
       rank_tier: 61,
       synced_at: new Date().toISOString(),
       hero_stats: { "14": { games: 67, wins: 38 }, "74": { games: 50, wins: 16 }, "76": { games: 46, wins: 29 }, "114": { games: 30, wins: 14 } },
+      // The last week: three Pudge wins and a Storm Spirit loss, then an older game outside it.
+      hero_games: [
+        [14, 1, now - 1 * DAY],
+        [14, 1, now - 2 * DAY],
+        [14, 1, now - 3 * DAY],
+        [17, 0, now - 4 * DAY],
+        [74, 0, now - 20 * DAY],
+      ],
     })
     .eq("id", id);
   if (saveError) throw saveError;
