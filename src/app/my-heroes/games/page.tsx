@@ -3,7 +3,8 @@ import Link from "next/link";
 import { getHeroes } from "@/lib/heroes";
 import { PLAYER_FEEDBACK_SELECT, readPlayerFeedback } from "@/lib/player-feedback";
 import { GAMES_PER_PAGE, PLAYER_GAMES_SELECT, readFilters, readGameRow } from "@/lib/player-games";
-import { playerRecord, RECORD_SELECT } from "@/lib/player-record";
+import { type PlayerRecord, playerRecord, RECORD_DAYS, RECORD_SELECT } from "@/lib/player-record";
+import { ResultSquares } from "@/components/result-squares";
 import { HeroRender } from "@/components/hero-render";
 import { createClient } from "@/lib/supabase/server";
 import { FeedbackView, MIN_GAMES } from "./feedback-view";
@@ -11,6 +12,22 @@ import { type HeroArt, PreviousGames } from "./previous-games";
 import { RecordStrip } from "./record-strip";
 
 export const metadata: Metadata = { title: "Your Games · Dota 2 Team Picker" };
+
+/** How many results the squares row shows. */
+const LATEST_GAMES = 20;
+const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+
+/** What the feedback is worked out from, with the real count and dates when there are games. */
+function introText(record: PlayerRecord | null) {
+  const start = "What you do well and what costs you games, worked out from your";
+  if (!record?.games || !record.firstAt || !record.lastAt) {
+    return `${start} ranked and normal games of the last ${RECORD_DAYS} days.`;
+  }
+  const first = dateFormat.format(new Date(record.firstAt));
+  const last = dateFormat.format(new Date(record.lastAt));
+  const span = first === last ? `on ${first}` : `between ${first} and ${last}`;
+  return `${start} ${record.games} ranked and normal ${record.games === 1 ? "game" : "games"} ${span}.`;
+}
 
 /** What the player does well and what costs them games, then each previous game. */
 export default async function YourGamesPage({ searchParams }: PageProps<"/my-heroes/games">) {
@@ -37,7 +54,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
   ]);
 
   const art = new Map<number, HeroArt>(heroes.map((h) => [h.id, { name: h.name, icon: h.icon, image: h.image }]));
-  const record = records.data ? playerRecord(records.data, new Date()) : null;
+  const record = records.data ? playerRecord(records.data, new Date(), LATEST_GAMES) : null;
   const topHero = record?.topHero ? art.get(record.topHero.id) : undefined;
 
   let body: React.ReactNode;
@@ -63,7 +80,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
         <FeedbackView feedback={feedback} />
       ) : (
         <p role="status" className="notice">
-          Feedback shows once we have read {MIN_GAMES} of your ranked or normal games from the last 14 days
+          Feedback shows once we have read {MIN_GAMES} of your ranked or normal games from the last {RECORD_DAYS} days
           {feedback ? (
             <>
               . We have <span className="num">{feedback.games}</span> so far.
@@ -104,11 +121,17 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
           <h1 id="your-games-title" className="page-title">
             Your Games
           </h1>
-          <p className="max-w-xl text-sm text-muted">
-            What you do well and what costs you games, worked out from your own ranked and normal matches of the last 14 days.
-          </p>
+          <p className="max-w-xl text-sm text-muted">{introText(showRecord ? record : null)}</p>
         </div>
         {showRecord && record && <RecordStrip record={record} hero={topHero} />}
+        {showRecord && record && record.latest.length > 1 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-subtle">
+              Last {record.latest.length} results: won {record.latest.filter(Boolean).length}
+            </span>
+            <ResultSquares results={record.latest} />
+          </div>
+        )}
       </section>
       {body}
     </main>

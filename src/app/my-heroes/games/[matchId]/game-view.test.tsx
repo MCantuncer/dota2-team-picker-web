@@ -74,7 +74,8 @@ describe("GameView", () => {
     expect(numbers).not.toContain("Healing");
     const fix = screen.getByRole("region", { name: "To Fix" });
     expect(fix.textContent).toContain("Keep a Town Portal Scroll.");
-    expect(screen.getByRole("region", { name: "Went Well" }).textContent).toContain("Nothing stood out as a strength");
+    // Nothing went well in this game, so that side is left out instead of an empty box.
+    expect(screen.queryByRole("region", { name: "Went Well" })).toBeNull();
     expect(screen.getByRole("region", { name: "Lane at 10 Minutes" }).textContent).toContain("820 net worth behind");
     const deaths = screen.getByRole("region", { name: /Deaths/ });
     expect(deaths.textContent).toContain("810 gold lost and 1:10 dead");
