@@ -1,13 +1,20 @@
 import { POSITIONS, type GamesWins, type Position } from "@/lib/engine/types";
 import { toPartyStats, type HeroPool, type PartyPlayer, type PlanMember } from "@/lib/party-plan";
 import { SOLO_ME, TEAMMATE, teammateId } from "@/lib/solo-queue";
-import { defaultPosition, LINEUP_MAX } from "@/lib/stack-lineup";
 
 /**
  * Team: plan one draft for any mix of people from the Stacks the player runs and their friends,
  * online or not. Five seats by position; the player sits under SOLO_ME, and a seat nobody sits in
  * is an open seat, planned as a teammate who can play any hero (what Solo Queue was).
  */
+
+/** Players in one game. */
+export const LINEUP_MAX = 5;
+
+/** A person's first favorite position nobody has yet, else the first free position. */
+export function defaultPosition(person: { positions: Position[] }, taken: Set<Position>): Position {
+  return person.positions.find((p) => !taken.has(p)) ?? POSITIONS.find((p) => !taken.has(p)) ?? person.positions[0] ?? 1;
+}
 
 /** One person in one seat. */
 export interface Seat {
@@ -42,8 +49,6 @@ export interface TeamPerson {
 export interface SavedTeam {
   mode: "me" | "team";
   seats: Seat[];
-  /** The Stack whose people the current Plan For list shows. Only the old list uses it. */
-  stackId?: string;
 }
 
 export const teamStorageKey = (userId: string | null) => `team-lineup:${userId ?? "guest"}`;
@@ -59,8 +64,7 @@ export function isSavedTeam(v: unknown): v is SavedTeam {
     isObject(v) &&
     (v.mode === "me" || v.mode === "team") &&
     Array.isArray(v.seats) &&
-    v.seats.every(isSeat) &&
-    (v.stackId === undefined || typeof v.stackId === "string")
+    v.seats.every(isSeat)
   );
 }
 
@@ -101,7 +105,7 @@ export function readSavedTeam(store: Store, userId: string | null, myPosition: P
   const stack = userId ? parse(oldStackKey(userId)) : null;
   if (isObject(stack) && typeof stack.stackId === "string" && Array.isArray(stack.picks) && stack.stackId) {
     const seats = stack.picks.filter(isSeat).map((s) => (s.id === userId ? { ...s, id: SOLO_ME } : s));
-    migrated = { mode: "team", seats: tidy(seats), stackId: stack.stackId };
+    migrated = { mode: "team", seats: tidy(seats) };
   } else if (store.getItem(oldSoloKey(userId)) === "on") {
     migrated = { mode: "team", seats: [{ id: SOLO_ME, position: myPosition }] };
   }

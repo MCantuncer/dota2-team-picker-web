@@ -34,7 +34,7 @@ import { PositionPicker } from "./position-picker";
 import { ScreenshotPaste } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
-import { StackLineup } from "./stack-lineup";
+import { TeamSeats } from "./team-seats";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { StartGame } from "./start-game";
 import { useGameCheckIn } from "./use-game-check-in";
@@ -49,9 +49,7 @@ import {
   soloBoardKey,
   toCheckInBoard,
 } from "@/lib/game-check-in";
-import { isTeammate, SOLO_ME, SOLO_QUEUE } from "@/lib/solo-queue";
-import { stackPeople } from "@/lib/team-lineup";
-import type { LineupPerson } from "@/lib/stack-lineup";
+import { isTeammate, SOLO_ME } from "@/lib/solo-queue";
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -387,23 +385,10 @@ export function DraftBoard({
   const placeAlly = (heroId: number, position: Position | null) => act(...positionActions(resolved, heroId, position));
   const choosePosition = (p: Position) => {
     // In Team the player's seat moves too, swapping with whoever sat there.
-    if (lineupPlan?.myPosition) lineup.move(SOLO_ME, p);
+    if (lineupPlan?.myPosition) lineup.place(SOLO_ME, p);
     setMyPosition(p);
     writeStorage(POSITION_KEY, p);
   };
-
-  // The Plan For list for the Stack shown: the player, then its people in the order they joined.
-  const shownStack = lineup.mode === "team" ? lineup.stackId : "";
-  const listedPeople: LineupPerson[] | null =
-    shownStack && lineup.people
-      ? [
-          { id: SOLO_ME, name: "You", positions: player.positions, canPlay: true },
-          ...lineup.people
-            .filter((p) => !p.canAdd && p.stacks.some((st) => st.id === shownStack))
-            .map((p) => ({ id: p.id, name: p.name, positions: p.positions, canPlay: false })),
-          ...stackPeople(lineup.people, shownStack).map((p) => ({ id: p.id, name: p.name, positions: p.positions, canPlay: true })),
-        ]
-      : null;
 
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
@@ -589,20 +574,25 @@ export function DraftBoard({
       </div>
 
       {!party && (
-        <StackLineup
+        <TeamSeats
+          mode={lineup.mode}
+          seats={lineup.seats}
+          people={lineup.people}
+          pool={lineup.pool}
+          myHeroes={player.heroes}
           stacks={stacks}
-          stackId={lineup.mode === "me" ? "" : lineup.stackId || SOLO_QUEUE}
-          people={listedPeople}
-          picks={lineup.seats.filter((seat) => listedPeople?.some((p) => p.id === seat.id))}
+          signedIn={signedIn}
           notice={lineup.notice}
-          onChoose={(id) => {
-            if (!id) return lineup.justMe();
-            lineup.team(id === SOLO_QUEUE ? "" : id);
+          hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
+          onJustMe={lineup.justMe}
+          onTeam={() => {
+            lineup.team();
             // The teammates' picks are what Team adds, so show them straight away.
-            if (id === SOLO_QUEUE) setView("players");
+            setView("players");
           }}
-          onToggle={(p) => lineup.toggle({ id: p.id, positions: p.positions, canAdd: p.canPlay })}
-          onMove={lineup.move}
+          onPlace={lineup.place}
+          onRemove={lineup.remove}
+          onFill={lineup.fill}
         />
       )}
 
