@@ -8,13 +8,19 @@ test("the landing page shows the pitch and a way to start", async ({ page }) => 
   await expectAccessible(page);
 });
 
-for (const path of ["/login", "/signup"]) {
-  test(`${path} is accessible`, async ({ page }) => {
-    await page.goto(path);
-    await expect(page.getByLabel("Email")).toBeVisible();
-    await expectAccessible(page);
-  });
-}
+test("sign in is Steam only and accessible", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Sign In", level: 1 })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Sign In with Steam" })).toBeVisible();
+  await expect(page.getByLabel("Email")).toHaveCount(0);
+  await expect(page.getByLabel("Password")).toHaveCount(0);
+  await expectAccessible(page);
+});
+
+test("the old sign up address opens sign in and keeps the next page", async ({ page }) => {
+  await page.goto("/signup?next=/stacks");
+  await expect(page).toHaveURL(/\/login\?next=%2Fstacks$/);
+});
 
 test("private pages send signed-out visitors to log in and back", async ({ page }) => {
   await page.goto("/profile");
@@ -28,15 +34,19 @@ test("the old Captain mode address opens the draft", async ({ page }) => {
 
 test("login refuses other sites as the next page", async ({ page }) => {
   await page.goto("/login?next=//evil.example");
-  await expect(page.locator('input[name="next"]')).toHaveValue("/");
+  const steam = page.getByRole("main").getByRole("link", { name: "Sign In with Steam" });
+  await expect(steam).toHaveAttribute("href", /\/functions\/v1\/steam-login\?next=%2F$/);
 });
 
-test("a party invite link asks signed-out visitors to sign up or log in, then come back", async ({ page }) => {
+test("a party invite link asks signed-out visitors to sign in with Steam, then come back", async ({ page }) => {
   await page.goto("/invite/0123456789abcdef");
   await expect(page.getByRole("heading", { name: "Join a party" })).toBeVisible();
-  // The header has its own Sign up and Log in buttons; these are the ones in the page.
-  const main = page.getByRole("main");
-  await expect(main.getByRole("link", { name: "Sign up" })).toHaveAttribute("href", "/signup?next=%2Finvite%2F0123456789abcdef");
-  await expect(main.getByRole("link", { name: "log in" })).toHaveAttribute("href", "/login?next=%2Finvite%2F0123456789abcdef");
+  const steam = page.getByRole("main").getByRole("link", { name: "Sign In with Steam" });
+  await expect(steam).toHaveAttribute("href", /\/functions\/v1\/steam-login\?next=%2Finvite%2F0123456789abcdef$/);
   await expectAccessible(page);
+});
+
+test("an old email invite link opens Stacks", async ({ page }) => {
+  await page.goto("/join/00000000-0000-0000-0000-000000000000");
+  await expect(page).toHaveURL((url) => url.pathname === "/stacks");
 });

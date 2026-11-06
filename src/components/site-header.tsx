@@ -53,11 +53,8 @@ async function HeaderSession() {
   if (!user) {
     return (
       <div className="ml-auto flex items-center gap-1">
-        <Link href="/login" className="btn btn-ghost">
-          Log In
-        </Link>
-        <Link href="/signup" className="btn btn-primary">
-          Sign Up
+        <Link href="/login" className="btn btn-primary">
+          Sign In
         </Link>
       </div>
     );
@@ -105,8 +102,8 @@ async function HeaderSession() {
   const checkIn = !poolCard && gameCheckInEnabled() ? await loadCheckIn(supabase) : null;
   const rank = rankName(profile?.rank_tier ?? null);
   const account = {
-    name: profile?.display_name || user.email?.split("@")[0] || "Player",
-    detail: steamLinked ? (rank ?? "Rank not visible yet") : (user.email ?? null),
+    name: profile?.display_name || "Player",
+    detail: rank ?? "Rank not visible yet",
     avatarUrl: profile?.avatar_url ?? null,
     steamLinked,
     rankTier: profile?.rank_tier ?? null,

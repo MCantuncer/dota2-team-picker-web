@@ -21,7 +21,6 @@ const show = (props: Partial<Parameters<typeof StackBoard>[0]> = {}) =>
       joined={[]}
       current={null}
       members={[]}
-      emailInvites={[]}
       friendInvites={[]}
       openInvites={[]}
       friends={[]}

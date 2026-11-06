@@ -13,7 +13,8 @@ import type { Database, Json } from "../src/lib/supabase/database.types";
  * BACKEND_REF once for the job; a local run works it out (see scripts/check-backend-sync.mjs).
  */
 const BACKEND_REF =
-  process.env.BACKEND_REF ?? execFileSync("node", ["scripts/check-backend-sync.mjs", "--schema-commit"], { encoding: "utf8" }).trim();
+  process.env.BACKEND_REF ??
+  execFileSync("node", ["scripts/check-backend-sync.mjs", "--schema-commit"], { encoding: "utf8" }).trim();
 if (!/^[0-9a-f]{40}$/.test(BACKEND_REF)) throw new Error("BACKEND_REF must be a full commit SHA");
 /** The backend's committed hero data at that commit. Older than the bucket's, but fixed, so tests repeat. */
 const HERO_DATA_FIXTURE = `https://raw.githubusercontent.com/MCantuncer/dota2-team-picker/${BACKEND_REF}/services/engine/data/snapshot.json`;
@@ -63,8 +64,6 @@ export function uniqueEmail(prefix: string) {
 function uniqueSteamId() {
   return `7656119${String(randomInt(1e10)).padStart(10, "0")}`;
 }
-
-export const PASSWORD = "e2e-password-123";
 
 /** Admin access to the local test database, for setup the site has no UI for (like account types). */
 function admin() {
@@ -141,7 +140,8 @@ export async function seedFeedback(email: string) {
         score: 1.4,
         headline: "Strong farm",
         happened: ["Monkey King: 84th percentile for farm (GPM and last hits)"],
-        pattern: "Across 5 games on Monkey King, you had higher farm (GPM and last hits) than 81% of games on these heroes on OpenDota (all ranks).",
+        pattern:
+          "Across 5 games on Monkey King, you had higher farm (GPM and last hits) than 81% of games on these heroes on OpenDota (all ranks).",
         cost: null,
         change: null,
         matchIds: [1, 2, 3, 4, 5],
@@ -188,7 +188,14 @@ export async function seedFeedback(email: string) {
       laneNetWorthDiffAt10: -640,
       deaths: [
         { time: 380, goldLost: 210, timeDead: 18, killerHeroId: 106, isKillerFromMid: true, buildingsLost: [] },
-        { time: 545, goldLost: 260, timeDead: 21, killerHeroId: 106, isKillerFromMid: true, buildingsLost: [] },
+        {
+          time: 545,
+          goldLost: 260,
+          timeDead: 21,
+          killerHeroId: 106,
+          isKillerFromMid: true,
+          buildingsLost: ["npc_dota_goodguys_tower1_bot"],
+        },
       ],
     },
     summary_version: 1,
@@ -199,7 +206,11 @@ export async function seedFeedback(email: string) {
     .insert([
       game(8100000001 + Math.floor(Math.random() * 1e6), 1, true, [finding("strength", "Strong farm", null)]),
       game(8200000001 + Math.floor(Math.random() * 1e6), 2, false, [
-        finding("problem", "2 deaths before 10 minutes", "Keep a Town Portal Scroll and step back when Ember Spirit goes missing."),
+        finding(
+          "problem",
+          "2 deaths before 10 minutes",
+          "Keep a Town Portal Scroll and step back when Ember Spirit goes missing.",
+        ),
       ]),
     ]);
   if (gamesError) throw gamesError;
@@ -218,7 +229,12 @@ export async function seedHeroStats(email: string) {
     .update({
       rank_tier: 61,
       synced_at: new Date().toISOString(),
-      hero_stats: { "14": { games: 67, wins: 38 }, "74": { games: 50, wins: 16 }, "76": { games: 46, wins: 29 }, "114": { games: 30, wins: 14 } },
+      hero_stats: {
+        "14": { games: 67, wins: 38 },
+        "74": { games: 50, wins: 16 },
+        "76": { games: 46, wins: 29 },
+        "114": { games: 30, wins: 14 },
+      },
       // The last week: three Pudge wins and a Storm Spirit loss, then an older game outside it.
       hero_games: [
         [14, 1, now - 1 * DAY],
@@ -262,7 +278,6 @@ export async function seedFriend(
   if (!me) throw new Error(`No user ${email}`);
   const { data: created, error: userError } = await db.auth.admin.createUser({
     email: uniqueEmail("friend"),
-    password: PASSWORD,
     email_confirm: true,
   });
   if (userError) throw userError;
@@ -307,7 +322,11 @@ export async function seedReport(email: string, report: { status: string; facts:
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
   if (error) throw error;
   if (!id) throw new Error(`No user ${email}`);
-  const { data: party, error: partyError } = await db.from("parties").insert({ leader_id: id, closed_at: new Date().toISOString() }).select("id").single();
+  const { data: party, error: partyError } = await db
+    .from("parties")
+    .insert({ leader_id: id, closed_at: new Date().toISOString() })
+    .select("id")
+    .single();
   if (partyError) throw partyError;
   const matchId = 9072422905;
   const { data: draft, error: draftError } = await db
@@ -316,7 +335,9 @@ export async function seedReport(email: string, report: { status: string; facts:
     .select("id")
     .single();
   if (draftError) throw draftError;
-  const { error: playerError } = await db.from("draft_players").insert({ draft_id: draft.id, user_id: id, hero_id: 145, hero_source: "position" });
+  const { error: playerError } = await db
+    .from("draft_players")
+    .insert({ draft_id: draft.id, user_id: id, hero_id: 145, hero_source: "position" });
   if (playerError) throw playerError;
   const { error: reportError } = await db.from("match_reports").insert({
     draft_id: draft.id,
@@ -376,7 +397,11 @@ export async function fakeDotaWindow(page: Page, fixture = "draft-nine-picked.pn
  * A Stack owned by a signed-up user, with players who never open the site: each gets an account
  * with the given name, joins as a member and, if given, a favorite position. Returns the Stack id.
  */
-export async function seedStack(ownerEmail: string, name: string, players: { name: string; position?: number; role?: "player" | "co_captain" }[]) {
+export async function seedStack(
+  ownerEmail: string,
+  name: string,
+  players: { name: string; position?: number; role?: "player" | "co_captain" }[],
+) {
   const db = admin();
   const { data: owner, error } = await db.rpc("user_id_by_email", { address: ownerEmail });
   if (error) throw error;
@@ -386,7 +411,6 @@ export async function seedStack(ownerEmail: string, name: string, players: { nam
   for (const p of players) {
     const { data: created, error: userError } = await db.auth.admin.createUser({
       email: uniqueEmail("stack-mate"),
-      password: PASSWORD,
       email_confirm: true,
     });
     if (userError) throw userError;

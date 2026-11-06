@@ -5,18 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { PoolCardsSwitch } from "./pool-cards-switch";
 import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
-import { type SteamAccount, SteamLink } from "./steam-link";
+import { type SteamAccount, SteamCard } from "./steam-card";
 import { YourGamesCard } from "./your-games-card";
 import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
 
 export const metadata: Metadata = { title: "My Heroes · Dota 2 Team Picker" };
-
-const STEAM_RESULTS: Record<string, { text: string; ok: boolean }> = {
-  linked: { text: "Steam linked. Your rank and hero record now count in suggestions and your captain's draft.", ok: true },
-  taken: { text: "That Steam account already belongs to another user here.", ok: false },
-  failed: { text: "Steam didn't confirm the sign-in. Please try again.", ok: false },
-  expired: { text: "That took too long. Please try again.", ok: false },
-};
 
 /** SteamID64 of account id 0. */
 const STEAM_ID_BASE = BigInt("76561197960265728");
@@ -29,7 +22,7 @@ interface GamesWins {
 
 /** The positions a user plays and their heroes for each, which their captain drafts from. */
 export default async function MyHeroesPage({ searchParams }: PageProps<"/my-heroes">) {
-  const { welcome, steam } = await searchParams;
+  const { welcome } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,7 +44,6 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   const heroesByPosition: Record<number, number[]> = {};
   for (const f of favorites ?? []) (heroesByPosition[f.position] ??= []).push(f.hero_id);
   const teamNames = (teams ?? []).flatMap((t) => (t.teams ? [(t.teams as unknown as { name: string }).name] : []));
-  const steamResult = typeof steam === "string" ? STEAM_RESULTS[steam] : undefined;
 
   const showCards = Boolean(profile?.steam_id) && poolCardsEnabled();
   let suggestions: PoolCard[] = [];
@@ -105,7 +97,6 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
         })
         .slice(0, 3),
       syncedAgo: profile.synced_at ? timeAgo(new Date(profile.synced_at)) : null,
-      steamOnly: !user.email || user.email.endsWith("@steam.invalid"),
     };
   }
 
@@ -119,7 +110,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
           Changes save right away.
         </p>
       </div>
-      <SteamLink account={steamAccount} result={steamResult} />
+      {steamAccount && <SteamCard account={steamAccount} />}
       {steamAccount && (
         <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
       )}

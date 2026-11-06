@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthCard } from "@/components/auth-card";
+import { SteamButton } from "@/components/steam-button";
 import { createClient } from "@/lib/supabase/server";
 import { AddFriendButton } from "./add-friend-button";
 
@@ -15,20 +16,10 @@ export default async function AddFriendPage({ params }: PageProps<"/add/[code]">
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const next = encodeURIComponent(`/add/${code}`);
     return (
-      <AuthCard title="Add a friend">
-        <p className="text-muted">
-          Someone shared their friend link with you.{" "}
-          <Link href={`/signup?next=${next}`} className="link">
-            Sign Up
-          </Link>{" "}
-          or{" "}
-          <Link href={`/login?next=${next}`} className="link">
-            log in
-          </Link>{" "}
-          to add them.
-        </p>
+      <AuthCard title="Add a Friend">
+        <p className="text-muted">Someone shared their friend link with you. Sign in with Steam to add them.</p>
+        <SteamButton next={`/add/${code}`} primary />
       </AuthCard>
     );
   }
@@ -37,7 +28,7 @@ export default async function AddFriendPage({ params }: PageProps<"/add/[code]">
   const person = data?.[0] as { id: string; display_name: string | null } | undefined;
   if (!person) {
     return (
-      <AuthCard title="Link not found">
+      <AuthCard title="Link Not Found">
         <p className="text-muted">This friend link doesn&apos;t work. Ask your friend to copy it again from their Friends page.</p>
       </AuthCard>
     );

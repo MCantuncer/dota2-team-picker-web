@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
-import type { FriendInvite, Invite, Member } from "@/lib/stacks";
+import type { FriendInvite, Member } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/client";
 import type { Friend } from "./stack-board";
 
@@ -87,106 +88,20 @@ export function FriendInvites({
   );
 }
 
-/** Invite someone who is not on the site yet: they get an email with a join link. */
-export function EmailInvites({
-  stackId,
-  initial,
-  onError,
-}: {
-  stackId: string;
-  initial: Invite[];
-  onError: (e: string | null) => void;
-}) {
-  const supabase = useMemo(() => createClient(), []);
-  const [email, setEmail] = useState("");
-  const [invites, setInvites] = useState(initial);
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
-
-  const invite = async (address: string) => {
-    setSending(true);
-    setSent(null);
-    const { data, error } = await supabase.functions.invoke<Invite>("team-invite", { body: { teamId: stackId, email: address } });
-    setSending(false);
-    if (error || !data) {
-      // The function answers errors as {error}; the client wraps the response in error.context.
-      const body = error && "context" in error ? await (error.context as Response).json().catch(() => null) : null;
-      return onError(`Invite not sent: ${body?.error ?? error?.message ?? "unknown error"}`);
-    }
-    onError(null);
-    setEmail("");
-    setSent(data.email);
-    setInvites((cur) => (cur.some((i) => i.id === data.id) ? cur : [...cur, { id: data.id, email: data.email }]));
-  };
-
-  const cancel = async (i: Invite) => {
-    const { error } = await supabase.from("team_invites").delete().eq("id", i.id);
-    if (error) return onError(`Invite not cancelled: ${error.message}`);
-    onError(null);
-    setInvites((cur) => cur.filter((x) => x.id !== i.id));
-  };
-
-  const copyLink = async (i: Invite) => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/join/${i.id}`);
-      setCopied(i.id);
-    } catch {
-      onError("Could not copy the link.");
-    }
-  };
-
+/** Someone not on the site yet signs in with Steam from your friend link, then shows up in Friends above. */
+export function NewPlayers() {
   return (
-    <section aria-labelledby="email-invites-heading" className="flex min-w-0 flex-col gap-2 p-4 sm:p-5">
-      <h3 id="email-invites-heading" className="flex items-center gap-2 font-semibold text-fg">
-        <Icon name="send" />
-        By Email
+    <section aria-labelledby="new-players-heading" className="flex min-w-0 flex-col gap-2 p-4 sm:p-5">
+      <h3 id="new-players-heading" className="flex items-center gap-2 font-semibold text-fg">
+        <Icon name="userPlus" />
+        Not on the Site Yet
       </h3>
-      <p className="text-sm text-subtle">For someone not on the site yet. They get a link, pick a name and password, then join.</p>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (email.trim()) void invite(email.trim());
-        }}
-        className="flex flex-wrap gap-2"
-      >
-        <label htmlFor="invite-email" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="invite-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="friend@example.com"
-          autoComplete="off"
-          className="field min-w-0 flex-1 basis-48"
-        />
-        <button type="submit" disabled={sending} className="btn btn-primary">
-          <Icon name="send" />
-          {sending ? "Sending…" : "Send Invite"}
-        </button>
-      </form>
-      {sent && <p className="text-sm text-radiant">Invite sent to {sent}.</p>}
-      {invites.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line text-sm">
-          {invites.map((i) => (
-            <li key={i.id} className="flex flex-wrap items-center gap-2 py-1.5">
-              <span className="mr-auto truncate">{i.email}</span>
-              <span className="text-xs text-subtle">Waiting</span>
-              <button onClick={() => invite(i.email)} disabled={sending} className="btn btn-secondary btn-sm">
-                Resend
-              </button>
-              <button onClick={() => copyLink(i)} className="btn btn-secondary btn-sm">
-                {copied === i.id ? "Copied" : "Copy Link"}
-              </button>
-              <button onClick={() => cancel(i)} className="btn btn-secondary btn-sm">
-                Cancel
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <p className="text-sm text-subtle">
+        Send them your friend link. They sign in with Steam and add you, then you can invite them here.
+      </p>
+      <Link href="/friends" className="btn btn-secondary self-start">
+        Get Your Friend Link
+      </Link>
     </section>
   );
 }
