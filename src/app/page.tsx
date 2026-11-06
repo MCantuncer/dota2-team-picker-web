@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Icon } from "@/components/icon";
+import { NextSkillShowcase, type SkillChoice } from "@/components/next-skill-showcase";
 import { SteamButton } from "@/components/steam-button";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { getUser } from "@/lib/supabase/server";
@@ -23,6 +24,20 @@ const EXAMPLE = {
     { id: 82, score: 7.6, reason: "53.2% win rate in Legend" },
     { id: 90, score: 6.9, reason: "Works well with Earthshaker" },
   ],
+};
+
+/**
+ * A real skill choice for the homepage Invoker, kept static like EXAMPLE: STRATZ's latest high-rank mid Invoker
+ * guide games against Pudge or Anti-Mage (19 games, patch 7.41, 6 November 2026). Their level 5 point went to
+ * Exort in 15, Wex in 2 and Quas in 2. Guide games are all wins, so this counts what winners took.
+ */
+const SKILL: SkillChoice = {
+  level: 5,
+  games: 19,
+  players: "winning high-rank mid Invokers",
+  against: "Pudge or Anti-Mage",
+  wex: { orb: "wex", name: "Wex", took: 2 },
+  exort: { orb: "exort", name: "Exort", took: 15 },
 };
 
 const POINTS = [
@@ -92,6 +107,7 @@ export default async function Home() {
             style={RENDER_STYLE}
             className="pointer-events-none absolute -right-24 top-4 -z-10 w-[min(44rem,90vw)] opacity-60 lg:-top-80 lg:right-auto lg:-left-50 lg:w-176 lg:max-w-none lg:opacity-100"
           />
+          <NextSkillShowcase choice={SKILL} />
           <DraftPreview byId={byId} />
         </div>
       </section>
