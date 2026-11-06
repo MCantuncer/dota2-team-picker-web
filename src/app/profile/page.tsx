@@ -8,11 +8,11 @@ import { FORM_GAMES, positionsLately, recentForm } from "@/lib/recent-form";
 import { createClient } from "@/lib/supabase/server";
 import { HeroInsightsView } from "./hero-insights-view";
 import { LocalTime } from "./local-time";
-import { NameForm } from "./name-form";
 import { DeleteAccount } from "./delete-account";
 import { PositionsCard } from "./positions-card";
 import { RecentFormCard } from "./recent-form-card";
 import { ShareHeroesSwitch } from "./share-heroes-switch";
+import { SteamIdentity } from "./steam-identity";
 import { SyncButton } from "./sync-button";
 
 export const metadata = { title: "Profile · Dota 2 Team Picker" };
@@ -30,7 +30,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   const [{ data: profile }, heroes, pool, games] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, steam_id, rank_tier, hero_stats, hero_games, synced_at, share_heroes_with_friends")
+      .select("display_name, steam_name, avatar_url, steam_id, rank_tier, hero_stats, hero_games, synced_at, share_heroes_with_friends")
       .eq("id", user.id)
       .single(),
     getHeroes(),
@@ -61,10 +61,15 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
 
   return (
     <main className="page flex flex-col gap-10 py-10">
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-5">
         <h1 className="page-title">Your Profile</h1>
-        <NameForm name={profile?.display_name ?? ""} />
-        <p className="text-sm text-subtle">Signed in with Steam.</p>
+        {profile?.steam_id && (
+          <SteamIdentity
+            name={profile.steam_name || profile.display_name || "Steam Player"}
+            avatarUrl={profile.avatar_url}
+            steamId={profile.steam_id}
+          />
+        )}
       </section>
 
       <section aria-labelledby="rank-heading" className="flex flex-col gap-4 border-t border-line pt-6">

@@ -74,6 +74,21 @@ function admin() {
   return createClient<Database>(url, key, { auth: { persistSession: false } });
 }
 
+/** Links a made-up Steam account with this Steam name to the user, as Steam sign-in does. Returns the SteamID64. */
+export async function linkSteam(email: string, steamName: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const steamId = uniqueSteamId();
+  const { error: steamError } = await db
+    .from("profiles")
+    .update({ steam_id: steamId, steam_name: steamName, display_name: steamName })
+    .eq("id", id);
+  if (steamError) throw steamError;
+  return steamId;
+}
+
 /** The suggestion lists saved for a user in party drafts. */
 export async function savedSuggestions(email: string) {
   const db = admin();
