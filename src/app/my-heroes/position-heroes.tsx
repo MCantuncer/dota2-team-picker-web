@@ -107,7 +107,7 @@ export function PositionHeroes({
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Positions" className="grid grid-cols-5 border-b border-line">
+      <nav aria-label="Positions" className="grid grid-cols-5 gap-1 border-b border-line">
         {POSITIONS.map((p) => {
           const isActive = p.n === active;
           const count = picks[p.n]?.length ?? 0;
@@ -117,26 +117,26 @@ export function PositionHeroes({
               onClick={() => setActive(p.n)}
               aria-current={isActive}
               title={p.name}
-              className={`relative flex min-w-0 items-center justify-between gap-2 px-2 py-3 text-left sm:px-4 ${
-                isActive ? "text-fg" : "text-muted hover:text-fg"
+              className={`group relative flex min-w-0 items-center justify-center gap-1.5 rounded-t-md px-1 py-3 transition-colors max-sm:flex-col sm:gap-3 sm:px-3 ${
+                isActive ? "bg-accent-tint text-fg" : "text-muted hover:bg-surface hover:text-fg"
               }`}
             >
-              <span className="flex min-w-0 flex-col gap-0.5 max-sm:hidden">
-                <span className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium">{p.name}</span>
+              <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-subtle/60 group-hover:text-subtle"}`}>
+                <PositionIcon position={p.n} size={32} />
+              </span>
+              <span className="flex min-w-0 flex-col gap-0.5 text-left max-sm:hidden">
+                <span className="flex items-center gap-1.5">
+                  <span className={`truncate text-sm ${isActive ? "font-semibold" : "font-medium"}`}>{p.name}</span>
                   {played.has(p.n) && <span aria-label="You play this" className="size-1.5 shrink-0 rounded-full bg-radiant" />}
                   {cards.some((c) => c.position === p.n) && (
                     <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
                   )}
                 </span>
-                <span className="num truncate text-xs text-subtle">
+                <span className={`num truncate text-xs ${isActive ? "text-muted" : "text-subtle"}`}>
                   Pos {p.n} · {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
                 </span>
               </span>
-              <span className={`flex items-center gap-1.5 ${isActive ? "text-accent" : "text-subtle"}`}>
-                <span className="num text-sm font-semibold sm:hidden">{p.n}</span>
-                <PositionIcon position={p.n} size={32} />
-              </span>
+              <span className={`num text-xs sm:hidden ${isActive ? "font-semibold" : "font-medium"}`}>Pos {p.n}</span>
               {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
           );
