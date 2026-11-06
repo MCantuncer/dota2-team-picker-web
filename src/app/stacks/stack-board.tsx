@@ -184,10 +184,13 @@ export function StackBoard({
               </h2>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {joined.map((s) => (
-                  <li key={s.id} className="flex items-center gap-3 rounded-md bg-surface p-3 ring-1 ring-inset ring-line">
+                  <li
+                    key={s.id}
+                    className="relative flex items-center gap-3 rounded-md bg-surface p-3 ring-1 ring-inset ring-line transition-colors hover:bg-raised hover:ring-line-hover"
+                  >
                     <StackCrest name={s.name} />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <Link href={`/stacks/${s.id}`} className="truncate font-semibold text-fg hover:underline">
+                      <Link href={`/stacks/${s.id}`} className="row-link truncate font-semibold">
                         {s.name}
                       </Link>
                       <span className="flex items-center gap-1 text-sm text-subtle">
@@ -195,7 +198,7 @@ export function StackBoard({
                         <span className="truncate">{s.ownerName}</span>
                       </span>
                     </span>
-                    <button onClick={() => leave(s)} className="btn btn-secondary btn-sm">
+                    <button onClick={() => leave(s)} className="btn btn-secondary btn-sm relative z-10">
                       Leave
                     </button>
                   </li>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Icon } from "@/components/icon";
 import { getHeroes } from "@/lib/heroes";
 import { PLAYER_GAME_SELECT, readGameDetail, readMatchId } from "@/lib/player-game";
 import { createClient } from "@/lib/supabase/server";
@@ -42,8 +43,9 @@ export default async function GamePage({ params }: PageProps<"/my-heroes/games/[
 
   return (
     <main className="page flex flex-1 flex-col gap-6 py-10">
-      <Link href="/my-heroes/games" className="link w-fit text-sm">
-        Your Games
+      <Link href="/my-heroes/games" className="btn btn-ghost btn-sm -mb-2 -ml-3 self-start">
+        <Icon name="chevronLeft" />
+        Back to Your Games
       </Link>
       {body}
     </main>

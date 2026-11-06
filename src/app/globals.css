@@ -370,16 +370,26 @@ body {
     }
   }
 
-  /* Underlined at rest so a link never depends on colour alone (WCAG link-in-text-block). */
-  .link {
-    color: var(--accent);
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
-    text-underline-offset: 3px;
+  /*
+   * No underlined text links: every link is a button or a whole clickable row (docs/design-system.md, "Links").
+   * .row-link goes on a row's or card's main link (usually the name) and stretches it over the whole row, which
+   * needs `position: relative`. Buttons inside the row add `relative z-10` so they still work on their own.
+   */
+  .row-link {
+    color: var(--fg);
   }
-  .link:hover {
-    color: var(--accent-hover);
-    text-decoration-color: currentColor;
+  .row-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0.375rem;
+  }
+  .row-link:focus-visible {
+    outline: none;
+  }
+  .row-link:focus-visible::after {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
 
   /* A quiet panel: a hairline and a slightly lifted fill, no shadow or gradient. Prefer plain hairline rows. */

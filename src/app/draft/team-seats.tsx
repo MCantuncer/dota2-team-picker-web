@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/icon";
+import { SteamButton } from "@/components/steam-button";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 import type { HeroPool } from "@/lib/party-plan";
@@ -222,12 +222,10 @@ export function TeamSeats({
       )}
       {mode === "team" && adding && !people && signedIn && <p className="text-sm text-muted">Loading your Stacks and friends…</p>}
       {mode === "team" && !signedIn && (
-        <p className="text-sm text-muted">
-          <Link href="/login?next=/draft" className="link">
-            Sign in
-          </Link>{" "}
-          to add Stack mates and friends.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">Sign in to add Stack mates and friends.</p>
+          <SteamButton next="/draft" small />
+        </div>
       )}
     </section>
   );

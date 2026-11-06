@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { OpenDotaButton } from "@/components/external-button";
 import { Icon } from "@/components/icon";
 import type { Facts, HeroCard } from "@/lib/report-facts";
 import {
@@ -44,12 +45,12 @@ export function ReportView({
       <header className={`flex flex-col gap-2 border-t-2 pt-5 ${facts.won ? "border-t-radiant" : "border-t-dire"}`}>
         <span className={`text-sm font-medium ${facts.won ? "text-radiant" : "text-dire"}`}>{facts.won ? "Won" : "Lost"}</span>
         <p className="text-3xl font-semibold leading-9 tracking-[-0.02em] text-fg">{headline(facts)}</p>
-        <p className="text-sm text-muted">
-          You played {facts.side === "radiant" ? "Radiant" : "Dire"}.{" "}
-          <a href={`https://www.opendota.com/matches/${facts.matchId}`} target="_blank" rel="noopener noreferrer" className="link">
-            Match <span className="num">{facts.matchId}</span> on OpenDota
-          </a>
-        </p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-sm text-muted">
+            You played {facts.side === "radiant" ? "Radiant" : "Dire"}. Match <span className="num text-fg">{facts.matchId}</span>
+          </p>
+          <OpenDotaButton matchId={facts.matchId} />
+        </div>
         {feedbackHref && (
           <Link href={feedbackHref} className="btn btn-secondary btn-sm self-start">
             Your Feedback

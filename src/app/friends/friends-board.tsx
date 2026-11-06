@@ -146,13 +146,13 @@ export function FriendsBoard({
               ))}
             </Group>
           )}
-          <p className="border-t border-line px-4 py-3 text-xs text-subtle">
-            Friends see your heroes for drafting. Turn this off on your{" "}
-            <Link href="/profile" className="link">
-              Profile
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2 pl-4 pr-2">
+            <p className="text-xs text-subtle">Friends see your heroes for drafting.</p>
+            <Link href="/profile#sharing" className="btn btn-ghost btn-sm">
+              <Icon name="settings" />
+              Sharing Settings
             </Link>
-            .
-          </p>
+          </div>
         </aside>
 
         {selected ? (

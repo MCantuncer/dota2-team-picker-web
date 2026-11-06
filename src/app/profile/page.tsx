@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
+import { Icon } from "@/components/icon";
 import { RankMedal } from "@/components/rank-medal";
 import { heroInsights, type HeroSort, readPeriod, recordFor } from "@/lib/hero-insights";
 import { rankName } from "@/lib/rank";
@@ -116,7 +117,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         />
       )}
 
-      <section aria-labelledby="privacy-heading" className="flex flex-col gap-3 border-t border-line pt-6">
+      <section id="sharing" aria-labelledby="privacy-heading" className="flex scroll-mt-20 flex-col gap-3 border-t border-line pt-6">
         <h2 id="privacy-heading" className="section-title">
           Privacy
         </h2>
@@ -128,13 +129,15 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         <h2 id="pool-heading" className="section-title">
           Positions and Heroes
         </h2>
-        <p className="text-sm text-muted">
-          Suggestions lean toward the heroes you pick for each position on{" "}
-          <Link href="/my-heroes" className="link">
-            My Heroes
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="min-w-0 flex-1 basis-60 text-sm text-muted">
+            Suggestions lean toward the heroes you pick for each position.
+          </p>
+          <Link href="/my-heroes" className="btn btn-secondary btn-sm">
+            <Icon name="pencil" />
+            Edit My Heroes
           </Link>
-          .
-        </p>
+        </div>
       </section>
 
       <section aria-labelledby="delete-heading" className="flex flex-col gap-3 border-t border-line pt-6">

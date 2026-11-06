@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { OpenDotaButton } from "@/components/external-button";
 import { Icon, type IconName } from "@/components/icon";
 import {
   CHECK_IN_TAGS,
@@ -94,22 +95,18 @@ export function CheckInCard({
             {found ? (game.won ? "Victory" : "Defeat") : "Game Over"}
           </h2>
           {found ? (
-            <p className="text-muted">
-              {me ? `${me.name}, ${POSITION_NAMES[game.myPosition - 1]}` : `Pos ${game.myPosition}`}
-              {game.matchId && (
-                <>
-                  <span className="px-2 text-subtle">|</span>
-                  <a
-                    href={`https://www.opendota.com/matches/${game.matchId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="link"
-                  >
-                    Match <span className="num">{game.matchId}</span>
-                  </a>
-                </>
-              )}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-muted">
+                {me ? `${me.name}, ${POSITION_NAMES[game.myPosition - 1]}` : `Pos ${game.myPosition}`}
+                {game.matchId && (
+                  <>
+                    <span className="px-2 text-subtle">|</span>
+                    Match <span className="num text-fg">{game.matchId}</span>
+                  </>
+                )}
+              </p>
+              {game.matchId && <OpenDotaButton matchId={game.matchId} />}
+            </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Result">
               <button

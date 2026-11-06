@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useActionState } from "react";
+import { ExternalButton } from "@/components/external-button";
+import { SteamLogo } from "@/components/steam-button";
 import { syncSteam } from "./actions";
 
 export interface SteamAccount {
@@ -43,13 +45,12 @@ export function SteamCard({ account }: { account: SteamAccount }) {
             {" · "}
             {account.syncedAgo ? `Updated ${account.syncedAgo}` : "Not updated yet"}
           </p>
-          <p className="flex gap-3 text-xs">
-            <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="link">
+          <p className="-ml-3 flex flex-wrap gap-1">
+            <ExternalButton href={profileUrl}>
+              <SteamLogo className="h-4 w-4" />
               Steam Profile
-            </a>
-            <a href={openDotaUrl} target="_blank" rel="noopener noreferrer" className="link">
-              OpenDota
-            </a>
+            </ExternalButton>
+            <ExternalButton href={openDotaUrl}>OpenDota</ExternalButton>
           </p>
         </div>
         {account.topHeroes.length > 0 && (

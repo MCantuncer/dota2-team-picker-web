@@ -78,9 +78,12 @@ export function FindingCard({ finding, open = false }: { finding: Finding; open?
         <h3 className="text-base font-semibold text-fg">{finding.headline}</h3>
         {finding.pattern && <p className="text-sm text-muted">{finding.pattern}</p>}
         <details className="group text-sm" open={open}>
-          <summary className="link w-fit cursor-pointer">
+          <summary className="btn btn-ghost btn-sm -ml-3 w-fit list-none [&::-webkit-details-marker]:hidden">
             <span className="group-open:hidden">Show Details</span>
             <span className="hidden group-open:inline">Hide Details</span>
+            <span className="transition-transform duration-(--dur-base) group-open:rotate-180 motion-reduce:transition-none">
+              <Icon name="chevronDown" />
+            </span>
           </summary>
           <div className="mt-3 flex flex-col gap-3">
             {finding.happened.length > 0 && (

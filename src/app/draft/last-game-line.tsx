@@ -19,12 +19,16 @@ export function LastGameLine({
   const art = game.myHero !== null ? portraits[game.myHero] : undefined;
   const name = game.myHero !== null ? heroOf(game.myHero).name : null;
   return (
-    <p className="flex h-8 items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-sm text-muted">
-      {art && <Image src={art} alt="" width={36} height={20} className="h-5 w-9 rounded-xs object-cover" />}
-      <span>{name ? `Last game with ${name}: how did it go?` : "Your last game: how did it go?"}</span>
-      <button onClick={onAnswer} className="link">
+    <div className="flex items-center gap-2.5 rounded-md border border-line bg-surface p-1 text-sm text-muted">
+      {art ? (
+        <Image src={art} alt="" width={56} height={32} className="h-8 w-14 rounded-xs object-cover" />
+      ) : (
+        <span aria-hidden className="w-1.5" />
+      )}
+      <p className="min-w-0 flex-1">{name ? `Last game with ${name}: how did it go?` : "Your last game: how did it go?"}</p>
+      <button onClick={onAnswer} className="btn btn-secondary btn-sm">
         Answer Now
       </button>
-    </p>
+    </div>
   );
 }

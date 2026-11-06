@@ -227,6 +227,17 @@ const PATHS = {
   ),
   chevronRight: <path d="m9 18 6-6-6-6" />,
   chevronLeft: <path d="m15 18-6-6 6-6" />,
+  /** Show Details: turns over when the details open. */
+  chevronDown: <path d="m6 9 6 6 6-6" />,
+  /** A link to a settings section, such as Sharing Settings. */
+  settings: (
+    <>
+      <path d="M20 7h-9" />
+      <path d="M14 17H5" />
+      <circle cx="17" cy="17" r="3" />
+      <circle cx="7" cy="7" r="3" />
+    </>
+  ),
   external: (
     <>
       <path d="M15 3h6v6" />
