@@ -47,6 +47,27 @@ describe("useTeamLineup", () => {
     expect(result.current.plan!.names.tusk).toBe("tusk");
   });
 
+  it("adds the friend from Plan a Draft to the saved Team, then drops them from the address", async () => {
+    const saved = { mode: "team", seats: [{ id: SOLO_ME, position: 1 }, { id: "tusk", position: 4 }] };
+    localStorage.setItem(teamStorageKey("u1"), JSON.stringify(saved));
+    window.history.replaceState(null, "", "/draft?with=pal");
+    rpc.mockResolvedValue({ data: [row("tusk"), row("pal", { positions: [3] })], error: null });
+    const { result } = renderHook(() => useTeamLineup(props("u1")));
+    await waitFor(() => expect(result.current.seats).toHaveLength(3));
+    expect(result.current.seats).toContainEqual({ id: "pal", position: 3 });
+    expect(result.current.notice).toBeNull();
+    expect(window.location.search).toBe("");
+  });
+
+  it("says so when the friend from Plan a Draft can't be planned for", async () => {
+    window.history.replaceState(null, "", "/draft?with=gone");
+    rpc.mockResolvedValue({ data: [], error: null });
+    const { result } = renderHook(() => useTeamLineup(props("u1")));
+    await waitFor(() => expect(result.current.notice).toMatch(/no longer yours/));
+    expect(result.current.mode).toBe("team");
+    expect(result.current.seats).toEqual([{ id: SOLO_ME, position: 2 }]);
+  });
+
   it("keeps the saved seats when the players don't load", async () => {
     const saved = { mode: "team", seats: [{ id: SOLO_ME, position: 1 }, { id: "pal", position: 4 }] };
     localStorage.setItem(teamStorageKey("u1"), JSON.stringify(saved));

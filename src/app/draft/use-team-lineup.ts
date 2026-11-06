@@ -10,6 +10,7 @@ import {
   place,
   readSavedTeam,
   removeSeat,
+  seatPerson,
   teamPlan,
   teamStorageKey,
   toTeamPeople,
@@ -41,11 +42,12 @@ function write(key: string, saved: SavedTeam) {
   }
 }
 
-/** Drops ?stack= from the address, so a reload keeps later edits. */
-function forgetStackParam() {
+/** Drops ?stack= and ?with= from the address, so a reload keeps later edits. */
+function forgetStartParams() {
   const url = new URL(window.location.href);
-  if (!url.searchParams.has("stack")) return;
+  if (!url.searchParams.has("stack") && !url.searchParams.has("with")) return;
   url.searchParams.delete("stack");
+  url.searchParams.delete("with");
   window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
 }
 
@@ -82,6 +84,8 @@ export function useTeamLineup({
   const [trusted, setTrusted] = useState(false);
   // "Draft for <Stack>": start a fresh Team from that Stack once its people load.
   const startStack = useRef<string | null>(null);
+  // "Plan a Draft" from Friends: seat that friend in the Team once people load.
+  const startWith = useRef<string | null>(null);
   const seatPosition = useRef(myPosition);
   const seatsNow = useRef(seats);
   useEffect(() => {
@@ -91,7 +95,9 @@ export function useTeamLineup({
 
   useEffect(() => {
     if (!enabled) return;
-    const wanted = new URLSearchParams(window.location.search).get("stack");
+    const params = new URLSearchParams(window.location.search);
+    const wanted = params.get("stack");
+    const friend = params.get("with");
     let saved: SavedTeam | null = null;
     try {
       saved = readSavedTeam(localStorage, userId, seatPosition.current);
@@ -104,8 +110,13 @@ export function useTeamLineup({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode("team");
       setSeats([{ id: SOLO_ME, position: seatPosition.current }]);
+    } else if (friend && userId) {
+      // Keep the Team from last time and add the friend to it once they load.
+      startWith.current = friend;
+      setMode("team");
+      setSeats(saved?.mode === "team" && saved.seats.length ? saved.seats : [{ id: SOLO_ME, position: seatPosition.current }]);
     } else {
-      if (wanted) forgetStackParam();
+      if (wanted || friend) forgetStartParams();
       setMode(saved?.mode ?? "me");
       setSeats(saved?.seats ?? []);
     }
@@ -124,10 +135,17 @@ export function useTeamLineup({
     const current = seatsNow.current;
     const clean = cleanSeats(current, next.people);
     const from = startStack.current;
+    const friend = startWith.current;
     if (from) {
       startStack.current = null;
-      forgetStackParam();
+      forgetStartParams();
       setSeats(fillFromStack(clean, next.people, from).seats);
+    } else if (friend) {
+      startWith.current = null;
+      forgetStartParams();
+      const result = seatPerson(clean, next.people, friend);
+      if (result.problem) setNotice(result.problem);
+      setSeats(result.seats);
     } else {
       if (clean.length < current.length) setNotice("Some players are no longer yours to plan for, so their seats are open.");
       setSeats(clean);
