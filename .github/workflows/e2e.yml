@@ -26,6 +26,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     env:
+      SUPABASE_CLI: 2.122.0
       # The local Supabase stack's fixed URL and public key (the same on every machine, nothing secret), so the
       # site can build before the stack is up. The wait step checks they still match.
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
@@ -52,19 +53,37 @@ jobs:
       - run: mv backend "$RUNNER_TEMP/backend"
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
-          version: 2.122.0
-      # Starting Supabase (mostly pulling its Docker images) is the slowest step, so run it in the background
-      # while the site installs and builds, and wait for it just before the tests.
+          version: ${{ env.SUPABASE_CLI }}
+      # Supabase's Docker images are pulled from public.ecr.aws, which is slow and often rate limited, so they
+      # are cached as one docker save archive. The images a CLI version starts are fixed, so the key is the
+      # CLI version and the backend's Supabase config. On a miss the CLI pulls them as before.
+      - id: supabase-images-key
+        working-directory: ${{ runner.temp }}/backend/services/accounts
+        run: |
+          config=$(sha256sum supabase/config.toml | cut -c1-16)
+          echo "key=supabase-images-$RUNNER_OS-$RUNNER_ARCH-cli${{ env.SUPABASE_CLI }}-$config" >> "$GITHUB_OUTPUT"
+      - id: supabase-images
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/supabase-images.tar
+          key: ${{ steps.supabase-images-key.outputs.key }}
+      # Starting Supabase is the slowest step, so run it in the background while the site installs and
+      # builds, and wait for it just before the tests. Each log line gets the time, so the log shows where
+      # the start spends it.
       - name: Start local Supabase in the background
         working-directory: ${{ runner.temp }}/backend/services/accounts
         run: |
           date +%s > "$RUNNER_TEMP/supabase.started"
           (
+            if [ -f "$RUNNER_TEMP/supabase-images.tar" ]; then
+              docker load -i "$RUNNER_TEMP/supabase-images.tar" && rm "$RUNNER_TEMP/supabase-images.tar"
+            fi
+            date +%s > "$RUNNER_TEMP/supabase.loaded"
             if supabase start -x realtime,storage-api,imgproxy,logflare,vector,supavisor,edge-runtime,studio,postgres-meta,mailpit
             then status=0; else status=1; fi
             date +%s > "$RUNNER_TEMP/supabase.ended"
             echo "$status" > "$RUNNER_TEMP/supabase.exit"
-          ) > "$RUNNER_TEMP/supabase.log" 2>&1 &
+          ) 2>&1 | while IFS= read -r line; do printf '%(%T)T %s\n' -1 "$line"; done > "$RUNNER_TEMP/supabase.log" &
       - uses: ./.github/actions/install
       # Headless runs only need Chromium's headless shell, and the runner image already has its system
       # libraries, so skip --with-deps (its apt step was most of this job's time). Cache the browser
@@ -85,8 +104,10 @@ jobs:
           waited=$(date +%s)
           timeout 300 bash -c 'until [ -f "$RUNNER_TEMP/supabase.exit" ]; do sleep 2; done'
           cat "$RUNNER_TEMP/supabase.log"
-          started=$(cat "$RUNNER_TEMP/supabase.started") ended=$(cat "$RUNNER_TEMP/supabase.ended")
-          echo "::notice::Supabase took $((ended - started))s to start; the tests waited $(($(date +%s) - waited))s for it."
+          started=$(cat "$RUNNER_TEMP/supabase.started") loaded=$(cat "$RUNNER_TEMP/supabase.loaded")
+          ended=$(cat "$RUNNER_TEMP/supabase.ended")
+          images=${{ steps.supabase-images.outputs.cache-hit == 'true' && 'loading cached images' || 'no cached images' }}
+          echo "::notice::Supabase took $((ended - started))s to start ($((loaded - started))s $images); the tests waited $(($(date +%s) - waited))s for it."
           [ "$(cat "$RUNNER_TEMP/supabase.exit")" = 0 ]
           eval "$(supabase status -o env)"
           # The build already used the local stack's well-known URL and publishable key; make sure they match.
@@ -99,6 +120,17 @@ jobs:
           name: playwright-report-${{ matrix.shard }}
           path: playwright-report
           retention-days: 7
+      # On a miss, one part saves the images the CLI pulled, after the tests so it doesn't hold them up.
+      - name: Save the Supabase images
+        if: always() && matrix.shard == 1 && steps.supabase-images.outputs.cache-hit != 'true' && env.E2E_SUPABASE_SECRET_KEY != ''
+        run: |
+          docker save -o "$RUNNER_TEMP/supabase-images.tar" \
+            $(docker images --format '{{.Repository}}:{{.Tag}}' | grep '/supabase/')
+      - if: always() && matrix.shard == 1 && steps.supabase-images.outputs.cache-hit != 'true' && env.E2E_SUPABASE_SECRET_KEY != ''
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/supabase-images.tar
+          key: ${{ steps.supabase-images-key.outputs.key }}
 
   # The required check. It always runs and passes only when every part passed: a job that only "needs" the
   # parts would be skipped when one fails, and GitHub counts a skipped required check as passing.
