@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { backdateGameStart, savedCheckIns, signUp, test, uniqueEmail } from "./helpers";
+import { backdateGameStart, newPlayer, savedCheckIns, test, uniqueEmail } from "./helpers";
 
 /** Fills a full board and presses Start Game. */
 async function startAGame(page: Page) {
@@ -18,7 +18,7 @@ async function startAGame(page: Page) {
 }
 
 test("a full board offers Start Game, remembers the start and can take it back", async ({ page }) => {
-  await signUp(page, uniqueEmail("start"), "Starter");
+  await newPlayer(page, uniqueEmail("start"), "Starter");
   await page.goto("/draft");
   const ally = page.getByLabel("My team pick, e.g. cm5");
   const enemy = page.getByLabel("Enemy pick");
@@ -63,7 +63,7 @@ test("signed out, a full board shows no Start Game", async ({ page }) => {
 
 test("Game Over asks how it went, and the answers are saved", async ({ page }) => {
   const email = uniqueEmail("over");
-  await signUp(page, email, "Ender");
+  await newPlayer(page, email, "Ender");
   await startAGame(page);
 
   await page.getByRole("button", { name: "Game Over" }).click();
@@ -98,7 +98,7 @@ test("Game Over asks how it went, and the answers are saved", async ({ page }) =
 
 test("a new board offers the last game's check-in, and Skip closes it", async ({ page }) => {
   const email = uniqueEmail("last");
-  await signUp(page, email, "Later");
+  await newPlayer(page, email, "Later");
   await startAGame(page);
   await backdateGameStart(email, 30);
 
@@ -120,7 +120,7 @@ test("a new board offers the last game's check-in, and Skip closes it", async ({
 
 test("away from the Draft page, a player without Steam is asked an hour after the start", async ({ page }) => {
   const email = uniqueEmail("site");
-  await signUp(page, email, "Elsewhere");
+  await newPlayer(page, email, "Elsewhere");
   await startAGame(page);
   await backdateGameStart(email, 70);
 

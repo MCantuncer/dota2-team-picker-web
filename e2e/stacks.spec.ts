@@ -1,13 +1,13 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, signUp, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, newPlayer, test, uniqueEmail } from "./helpers";
 
 test("any player creates a Stack, invites a friend, and the friend joins", async ({ page, browser }) => {
   const ownerEmail = uniqueEmail("stack-owner");
   const palEmail = uniqueEmail("stack-pal");
-  await signUp(page, ownerEmail, "Mirana");
+  await newPlayer(page, ownerEmail, "Mirana");
   const palContext = await browser.newContext();
   const pal = await palContext.newPage();
-  await signUp(pal, palEmail, "Tusk");
+  await newPlayer(pal, palEmail, "Tusk");
   await befriend(ownerEmail, palEmail);
 
   // A plain user sees what a Stack is for and creates one.
@@ -48,7 +48,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
 
 test("a player finds an open Stack, asks to join, and the owner accepts", async ({ page, browser }) => {
   const name = `Lane ${Date.now().toString(36)}`;
-  await signUp(page, uniqueEmail("open-owner"), "Lina");
+  await newPlayer(page, uniqueEmail("open-owner"), "Lina");
   await page.goto("/stacks");
   await page.getByPlaceholder("Stack name, e.g. Friday Five").fill(name);
   await page.getByRole("button", { name: "Create Stack" }).click();
@@ -56,7 +56,7 @@ test("a player finds an open Stack, asks to join, and the owner accepts", async 
 
   const strangerContext = await browser.newContext();
   const stranger = await strangerContext.newPage();
-  await signUp(stranger, uniqueEmail("open-stranger"), "Axe");
+  await newPlayer(stranger, uniqueEmail("open-stranger"), "Axe");
   await stranger.goto("/stacks");
   const all = stranger.getByRole("region", { name: "All Stacks" });
   await all.getByLabel("Search Stacks by name").fill(name);

@@ -279,21 +279,25 @@ export async function seedFriend(
   return id;
 }
 
-export async function signUp(page: Page, email: string, name: string) {
-  await page.goto("/signup?next=/profile");
-  await page.getByLabel("Name").fill(name);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign up with email" }).click();
-  // Match the path, not the whole URL: "/signup?next=/profile" also ends in "/profile".
-  await expect(page).toHaveURL((url) => url.pathname === "/profile");
+/**
+ * Makes a new player and signs them in the way Steam sign-in does: the backend's steam-login function makes the
+ * account, then sends the browser to /auth/confirm with a one-time token the site swaps for a session. CI runs
+ * Supabase without edge functions, so the test makes the account and the token itself. `email` is only the
+ * test's handle for the player; nothing is sent to it.
+ */
+export async function newPlayer(page: Page, email: string, name: string) {
+  const { error } = await admin().auth.admin.createUser({ email, email_confirm: true, user_metadata: { display_name: name } });
+  if (error) throw error;
+  await signInAs(page, email);
 }
 
-export async function logIn(page: Page, email: string, next = "/profile") {
-  await page.goto(`/login?next=${encodeURIComponent(next)}`);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Log in with email" }).click();
+/** Signs an existing player in through /auth/confirm with a one-time token, as Steam sign-in does, and opens `next`. */
+export async function signInAs(page: Page, email: string, next = "/profile") {
+  const { data, error } = await admin().auth.admin.generateLink({ type: "magiclink", email });
+  if (error) throw error;
+  const params = new URLSearchParams({ token_hash: data.properties.hashed_token, type: "email", next });
+  await page.goto(`/auth/confirm?${params}`);
+  // Match the path, not the whole URL, so a query string on `next` still counts.
   await expect(page).toHaveURL((url) => url.pathname === next);
 }
 

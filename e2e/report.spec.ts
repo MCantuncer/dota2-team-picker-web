@@ -1,12 +1,12 @@
 import { expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { expectAccessible, seedReport, seedReportFeedback, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, seedReport, seedReportFeedback, test, uniqueEmail } from "./helpers";
 
 const facts = JSON.parse(readFileSync("test/fixtures/report-facts-v1.json", "utf8")) as object;
 
 test("a player reads the report of a game they played", async ({ page }) => {
   const email = uniqueEmail("report");
-  await signUp(page, email, "Kez");
+  await newPlayer(page, email, "Kez");
   const draftId = await seedReport(email, { status: "ready", facts });
 
   await page.goto(`/reports/${draftId}`);
@@ -22,7 +22,7 @@ test("a player reads the report of a game they played", async ({ page }) => {
 
 test("a report links to the player's own feedback on the game", async ({ page }) => {
   const email = uniqueEmail("report-feedback");
-  await signUp(page, email, "Kez");
+  await newPlayer(page, email, "Kez");
   const draftId = await seedReport(email, { status: "ready", facts });
 
   await page.goto(`/reports/${draftId}`);
@@ -38,7 +38,7 @@ test("a report links to the player's own feedback on the game", async ({ page })
 
 test("a report still being built says so", async ({ page }) => {
   const email = uniqueEmail("report-wait");
-  await signUp(page, email, "Lina");
+  await newPlayer(page, email, "Lina");
   const draftId = await seedReport(email, { status: "waiting_parse", facts: null });
 
   await page.goto(`/reports/${draftId}`);
@@ -49,18 +49,18 @@ test("a report still being built says so", async ({ page }) => {
 test("another player's report is not found", async ({ page, browser }) => {
   const owner = uniqueEmail("report-owner");
   const ownerPage = await browser.newPage();
-  await signUp(ownerPage, owner, "Ursa");
+  await newPlayer(ownerPage, owner, "Ursa");
   const draftId = await seedReport(owner, { status: "ready", facts });
   await ownerPage.close();
 
-  await signUp(page, uniqueEmail("report-other"), "Lion");
+  await newPlayer(page, uniqueEmail("report-other"), "Lion");
   const res = await page.goto(`/reports/${draftId}`);
   expect(res?.status()).toBe(404);
 });
 
 test("the Party page shows records once a game is reported", async ({ page }) => {
   const email = uniqueEmail("records");
-  await signUp(page, email, "Mars");
+  await newPlayer(page, email, "Mars");
   await page.goto("/party");
   const records = page.getByRole("region", { name: "Your records" });
   await expect(records).toContainText("Records start after your first reported party game");

@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, savedSuggestions, seedFriend, seedStack, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, savedSuggestions, seedFriend, seedStack, test, uniqueEmail } from "./helpers";
 
 test("a Team mixes Stack mates and friends, and friends who don't share are planned as any hero", async ({ page }) => {
   const email = uniqueEmail("mixed");
-  await signUp(page, email, "Mirana");
+  await newPlayer(page, email, "Mirana");
   await seedStack(email, "Night Owls", [
     { name: "Tusk", position: 3 },
     { name: "Lina", position: 2 },

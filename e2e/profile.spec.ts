@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, seedFeedback, seedHeroStats, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, seedFeedback, seedHeroStats, test, uniqueEmail } from "./helpers";
 
 test("the profile explains a Steam player's heroes and recent form", async ({ page }) => {
   const email = uniqueEmail("profile-heroes");
-  await signUp(page, email, "Kez");
+  await newPlayer(page, email, "Kez");
   await seedFeedback(email);
   await seedHeroStats(email);
 
