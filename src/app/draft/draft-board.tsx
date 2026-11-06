@@ -37,6 +37,7 @@ import { usePartyDraft } from "./use-party-draft";
 import { TeamSeats } from "./team-seats";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { StartGame } from "./start-game";
+import { SuggestionRow } from "./suggestion-row";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
 import { CheckInCard } from "./check-in-card";
@@ -1100,41 +1101,22 @@ function SuggestionCard({
   }
 
   return (
-    <li className="group relative grid grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-line py-3">
-      {rank === 2 && <span className="col-span-4 -mt-3 mb-1 pt-3 text-sm text-subtle">Also Strong</span>}
-      <span className="num text-subtle">{rank}</span>
-      <Portrait hero={hero} src={portrait} size="strip" />
-      <div className="min-w-0">
-        <span className="flex items-center gap-2 font-medium text-fg">
-          {s.name} <MoveMark move={move} />
+    <SuggestionRow
+      suggestion={s}
+      portrait={<Portrait hero={hero} src={portrait} size="strip" />}
+      rank={rank}
+      scoreText={signed(s.score)}
+      badges={
+        <>
+          <MoveMark move={move} />
           {outsidePool && <OutsidePool />}
           {weakHere && <WeakHere />}
-        </span>
-        <details className="text-sm text-subtle">
-          <summary className="cursor-pointer truncate">{s.reasons[0] ?? "Why This Pick"}</summary>
-          <PickWhy suggestion={{ ...s, reasons: s.reasons.slice(1) }} className="mt-1 text-fg/85" />
-        </details>
-      </div>
-      <span className="flex items-center gap-3">
-        {/* On a mouse the row's buttons float over the reason on hover or keyboard focus, so they take no room; on touch they always show. */}
-        {onPicked && onBanned && (
-          <span className="flex gap-1 [@media(hover:hover)]:absolute [@media(hover:hover)]:right-16 [@media(hover:hover)]:top-1/2 [@media(hover:hover)]:-translate-y-1/2 [@media(hover:hover)]:bg-bg [@media(hover:hover)]:pl-4 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
-            <button onClick={onPicked} className="btn btn-secondary btn-sm">
-              <Icon name="check" />
-              Picked
-            </button>
-            <button onClick={onBanned} className="btn btn-ghost btn-sm">
-              <Icon name="ban" />
-              Banned
-            </button>
-          </span>
-        )}
-        {gainText}
-        <span className="num w-12 text-right text-fg" title="Score in win-rate points">
-          {signed(s.score)}
-        </span>
-      </span>
-      {s.hardCounters.length > 0 && <div className="col-span-2 col-start-3 flex flex-col gap-2">{counters}</div>}
-    </li>
+        </>
+      }
+      gainText={gainText}
+      counters={counters}
+      onPicked={onPicked}
+      onBanned={onBanned}
+    />
   );
 }

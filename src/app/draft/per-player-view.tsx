@@ -151,7 +151,7 @@ function HeroCard({
 }) {
   const [open, setOpen] = useState(top);
   const panelId = useId();
-  const actions = (quick: boolean) => (
+  const actions = (
     <>
       <button
         onClick={onPicked}
@@ -164,7 +164,7 @@ function HeroCard({
       <button
         onClick={onBanned}
         aria-label={`Banned ${s.name}`}
-        className={`btn btn-sm ${quick ? "btn-ghost" : "btn-secondary"}`}
+        className="btn btn-secondary btn-sm"
       >
         <Icon name="ban" />
         Banned
@@ -173,7 +173,7 @@ function HeroCard({
   );
 
   return (
-    <li className={`group relative border-t border-line ${open ? "bg-surface" : ""}`}>
+    <li className={`border-t border-line ${open ? "bg-surface" : ""}`}>
       <button
         type="button"
         aria-expanded={open}
@@ -208,13 +208,6 @@ function HeroCard({
         </span>
       </button>
 
-      {!open && (
-        // Closed cards keep quick buttons for a mouse, shown on hover or keyboard focus; touch opens the card.
-        <span className="absolute right-20 top-2.5 hidden gap-1 bg-bg pl-4 opacity-0 group-focus-within:opacity-100 group-hover:bg-hover group-hover:opacity-100 [@media(hover:hover)]:flex">
-          {actions(true)}
-        </span>
-      )}
-
       {/* The panel stays in the page for aria-controls; its content mounts only while open. */}
       <div id={panelId} hidden={!open} className="@container px-2 pb-4">
         {open && (
@@ -239,7 +232,7 @@ function HeroCard({
               </div>
               <ScoreParts breakdown={s.breakdown} place={s.place} />
             </div>
-            <div className="mt-4 flex gap-1.5 sm:pl-[4.75rem]">{actions(false)}</div>
+            <div className="mt-4 flex gap-1.5 sm:pl-[4.75rem]">{actions}</div>
           </>
         )}
       </div>
