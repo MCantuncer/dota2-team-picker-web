@@ -40,3 +40,18 @@ test("friends sharing is on by default and stays off once turned off", async ({ 
   await page.reload();
   await expect(page.getByRole("checkbox", { name: "Share My Heroes With Friends" })).not.toBeChecked();
 });
+
+test("a player deletes their account", async ({ page }) => {
+  await newPlayer(page, uniqueEmail("delete"), "Techies");
+  await page.getByRole("button", { name: "Delete Account" }).click();
+  const confirm = page.getByRole("button", { name: "Delete My Account" });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/to confirm/).fill("delete");
+  await expectAccessible(page);
+  await confirm.click();
+
+  await expect(page).toHaveURL(/\/login\?deleted=1/);
+  await expect(page.getByRole("status")).toHaveText(/Your account is deleted/);
+  await page.goto("/profile");
+  await expect(page).toHaveURL(/\/login/);
+});

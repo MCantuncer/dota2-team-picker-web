@@ -11,12 +11,17 @@ const ERRORS: Record<string, string> = {
 
 /** Steam is the only way in. The first sign-in makes the account, so there is no separate sign up. */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { next, error } = await searchParams;
+  const { next, error, deleted } = await searchParams;
   const nextPath = safeNext(typeof next === "string" ? next : undefined);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
     <AuthCard title="Sign In">
+      {deleted === "1" && (
+        <p role="status" className="rounded-md bg-raised p-3 text-sm text-fg">
+          Your account is deleted. Sign in with Steam any time to start fresh.
+        </p>
+      )}
       {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
       <SteamButton next={nextPath} primary />
       <p className="text-sm text-muted">

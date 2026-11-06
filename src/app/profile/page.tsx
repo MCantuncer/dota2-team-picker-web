@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { HeroInsightsView } from "./hero-insights-view";
 import { LocalTime } from "./local-time";
 import { NameForm } from "./name-form";
+import { DeleteAccount } from "./delete-account";
 import { PositionsCard } from "./positions-card";
 import { RecentFormCard } from "./recent-form-card";
 import { ShareHeroesSwitch } from "./share-heroes-switch";
@@ -134,6 +135,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           </Link>
           .
         </p>
+      </section>
+
+      <section aria-labelledby="delete-heading" className="flex flex-col gap-3 border-t border-line pt-6">
+        <h2 id="delete-heading" className="section-title">
+          Delete Account
+        </h2>
+        <p className="max-w-prose text-sm text-muted">
+          Deletes your profile, heroes, friends and games for good. Stacks you own pass to a co-captain or the next
+          player. You can sign in with Steam again later to start fresh.
+        </p>
+        <DeleteAccount />
       </section>
     </main>
   );
