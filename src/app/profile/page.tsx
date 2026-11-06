@@ -4,10 +4,12 @@ import { getHeroes } from "@/lib/heroes";
 import { RankMedal } from "@/components/rank-medal";
 import { heroInsights, type HeroSort, readPeriod, recordFor } from "@/lib/hero-insights";
 import { rankName } from "@/lib/rank";
-import { FORM_GAMES, recentForm } from "@/lib/recent-form";
+import { FORM_GAMES, positionsLately, recentForm } from "@/lib/recent-form";
 import { createClient } from "@/lib/supabase/server";
 import { HeroInsightsView } from "./hero-insights-view";
+import { LocalTime } from "./local-time";
 import { NameForm } from "./name-form";
+import { PositionsCard } from "./positions-card";
 import { RecentFormCard } from "./recent-form-card";
 import { ShareHeroesSwitch } from "./share-heroes-switch";
 import { SyncButton } from "./sync-button";
@@ -35,7 +37,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
     supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0),
     supabase
       .from("player_game_facts")
-      .select("is_win, started_at")
+      .select("is_win, started_at, position")
       .eq("user_id", user.id)
       .order("started_at", { ascending: false })
       .limit(FORM_GAMES),
@@ -52,6 +54,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   for (const f of pool.data ?? []) positions.set(f.hero_id, [...(positions.get(f.hero_id) ?? []), f.position].sort());
   if (games.error) console.error("Profile recent form:", games.error.message);
   const form = games.error ? null : recentForm(games.data);
+  const played = games.error ? null : positionsLately(games.data);
+  // Unknown when the pool failed to load: then the card makes no claim about it.
+  const poolPositions = pool.error ? null : new Set((pool.data ?? []).map((f) => f.position));
 
   return (
     <main className="page flex flex-col gap-10 py-10">
@@ -67,27 +72,28 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         </h2>
         {isSteam ? (
           <>
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] md:items-start">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4">
-                  {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
-                  <div className="flex flex-col gap-1">
-                    <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
-                    {profile?.synced_at && (
-                      <span className="text-xs text-subtle">
-                        Last updated {new Date(profile.synced_at).toLocaleString("en-GB", { timeZone: "UTC" })} UTC
-                      </span>
-                    )}
-                  </div>
+            <div className="flex items-center gap-4">
+              {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
+                  <SyncButton />
                 </div>
-                {!rank && (
-                  <p className="max-w-prose text-sm text-muted">
-                    OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
-                    <em>Expose Public Match Data</em>, play a match, then refresh.
-                  </p>
+                {profile?.synced_at && (
+                  <span className="text-xs text-subtle">
+                    Last updated <LocalTime iso={profile.synced_at} />
+                  </span>
                 )}
-                <SyncButton />
               </div>
+            </div>
+            {!rank && (
+              <p className="max-w-prose text-sm text-muted">
+                OpenDota could not see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
+                <em>Expose Public Match Data</em>, play a match, then refresh.
+              </p>
+            )}
+            <div className="grid gap-4 md:grid-cols-2">
+              <PositionsCard positions={played} games={games.data?.length ?? 0} poolPositions={poolPositions} />
               <RecentFormCard form={form} />
             </div>
           </>
