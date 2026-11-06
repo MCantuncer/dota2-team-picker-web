@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Page } from "@playwright/test";
-import { expectAccessible, heroData, savedSuggestions, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, heroData, newPlayer, savedSuggestions, test, uniqueEmail } from "./helpers";
 
 /** The position chosen for an ally, as its checked radio. */
 const chosen = (page: Page, hero: string) =>
@@ -91,7 +91,7 @@ test("the draft screen shows the win chance once a checked model exists", async 
 });
 
 test("in a party the draft is kept for the whole party", async ({ page }) => {
-  await signUp(page, uniqueEmail("party-draft"), "Earthshaker");
+  await newPlayer(page, uniqueEmail("party-draft"), "Earthshaker");
   await page.goto("/party");
   await page.getByRole("button", { name: "Start a party" }).click();
   await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
@@ -119,7 +119,7 @@ test("in a party the draft is kept for the whole party", async ({ page }) => {
 });
 
 test("the party leader can plan the whole team", async ({ page }) => {
-  await signUp(page, uniqueEmail("party-plan"), "Tiny");
+  await newPlayer(page, uniqueEmail("party-plan"), "Tiny");
   await page.goto("/party");
   await page.getByRole("button", { name: "Start a party" }).click();
   await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
@@ -140,7 +140,7 @@ test("the party leader can plan the whole team", async ({ page }) => {
 
 test("a party draft saves what each player was shown and ends with the after-game card", async ({ page }) => {
   const email = uniqueEmail("after-game");
-  await signUp(page, email, "Lina");
+  await newPlayer(page, email, "Lina");
   await page.goto("/party");
   await page.getByRole("button", { name: "Start a party" }).click();
   await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();

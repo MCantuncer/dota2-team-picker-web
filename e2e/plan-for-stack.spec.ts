@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, seedStack, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, seedStack, test, uniqueEmail } from "./helpers";
 
 test("a Stack owner plans a draft for Stack mates who aren't online", async ({ page }) => {
   const email = uniqueEmail("plan-owner");
-  await signUp(page, email, "Mirana");
+  await newPlayer(page, email, "Mirana");
   await seedStack(email, "Night Owls", [
     { name: "Tusk", position: 3 },
     { name: "Lina", position: 2 },
@@ -44,7 +44,7 @@ test("a Stack owner plans a draft for Stack mates who aren't online", async ({ p
 
 test("a Stack page's Draft link starts a Team with that Stack", async ({ page }) => {
   const email = uniqueEmail("plan-link");
-  await signUp(page, email, "Mirana");
+  await newPlayer(page, email, "Mirana");
   const stackId = await seedStack(email, "Night Owls", [{ name: "Tusk", position: 3 }]);
   await page.goto(`/draft?stack=${stackId}`);
   const seats = page.getByRole("list", { name: "Team Seats" });
@@ -53,7 +53,7 @@ test("a Stack page's Draft link starts a Team with that Stack", async ({ page })
 });
 
 test("a player who doesn't run a Stack gets no Fill From Stack", async ({ page }) => {
-  await signUp(page, uniqueEmail("plan-solo"), "Rubick");
+  await newPlayer(page, uniqueEmail("plan-solo"), "Rubick");
   await page.goto("/draft");
   const planFor = page.getByRole("region", { name: "Plan For" });
   await planFor.getByRole("button", { name: "Team", exact: true }).click();

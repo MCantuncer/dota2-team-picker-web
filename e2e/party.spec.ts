@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, signUp, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, newPlayer, test, uniqueEmail } from "./helpers";
 
 test("a party player can become draft captain and step down", async ({ page }) => {
-  await signUp(page, uniqueEmail("party-captain"), "Lion");
+  await newPlayer(page, uniqueEmail("party-captain"), "Lion");
   await page.goto("/party");
   await page.getByRole("button", { name: "Start a party" }).click();
 
@@ -23,10 +23,10 @@ test("a party player can become draft captain and step down", async ({ page }) =
 test("a player asks the draft captain for the role and gets it on Yes", async ({ page, browser }) => {
   const canEmail = uniqueEmail("captain-can");
   const aliEmail = uniqueEmail("captain-ali");
-  await signUp(page, canEmail, "Can");
+  await newPlayer(page, canEmail, "Can");
   const aliContext = await browser.newContext();
   const ali = await aliContext.newPage();
-  await signUp(ali, aliEmail, "Ali");
+  await newPlayer(ali, aliEmail, "Ali");
   await befriend(canEmail, aliEmail);
 
   // Can starts a party, invites Ali, and becomes draft captain.
@@ -73,7 +73,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
 });
 
 test("the party planner sees suggestions per player", async ({ page }) => {
-  await signUp(page, uniqueEmail("per-player"), "Lion");
+  await newPlayer(page, uniqueEmail("per-player"), "Lion");
   await page.goto("/party");
   await page.getByRole("button", { name: "Start a party" }).click();
   await expect(page.getByRole("region", { name: "Draft captain" })).toBeVisible();

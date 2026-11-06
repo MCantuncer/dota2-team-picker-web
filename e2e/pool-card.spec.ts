@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, seedPoolCard, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, seedPoolCard, test, uniqueEmail } from "./helpers";
 
 test("a hero pool card adds the hero to the player's position", async ({ page }) => {
   const email = uniqueEmail("pool-card");
-  await signUp(page, email, "Pool Card");
+  await newPlayer(page, email, "Pool Card");
   await seedPoolCard(email);
 
   await page.goto("/my-heroes");
@@ -27,7 +27,7 @@ test("a hero pool card adds the hero to the player's position", async ({ page })
 
 test("closing a hero pool card asks again later, not never", async ({ page }) => {
   const email = uniqueEmail("pool-later");
-  await signUp(page, email, "Pool Later");
+  await newPlayer(page, email, "Pool Later");
   await seedPoolCard(email);
 
   await page.goto("/party");
@@ -39,7 +39,7 @@ test("closing a hero pool card asks again later, not never", async ({ page }) =>
 
 test("My Heroes lists suggestions on their position and can turn them off", async ({ page }) => {
   const email = uniqueEmail("pool-row");
-  await signUp(page, email, "Pool Row");
+  await newPlayer(page, email, "Pool Row");
   await seedPoolCard(email);
 
   await page.goto("/my-heroes");

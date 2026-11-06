@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { expectAccessible, logIn, PASSWORD, signUp, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, PASSWORD, signInAs, uniqueEmail } from "./helpers";
 
-test("sign up, rename, sign out and log back in", async ({ page }) => {
+test("sign in, rename, sign out and sign back in", async ({ page }) => {
   const email = uniqueEmail("account");
-  await signUp(page, email, "Invoker");
+  await newPlayer(page, email, "Invoker");
   await expect(page.getByLabel("Display name")).toHaveValue("Invoker");
   await expectAccessible(page);
 
@@ -16,13 +16,18 @@ test("sign up, rename, sign out and log back in", async ({ page }) => {
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/login/);
 
-  await logIn(page, email);
+  await signInAs(page, email);
   await expect(page.getByLabel("Display name")).toHaveValue("Carl");
 });
 
 test("a wrong password shows an error and stays on login", async ({ page }) => {
   const email = uniqueEmail("wrong");
-  await signUp(page, email, "Pudge");
+  await page.goto("/signup?next=/profile");
+  await page.getByLabel("Name").fill("Pudge");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(PASSWORD);
+  await page.getByRole("button", { name: "Sign up with email" }).click();
+  await expect(page).toHaveURL((url) => url.pathname === "/profile");
   await page.context().clearCookies();
 
   await page.goto("/login");
@@ -34,14 +39,14 @@ test("a wrong password shows an error and stays on login", async ({ page }) => {
 });
 
 test("my heroes opens for a signed-in user", async ({ page }) => {
-  await signUp(page, uniqueEmail("heroes"), "Lina");
+  await newPlayer(page, uniqueEmail("heroes"), "Lina");
   await page.goto("/my-heroes");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expectAccessible(page);
 });
 
 test("friends sharing is on by default and stays off once turned off", async ({ page }) => {
-  await signUp(page, uniqueEmail("share"), "Rubick");
+  await newPlayer(page, uniqueEmail("share"), "Rubick");
   const share = page.getByRole("checkbox", { name: "Share My Heroes With Friends" });
   await expect(share).toBeChecked();
   await expectAccessible(page);

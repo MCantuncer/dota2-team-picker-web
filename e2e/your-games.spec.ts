@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
-import { expectAccessible, seedFeedback, signUp, test, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, seedFeedback, test, uniqueEmail } from "./helpers";
 
 test("Your Games shows strengths and problems with what to change", async ({ page }) => {
   const email = uniqueEmail("your-games");
-  await signUp(page, email, "Your Games");
+  await newPlayer(page, email, "Your Games");
 
   // Without Steam there is nothing to read yet.
   await page.goto("/my-heroes/games");
