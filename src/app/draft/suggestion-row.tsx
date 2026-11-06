@@ -62,9 +62,9 @@ export function SuggestionRow({
           </span>
         </span>
       </button>
-      {counters.length > 0 && <div className="flex flex-col gap-2 px-2 pb-3 sm:pl-[6.75rem]">{counters}</div>}
+      {counters.length > 0 && <div className="flex flex-col gap-2 px-2 pb-3 sm:pl-[7.25rem]">{counters}</div>}
       {/* The panel stays in the page for aria-controls; its content mounts only while open. */}
-      <div id={panelId} hidden={!open} className="px-2 pb-4 sm:pl-[6.75rem]">
+      <div id={panelId} hidden={!open} className="px-2 pb-4 pt-3 sm:pl-[7.25rem]">
         {open && (
           <>
             <PickWhy suggestion={s} className="text-sm text-fg/85" />
