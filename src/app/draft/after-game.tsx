@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { OpenDotaButton } from "@/components/external-button";
+import { Icon } from "@/components/icon";
 import { useState } from "react";
 
 /** A match ID as Dota shows it: digits only. */
@@ -40,12 +42,11 @@ export function AfterGame({
       {result ? (
         <p className="flex flex-wrap items-center gap-2 text-sm">
           <span className={`chip micro ${result.won ? "text-radiant" : "text-dire"}`}>{result.won ? "Won" : "Lost"}</span>
-          <a href={`https://www.opendota.com/matches/${result.matchId}`} target="_blank" rel="noopener noreferrer" className="underline">
-            Match <span className="num">{result.matchId}</span> on OpenDota
-          </a>
-          <Link href={`/reports/${result.draftId}`} className="link">
+          <Link href={`/reports/${result.draftId}`} className="btn btn-secondary btn-sm">
+            <Icon name="chart" />
             Read the Report
           </Link>
+          <OpenDotaButton matchId={result.matchId} />
         </p>
       ) : (
         <>

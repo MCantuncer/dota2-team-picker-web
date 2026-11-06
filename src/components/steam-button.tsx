@@ -1,14 +1,17 @@
 import { SUPABASE_URL } from "@/lib/supabase/env";
 
-/** Starts the Steam sign-in, handled by the backend's steam-login function. */
-export function SteamButton({ next, primary }: { next: string; primary?: boolean }) {
+/**
+ * Starts the Steam sign-in, handled by the backend's steam-login function. Large on sign-in pages; `small` for
+ * a hint line inside a page ("Sign in to add Stack mates and friends").
+ */
+export function SteamButton({ next, primary, small }: { next: string; primary?: boolean; small?: boolean }) {
   const href = `${SUPABASE_URL}/functions/v1/steam-login?${new URLSearchParams({ next })}`;
   return (
     <a
       href={href}
-      className={`btn btn-lg ${primary ? "btn-primary" : "bg-steam text-on-strong ring-1 ring-line-hover hover:bg-steam-hover"}`}
+      className={`btn ${small ? "btn-sm" : "btn-lg"} ${primary ? "btn-primary" : "bg-steam text-on-strong ring-1 ring-line-hover hover:bg-steam-hover"}`}
     >
-      <SteamLogo className="h-5 w-5" />
+      <SteamLogo className={small ? "h-4 w-4" : "h-5 w-5"} />
       Sign In with Steam
     </a>
   );

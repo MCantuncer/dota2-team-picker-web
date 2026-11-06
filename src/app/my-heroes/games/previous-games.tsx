@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Icon } from "@/components/icon";
 import { FindingIcon } from "./finding-icon";
 import { filterQuery, type GameFilters, gameLength, type GameRow, GAMES_PER_PAGE } from "@/lib/player-games";
 
@@ -76,7 +77,8 @@ export function PreviousGames({
             Filter
           </button>
           {filtered && (
-            <Link href="/my-heroes/games" className="link text-sm">
+            <Link href="/my-heroes/games" className="btn btn-ghost btn-sm">
+              <Icon name="x" />
               Clear
             </Link>
           )}
@@ -98,7 +100,8 @@ export function PreviousGames({
       {pages > 1 && (
         <nav aria-label="Pages" className="flex items-center justify-between text-sm">
           {filters.page > 1 ? (
-            <Link href={`/my-heroes/games${filterQuery(filters, filters.page - 1)}`} className="link">
+            <Link href={`/my-heroes/games${filterQuery(filters, filters.page - 1)}`} className="btn btn-secondary btn-sm">
+              <Icon name="chevronLeft" />
               Newer Games
             </Link>
           ) : (
@@ -108,8 +111,9 @@ export function PreviousGames({
             Page {filters.page} of {pages}
           </span>
           {filters.page < pages ? (
-            <Link href={`/my-heroes/games${filterQuery(filters, filters.page + 1)}`} className="link">
+            <Link href={`/my-heroes/games${filterQuery(filters, filters.page + 1)}`} className="btn btn-secondary btn-sm">
               Older Games
+              <Icon name="chevronRight" />
             </Link>
           ) : (
             <span />
@@ -125,14 +129,16 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
   const kda =
     game.kills !== null && game.deaths !== null && game.assists !== null ? `${game.kills}/${game.deaths}/${game.assists}` : null;
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
+    // The whole row opens the game: the hero name's link stretches over it. That page has the OpenDota button,
+    // so the list doesn't repeat one on every row.
+    <li className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface">
       <span aria-hidden className={`h-8 w-0.5 rounded-full ${game.isWin ? "bg-radiant" : "bg-dire"}`} />
       {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-xs" />}
       <div className="flex min-w-36 flex-col">
         <Link
           href={`/my-heroes/games/${game.matchId}`}
           aria-label={`${heroName} ${game.isWin ? "won" : "lost"} on ${dateFormat.format(new Date(game.startedAt))}`}
-          className="text-sm font-medium text-fg hover:underline"
+          className="row-link text-sm font-medium"
         >
           {heroName}
         </Link>
@@ -149,7 +155,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
       <span className="num w-20 text-sm text-fg" title="Kills / deaths / assists">
         {kda ?? "?"}
       </span>
-      <span className="min-w-0 flex-1 text-sm">
+      <span className="min-w-48 flex-1 text-sm">
         {game.note ? (
           <span className={`flex items-center gap-2 ${game.note.tone === "problem" ? "text-dire" : "text-radiant"}`}>
             <FindingIcon kind={game.note.kind} tone={game.note.tone} />
@@ -161,15 +167,9 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
           <span className="text-subtle">Nothing stood out</span>
         )}
       </span>
-      <a
-        href={`https://www.opendota.com/matches/${game.matchId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="link text-xs"
-        aria-label={`Match ${game.matchId} on OpenDota`}
-      >
-        OpenDota
-      </a>
+      <span aria-hidden className="text-subtle max-sm:hidden">
+        <Icon name="chevronRight" />
+      </span>
     </li>
   );
 }

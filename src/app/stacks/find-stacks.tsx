@@ -78,11 +78,14 @@ export function FindStacks({
   const card = (s: StackCard, hot = false) => {
     const request = requests[s.id];
     return (
-      <li key={s.id} className="flex min-w-0 flex-col gap-3 rounded-md bg-surface p-4 ring-1 ring-inset ring-line">
+      <li
+        key={s.id}
+        className="relative flex min-w-0 flex-col gap-3 rounded-md bg-surface p-4 ring-1 ring-inset ring-line transition-colors hover:bg-raised hover:ring-line-hover"
+      >
         <span className="flex items-start gap-3">
           <StackCrest name={s.name} />
           <span className="flex min-w-0 flex-1 flex-col">
-            <Link href={`/stacks/${s.id}`} className="truncate font-semibold text-fg hover:underline">
+            <Link href={`/stacks/${s.id}`} className="row-link truncate font-semibold">
               {s.name}
             </Link>
             <span className="flex items-center gap-1 text-sm text-subtle">
@@ -109,7 +112,7 @@ export function FindStacks({
             </span>
           )}
         </span>
-        <span className="mt-auto flex min-h-8 items-center justify-end gap-2">
+        <span className="relative z-10 mt-auto flex min-h-8 items-center justify-end gap-2 self-end">
           {own.has(s.id) ? (
             <span className="chip">Your Stack</span>
           ) : request ? (

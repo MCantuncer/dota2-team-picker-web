@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icon } from "@/components/icon";
 import { getHeroes } from "@/lib/heroes";
 import { PLAYER_FEEDBACK_SELECT, readPlayerFeedback } from "@/lib/player-feedback";
 import { GAMES_PER_PAGE, PLAYER_GAMES_SELECT, readFilters, readGameRow } from "@/lib/player-games";
@@ -66,12 +67,12 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
     );
   } else if (!profile.data.steam_id) {
     body = (
-      <p role="status" className="notice">
-        Feedback comes from your real games, so it needs your Steam account.{" "}
-        <Link href="/my-heroes" className="link">
-          Connect Steam on My Heroes
+      <div role="status" className="notice items-center">
+        <p className="min-w-0 flex-1">Feedback comes from your real games, so it needs your Steam account.</p>
+        <Link href="/my-heroes" className="btn btn-secondary btn-sm">
+          Connect Steam
         </Link>
-      </p>
+      </div>
     );
   } else {
     const feedback = readPlayerFeedback(feedbackRow.data);
@@ -115,8 +116,9 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
           />
         )}
         <div className="flex flex-col gap-1.5">
-          <Link href="/my-heroes" className="link w-fit text-sm">
-            My Heroes
+          <Link href="/my-heroes" className="btn btn-ghost btn-sm -ml-3 self-start">
+            <Icon name="chevronLeft" />
+            Back to My Heroes
           </Link>
           <h1 id="your-games-title" className="page-title">
             Your Games

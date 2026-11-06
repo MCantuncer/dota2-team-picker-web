@@ -44,7 +44,7 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `fg` | Main text |
 | `muted` | Secondary text, labels |
 | `subtle` | Placeholders, meta lines. Not on `hover` (fails contrast) |
-| `accent`, `accent-hover`, `accent-bright`, `accent-deep` | Copper: focus ring, primary button, the recommended answer, selected underline, links |
+| `accent`, `accent-hover`, `accent-bright`, `accent-deep` | Copper: focus ring, primary button, the recommended answer, selected underline |
 | `accent-tint` | Fill behind a selected or "best" item |
 | `on-accent` | Text on a copper fill |
 | `radiant`, `radiant-strong`, `radiant-tint` | Your team: label text, bars and borders, column wash |
@@ -109,12 +109,27 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.seg` + `.seg-item` | Segmented control; mark the chosen item `aria-selected` or `aria-pressed` |
 | `.seg-sm` | Compact segmented control for one row (an ally's position). Its items are radios: the chosen one (`aria-checked`) is copper filled, a guessed, unconfirmed one gets `data-guess`: dashed, not filled |
 | `.notice` + `.notice-error`, `-warn`, `-done` | Page or panel message; edge colour and icon carry the meaning |
-| `.link` | Copper text link |
+| `.row-link` | Makes a whole row or card one click target: on the row's main link (the name); the row is `relative`, buttons inside it add `relative z-10`. See Links below |
 | `.stack-banner` + `.stack-render` | A Stack's head: surface with faint Radiant and Dire corners and a hairline split, and one hero render on the right with a round fade (so spell effects in a render's corners drop away). One per page |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
 or class in its own small PR, then use it.
+
+## Links
+
+No underlined or plain text links anywhere. Every link is a designed control, picked by what it does:
+
+| Link | Control |
+| --- | --- |
+| Back to the page above ("Back to My Heroes") | `.btn .btn-ghost .btn-sm` with `chevronLeft`, at the top left, `-ml-3` so the text lines up with the title |
+| To another page from a hint ("Suggestions lean toward the heroes you pick") | The sentence, then a `.btn-secondary .btn-sm` at the end of the line that says what it does ("Edit My Heroes"). Sign in is `<SteamButton small />` |
+| To another site (OpenDota, Steam) | `<ExternalButton>` or `<OpenDotaButton>`: a small ghost button ending in the `external` arrow, opening a new tab. Match numbers stay plain text |
+| An action ("Answer Now", "Show Details", "Clear") | A real button; a disclosure gets `chevronDown` that turns over when open |
+| A row or card in a list (a game, a Stack) | The whole row is the target: `.row-link` on its name, hover fill, `chevronRight` at the end when nothing else sits there. No per-row links to other sites |
+| Paging ("Newer Games", "Older Games") | `.btn-secondary .btn-sm` with the chevron pointing the way it goes |
+
+`src/app/no-text-links.test.ts` fails on `.link`, `underline` or `hover:underline` in a class list.
 
 ## Heroes, icons, states
 
@@ -191,6 +206,7 @@ Errors say what went wrong and how to fix it. No em dashes in UI copy.
 - [ ] Title Case for nav, tabs, titles, headings and buttons; sentences for body text; no `uppercase` or wide tracking.
 - [ ] Heroes shown with their art; names never truncated.
 - [ ] Colour only for signals (team, focus, risk, error).
+- [ ] No underlined text links; every link is a button or a whole row (see Links).
 - [ ] Every action works by keyboard, has a visible key hint where it matters, and has an accessible name.
 - [ ] Checked at 1280px, 1920px and phone width.
 - [ ] Motion uses the tokens and classes above, confirms an action, and is off with reduced motion.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/party";
 import { POSITION_WORDS } from "@/lib/pool-cards";
@@ -56,13 +57,15 @@ export function PositionsCard({ positions, games, poolPositions }: PositionsCard
         </p>
       )}
       {top && poolPositions && !poolPositions.has(top.position) && (
-        <p className="text-sm text-muted">
-          You play {POSITION_WORDS[top.position]} most, but your pool has no {POSITION_WORDS[top.position]} heroes.{" "}
-          <Link href="/my-heroes" className="link">
-            Add them on My Heroes
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="min-w-0 flex-1 basis-60 text-sm text-muted">
+            You play {POSITION_WORDS[top.position]} most, but your pool has no {POSITION_WORDS[top.position]} heroes.
+          </p>
+          <Link href="/my-heroes" className="btn btn-secondary btn-sm">
+            <Icon name="plus" />
+            Add {POSITION_NAMES[top.position]} Heroes
           </Link>
-          .
-        </p>
+        </div>
       )}
     </section>
   );

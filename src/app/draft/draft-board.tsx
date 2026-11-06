@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { Icon } from "@/components/icon";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
+import { SteamButton } from "@/components/steam-button";
 import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
@@ -629,20 +629,17 @@ export function DraftBoard({
           Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
           (<span className="text-muted">pa sf</span>). Add a digit for an ally&apos;s position (<span className="text-muted">cm5</span>).
           <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
-          {!signedIn && (
-            <>
-              {" "}
-              <Link href="/login?next=/draft" className="link">
-                Sign in
-              </Link>{" "}
-              to use your own heroes and rank.
-            </>
-          )}
           {party &&
             (captainId
               ? " Your party sees each hero as you enter it."
               : " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you.")}
         </p>
+      )}
+      {!signedIn && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">Sign in to use your own heroes and rank.</p>
+          <SteamButton next="/draft" small />
+        </div>
       )}
 
       {party && (shared.error ?? live.error) && (
