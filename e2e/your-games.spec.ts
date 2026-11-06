@@ -21,6 +21,12 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   await expect(problems.getByRole("heading", { name: "Early deaths are costing your lanes" })).toBeVisible();
   await problems.getByText("Show Details").click();
   await expect(problems.getByText(/Most early deaths came from Ember Spirit/)).toBeVisible();
+  // Once open, the toggle offers to close the details again.
+  await expect(problems.getByText("Show Details")).toBeHidden();
+  await problems.getByText("Hide Details").click();
+  await expect(problems.getByText(/Most early deaths came from Ember Spirit/)).toBeHidden();
+  await expect(problems.getByText("Show Details")).toBeVisible();
+  await problems.getByText("Show Details").click();
   await expect(page.getByRole("region", { name: "Strengths" })).toContainText("Strong farm");
   await expect(page.getByRole("region", { name: "Better Than Last Week" })).toContainText("You fall behind in lane");
 
