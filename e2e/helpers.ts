@@ -383,7 +383,7 @@ export async function seedStack(ownerEmail: string, name: string, players: { nam
   for (const p of players) {
     const { data: created, error: userError } = await db.auth.admin.createUser({
       email: uniqueEmail("stack-mate"),
-        email_confirm: true,
+      email_confirm: true,
     });
     if (userError) throw userError;
     const id = created.user.id;
