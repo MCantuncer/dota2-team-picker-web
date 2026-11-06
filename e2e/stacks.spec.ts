@@ -39,8 +39,12 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await page.getByLabel("Stack", { exact: true }).selectOption({ label: "Night Owls" });
   await page.getByRole("button", { name: "Start a Party" }).click();
   const fromStack = page.getByRole("region", { name: "Invite from Stack" });
-  await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
-  await fromStack.getByRole("button", { name: "Invite" }).click();
+  // Starting a party redraws the lobby once from the server, which clears a tick made before it lands. Tick again
+  // until the Invite button takes it.
+  await expect(async () => {
+    await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
+    await fromStack.getByRole("button", { name: "Invite" }).click({ timeout: 1000 });
+  }).toPass();
   await expect(fromStack.getByText("Invite sent.")).toBeVisible();
   await expectAccessible(page);
   await palContext.close();
