@@ -76,6 +76,9 @@
   --motion-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --motion-in: cubic-bezier(0.4, 0, 1, 1);
 
+  /* The Wex orb's glow in the homepage skill showcase only (Exort glows in --accent). */
+  --orb-wex: #b48ad8;
+
   /* Steam's own button colors, for the Steam sign-in button only. */
   --steam: #171a21;
   --steam-hover: #2a475e;
@@ -658,6 +661,303 @@ body {
     }
     .btn:not(:disabled):active {
       transform: translateY(1px);
+    }
+  }
+}
+
+/*
+ * Next skill showcase: the homepage Invoker weighing Wex against Exort, then taking one (components/next-skill-showcase.tsx).
+ * The one scripted moment on the site, homepage only, so it is the documented exception to the 300ms limit and to
+ * "the live dot is the only loop" (docs/design-system.md, "Motion and light"). Positions are offsets from the example
+ * card's top left corner, matched to the render's hands (render at -20rem top, -12.5rem left, 44rem wide).
+ * Base styles are the decided state; the sequence lives only in the reduced-motion query below.
+ */
+@layer components {
+  .next-skill {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .ns-orb {
+    position: absolute;
+    width: 2.875rem;
+    height: 2.875rem;
+    margin: -1.4375rem 0 0 -1.4375rem;
+  }
+  .ns-orb img {
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+  }
+  .ns-orb::before {
+    content: "";
+    position: absolute;
+    inset: -1.125rem;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(closest-side, var(--glow) 0%, transparent 100%);
+    opacity: 0.25;
+  }
+  .ns-orb-wex {
+    --glow: var(--orb-wex);
+    left: 4rem;
+    top: -3.125rem;
+  }
+  .ns-orb-exort {
+    --glow: var(--accent);
+    left: 19.75rem;
+    top: -6.25rem;
+  }
+  .ns-orb.ns-picked {
+    transform: scale(1.1);
+  }
+  .ns-orb.ns-picked img {
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.6),
+      0 0 0 2px var(--accent);
+  }
+  .ns-orb.ns-picked::before {
+    opacity: 0.85;
+  }
+  .ns-orb.ns-passed {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+    transform: scale(0.94);
+  }
+  .ns-leader {
+    position: absolute;
+    left: 19.75rem;
+    top: -11.75rem;
+    width: 1px;
+    height: 3.75rem;
+    background: linear-gradient(var(--accent-deep), transparent);
+    opacity: 0.9;
+  }
+  .ns-panel {
+    position: absolute;
+    left: 11rem;
+    top: -19.5rem;
+    width: 14rem;
+    padding: 0.625rem 0.625rem 0.6875rem;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .ns-row {
+    display: grid;
+    grid-template-columns: 1.375rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.375rem;
+    padding: 0.3125rem 0.5rem 0.3125rem 0.375rem;
+    border-radius: 0.5rem;
+  }
+  .ns-row.ns-picked {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent-bright);
+  }
+  .ns-row.ns-passed {
+    color: var(--subtle);
+  }
+  /* Text that changes when he decides: both versions share one cell, only the decided one shows by default. */
+  .ns-swap {
+    display: grid;
+  }
+  .ns-swap > * {
+    grid-area: 1 / 1;
+  }
+  .ns-before {
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /*
+     * 3.4s after a 0.3s pause: both appear, he weighs the one he passes on (18% to 44%), then the one he takes
+     * (44% to 71%), glances back (71% to 85%) and decides (85% to the end, the base styles). Then a slow float.
+     */
+    @keyframes ns-orb-passed {
+      0% {
+        opacity: 0;
+        transform: none;
+        filter: none;
+      }
+      5%,
+      15%,
+      47%,
+      70%,
+      88%,
+      94% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      22%,
+      40%,
+      74%,
+      83% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+    }
+    @keyframes ns-orb-picked {
+      0% {
+        opacity: 0;
+        transform: none;
+      }
+      5%,
+      40%,
+      71%,
+      85% {
+        opacity: 0.85;
+        transform: none;
+      }
+      47%,
+      66%,
+      92% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+      }
+    }
+    @keyframes ns-glow-passed {
+      0% {
+        opacity: 0;
+      }
+      5%,
+      15%,
+      47%,
+      70%,
+      88% {
+        opacity: 0.25;
+      }
+      22%,
+      40%,
+      74%,
+      83% {
+        opacity: 0.9;
+      }
+    }
+    @keyframes ns-glow-picked {
+      0% {
+        opacity: 0;
+      }
+      5%,
+      40%,
+      71%,
+      85% {
+        opacity: 0.25;
+      }
+      47%,
+      66%,
+      92% {
+        opacity: 0.9;
+      }
+    }
+    @keyframes ns-row-passed {
+      0%,
+      15%,
+      47%,
+      70%,
+      88% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      22%,
+      40%,
+      74%,
+      83% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+    }
+    @keyframes ns-row-picked {
+      0%,
+      40%,
+      71%,
+      85% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      47%,
+      66%,
+      92% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+    }
+    @keyframes ns-undecided {
+      0%,
+      99.9% {
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+      }
+    }
+    @keyframes ns-hidden-until-decided {
+      0%,
+      99.9% {
+        opacity: 0;
+      }
+    }
+    @keyframes ns-shown-until-decided {
+      0%,
+      99.9% {
+        visibility: visible;
+      }
+    }
+    @keyframes ns-panel-in {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      12% {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    @keyframes ns-float {
+      50% {
+        translate: 0 -4px;
+      }
+    }
+
+    .next-skill {
+      --ns-run: 3.4s;
+      --ns-wait: 0.3s;
+    }
+    .ns-orb.ns-passed {
+      animation:
+        ns-orb-passed var(--ns-run) ease-in-out var(--ns-wait) both,
+        ns-float 6s ease-in-out calc(var(--ns-wait) + var(--ns-run) + 2s) infinite;
+    }
+    .ns-orb.ns-picked {
+      animation:
+        ns-orb-picked var(--ns-run) ease-in-out var(--ns-wait) both,
+        ns-float 5s ease-in-out calc(var(--ns-wait) + var(--ns-run)) infinite;
+    }
+    .ns-orb.ns-passed::before {
+      animation: ns-glow-passed var(--ns-run) ease-in-out var(--ns-wait) both;
+    }
+    .ns-orb.ns-picked::before {
+      animation: ns-glow-picked var(--ns-run) ease-in-out var(--ns-wait) both;
+    }
+    .ns-orb.ns-picked img {
+      animation: ns-undecided var(--ns-run) linear var(--ns-wait) both;
+    }
+    .ns-row.ns-passed {
+      animation: ns-row-passed var(--ns-run) ease-in-out var(--ns-wait) both;
+    }
+    .ns-row.ns-picked {
+      animation: ns-row-picked var(--ns-run) ease-in-out var(--ns-wait) both;
+    }
+    .ns-leader,
+    .ns-after {
+      animation: ns-hidden-until-decided var(--ns-run) step-end var(--ns-wait) both;
+    }
+    .ns-before {
+      animation: ns-shown-until-decided var(--ns-run) step-end var(--ns-wait) both;
+    }
+    .ns-panel {
+      animation: ns-panel-in var(--ns-run) var(--motion-out) var(--ns-wait) both;
     }
   }
 }
