@@ -1,19 +1,12 @@
 import Image from "next/image";
 
-const HERO_ART =
-  "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
+const HERO_ART = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
 
 /**
  * Layout for the Sign In page: our own abstract lane map on the left (above the form on phones and tablets), the
  * form on the right. No card around the form; the page itself is the surface.
  */
-export function AuthCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+export function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <main className="page grid flex-1 content-center items-center gap-16 py-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-24 lg:py-12">
       <LaneMap />
@@ -28,53 +21,17 @@ export function AuthCard({
 /** Puck against Pudge in mid on a plain map: two bases, three lanes, the river. Decoration only. */
 function LaneMap() {
   return (
-    <figure
-      aria-hidden
-      className="relative mx-auto aspect-square w-full max-w-md lg:max-w-[35rem]"
-    >
+    <figure aria-hidden className="relative mx-auto aspect-square w-full max-w-md lg:max-w-[35rem]">
       <svg viewBox="0 0 560 560" className="h-full w-full">
-        <rect
-          x="0.5"
-          y="0.5"
-          width="559"
-          height="559"
-          rx="2"
-          className="fill-surface stroke-line"
-        />
-        <path
-          d="M0 240 C120 250 200 300 280 280 C360 260 440 310 560 320"
-          fill="none"
-          className="stroke-raised"
-          strokeWidth="26"
-        />
-        <g
-          fill="none"
-          className="stroke-line-hover"
-          strokeWidth="10"
-          strokeLinecap="round"
-        >
+        <rect x="0.5" y="0.5" width="559" height="559" rx="2" className="fill-surface stroke-line" />
+        <path d="M0 240 C120 250 200 300 280 280 C360 260 440 310 560 320" fill="none" className="stroke-raised" strokeWidth="26" />
+        <g fill="none" className="stroke-line-hover" strokeWidth="10" strokeLinecap="round">
           <path d="M40 520 L40 60 L500 60" />
           <path d="M40 520 L500 520 L500 60" />
           <path d="M40 520 L500 60" />
         </g>
-        <rect
-          x="22"
-          y="502"
-          width="36"
-          height="36"
-          rx="2"
-          className="fill-radiant"
-          opacity=".85"
-        />
-        <rect
-          x="482"
-          y="22"
-          width="36"
-          height="36"
-          rx="2"
-          className="fill-dire"
-          opacity=".85"
-        />
+        <rect x="22" y="502" width="36" height="36" rx="2" className="fill-radiant" opacity=".85" />
+        <rect x="482" y="22" width="36" height="36" rx="2" className="fill-dire" opacity=".85" />
       </svg>
       <Pin slug="puck" side="radiant" left="39%" top="48%" />
       <Pin slug="pudge" side="dire" left="52%" top="35%" />
@@ -85,30 +42,14 @@ function LaneMap() {
   );
 }
 
-function Pin({
-  slug,
-  side,
-  left,
-  top,
-}: {
-  slug: string;
-  side: "radiant" | "dire";
-  left: string;
-  top: string;
-}) {
+function Pin({ slug, side, left, top }: { slug: string; side: "radiant" | "dire"; left: string; top: string }) {
   const ring = side === "radiant" ? "ring-radiant" : "ring-dire";
   return (
     <span
       style={{ left, top }}
       className={`absolute h-[9.3%] w-[9.3%] overflow-hidden rounded-full ring-1 ring-offset-2 ring-offset-bg ${ring}`}
     >
-      <Image
-        src={`${HERO_ART}/${slug}.png`}
-        alt=""
-        width={104}
-        height={104}
-        className="h-full w-full object-cover"
-      />
+      <Image src={`${HERO_ART}/${slug}.png`} alt="" width={104} height={104} className="h-full w-full object-cover" />
     </span>
   );
 }
