@@ -773,8 +773,11 @@ body {
 
   @media (prefers-reduced-motion: no-preference) {
     /*
-     * 3.4s after a 0.3s pause: both appear, he weighs the one he passes on (18% to 44%), then the one he takes
-     * (44% to 71%), glances back (71% to 85%) and decides (85% to the end, the base styles). Then a slow float.
+     * About 10 seconds after a 0.3s pause, one step at a time: each look eases out fully before the next eases in,
+     * with no gap and no overlap. Both orbs appear (0 to 0.8s), he looks at the one he passes on (0.8 to 3.4s), then
+     * the one he takes (3.4 to 6s), glances back (6 to 7.6s), looks again at his choice (7.6 to 8.4s) and decides
+     * (8.4s to the end, easing into the base styles). The old text fades out before the new fades in. The orbs float
+     * gently the whole time, so nothing looks frozen while he thinks.
      */
     @keyframes ns-orb-passed {
       0% {
@@ -782,22 +785,49 @@ body {
         transform: none;
         filter: none;
       }
-      5%,
-      15%,
-      47%,
-      70%,
-      88%,
-      94% {
+      8.33% {
         opacity: 0.85;
         transform: none;
         filter: none;
       }
-      22%,
-      40%,
-      74%,
-      83% {
+      16.67% {
         opacity: 1;
         transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      27.08% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      35.42% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      62.5% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      68.75% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      72.92% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      79.17% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      87.5% {
+        opacity: 0.85;
+        transform: none;
         filter: none;
       }
     }
@@ -805,103 +835,206 @@ body {
       0% {
         opacity: 0;
         transform: none;
+        filter: none;
       }
-      5%,
-      40%,
-      71%,
-      85% {
+      8.33% {
         opacity: 0.85;
         transform: none;
+        filter: none;
       }
-      47%,
-      66%,
-      92% {
+      35.42% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      43.75% {
         opacity: 1;
         transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      54.17% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
+      }
+      62.5% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      79.17% {
+        opacity: 0.85;
+        transform: none;
+        filter: none;
+      }
+      87.5% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.06);
+        filter: none;
       }
     }
     @keyframes ns-glow-passed {
       0% {
         opacity: 0;
       }
-      5%,
-      15%,
-      47%,
-      70%,
-      88% {
+      8.33% {
         opacity: 0.25;
       }
-      22%,
-      40%,
-      74%,
-      83% {
+      16.67% {
         opacity: 0.9;
+      }
+      27.08% {
+        opacity: 0.9;
+      }
+      35.42% {
+        opacity: 0.25;
+      }
+      62.5% {
+        opacity: 0.25;
+      }
+      68.75% {
+        opacity: 0.9;
+      }
+      72.92% {
+        opacity: 0.9;
+      }
+      79.17% {
+        opacity: 0.25;
+      }
+      87.5% {
+        opacity: 0.25;
       }
     }
     @keyframes ns-glow-picked {
       0% {
         opacity: 0;
       }
-      5%,
-      40%,
-      71%,
-      85% {
+      8.33% {
         opacity: 0.25;
       }
-      47%,
-      66%,
-      92% {
+      35.42% {
+        opacity: 0.25;
+      }
+      43.75% {
+        opacity: 0.9;
+      }
+      54.17% {
+        opacity: 0.9;
+      }
+      62.5% {
+        opacity: 0.25;
+      }
+      79.17% {
+        opacity: 0.25;
+      }
+      87.5% {
         opacity: 0.9;
       }
     }
     @keyframes ns-row-passed {
-      0%,
-      15%,
-      47%,
-      70%,
-      88% {
+      0% {
         background-color: transparent;
         color: var(--muted);
       }
-      22%,
-      40%,
-      74%,
-      83% {
+      8.33% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      16.67% {
         background-color: var(--raised);
         color: var(--fg);
       }
-    }
-    @keyframes ns-row-picked {
-      0%,
-      40%,
-      71%,
-      85% {
+      27.08% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+      35.42% {
         background-color: transparent;
         color: var(--muted);
       }
-      47%,
-      66%,
-      92% {
+      62.5% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      68.75% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+      72.92% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+      79.17% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      87.5% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+    }
+    @keyframes ns-row-picked {
+      0% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      35.42% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      43.75% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+      54.17% {
+        background-color: var(--raised);
+        color: var(--fg);
+      }
+      62.5% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      79.17% {
+        background-color: transparent;
+        color: var(--muted);
+      }
+      87.5% {
         background-color: var(--raised);
         color: var(--fg);
       }
     }
     @keyframes ns-undecided {
-      0%,
-      99.9% {
-        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+      0% {
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6), 0 0 0 2px transparent;
+      }
+      87.5% {
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6), 0 0 0 2px transparent;
       }
     }
-    @keyframes ns-hidden-until-decided {
-      0%,
-      99.9% {
+    @keyframes ns-before-out {
+      0% {
+        opacity: 1;
+        visibility: visible;
+      }
+      87.5% {
+        opacity: 1;
+        visibility: visible;
+      }
+      92.71% {
+        opacity: 0;
+        visibility: visible;
+      }
+      100% {
+        opacity: 0;
+        visibility: visible;
+      }
+    }
+    @keyframes ns-after-in {
+      0% {
         opacity: 0;
       }
-    }
-    @keyframes ns-shown-until-decided {
-      0%,
-      99.9% {
-        visibility: visible;
+      92.71% {
+        opacity: 0;
       }
     }
     @keyframes ns-panel-in {
@@ -909,7 +1042,7 @@ body {
         opacity: 0;
         transform: translateY(6px);
       }
-      12% {
+      8.33% {
         opacity: 1;
         transform: none;
       }
@@ -921,43 +1054,44 @@ body {
     }
 
     .next-skill {
-      --ns-run: 3.4s;
+      --ns-run: 9.6s;
       --ns-wait: 0.3s;
+      --ns-ease: cubic-bezier(0.45, 0, 0.55, 1);
     }
     .ns-orb.ns-passed {
       animation:
-        ns-orb-passed var(--ns-run) ease-in-out var(--ns-wait) both,
-        ns-float 6s ease-in-out calc(var(--ns-wait) + var(--ns-run) + 2s) infinite;
+        ns-orb-passed var(--ns-run) var(--ns-ease) var(--ns-wait) both,
+        ns-float 6s ease-in-out calc(var(--ns-wait) - 2s) infinite;
     }
     .ns-orb.ns-picked {
       animation:
-        ns-orb-picked var(--ns-run) ease-in-out var(--ns-wait) both,
-        ns-float 5s ease-in-out calc(var(--ns-wait) + var(--ns-run)) infinite;
+        ns-orb-picked var(--ns-run) var(--ns-ease) var(--ns-wait) both,
+        ns-float 5s ease-in-out var(--ns-wait) infinite;
     }
     .ns-orb.ns-passed::before {
-      animation: ns-glow-passed var(--ns-run) ease-in-out var(--ns-wait) both;
+      animation: ns-glow-passed var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-orb.ns-picked::before {
-      animation: ns-glow-picked var(--ns-run) ease-in-out var(--ns-wait) both;
+      animation: ns-glow-picked var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-orb.ns-picked img {
-      animation: ns-undecided var(--ns-run) linear var(--ns-wait) both;
+      animation: ns-undecided var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-row.ns-passed {
-      animation: ns-row-passed var(--ns-run) ease-in-out var(--ns-wait) both;
+      animation: ns-row-passed var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-row.ns-picked {
-      animation: ns-row-picked var(--ns-run) ease-in-out var(--ns-wait) both;
+      animation: ns-row-picked var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-leader,
     .ns-after {
-      animation: ns-hidden-until-decided var(--ns-run) step-end var(--ns-wait) both;
+      animation: ns-after-in var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-before {
-      animation: ns-shown-until-decided var(--ns-run) step-end var(--ns-wait) both;
+      animation: ns-before-out var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
     .ns-panel {
-      animation: ns-panel-in var(--ns-run) var(--motion-out) var(--ns-wait) both;
+      animation: ns-panel-in var(--ns-run) var(--ns-ease) var(--ns-wait) both;
     }
   }
 }
