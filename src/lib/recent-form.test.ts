@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recentForm } from "./recent-form";
+import { positionsLately, recentForm } from "./recent-form";
 
 const games = (results: string) =>
   [...results].map((r, i) => ({ is_win: r === "W", started_at: new Date(Date.UTC(2026, 10, 4) - i * 3600_000).toISOString() }));
@@ -20,5 +20,31 @@ describe("recentForm", () => {
 
   it("has nothing to show without games", () => {
     expect(recentForm([])).toBeNull();
+  });
+});
+
+describe("positionsLately", () => {
+  const row = (position: number | null, is_win: boolean) => ({ position, is_win });
+
+  it("counts games and wins per position, most played first", () => {
+    const rows = [row(2, true), row(3, false), row(2, true), row(2, false), row(3, true), row(1, false)];
+    expect(positionsLately(rows)).toEqual([
+      { position: 2, games: 3, wins: 2 },
+      { position: 3, games: 2, wins: 1 },
+      { position: 1, games: 1, wins: 0 },
+    ]);
+  });
+
+  it("breaks a tie by more wins, and leaves out games with no known position", () => {
+    const rows = [row(4, false), row(5, true), row(null, true), row(9, true)];
+    expect(positionsLately(rows)).toEqual([
+      { position: 5, games: 1, wins: 1 },
+      { position: 4, games: 1, wins: 0 },
+    ]);
+  });
+
+  it("only reads the latest 20 games", () => {
+    const rows = [...Array.from({ length: 20 }, () => row(2, true)), row(1, true)];
+    expect(positionsLately(rows)).toEqual([{ position: 2, games: 20, wins: 20 }]);
   });
 });

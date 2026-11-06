@@ -68,7 +68,7 @@ export function HeroInsightsView({
             ) : loaded ? (
               `OpenDota has no public games of yours from ${period.words}.`
             ) : (
-              `Press Refresh from OpenDota above to load ${period.words}.`
+              `Press the refresh button next to your rank to load ${period.words}.`
             )}
           </p>
         </div>

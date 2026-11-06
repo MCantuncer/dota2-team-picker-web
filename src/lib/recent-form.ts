@@ -39,3 +39,31 @@ function formNote(results: boolean[]): string | null {
   }
   return parts.length ? parts.join(" ") : null;
 }
+
+export interface PositionRow {
+  is_win: boolean;
+  position: number | null;
+}
+
+export interface PositionShare {
+  /** 1 to 5. */
+  position: number;
+  games: number;
+  wins: number;
+}
+
+/**
+ * The positions the player actually played in their latest games (rows newest first), most played first, ties by
+ * more wins, then by position number. Games without a known position (OpenDota had no lane data) are left out. Pure.
+ */
+export function positionsLately(rows: PositionRow[]): PositionShare[] {
+  const byPosition = new Map<number, PositionShare>();
+  for (const r of rows.slice(0, FORM_GAMES)) {
+    if (r.position === null || r.position < 1 || r.position > 5) continue;
+    const share = byPosition.get(r.position) ?? { position: r.position, games: 0, wins: 0 };
+    share.games++;
+    if (r.is_win) share.wins++;
+    byPosition.set(r.position, share);
+  }
+  return [...byPosition.values()].sort((a, b) => b.games - a.games || b.wins - a.wins || a.position - b.position);
+}
