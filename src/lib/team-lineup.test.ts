@@ -7,6 +7,7 @@ import {
   isSavedTeam,
   place,
   readSavedTeam,
+  seatPerson,
   stackPeople,
   teamPlan,
   teamStorageKey,
@@ -111,6 +112,16 @@ describe("seats", () => {
     const full = ["c", "d", "e"].reduce((s, id) => toggleSeat(s, person(id)), seats);
     expect(full).toHaveLength(5);
     expect(toggleSeat(full, person("f"))).toBe(full);
+  });
+
+  it("seats one friend at their favorite free position and says why when they can't be seated", () => {
+    const people = [person("pal", { positions: [2, 5] }), person("own", { canAdd: false })];
+    expect(seatPerson(seats, people, "pal")).toEqual({ seats: [...seats, { id: "pal", position: 5 }], problem: null });
+    expect(seatPerson(seats, people, "a")).toEqual({ seats, problem: null });
+    expect(seatPerson(seats, people, "own").problem).toBe("That player is no longer yours to plan for.");
+    expect(seatPerson(seats, people, "stranger").problem).toBe("That player is no longer yours to plan for.");
+    const full = ["c", "d", "e"].reduce((s, id) => toggleSeat(s, person(id)), seats);
+    expect(seatPerson(full, people, "pal")).toEqual({ seats: full, problem: "pal didn't fit: all seats are taken." });
   });
 
   it("fills open seats from a Stack in the order people joined, skipping the owner and who is seated", () => {

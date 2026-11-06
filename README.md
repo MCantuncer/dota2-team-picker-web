@@ -1,6 +1,6 @@
 # Dota 2 Team Picker: website
 
-The website for Dota 2 Team Picker: sign in with Steam or email, keep your favorite heroes, and
+The website for Dota 2 Team Picker: sign in with Steam, keep your favorite heroes, and
 get hero suggestions during a draft.
 
 The backend (hero data, scoring engine, accounts) lives in
@@ -19,9 +19,9 @@ All UI work follows the [design system](docs/design-system.md): tokens and share
 | Path            | What it does                                                               |
 | --------------- | -------------------------------------------------------------------------- |
 | `/`             | Home                                                                       |
-| `/login`        | Sign in with Steam, or log in with email and password                      |
-| `/signup`       | Sign up with email (Supabase sends a confirmation link)                    |
-| `/auth/confirm` | Finishes Steam sign-in and email confirmation links, then sets the session |
+| `/login`        | Sign in with Steam, the only way in (the first sign-in makes the account)  |
+| `/signup`       | Old address: opens `/login`                                                |
+| `/auth/confirm` | Finishes Steam sign-in, then sets the session                              |
 
 ## Run locally
 
@@ -52,7 +52,7 @@ unrelated website PR red, and sync PRs from different threads don't conflict. To
 reports, without blocking anything, when backend main has newer versions.
 
 Unit tests cover helpers and client components with React Testing Library. Async Server Components and
-full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign up, log in,
+full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign in,
 profile, private-page redirects, parties and the Draft Room, with automatic accessibility checks on every page.
 
 CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the

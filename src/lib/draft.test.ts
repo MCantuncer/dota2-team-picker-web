@@ -69,7 +69,7 @@ describe("splitPosition", () => {
 });
 
 describe("party draft rows", () => {
-  const row = (id: number, actor: string, kind: string, hero: number, position: number | null = null): ActionRow => ({
+  const row = (id: number, actor: string | null, kind: string, hero: number, position: number | null = null): ActionRow => ({
     id,
     actor_id: actor,
     kind,
@@ -117,5 +117,12 @@ describe("party draft rows", () => {
     const draft = replay(rows.map(toAction).filter((a) => a !== null));
     expect(actorsOf(rows).get(5)).toBe("a");
     expect(lastEntryBy(rows, draft, "a")).toBe(5);
+  });
+
+  it("names nobody for a hero entered by a player who deleted their account", () => {
+    const rows = [row(1, null, "ally", 5), row(2, "a", "enemy", 6)];
+    const draft = replay(rows.map(toAction).filter((a) => a !== null));
+    expect([...actorsOf(rows)]).toEqual([[6, "a"]]);
+    expect(lastEntryBy(rows, draft, "a")).toBe(6);
   });
 });

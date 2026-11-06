@@ -45,7 +45,16 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Monkey King");
   await expect(page.getByRole("region", { name: "To Fix" })).toContainText("Keep a Town Portal Scroll");
   await expect(page.getByRole("region", { name: "Lane at 10 Minutes" })).toContainText("640 net worth behind");
-  await expect(page.getByRole("region", { name: /Deaths/ })).toContainText("Rotation from Mid");
+  const deaths = page.getByRole("region", { name: /Deaths/ });
+  await expect(deaths).toContainText("Rotation from Mid");
+  // A building lost while dead is a tag beside the killer, on the same line, not squeezed under the time.
+  const lost = deaths.getByText(/Lost while dead: Tier 1 Bottom Tower/);
+  const killer = deaths.getByRole("listitem").nth(1).getByText("Ember Spirit");
+  const [lostBox, killerBox] = [await lost.boundingBox(), await killer.boundingBox()];
+  expect(lostBox!.x).toBeGreaterThanOrEqual(killerBox!.x);
+  // On a phone it may wrap under the name, still in the name column, right of the time and face.
+  if ((page.viewportSize()?.width ?? 0) >= 1024)
+    expect(Math.abs(lostBox!.y + lostBox!.height / 2 - (killerBox!.y + killerBox!.height / 2))).toBeLessThan(killerBox!.height);
   await expectAccessible(page);
 
   // Someone else's game, or one that isn't there, is a 404.

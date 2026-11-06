@@ -10,9 +10,9 @@ import { bannerHero, StackBanner, type BannerStack } from "@/components/stacks/s
 import { StackCrest } from "@/components/stacks/stack-crest";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
 import type { Seat } from "@/lib/stack-seats";
-import type { FriendInvite, Invite, Member, StackRef } from "@/lib/stacks";
+import type { FriendInvite, Member, StackRef } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/client";
-import { EmailInvites, FriendInvites } from "./stack-invites";
+import { FriendInvites, NewPlayers } from "./stack-invites";
 
 /** A Stack you play in but do not run. */
 export interface JoinedStack {
@@ -45,7 +45,6 @@ export function StackBoard({
   joined,
   current,
   members: initialMembers,
-  emailInvites,
   friendInvites,
   openInvites,
   friends,
@@ -61,7 +60,6 @@ export function StackBoard({
   joined: JoinedStack[];
   current: StackRef | null;
   members: Member[];
-  emailInvites: Invite[];
   friendInvites: FriendInvite[];
   openInvites: OpenInvite[];
   friends: Friend[];
@@ -164,7 +162,7 @@ export function StackBoard({
                 </h2>
                 <div className="grid grid-cols-1 divide-line rounded-md ring-1 ring-inset ring-line max-md:divide-y md:grid-cols-2 md:divide-x">
                   <FriendInvites stackId={current.id} friends={friends} members={members} initial={friendInvites} onError={setError} />
-                  <EmailInvites stackId={current.id} initial={emailInvites} onError={setError} />
+                  <NewPlayers />
                 </div>
               </section>
               {(allHeroes || !seats.length) && (

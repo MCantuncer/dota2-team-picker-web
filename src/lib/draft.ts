@@ -56,7 +56,8 @@ export function splitPosition(text: string): { query: string; position: Position
 /** One row of a party draft's `draft_actions` table. */
 export interface ActionRow {
   id: number;
-  actor_id: string;
+  /** Null once the player who entered it deleted their account. */
+  actor_id: string | null;
   kind: string;
   hero_id: number;
   position: number | null;
@@ -99,7 +100,7 @@ function entryRows(rows: ActionRow[]): ActionRow[] {
 export function actorsOf(rows: ActionRow[]): Map<number, string> {
   const actors = new Map<number, string>();
   for (const r of entryRows(rows)) {
-    if (r.kind === "remove") actors.delete(r.hero_id);
+    if (r.kind === "remove" || r.actor_id === null) actors.delete(r.hero_id);
     else actors.set(r.hero_id, r.actor_id);
   }
   return actors;

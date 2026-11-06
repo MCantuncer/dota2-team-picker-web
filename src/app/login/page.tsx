@@ -1,37 +1,35 @@
-import Link from "next/link";
-import { AuthCard, Divider } from "@/components/auth-card";
-import { AuthForm } from "@/components/auth-form";
+import { AuthCard } from "@/components/auth-card";
 import { SteamButton } from "@/components/steam-button";
 import { safeNext } from "@/lib/safe-next";
-import { logIn } from "./actions";
 
-export const metadata = { title: "Log in · Dota 2 Team Picker" };
+export const metadata = { title: "Sign in · Dota 2 Team Picker" };
 
 const ERRORS: Record<string, string> = {
   steam: "Steam sign-in did not work. Please try again.",
   link: "That sign-in link is invalid or has expired.",
 };
 
+/** Steam is the only way in. The first sign-in makes the account, so there is no separate sign up. */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { next, error } = await searchParams;
+  const { next, error, deleted } = await searchParams;
   const nextPath = safeNext(typeof next === "string" ? next : undefined);
   const errorText = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <AuthCard title="Log In">
+    <AuthCard title="Sign In">
+      {deleted === "1" && (
+        <p role="status" className="rounded-md bg-raised p-3 text-sm text-fg">
+          Your account is deleted. Sign in with Steam any time to start fresh.
+        </p>
+      )}
       {errorText && <p className="rounded-md bg-dire/10 p-3 text-sm text-dire">{errorText}</p>}
       <SteamButton next={nextPath} primary />
-      <p className="text-sm text-subtle">
-        Steam accounts get rank-based suggestions. Turn on <em>Expose Public Match Data</em> in Dota 2 so we can
-        read it.
-      </p>
-      <Divider />
-      <AuthForm action={logIn} submitLabel="Log In with Email" next={nextPath} />
       <p className="text-sm text-muted">
-        No account?{" "}
-        <Link href={`/signup?next=${encodeURIComponent(nextPath)}`} className="link">
-          Sign Up with Email
-        </Link>
+        You sign in on steamcommunity.com. We only get your public SteamID, never your password or email.
+      </p>
+      <p className="text-sm text-subtle">
+        For rank-based suggestions, turn on <em>Expose Public Match Data</em> in Dota 2 (Settings &gt; Options &gt;
+        Social).
       </p>
     </AuthCard>
   );

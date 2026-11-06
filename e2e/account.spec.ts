@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectAccessible, newPlayer, PASSWORD, signInAs, uniqueEmail } from "./helpers";
+import { expectAccessible, newPlayer, signInAs, uniqueEmail } from "./helpers";
 
 test("sign in, rename, sign out and sign back in", async ({ page }) => {
   const email = uniqueEmail("account");
@@ -18,24 +18,6 @@ test("sign in, rename, sign out and sign back in", async ({ page }) => {
 
   await signInAs(page, email);
   await expect(page.getByLabel("Display name")).toHaveValue("Carl");
-});
-
-test("a wrong password shows an error and stays on login", async ({ page }) => {
-  const email = uniqueEmail("wrong");
-  await page.goto("/signup?next=/profile");
-  await page.getByLabel("Name").fill("Pudge");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign up with email" }).click();
-  await expect(page).toHaveURL((url) => url.pathname === "/profile");
-  await page.context().clearCookies();
-
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(`${PASSWORD}-nope`);
-  await page.getByRole("button", { name: "Log in with email" }).click();
-  await expect(page.getByText(/invalid login credentials/i)).toBeVisible();
-  await expect(page).toHaveURL(/\/login/);
 });
 
 test("my heroes opens for a signed-in user", async ({ page }) => {
@@ -57,4 +39,19 @@ test("friends sharing is on by default and stays off once turned off", async ({ 
   await expect(share).toBeEnabled();
   await page.reload();
   await expect(page.getByRole("checkbox", { name: "Share My Heroes With Friends" })).not.toBeChecked();
+});
+
+test("a player deletes their account", async ({ page }) => {
+  await newPlayer(page, uniqueEmail("delete"), "Techies");
+  await page.getByRole("button", { name: "Delete Account" }).click();
+  const confirm = page.getByRole("button", { name: "Delete My Account" });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/to confirm/).fill("delete");
+  await expectAccessible(page);
+  await confirm.click();
+
+  await expect(page).toHaveURL(/\/login\?deleted=1/);
+  await expect(page.getByRole("status")).toHaveText(/Your account is deleted/);
+  await page.goto("/profile");
+  await expect(page).toHaveURL(/\/login/);
 });

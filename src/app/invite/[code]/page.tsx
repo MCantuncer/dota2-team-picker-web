@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/account-menu";
 import { AuthCard } from "@/components/auth-card";
+import { SteamButton } from "@/components/steam-button";
 import { PARTY_SIZE } from "@/lib/party";
 import { isPartyLinkCode, partyByLink, PARTY_LINK_PATH } from "@/lib/party-link";
 import { createClient } from "@/lib/supabase/server";
@@ -32,20 +33,10 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const next = encodeURIComponent(`${PARTY_LINK_PATH}/${code}`);
     return (
       <AuthCard title="Join a Party">
-        <p className="text-muted">
-          You&apos;ve been invited to a party.{" "}
-          <Link href={`/signup?next=${next}`} className="link">
-            Sign up
-          </Link>{" "}
-          or{" "}
-          <Link href={`/login?next=${next}`} className="link">
-            log in
-          </Link>{" "}
-          to join it.
-        </p>
+        <p className="text-muted">You&apos;ve been invited to a party. Sign in with Steam to join it.</p>
+        <SteamButton next={`${PARTY_LINK_PATH}/${code}`} primary />
       </AuthCard>
     );
   }

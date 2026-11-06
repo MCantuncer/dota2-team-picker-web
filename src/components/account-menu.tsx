@@ -9,7 +9,7 @@ import { RankMedal } from "./rank-medal";
 
 export interface Account {
   name: string;
-  /** Rank text such as "Legend 4" for Steam players, or the email for email accounts. */
+  /** Rank text such as "Legend 4". */
   detail: string | null;
   avatarUrl: string | null;
   steamLinked: boolean;
@@ -191,16 +191,6 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
           <Link href="/profile" role="menuitem" tabIndex={-1} className={`${itemClass} text-fg`}>
             Profile
           </Link>
-          {account.steamLinked ? (
-            <div className="flex items-center gap-2 px-2.5 py-2 text-sm text-muted">
-              Steam account linked
-              <span aria-hidden className="ml-auto h-1.5 w-1.5 rounded-full bg-radiant" />
-            </div>
-          ) : (
-            <Link href="/my-heroes#steam" role="menuitem" tabIndex={-1} className={`${itemClass} text-fg`}>
-              Link Steam Account
-            </Link>
-          )}
         </div>
 
         <div className="border-t border-line pt-1">

@@ -294,7 +294,8 @@ function Deaths({
   const dead = deaths.reduce((n, d) => n + d.timeDead, 0);
   const at = (s: number) => `${Math.min(100, Math.max(0, (100 * s) / durationS))}%`;
   const early = deaths.filter((d) => d.time < LANE_END_S).length;
-  const ticks = [600, 1200, 1800, 2400, 3000, 3600].filter((t) => t < durationS - 120);
+  // Keep the last tick clear of the game length label at the right end, on a phone too.
+  const ticks = [600, 1200, 1800, 2400, 3000, 3600].filter((t) => t < durationS * 0.88);
   return (
     <section aria-labelledby="game-deaths" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -378,16 +379,16 @@ function Deaths({
                     {d.isKillerFromMid && (
                       <span className="rounded-xs bg-dire-tint px-2 py-0.5 text-xs text-dire">Rotation from Mid</span>
                     )}
+                    {d.buildingsLost.length > 0 && (
+                      <span className="flex items-center gap-1.5 rounded-xs bg-dire-tint px-2 py-0.5 text-xs text-dire">
+                        <Icon name="castle" />
+                        Lost while dead: {d.buildingsLost.map(buildingName).join(", ")}
+                      </span>
+                    )}
                   </span>
                   <span className="num col-start-3 text-sm text-muted sm:col-start-auto sm:text-right">
                     {number.format(d.goldLost)} gold, {d.timeDead}s dead
                   </span>
-                  {d.buildingsLost.length > 0 && (
-                    <span className="col-start-3 flex items-center gap-1.5 text-xs text-dire sm:col-span-2">
-                      <Icon name="castle" />
-                      Lost while dead: {d.buildingsLost.map(buildingName).join(", ")}
-                    </span>
-                  )}
                 </li>
               );
             })}

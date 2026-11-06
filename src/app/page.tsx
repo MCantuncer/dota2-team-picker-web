@@ -87,9 +87,6 @@ export default async function Home() {
           ) : (
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <SteamButton next="/my-heroes" primary />
-              <Link href="/signup" className="btn btn-secondary btn-lg">
-                Sign Up with Email
-              </Link>
             </div>
           )}
         </div>

@@ -137,6 +137,18 @@ export function toggleSeat(seats: Seat[], person: Pick<TeamPerson, "id" | "posit
   return [...seats, { id: person.id, position: defaultPosition(person, new Set(seats.map((s) => s.position))) }];
 }
 
+/**
+ * Seats one person (Plan a Draft from Friends) at their favorite free position, keeping everyone
+ * already seated. Says why when they can't be seated.
+ */
+export function seatPerson(seats: Seat[], people: TeamPerson[], id: string): { seats: Seat[]; problem: string | null } {
+  if (seats.some((s) => s.id === id)) return { seats, problem: null };
+  const person = people.find((p) => p.id === id);
+  if (!person || !person.canAdd) return { seats, problem: "That player is no longer yours to plan for." };
+  if (seats.length >= LINEUP_MAX) return { seats, problem: `${person.name} didn't fit: all seats are taken.` };
+  return { seats: toggleSeat(seats, person), problem: null };
+}
+
 /** A Stack's people the player can seat, in the order they joined it. Never its owner. */
 export function stackPeople(people: TeamPerson[], stackId: string): TeamPerson[] {
   const joined = (p: TeamPerson) => p.stacks.find((s) => s.id === stackId)?.joinedAt ?? "";
