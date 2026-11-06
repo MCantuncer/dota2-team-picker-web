@@ -106,7 +106,7 @@ jobs:
           cat "$RUNNER_TEMP/supabase.log"
           started=$(cat "$RUNNER_TEMP/supabase.started") loaded=$(cat "$RUNNER_TEMP/supabase.loaded")
           ended=$(cat "$RUNNER_TEMP/supabase.ended")
-          images=${{ steps.supabase-images.outputs.cache-hit == 'true' && 'loading cached images' || 'no cached images' }}
+          images="${{ steps.supabase-images.outputs.cache-hit == 'true' && 'loading cached images' || 'no cached images' }}"
           echo "::notice::Supabase took $((ended - started))s to start ($((loaded - started))s $images); the tests waited $(($(date +%s) - waited))s for it."
           [ "$(cat "$RUNNER_TEMP/supabase.exit")" = 0 ]
           eval "$(supabase status -o env)"
