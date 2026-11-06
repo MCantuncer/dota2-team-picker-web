@@ -1,4 +1,7 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/item-build.ts). Keep in sync.
+import { beatsBkb } from "./bkb";
+import { buffsFrom, dispellableBuffs } from "./dispel";
+import { dispelsEnemy, itemFact } from "./item-facts";
 import { chooseTimingSlice, finishedItems } from "./item-timing-slice";
 import type { HeroInfo, ItemInfo, ItemPhases, Position, RankBracket, Snapshot } from "./types";
 
@@ -20,10 +23,10 @@ export type Threat =
   | "invisible"
   | "passives"
   | "physicalCarry"
-  | "buffs";
+  | "unattackable";
 
 /** Threats OpenDota roles cannot see, by hero display name. */
-const THREAT_HEROES: Record<Exclude<Threat, "disable" | "magicBurst" | "physicalCarry">, string[]> = {
+const THREAT_HEROES: Record<Exclude<Threat, "disable" | "magicBurst" | "physicalCarry" | "unattackable">, string[]> = {
   heal: [
     "Lifestealer", "Necrophos", "Huskar", "Alchemist", "Omniknight", "Oracle", "Dazzle", "Warlock",
     "Chen", "Witch Doctor", "Morphling", "Abaddon", "Wraith King", "Undying", "Treant Protector", "Bristleback",
@@ -42,18 +45,21 @@ const THREAT_HEROES: Record<Exclude<Threat, "disable" | "magicBurst" | "physical
     "Lifestealer", "Phantom Assassin", "Bristleback", "Spectre", "Slardar", "Huskar", "Faceless Void",
     "Troll Warlord", "Templar Assassin", "Tiny", "Sniper", "Ursa", "Medusa", "Necrophos", "Timbersaw",
   ],
-  buffs: ["Omniknight", "Oracle", "Dazzle", "Ogre Magi", "Templar Assassin", "Abaddon", "Wraith King"],
 };
 
 /** Carries whose damage is mostly spells, so supports need no armour or Ghost Scepter against them. */
 const MAGIC_CORES = new Set(["Storm Spirit", "Zeus", "Leshrac", "Tinker", "Lina", "Outworld Devourer", "Death Prophet"]);
 
-/** The threats each enemy hero brings. Disables and magic burst come from OpenDota roles. */
+/**
+ * The threats each enemy hero brings. Disables and magic burst come from OpenDota roles, buffs that stop
+ * attacks from the spell facts (dispel.ts), the rest from THREAT_HEROES.
+ */
 export function threatsOf(hero: HeroInfo): Set<Threat> {
   const t = new Set<Threat>();
   if (hero.roles.includes("Disabler")) t.add("disable");
   if (hero.roles.includes("Nuker")) t.add("magicBurst");
   if (hero.roles.includes("Carry") && !MAGIC_CORES.has(hero.name)) t.add("physicalCarry");
+  if (dispellableBuffs(hero, "unattackable").length) t.add("unattackable");
   // Object.entries loses the key type; the keys are THREAT_HEROES keys, all Threats.
   for (const [threat, names] of Object.entries(THREAT_HEROES)) if (names.includes(hero.name)) t.add(threat as Threat);
   return t;
@@ -68,16 +74,19 @@ interface CounterItem {
   /** Enemy heroes with one of `answers` needed before the item is worth suggesting. */
   minEnemies: number;
   buyer: Buyer;
+  /** Enemies the item does nothing against even though they bring the threat, like Enigma for Black King Bar. */
+  skips?: (hero: HeroInfo) => boolean;
+  /** The reason naming what the item does to the named enemies, instead of "Against Pugna". */
+  reason?: (named: HeroInfo[]) => string;
 }
 
 /** Items that answer threats, best answer first within each threat. Matched by OpenDota item key. */
 export const COUNTER_ITEMS: readonly CounterItem[] = [
-  { key: "black_king_bar", answers: ["disable"], minEnemies: 3, buyer: "core" },
+  { key: "black_king_bar", answers: ["disable"], minEnemies: 3, buyer: "core", skips: beatsBkb },
   { key: "monkey_king_bar", answers: ["evasion"], minEnemies: 1, buyer: "core" },
   { key: "silver_edge", answers: ["passives"], minEnemies: 1, buyer: "core" },
   { key: "spirit_vessel", answers: ["heal"], minEnemies: 2, buyer: "any" },
   { key: "skadi", answers: ["heal"], minEnemies: 2, buyer: "core" },
-  { key: "nullifier", answers: ["buffs"], minEnemies: 1, buyer: "core" },
   { key: "mjollnir", answers: ["illusions"], minEnemies: 1, buyer: "core" },
   { key: "bfury", answers: ["illusions"], minEnemies: 1, buyer: "core" },
   { key: "crimson_guard", answers: ["illusions", "physicalCarry"], minEnemies: 2, buyer: "core" },
@@ -121,6 +130,8 @@ const CORE_ITEMS = 6;
 const START_ITEMS = 5;
 const LANE_ITEMS = 2;
 const SITUATIONAL_ITEMS = 3;
+/** A hero is a right-click hero when more than this share of its core item buys add to attacks. */
+const RIGHT_CLICK_SHARE = 0.5;
 /** Rough minute each phase's items are bought by, for the order and the timings shown. */
 const PHASE_MINUTE = { start: 0, early: 8, mid: 18, late: 32 } as const;
 
@@ -265,17 +276,17 @@ export function itemBuild(
 
   const isCore = position <= 3;
   const enemyHeroes = enemies.flatMap((id) => (data.heroes[id] ? [data.heroes[id]] : []));
-  const situational: BuildItem[] = [];
+  const situational: (BuildItem & { added?: true })[] = [];
   const idByKey = new Map(Object.entries(items).map(([id, item]) => [item.key, id]));
   for (const rule of COUNTER_ITEMS) {
     if (rule.buyer !== "any" && (rule.buyer === "core") !== isCore) continue;
     const id = idByKey.get(rule.key);
     if (!id || !popular(id)) continue;
     const matches = (h: HeroInfo) => rule.answers.filter((t) => threatsOf(h).has(t)).length;
-    const answered = enemyHeroes.filter((h) => matches(h) > 0).sort((a, b) => matches(b) - matches(a));
+    const answered = enemyHeroes.filter((h) => matches(h) > 0 && !rule.skips?.(h)).sort((a, b) => matches(b) - matches(a));
     if (answered.length < rule.minEnemies) continue;
     const named = answered.slice(0, REASON_NAMES);
-    const reason = `Against ${listNames(named.map((h) => h.name))}`;
+    const reason = rule.reason?.(named) ?? `Against ${listNames(named.map((h) => h.name))}`;
     const against = named.map((h) => h.id);
     const inCore = core.findIndex((c) => c.itemId === Number(id));
     if (inCore >= 0) {
@@ -293,6 +304,25 @@ export function itemBuild(
       });
     }
   }
+  if (isCore && situational.length < SITUATIONAL_ITEMS && isRightClick(bought, items)) {
+    const answer = dispelAnswer(enemyHeroes, items, bought, popular);
+    if (answer && !situational.some((s) => s.itemId === Number(answer.id))) {
+      const hero = data.heroes[heroId]?.name ?? "this hero";
+      const rare = !popular(answer.id);
+      const reason = `Removes ${listNames(buffsFrom(answer.against, "unattackable"))}, which stop your attacks${rare ? `. Few ${hero} players buy it` : ""}`;
+      const against = answer.against.map((h) => h.id);
+      const inCore = core.findIndex((c) => c.itemId === Number(answer.id));
+      if (inCore >= 0) {
+        const item = core[inCore]!; // inCore is a valid index.
+        if (!item.reason) core[inCore] = { ...item, reason, against };
+      } else {
+        const timing = timed.get(answer.id);
+        // Rarely bought items have no minute of their own: a late one, so it never jumps the usual core.
+        const minute = timing?.minute ?? bought.get(answer.id)?.minute ?? PHASE_MINUTE.late;
+        situational.push({ ...toItem(answer.id, minute, reason), ...(timing ? { lateMinute: timing.lateMinute } : {}), against, ...(rare ? { added: true } : {}) });
+      }
+    }
+  }
   const bootsId = boots === undefined ? undefined : Number(boots);
   const firstBig = core.find((c) => c.itemId !== bootsId);
   const laterPhase = (i: BuildItem): ItemPhase => (i.minute >= LATE_MINUTE ? "late" : "next");
@@ -304,24 +334,26 @@ export function itemBuild(
     lane: lane.map((i) => ({ ...i, phase: "lane" as const })),
     core: core.map(withCounter),
     ...(stratzOr ? { bootsOr: { ...toItem(String(stratzOr[0]), stratzOr[1]), phase: "lane" as const } } : {}),
-    situational: swapFor(situational, core, firstBig, bootsId, (i) => items[i.itemId]?.key === "blink").map((i) => ({ ...i, phase: laterPhase(i), draft: true as const })),
+    situational: swapFor(situational, core, firstBig, bootsId, (i) => items[i.itemId]?.key === "blink").map(({ added: _, ...i }) => ({ ...i, phase: laterPhase(i), draft: true as const })),
   };
 }
 
 /**
  * Each counter item is bought instead of a usual core item: the one nearest its minute that answers
  * nothing, and each usual item at most once. Never the boots, the first big item or a Blink Dagger,
- * which starts an initiator's fights.
+ * which starts an initiator's fights. An item few players of the hero buy is added, not swapped in: its
+ * minute is a guess, so it must not push out an item players really buy.
  */
-function swapFor(
-  situational: BuildItem[],
+function swapFor<T extends BuildItem & { added?: true }>(
+  situational: T[],
   core: BuildItem[],
   firstBig: BuildItem | undefined,
   bootsId: number | undefined,
   isBlink: (i: BuildItem) => boolean,
-): BuildItem[] {
+): T[] {
   const free = core.filter((c) => c !== firstBig && c.itemId !== bootsId && !c.reason && !isBlink(c));
   return situational.map((s) => {
+    if (s.added) return s;
     const nearest = [...free].sort((a, b) => Math.abs(a.minute - s.minute) - Math.abs(b.minute - s.minute))[0];
     if (!nearest) return s;
     free.splice(free.indexOf(nearest), 1);
@@ -349,4 +381,47 @@ function oneAfterAnother(core: BuildItem[]): void {
 export function listNames(names: string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+/**
+ * Whether players of the hero mostly buy attack items: of their core item buys (boots and big items, see
+ * isCoreItem), more than RIGHT_CLICK_SHARE add damage, attack speed, crits or bashes (item-facts.ts).
+ * Black King Bar and Radiance count, since they carry bonus damage.
+ */
+export function isRightClick(bought: Map<string, { count: number }>, items: Record<string, ItemInfo>): boolean {
+  let all = 0;
+  let attack = 0;
+  for (const [id, b] of bought) {
+    const item = items[id];
+    if (!item || !isCoreItem(item)) continue;
+    all += b.count;
+    if (itemFact(item.key).attack) attack += b.count;
+  }
+  return all > 0 && attack / all > RIGHT_CLICK_SHARE;
+}
+
+/**
+ * The item that answers enemy buffs which stop attacks, chosen from item facts alone: it dispels an enemy
+ * you aim it at and leaves them hittable, and it adds to attacks. One that keeps dispelling comes first,
+ * since a single dispel loses to a recast; then the one players of the hero buy more. Null when no enemy
+ * has such a buff.
+ */
+function dispelAnswer(
+  enemies: HeroInfo[],
+  items: Record<string, ItemInfo>,
+  bought: Map<string, { count: number }>,
+  popular: (id: string) => boolean,
+): { id: string; against: HeroInfo[] } | null {
+  const against = enemies.filter((h) => threatsOf(h).has("unattackable")).slice(0, REASON_NAMES);
+  if (!against.length) return null;
+  const options = Object.entries(items)
+    .filter(([, item]) => dispelsEnemy(item.key) && itemFact(item.key).attack)
+    .sort(([a, x], [b, y]) =>
+      Number(itemFact(y.key).repeats ?? false) - Number(itemFact(x.key).repeats ?? false) ||
+      Number(popular(b)) - Number(popular(a)) ||
+      (bought.get(b)?.count ?? 0) - (bought.get(a)?.count ?? 0) ||
+      x.cost - y.cost,
+    );
+  const best = options[0];
+  return best ? { id: best[0], against } : null;
 }

@@ -9,7 +9,10 @@
  * An item with no enemy it works on gets its plain effect, so the step still says why it is there.
  * Items missing from the table get no line.
  */
+import { beatsBkb, piercingSpell } from "./bkb";
+import { buffsFrom } from "./dispel";
 import { listNames, threatsOf, type ItemBuild, type Threat } from "./item-build";
+import { dispelsEnemy } from "./item-facts";
 import type { HeroInfo, ItemInfo } from "./types";
 
 /** Enemy heroes named in one line; more would bury it. */
@@ -21,26 +24,6 @@ interface Effect {
   /** The line when no enemy brings that threat, or for an item that answers none. */
   plain: string;
 }
-
-/**
- * Disables that go through Black King Bar, by hero, so it never reads as the answer to them. Kept to the
- * certain ones; a wrong "it still goes through" is worse than none.
- */
-const PIERCING_DISABLES: Record<string, string> = {
-  Enigma: "Black Hole",
-  "Faceless Void": "Chronosphere",
-  "Legion Commander": "Duel",
-  Doom: "Doom",
-  Axe: "Berserker's Call",
-  Bane: "Fiend's Grip",
-  "Troll Warlord": "Troll Warlord's bash",
-};
-
-/**
- * Heroes whose main disable may go through Black King Bar in this patch, but not surely enough to say so.
- * Black King Bar doesn't name them as heroes it stops, and doesn't warn about them either.
- */
-const UNSURE_VS_BKB = new Set(["Primal Beast", "Naga Siren", "Magnus"]);
 
 /**
  * By OpenDota item key. Lines name the heroes after a preposition, never with a possessive, so a list of
@@ -57,7 +40,7 @@ const EFFECTS: Record<string, Effect> = {
   silver_edge: { answers: { threat: "passives", line: (n) => `Breaks passives on ${n}.` }, plain: "Invisibility to start fights." },
   spirit_vessel: { answers: { threat: "heal", line: (n) => `Cuts the healing from ${n}.` }, plain: "Cuts healing in fights." },
   skadi: { answers: { threat: "heal", line: (n) => `Cuts the healing from ${n}; your hits slow.` }, plain: "Health and a slow on every hit." },
-  nullifier: { answers: { threat: "buffs", line: (n) => `Dispels the saves from ${n}.` }, plain: "Dispels saves on your target." },
+  nullifier: { plain: "Dispels buffs on your target and slows it." },
   mjollnir: { answers: { threat: "illusions", line: (n) => `Chain lightning clears illusions from ${n}.` }, plain: "Attack speed and chain lightning." },
   bfury: { answers: { threat: "illusions", line: (n) => `Cleave hits illusions from ${n}.` }, plain: "Cleave for fast farm." },
   crimson_guard: { answers: { threat: "physicalCarry", line: (n) => `Blocks hits from ${n} for your team.` }, plain: "Blocks hits for your team." },
@@ -81,15 +64,18 @@ const EFFECTS: Record<string, Effect> = {
  * With `name` false the line names no heroes, but still warns of disables that go through Black King Bar.
  */
 export function itemEffect(key: string, enemies: HeroInfo[], name = true): { line: string; against: number[] } | null {
+  // Any item that dispels an enemy you can still hit names the buffs it removes: "Dispels Decrepify from Pugna."
+  const buffed = name && dispelsEnemy(key) ? enemies.filter((h) => threatsOf(h).has("unattackable")).slice(0, MAX_NAMES) : [];
+  if (buffed.length) return { line: `Dispels ${listNames(buffsFrom(buffed, "unattackable"))}.`, against: buffed.map((h) => h.id) };
   const effect = EFFECTS[key];
   if (!effect) return null;
   const bkb = key === "black_king_bar";
   const answers = effect.answers;
-  const named = (h: HeroInfo) => !bkb || (!PIERCING_DISABLES[h.name] && !UNSURE_VS_BKB.has(h.name));
+  const named = (h: HeroInfo) => !bkb || !beatsBkb(h);
   const hit = answers && name ? enemies.filter((h) => threatsOf(h).has(answers.threat) && named(h)).slice(0, MAX_NAMES) : [];
   let line = answers && hit.length ? answers.line(listNames(hit.map((h) => h.name))) : effect.plain;
   if (bkb) {
-    const pierce = enemies.flatMap((h) => PIERCING_DISABLES[h.name] ?? []);
+    const pierce = enemies.flatMap((h) => piercingSpell(h) ?? []);
     if (pierce.length) line += ` ${listNames(pierce)} still ${pierce.length > 1 ? "go" : "goes"} through it.`;
   }
   return { line, against: hit.map((h) => h.id) };

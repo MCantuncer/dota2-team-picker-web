@@ -30,25 +30,33 @@ const SPELL_ONLY = ["black_king_bar", "lotus_orb", "pipe", "glimmer_cape"];
 const ATTACK_ONLY = ["ghost", "heavens_halberd", "crimson_guard", "assault", "shivas_guard", "blade_mail", "monkey_king_bar"];
 const itemKey = (img: string) => img.split("/").pop()?.replace(/\.png$/, "") ?? "";
 
-/** Whether an item can answer this kind of spell: Black King Bar does nothing against Marksmanship. */
+/**
+ * Whether an item can answer this kind of spell: Black King Bar does nothing against Marksmanship, and
+ * neither it nor armor answers Black Hole.
+ */
 function fits(kind: KeySpell["kind"] | undefined, img: string): boolean {
-  if (kind === "attack") return !SPELL_ONLY.includes(itemKey(img));
-  if (kind === "magic") return !ATTACK_ONLY.includes(itemKey(img));
+  const key = itemKey(img);
+  if (kind === "attack") return !SPELL_ONLY.includes(key);
+  if (kind === "magic") return !ATTACK_ONLY.includes(key);
+  if (kind === "other") return !SPELL_ONLY.includes(key) && !ATTACK_ONLY.includes(key);
   return true;
 }
 
 /** Answer items named per enemy; more would bury the first. */
 const MAX_ANSWERS = 3;
 
-/** Most telling threat first: an illusion carry is an illusion problem before a right-click one. */
-const THREAT_ORDER: Threat[] = ["illusions", "evasion", "invisible", "heal", "buffs", "passives", "magicBurst", "disable", "physicalCarry"];
+/**
+ * Most telling threat first: an illusion carry is an illusion problem before a right-click one. A buff that
+ * stops attacks comes last: Necrophos heals and bursts before his Ghost Shroud matters.
+ */
+const THREAT_ORDER: Threat[] = ["illusions", "evasion", "invisible", "heal", "passives", "magicBurst", "disable", "physicalCarry", "unattackable"];
 
 const THREAT_LINE: Record<Threat, { threat: string; tip: string }> = {
   illusions: { threat: "Illusions split your damage", tip: "Hit the real hero: it is the one their team protects" },
   evasion: { threat: "Evasion: right clicks miss", tip: "Fight them with spells, not right clicks" },
   invisible: { threat: "Goes invisible", tip: "Ask your support for Dust and Sentries before fights" },
   heal: { threat: "Heals their team through fights", tip: "Kill them first or fight short and decisive" },
-  buffs: { threat: "Saves allies with buffs", tip: "Wait for the save, then commit" },
+  unattackable: { threat: "Makes heroes unable to be attacked", tip: "Dispel it, or wait it out before you commit" },
   passives: { threat: "Strong passives", tip: "Fight them when they are low, not head on" },
   magicBurst: { threat: "Magic burst", tip: "Stay spread so one combo can't catch two" },
   disable: { threat: "Locks you down", tip: "Keep distance until their disable is used" },
