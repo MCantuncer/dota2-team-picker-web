@@ -33,12 +33,6 @@ export interface Member {
   personal: Record<number, GamesWins>;
 }
 
-/** An email invite that has not been accepted yet. */
-export interface Invite {
-  id: string;
-  email: string;
-}
-
 /** A friend invited on the site who has not answered yet. */
 export interface FriendInvite {
   id: string;
@@ -98,26 +92,17 @@ export async function loadMembers(supabase: SupabaseClient<Database>, teamId: st
   });
 }
 
-/** Open invites of a Stack, split into email invites and friend invites. Throws when the query fails. */
-export async function loadInvites(
-  supabase: SupabaseClient<Database>,
-  teamId: string,
-): Promise<{ emails: Invite[]; friends: FriendInvite[] }> {
+/** Open invites of a Stack to friends on the site. Throws when the query fails. */
+export async function loadInvites(supabase: SupabaseClient<Database>, teamId: string): Promise<FriendInvite[]> {
   const { data, error } = await supabase
     .from("team_invites")
-    .select("id, email, user_id")
+    .select("id, user_id")
     .eq("team_id", teamId)
     .is("accepted_at", null)
     .is("declined_at", null)
     .order("created_at");
   if (error) throw new Error(`Could not load the invites: ${error.message}`);
-  const emails: Invite[] = [];
-  const friends: FriendInvite[] = [];
-  for (const i of data ?? []) {
-    if (i.email) emails.push({ id: i.id, email: i.email });
-    else if (i.user_id) friends.push({ id: i.id, userId: i.user_id });
-  }
-  return { emails, friends };
+  return (data ?? []).flatMap((i) => (i.user_id ? [{ id: i.id, userId: i.user_id }] : []));
 }
 
 /** An open Stack as anyone sees it: no member names, heroes or positions. */
