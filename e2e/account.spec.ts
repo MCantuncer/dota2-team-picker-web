@@ -1,23 +1,24 @@
 import { expect, test } from "@playwright/test";
-import { expectAccessible, newPlayer, signInAs, uniqueEmail } from "./helpers";
+import { expectAccessible, linkSteam, newPlayer, signInAs, uniqueEmail } from "./helpers";
 
-test("sign in, rename, sign out and sign back in", async ({ page }) => {
+test("the profile shows the linked Steam account, and signing out and back in keeps it", async ({ page }) => {
   const email = uniqueEmail("account");
   await newPlayer(page, email, "Invoker");
-  await expect(page.getByLabel("Display name")).toHaveValue("Invoker");
-  await expectAccessible(page);
-
-  await page.getByLabel("Display name").fill("Carl");
-  await page.getByRole("button", { name: "Save" }).click();
+  const steamId = await linkSteam(email, "ct'x");
   await page.reload();
-  await expect(page.getByLabel("Display name")).toHaveValue("Carl");
+
+  const steamProfile = page.getByRole("link", { name: /ct'x/ });
+  await expect(steamProfile).toHaveAttribute("href", `https://steamcommunity.com/profiles/${steamId}`);
+  await expect(page.getByText("Steam Account Linked")).toBeVisible();
+  await expect(page.getByLabel("Display name")).toHaveCount(0);
+  await expectAccessible(page);
 
   await page.context().clearCookies();
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/login/);
 
   await signInAs(page, email);
-  await expect(page.getByLabel("Display name")).toHaveValue("Carl");
+  await expect(page.getByText("Steam Account Linked")).toBeVisible();
 });
 
 test("my heroes opens for a signed-in user", async ({ page }) => {
