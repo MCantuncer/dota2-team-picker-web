@@ -7,6 +7,7 @@ import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
 import type { PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/client";
+import { NO_SUPPORT_COPY, readSupportLists, type SupportCopy, supportCopyNote } from "@/lib/support-copy";
 
 const POSITIONS = [
   { n: 1, name: "Carry" },
@@ -33,6 +34,7 @@ export function PositionHeroes({
   initialHeroes,
   suggestions = [],
   options,
+  initialSupportCopy = NO_SUPPORT_COPY,
 }: {
   userId: string;
   heroes: Hero[];
@@ -42,6 +44,8 @@ export function PositionHeroes({
   suggestions?: PoolCard[];
   /** Page-level settings shown beside "Use in drafts", such as the suggestions setting. */
   options?: ReactNode;
+  /** Whether the first support list is being copied to the other one (Support Copy). */
+  initialSupportCopy?: SupportCopy;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const search = useMemo(() => new HeroSearch(heroes), [heroes]);
@@ -53,6 +57,7 @@ export function PositionHeroes({
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState(suggestions);
   const [answering, setAnswering] = useState<string | null>(null);
+  const [supportCopy, setSupportCopy] = useState(initialSupportCopy);
 
   const chosen = picks[active] ?? [];
   const matches = query.trim() ? search.find(query, new Set(), 200) : null;
@@ -78,11 +83,24 @@ export function PositionHeroes({
     const on = !chosen.includes(id);
     setPicks((cur) => ({ ...cur, [active]: on ? [...(cur[active] ?? []), id] : (cur[active] ?? []).filter((x) => x !== id) }));
     if (on && !played.has(active)) setPosition(active, true);
-    report(byId.get(id)?.name ?? "that hero")(
-      on
-        ? await supabase.from("favorite_heroes").insert({ user_id: userId, position: active, hero_id: id })
-        : await supabase.from("favorite_heroes").delete().eq("user_id", userId).eq("position", active).eq("hero_id", id),
-    );
+    // The database also copies the change to the other support list while Support Copy is on.
+    const { data, error } = await supabase.rpc("set_favorite_hero", { hero_position: active, hero: id, is_on: on });
+    report(byId.get(id)?.name ?? "that hero")({ error });
+    if (!error) showSupportLists(data);
+  }
+
+  /** Takes both support lists and the copy state from the database's answer. */
+  function showSupportLists(raw: unknown) {
+    const lists = readSupportLists(raw);
+    if (!lists) return;
+    setSupportCopy(lists.copy);
+    setPicks((cur) => ({ ...cur, 4: lists.heroes[4], 5: lists.heroes[5] }));
+  }
+
+  async function stopSupportCopy() {
+    const { data, error } = await supabase.rpc("stop_support_copy");
+    report("your support lists")({ error });
+    if (!error) showSupportLists(data);
   }
 
   /** Yes adds the hero and turns the position on in the database; mirror that here. */
@@ -99,11 +117,20 @@ export function PositionHeroes({
       return list.includes(card.heroId) ? cur : { ...cur, [card.position]: [...list, card.heroId] };
     });
     setPlayed((cur) => new Set(cur).add(card.position));
+    // A Yes on the source support list is copied like a hero added by hand.
+    if (supportCopy.state === "on" && card.position === supportCopy.from) {
+      const other = 9 - card.position;
+      setPicks((cur) => {
+        const list = cur[other] ?? [];
+        return list.includes(card.heroId) ? cur : { ...cur, [other]: [...list, card.heroId] };
+      });
+    }
   }
 
   const pos = POSITIONS[active - 1]!;
   const activeCards = cards.filter((c) => c.position === active);
   const isPlayed = played.has(active);
+  const copyNote = supportCopyNote(supportCopy, active);
 
   return (
     <div className="flex flex-col gap-6">
@@ -179,6 +206,15 @@ export function PositionHeroes({
             );
           })}
         </div>
+
+        {copyNote && (
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+            {copyNote}
+            <button onClick={stopSupportCopy} className="btn btn-ghost btn-sm">
+              Stop Copying
+            </button>
+          </p>
+        )}
 
         {activeCards.length > 0 && (
           <div role="group" aria-labelledby="from-games-title" className="flex flex-col gap-2 rounded-md bg-surface p-3">
