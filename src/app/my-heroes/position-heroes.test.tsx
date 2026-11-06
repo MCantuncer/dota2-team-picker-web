@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Hero } from "@/lib/heroes";
+import { NO_SUPPORT_COPY, type SupportCopy } from "@/lib/support-copy";
 import { PositionHeroes } from "./position-heroes";
 
 const rpc = vi.fn();
@@ -68,5 +69,46 @@ describe("PositionHeroes suggestions", () => {
     show();
     await userEvent.click(screen.getByRole("button", { name: /Mid/ }));
     expect(screen.queryByRole("group", { name: "From Your Games" })).not.toBeInTheDocument();
+  });
+});
+
+describe("PositionHeroes Support Copy", () => {
+  const lists = (four: number[], five: number[], copy: "on" | "off" | null, from: 4 | 5 | null) => ({
+    data: { heroes: { "4": four, "5": five }, support_copy: copy, support_copy_from: from },
+    error: null,
+  });
+  const showSupport = (initialHeroes: Record<number, number[]> = {}, copy: SupportCopy = NO_SUPPORT_COPY) =>
+    render(
+      <PositionHeroes userId="u1" heroes={heroes} initialPositions={[4]} initialHeroes={initialHeroes} initialSupportCopy={copy} />,
+    );
+
+  beforeEach(() => rpc.mockReset());
+
+  it("saves through set_favorite_hero and shows the copy on Pos 5", async () => {
+    rpc.mockResolvedValue(lists([114], [114], "on", 4));
+    showSupport();
+    await userEvent.click(screen.getByRole("button", { name: "Monkey King" }));
+    expect(rpc).toHaveBeenCalledWith("set_favorite_hero", { hero_position: 4, hero: 114, is_on: true });
+    expect(screen.getByText("Pos 5 gets the same heroes. Change Pos 5 any time to make it its own list.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Hard Support/ }));
+    expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
+    expect(screen.getByText("Copied from Pos 4. Change this list any time to make it its own.")).toBeInTheDocument();
+  });
+
+  it("Stop Copying keeps both lists and hides the note", async () => {
+    rpc.mockResolvedValue(lists([114], [114], "off", null));
+    showSupport({ 4: [114], 5: [114] }, { state: "on", from: 4 });
+    await userEvent.click(screen.getByRole("button", { name: "Stop Copying" }));
+    expect(rpc).toHaveBeenCalledWith("stop_support_copy");
+    expect(screen.queryByText(/gets the same heroes/)).not.toBeInTheDocument();
+    expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
+  });
+
+  it("says so and keeps the lists when the change isn't saved", async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+    showSupport();
+    await userEvent.click(screen.getByRole("button", { name: "Monkey King" }));
+    expect(screen.getByText("Could not save Monkey King. Please try again.")).toBeInTheDocument();
+    expect(screen.queryByText(/gets the same heroes/)).not.toBeInTheDocument();
   });
 });

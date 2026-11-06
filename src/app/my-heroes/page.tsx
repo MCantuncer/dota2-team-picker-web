@@ -8,6 +8,7 @@ import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamCard } from "./steam-card";
 import { YourGamesCard } from "./your-games-card";
 import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
+import { readSupportCopy } from "@/lib/support-copy";
 
 export const metadata: Metadata = { title: "My Heroes · Dota 2 Team Picker" };
 
@@ -35,7 +36,9 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0).order("created_at"),
     supabase
       .from("profiles")
-      .select("steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at, pool_suggestions_off, trends_state")
+      .select(
+        "steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at, pool_suggestions_off, trends_state, support_copy, support_copy_from",
+      )
       .eq("id", user.id)
       .single(),
     supabase.from("team_members").select("teams(name)").eq("user_id", user.id),
@@ -127,6 +130,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
         heroes={heroes}
         initialPositions={(positions ?? []).map((p) => p.position)}
         initialHeroes={heroesByPosition}
+        initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
       />
     </main>
   );
