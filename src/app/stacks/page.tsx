@@ -55,7 +55,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
           supabase.rpc("stack_player_stats", { team: current.id }),
         ]),
       ])
-    : [[], { emails: [], friends: [] }, [], 0, null];
+    : [[], [], [], 0, null];
   const viewFailed = view?.[0].error ?? view?.[1].error ?? view?.[2].error;
   if (viewFailed) throw new Error(`Could not load your stacks: ${viewFailed.message}`);
   const summary = view?.[0].data?.[0];
@@ -100,8 +100,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         joined={joined}
         current={current ?? null}
         members={members}
-        emailInvites={stackInvites.emails}
-        friendInvites={stackInvites.friends}
+        friendInvites={stackInvites}
         openInvites={openInvites}
         friends={friendList}
         icons={Object.fromEntries(heroes.map((h) => [h.id, { name: h.name, icon: h.icon }]))}

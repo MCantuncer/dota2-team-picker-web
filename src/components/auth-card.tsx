@@ -3,7 +3,7 @@ import Image from "next/image";
 const HERO_ART = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
 
 /**
- * Layout for the log in and sign up pages: our own abstract lane map on the left (from laptop width up), the form on
+ * Layout for the Sign In page: our own abstract lane map on the left (from laptop width up), the form on
  * the right. No card around the form; the page itself is the surface.
  */
 export function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -51,15 +51,5 @@ function Pin({ slug, side, left, top }: { slug: string; side: "radiant" | "dire"
     >
       <Image src={`${HERO_ART}/${slug}.png`} alt="" width={104} height={104} className="h-full w-full object-cover" />
     </span>
-  );
-}
-
-export function Divider() {
-  return (
-    <div className="flex items-center gap-3 text-sm text-subtle">
-      <span className="h-px flex-1 bg-line" />
-      or with email
-      <span className="h-px flex-1 bg-line" />
-    </div>
   );
 }

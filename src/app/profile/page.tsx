@@ -58,7 +58,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
       <section className="flex flex-col gap-3">
         <h1 className="page-title">Your Profile</h1>
         <NameForm name={profile?.display_name ?? ""} />
-        <p className="text-sm text-subtle">{isSteam ? "Signed in with Steam." : `Signed in with ${user.email}.`}</p>
+        <p className="text-sm text-subtle">Signed in with Steam.</p>
       </section>
 
       <section aria-labelledby="rank-heading" className="flex flex-col gap-4 border-t border-line pt-6">
@@ -93,11 +93,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           </>
         ) : (
           <p className="max-w-prose text-sm text-muted">
-            Email accounts get suggestions from all ranks.{" "}
-            <Link href="/my-heroes" className="link">
-              Link your Steam account
-            </Link>{" "}
-            to have suggestions tuned to your rank and the heroes you win with.
+            Your Steam account isn&apos;t on this profile. Sign out and sign in with Steam again.
           </p>
         )}
       </section>

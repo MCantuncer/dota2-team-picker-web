@@ -64,8 +64,6 @@ function uniqueSteamId() {
   return `7656119${String(randomInt(1e10)).padStart(10, "0")}`;
 }
 
-export const PASSWORD = "e2e-password-123";
-
 /** Admin access to the local test database, for setup the site has no UI for (like account types). */
 function admin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -262,7 +260,6 @@ export async function seedFriend(
   if (!me) throw new Error(`No user ${email}`);
   const { data: created, error: userError } = await db.auth.admin.createUser({
     email: uniqueEmail("friend"),
-    password: PASSWORD,
     email_confirm: true,
   });
   if (userError) throw userError;
@@ -386,8 +383,7 @@ export async function seedStack(ownerEmail: string, name: string, players: { nam
   for (const p of players) {
     const { data: created, error: userError } = await db.auth.admin.createUser({
       email: uniqueEmail("stack-mate"),
-      password: PASSWORD,
-      email_confirm: true,
+        email_confirm: true,
     });
     if (userError) throw userError;
     const id = created.user.id;
