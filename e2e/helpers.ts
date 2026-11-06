@@ -294,6 +294,21 @@ export async function seedFriend(
   return id;
 }
 
+/** Saves one game the signed-up user played on the same team as a friend, as the refresh-trends job would. */
+export async function seedGameTogether(email: string, friendId: string, { won, myHero, friendHero }: { won: boolean; myHero: number; friendHero: number }) {
+  const db = admin();
+  const { data: me, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!me) throw new Error(`No user ${email}`);
+  const matchId = 9_000_000_000 + Math.floor(Math.random() * 1_000_000_000);
+  const game = { match_id: matchId, is_win: won, started_at: new Date(Date.now() - 3_600_000).toISOString(), game_mode: 22, lobby_type: 7 };
+  const { error: insertError } = await db.from("player_games").insert([
+    { ...game, user_id: me, hero_id: myHero },
+    { ...game, user_id: friendId, hero_id: friendHero },
+  ]);
+  if (insertError) throw insertError;
+}
+
 /**
  * Makes a new player and signs them in the way Steam sign-in does: the backend's steam-login function makes the
  * account, then sends the browser to /auth/confirm with a one-time token the site swaps for a session. CI runs
