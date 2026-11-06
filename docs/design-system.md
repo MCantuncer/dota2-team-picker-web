@@ -191,8 +191,8 @@ Rules:
 - The e2e accessibility check runs with reduced motion, so contrast is never measured halfway through a fade.
 
 One documented exception: the **next skill showcase** on the homepage (`.next-skill` and its `.ns-*` parts,
-`components/next-skill-showcase.tsx`). Invoker weighs Wex against Exort for about 3.4 seconds, takes the one the
-example matchup favors, then the two orbs float 4px on a slow loop. It is the only scripted moment on the site, plays
+`components/next-skill-showcase.tsx`). Invoker weighs Wex against Exort for about 10 seconds, one step at a time
+with slow eased fades, takes the one winning players took, and the two orbs float 4px on a slow loop throughout. It is the only scripted moment on the site, plays
 once per visit, shows on wide screens only, and follows every other rule: base styles are the decided state, and the
 whole sequence sits inside the reduced-motion query. `--orb-wex` colours the Wex glow there and nowhere else.
 
