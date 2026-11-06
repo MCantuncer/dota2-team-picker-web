@@ -53,16 +53,6 @@ export default async function Home() {
 
   return (
     <main className="relative isolate flex flex-1 flex-col overflow-hidden">
-      <Image
-        src="/art/invoker.webp"
-        alt=""
-        aria-hidden
-        width={1100}
-        height={1100}
-        priority
-        style={RENDER_STYLE}
-        className="pointer-events-none absolute -right-24 top-4 -z-10 w-[min(44rem,90vw)] opacity-60 lg:right-0 lg:opacity-100"
-      />
       <section className="page grid items-center gap-12 pb-12 pt-16 lg:grid-cols-[minmax(0,1fr)_25rem] lg:pt-20">
         <div className="flex flex-col">
           <span className="text-sm text-accent">Draft assistant for Dota 2</span>
@@ -90,7 +80,20 @@ export default async function Home() {
             </div>
           )}
         </div>
-        <DraftPreview byId={byId} />
+        {/* On wide screens the render is anchored to the card, not the window, so Invoker stays behind it at any width. */}
+        <div className="lg:relative lg:mt-64">
+          <Image
+            src="/art/invoker.webp"
+            alt=""
+            aria-hidden
+            width={1100}
+            height={1100}
+            priority
+            style={RENDER_STYLE}
+            className="pointer-events-none absolute -right-24 top-4 -z-10 w-[min(44rem,90vw)] opacity-60 lg:-top-80 lg:right-auto lg:-left-50 lg:w-176 lg:max-w-none lg:opacity-100"
+          />
+          <DraftPreview byId={byId} />
+        </div>
       </section>
 
       <section className="page pb-16">
@@ -112,7 +115,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const hero = (id: number) => byId.get(id);
   const names = (ids: number[]) => ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and ");
   return (
-    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong lg:mt-64">
+    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong">
       <figcaption className="text-sm text-subtle">
         Example: you play mid with {names(EXAMPLE.allies)}, they have {names(EXAMPLE.enemies)}
       </figcaption>
