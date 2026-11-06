@@ -49,3 +49,25 @@ export function supportCopyNote(copy: SupportCopy, position: number): string | n
     ? `Pos ${other} gets the same heroes. Change Pos ${other} any time to make it its own list.`
     : `Copied from Pos ${copy.from}. Change this list any time to make it its own.`;
 }
+
+type SupportHeroes = Record<SupportPosition, number[]>;
+
+/**
+ * What the database does when a suggestion's Yes adds a hero (answer_pool_suggestion runs the same
+ * Support Copy rules as set_favorite_hero), so My Heroes can show it without reading the lists again.
+ * A hero the player once removed from the other list is not copied there; the page shows that on the next load.
+ */
+export function supportAddedByAnswer(copy: SupportCopy, heroes: SupportHeroes, position: number, heroId: number): SupportLists {
+  if ((position !== 4 && position !== 5) || heroes[position].includes(heroId)) return { copy, heroes };
+  const other: SupportPosition = position === 4 ? 5 : 4;
+  const added = { ...heroes, [position]: [...heroes[position], heroId] } as SupportHeroes;
+  const stopped = { copy: { state: "off", from: null } as SupportCopy, heroes: added };
+  const copied = {
+    copy: { state: "on", from: position } as SupportCopy,
+    heroes: { ...added, [other]: added[other].includes(heroId) ? added[other] : [...added[other], heroId] } as SupportHeroes,
+  };
+  if (copy.state === "off") return { copy, heroes: added };
+  // The first time: copying starts only when this is the first hero on either support list.
+  if (copy.state === null) return heroes[4].length === 0 && heroes[5].length === 0 ? copied : stopped;
+  return position === copy.from ? copied : stopped;
+}

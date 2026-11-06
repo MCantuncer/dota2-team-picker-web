@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NO_SUPPORT_COPY, readSupportCopy, readSupportLists, supportCopyNote } from "./support-copy";
+import { NO_SUPPORT_COPY, readSupportCopy, readSupportLists, supportAddedByAnswer, supportCopyNote } from "./support-copy";
 
 describe("readSupportCopy", () => {
   it("reads on with its source, and off", () => {
@@ -43,5 +43,28 @@ describe("supportCopyNote", () => {
     expect(supportCopyNote(on, 1)).toBeNull();
     expect(supportCopyNote({ state: "off", from: null }, 4)).toBeNull();
     expect(supportCopyNote(NO_SUPPORT_COPY, 5)).toBeNull();
+  });
+});
+
+describe("supportAddedByAnswer", () => {
+  const on = { state: "on", from: 4 } as const;
+
+  it("starts copying when the Yes is the first support hero", () => {
+    expect(supportAddedByAnswer(NO_SUPPORT_COPY, { 4: [], 5: [] }, 5, 26)).toEqual({ copy: { state: "on", from: 5 }, heroes: { 4: [26], 5: [26] } });
+  });
+
+  it("never starts once a support list has heroes", () => {
+    expect(supportAddedByAnswer(NO_SUPPORT_COPY, { 4: [], 5: [14] }, 5, 26)).toEqual({ copy: { state: "off", from: null }, heroes: { 4: [], 5: [14, 26] } });
+  });
+
+  it("copies a Yes on the source list and stops on the other list", () => {
+    expect(supportAddedByAnswer(on, { 4: [14], 5: [14] }, 4, 50)).toEqual({ copy: on, heroes: { 4: [14, 50], 5: [14, 50] } });
+    expect(supportAddedByAnswer(on, { 4: [14], 5: [14] }, 5, 50)).toEqual({ copy: { state: "off", from: null }, heroes: { 4: [14], 5: [14, 50] } });
+  });
+
+  it("changes nothing for other positions or a hero already listed", () => {
+    const lists = { 4: [14], 5: [14] };
+    expect(supportAddedByAnswer(on, lists, 1, 50)).toEqual({ copy: on, heroes: lists });
+    expect(supportAddedByAnswer(on, lists, 5, 14)).toEqual({ copy: on, heroes: lists });
   });
 });

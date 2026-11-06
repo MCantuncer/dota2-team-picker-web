@@ -7,7 +7,7 @@ import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
 import type { PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/client";
-import { NO_SUPPORT_COPY, readSupportLists, type SupportCopy, supportCopyNote } from "@/lib/support-copy";
+import { NO_SUPPORT_COPY, readSupportLists, supportAddedByAnswer, type SupportCopy, supportCopyNote } from "@/lib/support-copy";
 
 const POSITIONS = [
   { n: 1, name: "Carry" },
@@ -112,19 +112,15 @@ export function PositionHeroes({
     setError(null);
     setCards((cur) => cur.filter((c) => c.id !== card.id));
     if (!yes) return;
+    // The database runs Support Copy on a Yes too; show what it did to the support lists.
+    const lists = supportAddedByAnswer(supportCopy, { 4: picks[4] ?? [], 5: picks[5] ?? [] }, card.position, card.heroId);
+    setSupportCopy(lists.copy);
     setPicks((cur) => {
       const list = cur[card.position] ?? [];
-      return list.includes(card.heroId) ? cur : { ...cur, [card.position]: [...list, card.heroId] };
+      const next = list.includes(card.heroId) ? cur : { ...cur, [card.position]: [...list, card.heroId] };
+      return { ...next, 4: lists.heroes[4], 5: lists.heroes[5] };
     });
     setPlayed((cur) => new Set(cur).add(card.position));
-    // A Yes on the source support list is copied like a hero added by hand.
-    if (supportCopy.state === "on" && card.position === supportCopy.from) {
-      const other = 9 - card.position;
-      setPicks((cur) => {
-        const list = cur[other] ?? [];
-        return list.includes(card.heroId) ? cur : { ...cur, [other]: [...list, card.heroId] };
-      });
-    }
   }
 
   const pos = POSITIONS[active - 1]!;
