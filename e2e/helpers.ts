@@ -469,3 +469,13 @@ export async function savedCheckIns(email: string) {
   if (readError) throw readError;
   return data;
 }
+
+/** Makes the user an admin, as Can does by hand in the SQL Editor. */
+export async function makeAdmin(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: saveError } = await db.from("profiles").update({ user_type: "admin" }).eq("id", id);
+  if (saveError) throw saveError;
+}
