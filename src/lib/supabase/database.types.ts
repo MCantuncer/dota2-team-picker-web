@@ -544,14 +544,14 @@ isOneToOne: true
                   ]
                 },"player_game_facts": {
                   Row: {
-                    "attempts": number,"created_at": string,"draft_id": string | null,"duration_s": number,"error": string | null,"findings": Json | null,"hero_id": number,"is_win": boolean,"match_id": number,"next_try_at": string,"parse_requested_at": string | null,"parse_requests": number,"position": number | null,"started_at": string,"status": string,"summary": Json | null,"summary_version": number | null,"updated_at": string,"user_id": string
+                    "attempts": number,"created_at": string,"draft_id": string | null,"duration_s": number,"error": string | null,"findings": Json | null,"findings_version": number,"hero_id": number,"is_win": boolean,"match_id": number,"next_try_at": string,"parse_requested_at": string | null,"parse_requests": number,"position": number | null,"started_at": string,"status": string,"summary": Json | null,"summary_version": number | null,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"created_at"?: string,"draft_id"?: string | null,"duration_s": number,"error"?: string | null,"findings"?: Json | null,"hero_id": number,"is_win": boolean,"match_id": number,"next_try_at"?: string,"parse_requested_at"?: string | null,"parse_requests"?: number,"position"?: number | null,"started_at": string,"status"?: string,"summary"?: Json | null,"summary_version"?: number | null,"updated_at"?: string,"user_id": string
+                    "attempts"?: number,"created_at"?: string,"draft_id"?: string | null,"duration_s": number,"error"?: string | null,"findings"?: Json | null,"findings_version"?: number,"hero_id": number,"is_win": boolean,"match_id": number,"next_try_at"?: string,"parse_requested_at"?: string | null,"parse_requests"?: number,"position"?: number | null,"started_at": string,"status"?: string,"summary"?: Json | null,"summary_version"?: number | null,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "attempts"?: number,"created_at"?: string,"draft_id"?: string | null,"duration_s"?: number,"error"?: string | null,"findings"?: Json | null,"hero_id"?: number,"is_win"?: boolean,"match_id"?: number,"next_try_at"?: string,"parse_requested_at"?: string | null,"parse_requests"?: number,"position"?: number | null,"started_at"?: string,"status"?: string,"summary"?: Json | null,"summary_version"?: number | null,"updated_at"?: string,"user_id"?: string
+                    "attempts"?: number,"created_at"?: string,"draft_id"?: string | null,"duration_s"?: number,"error"?: string | null,"findings"?: Json | null,"findings_version"?: number,"hero_id"?: number,"is_win"?: boolean,"match_id"?: number,"next_try_at"?: string,"parse_requested_at"?: string | null,"parse_requests"?: number,"position"?: number | null,"started_at"?: string,"status"?: string,"summary"?: Json | null,"summary_version"?: number | null,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -621,26 +621,6 @@ isOneToOne: false
                   }
                   Relationships: [
                     
-                  ]
-                },"steam_link_requests": {
-                  Row: {
-                    "created_at": string,"id": string,"next": string,"user_id": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "created_at"?: string,"id"?: string,"next"?: string,"user_id": string
-                  }
-                  Update: {
-                    "created_at"?: string,"id"?: string,"next"?: string,"user_id"?: string
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "steam_link_requests_user_id_fkey"
-      columns: ["user_id"]
-isOneToOne: false
-      referencedRelation: "profiles"
-      referencedColumns: ["id"]
-    }
                   ]
                 },"stratz_calls": {
                   Row: {
@@ -950,9 +930,19 @@ isOneToOne: false
 "forget_old_matchups":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"friend_overview":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "games_together": number,"games_without": number,"last_game_at": string,"last_together": string,"party_size": number,"party_state": string,"user_id": string,"wins_together": number,"wins_without": number
+            }[]
+                           },
 "friend_suggestions":
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_url": string,"display_name": string,"team_name": string,"user_id": string
+            }[]
+                           },
+"games_with_friend":
+{ Args: { "friend": string }; Returns: {
+              "friend_hero_id": number,"friend_position": number,"game_mode": number,"is_win": boolean,"lobby_type": number,"match_id": number,"my_hero_id": number,"my_position": number,"started_at": string
             }[]
                            },
 "get_team_invite":
