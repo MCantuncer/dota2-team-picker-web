@@ -54,14 +54,16 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
         items={ordered.map((p) => ({ key: String(p.position), id: playerTab(p.position), controls: `${id}-player-panel` }))}
         selected={String(player.position)}
         onSelect={(key) => setPicked({ for: myPosition, position: Number(key) })}
-        className="flex gap-7 overflow-x-auto border-b border-line"
+        // The bottom rule is an inset shadow, not a border: a -1px margin to lay the selected underline on a
+        // border spilled 1px past the scroll box and showed a vertical scrollbar (Can 2026-11-06).
+        className="flex gap-7 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--line)]"
         render={(key, selected) => {
           const p = ordered.find((x) => String(x.position) === key);
           if (!p) return null;
           const mine = p.position === myPosition;
           const icon = icons[p.heroId];
           return (
-            <span className={`-mb-px flex items-center gap-2.5 whitespace-nowrap border-b-2 pb-3 pt-2.5 text-[0.9375rem] ${selected ? "border-accent text-fg" : "border-transparent text-muted hover:text-fg"}`}>
+            <span className={`flex items-center gap-2.5 whitespace-nowrap border-b-2 pb-3 pt-2.5 text-[0.9375rem] ${selected ? "border-accent text-fg" : "border-transparent text-muted hover:text-fg"}`}>
               <span className="relative">
                 {icon && <Image src={icon} alt="" width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />}
                 {mine && <span className="absolute -right-1.5 -top-1.5 rounded-xs bg-radiant px-1 text-[0.625rem] font-semibold leading-[0.875rem] text-bg">You</span>}
