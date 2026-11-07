@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Page } from "@playwright/test";
-import { expectAccessible, heroData, newPlayer, savedSuggestions, test, uniqueEmail } from "./helpers";
+import { expectAccessible, heroData, newPlayer, savedSuggestions, seedMidHeroes, test, uniqueEmail } from "./helpers";
 
 /** The position chosen for an ally, as its checked radio. */
 const chosen = (page: Page, hero: string) =>
@@ -180,4 +180,19 @@ test("the draft screen shows the game plan once both teams are in", async ({ pag
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
   await expect(plan.getByRole("tab", { name: /Pos [1-5]/ })).toHaveCount(5);
   await expectAccessible(page);
+});
+
+test("a hero in the player's Top 3 gets its small boost in the draft", async ({ page }) => {
+  const email = uniqueEmail("draft-top3");
+  await newPlayer(page, email, "Draft Top");
+  await seedMidHeroes(email, [74, 76], [76]);
+  await page.goto("/draft");
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  // The best pick shows its reasons open.
+  await expect(picks.first()).toContainText("Outworld Devourer");
+  await expect(picks.first().getByText("Top 3 (+0.5)")).toBeVisible();
+  const invoker = picks.filter({ hasText: "Invoker" });
+  await invoker.getByRole("button", { name: /Invoker/ }).click();
+  await expect(invoker.getByText("Favorite (+1.5)")).toBeVisible();
+  await expect(invoker.getByText("Top 3 (+0.5)")).toHaveCount(0);
 });

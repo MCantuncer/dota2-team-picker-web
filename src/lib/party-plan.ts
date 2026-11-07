@@ -22,8 +22,14 @@ export function toHeroPool(rows: { user_id: string; position: number; hero_id: n
  * The five slots for the leader's team plan: each position gets the member who chose it in the
  * lobby (members without one fill the positions nobody chose, in order) and the ally already
  * picked there. Allies entered without a position take the open positions left, in order.
+ * `stats` adds each member's Top 3 for the position they play.
  */
-export function toPlanSlots(members: PlanMember[], pool: HeroPool, allies: DraftEntry[]): PlanSlot[] {
+export function toPlanSlots(
+  members: PlanMember[],
+  pool: HeroPool,
+  allies: DraftEntry[],
+  stats: Record<string, Pick<PartyPlayer, "top">> = {},
+): PlanSlot[] {
   const players = new Map<Position, string>();
   for (const m of members) if (m.position && !players.has(m.position)) players.set(m.position, m.id);
   const free = POSITIONS.filter((p) => !players.has(p));
@@ -50,6 +56,8 @@ export function toPlanSlots(members: PlanMember[], pool: HeroPool, allies: Draft
       playerId,
       heroId: heroes.get(position),
       favorites: own ? [...new Set([...(own[position] ?? []), ...(own[0] ?? [])])] : [],
+      // The position's own Top 3 only; heroes for any position (0) have none.
+      top: (playerId && stats[playerId]?.top[position]) || [],
     };
   });
 }
@@ -59,6 +67,8 @@ export interface PartyPlayer {
   /** Rank medal (1 Herald to 8 Immortal), or null when their rank isn't visible. */
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
+  /** Their Top 3 per position (1 to 5), hero ids in slot order. */
+  top: Record<number, number[]>;
 }
 
 interface PartyStatsRow {
@@ -66,28 +76,35 @@ interface PartyStatsRow {
   rank_tier: number | null;
   favorites: unknown;
   hero_stats: unknown;
+  top?: unknown;
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
+/** Position to hero ids, from a jsonb object; anything malformed is skipped rather than trusted. */
+function idsByPosition(raw: unknown): Record<number, number[]> {
+  const byPos: Record<number, number[]> = {};
+  if (isObject(raw)) {
+    for (const [pos, ids] of Object.entries(raw)) {
+      if (Array.isArray(ids)) byPos[Number(pos)] = ids.filter((id): id is number => Number.isInteger(id));
+    }
+  }
+  return byPos;
+}
+
 /**
- * Builds the party's hero pool and each member's rank and stats from `party_player_stats` rows.
- * favorites is position to hero ids; anything malformed is skipped rather than trusted.
+ * Builds the party's hero pool and each member's rank, stats and Top 3 from `party_player_stats` rows.
+ * favorites and top are position to hero ids; anything malformed is skipped rather than trusted.
  */
 export function toPartyStats(rows: PartyStatsRow[]): { pool: HeroPool; players: Record<string, PartyPlayer> } {
   const pool: HeroPool = {};
   const players: Record<string, PartyPlayer> = {};
   for (const r of rows) {
-    const byPos: Record<number, number[]> = {};
-    if (isObject(r.favorites)) {
-      for (const [pos, ids] of Object.entries(r.favorites)) {
-        if (Array.isArray(ids)) byPos[Number(pos)] = ids.filter((id): id is number => Number.isInteger(id));
-      }
-    }
-    pool[r.user_id] = byPos;
+    pool[r.user_id] = idsByPosition(r.favorites);
     players[r.user_id] = {
       rank: r.rank_tier ? (Math.floor(r.rank_tier / 10) as RankBracket) : null,
       personal: (isObject(r.hero_stats) ? r.hero_stats : {}) as Record<number, GamesWins>,
+      top: idsByPosition(r.top),
     };
   }
   return { pool, players };

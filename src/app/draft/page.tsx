@@ -3,6 +3,7 @@ import type { GamesWins, Position, RankBracket } from "@/lib/engine/types";
 import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
 import { createClient } from "@/lib/supabase/server";
+import { topByPosition } from "@/lib/top-heroes";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
 import type { PlannableStack } from "./use-team-lineup";
 
@@ -20,7 +21,7 @@ export default async function DraftPage() {
 
   // Portraits are decoration: if OpenDota is down the screen falls back to hero names.
   const heroesPromise = getHeroes().catch(() => []);
-  let player: Player = { heroes: {}, positions: [], rank: null, personal: {} };
+  let player: Player = { heroes: {}, top: {}, positions: [], rank: null, personal: {} };
   let party: PartyInfo | null = null;
   // Stacks the player runs (owner or Manager), to plan a draft for out of a party.
   let stacks: PlannableStack[] = [];
@@ -32,7 +33,7 @@ export default async function DraftPage() {
       { data: partyRows, error: partyError },
     ] = await Promise.all([
       supabase.from("favorite_positions").select("position").eq("user_id", user.id),
-      supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).order("created_at"),
+      supabase.from("favorite_heroes").select("position, hero_id, top_slot").eq("user_id", user.id).order("created_at"),
       supabase.from("profiles").select("rank_tier, hero_stats").eq("id", user.id).single(),
       supabase.rpc("party_view"),
     ]);
@@ -74,6 +75,7 @@ export default async function DraftPage() {
     for (const f of favorites ?? []) (heroes[f.position] ??= []).push(f.hero_id);
     player = {
       heroes,
+      top: topByPosition(favorites ?? []),
       positions: (positions ?? []).map((p) => p.position as Position).sort(),
       // rank_tier is medal and star (e.g. 54 = Legend 4); the engine uses the medal.
       rank: profile?.rank_tier ? (Math.floor(profile.rank_tier / 10) as RankBracket) : null,
