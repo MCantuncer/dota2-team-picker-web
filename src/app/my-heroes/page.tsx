@@ -7,6 +7,7 @@ import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamCard } from "./steam-card";
 import { YourGamesCard } from "./your-games-card";
+import { type FillAdded, FillButton, FillCard, FillProvider } from "./hero-fill";
 import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
 import { readSupportCopy } from "@/lib/support-copy";
 
@@ -37,7 +38,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     supabase
       .from("profiles")
       .select(
-        "steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at, pool_suggestions_off, trends_state, support_copy, support_copy_from",
+        "steam_id, steam_name, avatar_url, rank_tier, hero_stats, synced_at, pool_suggestions_off, trends_state, support_copy, support_copy_from, hero_fill_state, hero_fill_at, hero_fill_games, hero_fill_next_at",
       )
       .eq("id", user.id)
       .single(),
@@ -81,6 +82,31 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     }
   }
 
+  // The heroes the fill added that are still listed, for the summary card. Extra: a failed read hides the card.
+  const added: FillAdded = { count: 0, heroes: [] };
+  if (profile?.steam_id && profile.hero_fill_state === "done") {
+    const { data, error } = await supabase.from("hero_fill_picks").select("hero_id, games").eq("user_id", user.id);
+    if (error) console.error("My Heroes fill picks:", error.message);
+    else {
+      const heroById = new Map(heroes.map((h) => [h.id, h]));
+      added.count = data.length;
+      // A hero filled on two positions shows once.
+      const seen = new Set<number>();
+      for (const p of [...data].sort((a, b) => b.games - a.games)) {
+        const hero = heroById.get(p.hero_id);
+        if (!hero || seen.has(hero.id) || seen.size === 3) continue;
+        seen.add(hero.id);
+        added.heroes.push({ id: hero.id, name: hero.name, image: hero.image });
+      }
+    }
+  }
+  const fillRow = {
+    hero_fill_state: profile?.hero_fill_state ?? null,
+    hero_fill_at: profile?.hero_fill_at ?? null,
+    hero_fill_games: profile?.hero_fill_games ?? null,
+    hero_fill_next_at: profile?.hero_fill_next_at ?? null,
+  };
+
   let steamAccount: SteamAccount | null = null;
   if (profile?.steam_id) {
     const heroById = new Map(heroes.map((h) => [h.id, h]));
@@ -113,25 +139,29 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
           Changes save right away.
         </p>
       </div>
-      {steamAccount && <SteamCard account={steamAccount} />}
-      {steamAccount && (
-        <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
-      )}
-      <PositionHeroes
-        // A fresh list after the switch changes, since the cards are copied into state.
-        key={suggestions.map((s) => s.id).join(",")}
-        suggestions={suggestions}
-        options={
-          showCards && (
-            <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />
-          )
-        }
-        userId={user.id}
-        heroes={heroes}
-        initialPositions={(positions ?? []).map((p) => p.position)}
-        initialHeroes={heroesByPosition}
-        initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
-      />
+      <FillProvider row={fillRow} steamLinked={Boolean(profile?.steam_id)}>
+        <FillCard added={added} />
+        {steamAccount && <SteamCard account={steamAccount} />}
+        {steamAccount && (
+          <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
+        )}
+        <PositionHeroes
+          // A fresh list after the switch changes or a fill finishes, since the lists are copied into state.
+          key={`${suggestions.map((s) => s.id).join(",")}|${fillRow.hero_fill_state === "done" ? fillRow.hero_fill_at : ""}`}
+          suggestions={suggestions}
+          options={
+            showCards && (
+              <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />
+            )
+          }
+          userId={user.id}
+          heroes={heroes}
+          initialPositions={(positions ?? []).map((p) => p.position)}
+          initialHeroes={heroesByPosition}
+          initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
+          headingAction={<FillButton />}
+        />
+      </FillProvider>
     </main>
   );
 }

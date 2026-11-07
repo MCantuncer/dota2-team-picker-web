@@ -35,6 +35,7 @@ export function PositionHeroes({
   suggestions = [],
   options,
   initialSupportCopy = NO_SUPPORT_COPY,
+  headingAction,
 }: {
   userId: string;
   heroes: Hero[];
@@ -46,6 +47,8 @@ export function PositionHeroes({
   options?: ReactNode;
   /** Whether the first support list is being copied to the other one (Support Copy). */
   initialSupportCopy?: SupportCopy;
+  /** Shown at the end of the position heading, such as Fill from My Games. */
+  headingAction?: ReactNode;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const search = useMemo(() => new HeroSearch(heroes), [heroes]);
@@ -167,17 +170,20 @@ export function PositionHeroes({
       </nav>
 
       <section aria-label={`${pos.name} heroes`} className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <h2 className="section-title">
-            {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
-          </h2>
-          <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
-              <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="lane-check" />
-              Use in drafts
-            </label>
-            {options}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-col gap-2">
+            <h2 className="section-title">
+              {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
+            </h2>
+            <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
+                <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="lane-check" />
+                Use in drafts
+              </label>
+              {options}
+            </div>
           </div>
+          {headingAction}
         </div>
 
         <div className="flex min-h-12 flex-wrap gap-2">

@@ -37,6 +37,8 @@ export function heroData(): Promise<Record<string, unknown>> {
 export const test = base.extend({
   page: async ({ page }, provide) => {
     await page.route(SNAPSHOT_URL, async (route) => route.fulfill({ json: await heroData() }));
+    // No edge functions locally: My Heroes' first-visit fill gets "not now", so the saved state stands.
+    await page.route("**/functions/v1/fill-heroes", (route) => route.fulfill({ json: { claimed: false } }));
     await provide(page);
   },
 });
@@ -493,4 +495,43 @@ export async function makeAdmin(email: string) {
   if (!id) throw new Error(`No user ${email}`);
   const { error: saveError } = await db.from("profiles").update({ user_type: "admin" }).eq("id", id);
   if (saveError) throw saveError;
+}
+
+/**
+ * Saves a fill for the user as fill-heroes would: `state` on the profile and, when done, Outworld Devourer
+ * at mid with the numbers his reason shows. Links a made-up Steam account first, since only those are filled.
+ */
+export async function seedFill(email: string, state: "done" | "failed") {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: profileError } = await db
+    .from("profiles")
+    .update({
+      steam_id: uniqueSteamId(),
+      hero_fill_state: state,
+      hero_fill_at: new Date().toISOString(),
+      hero_fill_games: state === "done" ? 835 : null,
+    })
+    .eq("id", id);
+  if (profileError) throw profileError;
+  if (state !== "done") return;
+  const { error: positionError } = await db.from("favorite_positions").insert({ user_id: id, position: 2 });
+  if (positionError) throw positionError;
+  const { error: heroError } = await db.from("favorite_heroes").insert({ user_id: id, position: 2, hero_id: 76 });
+  if (heroError) throw heroError;
+  const { error: pickError } = await db.from("hero_fill_picks").insert({
+    user_id: id,
+    position: 2,
+    hero_id: 76,
+    kind: "regular",
+    games: 58,
+    wins: 22,
+    strong_games: 10,
+    judged_games: 40,
+    last_played: new Date().toISOString(),
+    games_needed: 32,
+  });
+  if (pickError) throw pickError;
 }
