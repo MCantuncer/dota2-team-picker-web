@@ -12,7 +12,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
 
   // A plain user sees what a Stack is for and creates one.
   await page.goto("/stacks");
-  await expect(page.getByText(/Everyone you play with, saved in one place\./)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build Your Stack" })).toBeVisible();
   await expectAccessible(page);
   await page.getByPlaceholder("Stack name, e.g. Friday Five").fill("Night Owls");
   await page.getByRole("button", { name: "Create Stack" }).click();
