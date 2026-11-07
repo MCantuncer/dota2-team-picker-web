@@ -37,8 +37,9 @@ describe("StackBoard", () => {
 
   it("explains what a Stack does when you have none", () => {
     show();
-    expect(screen.getByRole("heading", { name: "Create Your First Stack" })).toBeInTheDocument();
-    expect(screen.getByText(/Everyone you play with, saved in one place\./)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Build Your Stack" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "How it works" }).children).toHaveLength(3);
+    expect(screen.getAllByText("Open Seat")).toHaveLength(5);
     expect(screen.getByRole("button", { name: "Create Stack" })).toBeDisabled();
   });
 
