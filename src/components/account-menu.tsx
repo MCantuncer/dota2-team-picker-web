@@ -50,14 +50,20 @@ export function Avatar({ account, size }: { account: Account; size: number }) {
   );
 }
 
+/** Pages only admins can open; the menu shows them to admins only. */
+const ADMIN_PAGES = [
+  { href: "/admin/players", label: "Players" },
+  { href: "/admin/fill-check", label: "Fill Check" },
+];
+
 const itemClass =
   "flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-sm outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none";
 
 /**
  * The avatar button in the header corner and its dropdown (the WAI-ARIA menu button pattern):
- * profile, Steam, sign out, and on phones the main sections too.
+ * profile, Steam, sign out, and on phones the main sections too. Admins also get the admin pages.
  */
-export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[] }) {
+export function AccountMenu({ account, nav, admin = false }: { account: Account; nav: NavItem[]; admin?: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const menuId = useId();
@@ -192,6 +198,26 @@ export function AccountMenu({ account, nav }: { account: Account; nav: NavItem[]
             Profile
           </Link>
         </div>
+
+        {admin && (
+          <div role="group" aria-labelledby={`${menuId}-admin`} className="border-t border-line py-1">
+            <div id={`${menuId}-admin`} className="px-2.5 pb-1 pt-1.5 text-xs text-subtle">
+              Admin
+            </div>
+            {ADMIN_PAGES.map((page) => (
+              <Link
+                key={page.href}
+                href={page.href}
+                role="menuitem"
+                tabIndex={-1}
+                aria-current={isActive(pathname, page.href) ? "page" : undefined}
+                className={`${itemClass} text-fg aria-[current=page]:text-accent`}
+              >
+                {page.label}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="border-t border-line pt-1">
           <form action="/auth/signout" method="post">
