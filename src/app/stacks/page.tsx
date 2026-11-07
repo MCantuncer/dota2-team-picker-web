@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { FindStacks } from "./find-stacks";
 import { StackBoard, type Friend, type JoinedStack, type OpenInvite } from "./stack-board";
 
+const LEGION_COMMANDER = 104;
+
 export const metadata: Metadata = { title: "Stacks · Dota 2 Team Picker" };
 
 /** Your Stacks: saved groups of the people you play with, their members and invites. */
@@ -72,6 +74,18 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         }
       : null;
 
+  // Before your first Stack the banner shows your top hero, or Legion Commander when you have none saved.
+  let emptyHero: string | undefined;
+  if (!run.length && !joined.length) {
+    const [top, all] = await Promise.all([
+      supabase.from("favorite_heroes").select("hero_id").eq("user_id", user.id).order("position").order("created_at").limit(1),
+      getHeroes().catch(() => []),
+    ]);
+    if (top.error) throw new Error(`Could not load your stacks: ${top.error.message}`);
+    const id = top.data?.[0]?.hero_id ?? LEGION_COMMANDER;
+    emptyHero = (all.find((h) => h.id === id) ?? all.find((h) => h.id === LEGION_COMMANDER))?.image;
+  }
+
   const openInvites: OpenInvite[] = (invites.data ?? []).map((i) => ({
     id: i.invite_id,
     stackName: i.team_name,
@@ -85,7 +99,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
 
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
-      {banner ? (
+      {banner || (!run.length && !joined.length) ? (
         <h1 className="sr-only">Stacks</h1>
       ) : (
         <div className="flex flex-col gap-1.5">
@@ -108,6 +122,7 @@ export default async function StacksPage({ searchParams }: PageProps<"/stacks">)
         banner={banner}
         seats={seats}
         waiting={waiting}
+        emptyHero={emptyHero}
       />
       <FindStacks
         hot={(hot.data ?? []).map(toStackCard)}

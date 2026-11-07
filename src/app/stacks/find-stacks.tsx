@@ -155,37 +155,47 @@ export function FindStacks({
         <h3 id="all-heading" className="font-semibold text-fg">
           All Stacks
         </h3>
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void load(search.trim(), 0);
-          }}
-          className="flex max-w-md gap-2"
-        >
-          <label htmlFor="stack-search" className="sr-only">
-            Search Stacks by name
-          </label>
-          <input
-            id="stack-search"
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name"
-            maxLength={40}
-            className="field flex-1"
-          />
-          <button type="submit" disabled={loading} className="btn btn-secondary">
-            <Icon name="search" />
-            Search
-          </button>
-        </form>
+        {(list.length > 0 || shownSearch) && (
+          <form
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void load(search.trim(), 0);
+            }}
+            className="flex max-w-md gap-2"
+          >
+            <label htmlFor="stack-search" className="sr-only">
+              Search Stacks by name
+            </label>
+            <input
+              id="stack-search"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name"
+              maxLength={40}
+              className="field flex-1"
+            />
+            <button type="submit" disabled={loading} className="btn btn-secondary">
+              <Icon name="search" />
+              Search
+            </button>
+          </form>
+        )}
         {list.length ? (
           <ul className={grid}>{list.map((s) => card(s))}</ul>
+        ) : shownSearch ? (
+          <p className="text-sm text-muted">No open Stack matches &quot;{shownSearch}&quot;.</p>
         ) : (
-          <p className="text-sm text-muted">
-            {shownSearch ? `No open Stack matches "${shownSearch}".` : "No open Stacks yet. Yours could be the first."}
-          </p>
+          <div className="flex items-center gap-3.5 rounded-md border border-dashed border-line-strong p-5">
+            <span className="grid size-10 shrink-0 place-items-center rounded-md bg-raised text-subtle ring-1 ring-inset ring-line-strong">
+              <Icon name="flame" large />
+            </span>
+            <span className="flex flex-col leading-tight">
+              <span className="font-semibold text-fg">No Open Stacks Yet</span>
+              <span className="text-sm text-subtle">Yours could be the first.</span>
+            </span>
+          </div>
         )}
         {more && (
           <button

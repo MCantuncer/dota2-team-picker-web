@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { MemberList, type HeroFace } from "@/components/stacks/member-list";
 import { bannerHero, StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
 import { StackCrest } from "@/components/stacks/stack-crest";
+import { StackEmpty } from "@/components/stacks/stack-empty";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
 import type { Seat } from "@/lib/stack-seats";
 import type { FriendInvite, Member, StackRef } from "@/lib/stacks";
@@ -36,9 +37,6 @@ export interface Friend {
   avatarUrl: string | null;
 }
 
-const EMPTY_COPY =
-  "Everyone you play with, saved in one place. Pick who's in for this game and draft for all of them together. Arguing about who plays mid is still up to you.";
-
 export function StackBoard({
   userId,
   stacks,
@@ -53,6 +51,7 @@ export function StackBoard({
   banner = null,
   seats = [],
   waiting = 0,
+  emptyHero,
 }: {
   userId: string;
   /** Stacks you own or manage. */
@@ -72,6 +71,8 @@ export function StackBoard({
   seats?: Seat[];
   /** Players asking to join the open Stack. */
   waiting?: number;
+  /** Portrait of the hero shown before you have a Stack: your top hero, or a stand-in. */
+  emptyHero?: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -108,13 +109,7 @@ export function StackBoard({
       {error && <p className="text-sm text-dire">{error}</p>}
 
       {none ? (
-        <section aria-labelledby="no-stack" className="card flex flex-col gap-4 p-6">
-          <h2 id="no-stack" className="text-lg font-semibold">
-            Create Your First Stack
-          </h2>
-          <p className="max-w-prose text-sm text-muted">{EMPTY_COPY}</p>
-          <CreateStack userId={userId} />
-        </section>
+        <StackEmpty hero={emptyHero} create={<CreateStack userId={userId} />} />
       ) : (
         <>
           <nav aria-label="Your Stacks" className="flex flex-wrap items-center gap-2">
@@ -303,9 +298,10 @@ function CreateStack({ userId, compact = false }: { userId: string; compact?: bo
         placeholder="Stack name, e.g. Friday Five"
         maxLength={40}
         autoFocus={compact}
-        className={`field ${compact ? "h-8 w-56" : "w-64"}`}
+        className={`field ${compact ? "h-8 w-56" : "field-lg w-full max-w-72"}`}
       />
-      <button type="submit" disabled={busy || !name.trim()} className={`btn btn-primary ${compact ? "btn-sm" : ""}`}>
+      <button type="submit" disabled={busy || !name.trim()} className={`btn btn-primary ${compact ? "btn-sm" : "btn-lg"}`}>
+        {!compact && <Icon name="plus" large />}
         Create Stack
       </button>
       {error && <span className="text-sm text-dire">{error}</span>}

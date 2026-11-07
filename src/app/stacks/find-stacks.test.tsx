@@ -50,7 +50,7 @@ describe("FindStacks", () => {
   it("searches by name and loads the next page", async () => {
     const page = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}`, name: `Owls ${i}`, owner_name: "Ana", members: 2, games: 0 }));
     rpc.mockResolvedValueOnce({ data: page, error: null }).mockResolvedValueOnce({ data: [], error: null });
-    render(<FindStacks hot={[]} all={[]} mine={[]} requests={{}} />);
+    render(<FindStacks hot={[]} all={[duo]} mine={[]} requests={{}} />);
     await userEvent.type(screen.getByLabelText("Search Stacks by name"), "owls");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(rpc).toHaveBeenCalledWith("browse_stacks", { search: "owls", page: 0 });
@@ -66,5 +66,11 @@ describe("FindStacks", () => {
     await userEvent.type(screen.getByLabelText("Search Stacks by name"), "zzz");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(await screen.findByText('No open Stack matches "zzz".')).toBeInTheDocument();
+  });
+
+  it("shows an empty card and no search box when there are no open Stacks", () => {
+    render(<FindStacks hot={[]} all={[]} mine={[]} requests={{}} />);
+    expect(screen.getByText("No Open Stacks Yet")).toBeInTheDocument();
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
   });
 });
