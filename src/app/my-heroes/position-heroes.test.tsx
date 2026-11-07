@@ -46,7 +46,7 @@ describe("PositionHeroes suggestions", () => {
     await userEvent.click(within(screen.getByRole("group", { name: "From Your Games" })).getByRole("button", { name: "Add Hero" }));
     expect(rpc).toHaveBeenCalledWith("answer_pool_suggestion", { card: "c1", answer: "yes" });
     expect(screen.queryByRole("group", { name: "From Your Games" })).not.toBeInTheDocument();
-    expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Remove Monkey King from / })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Use in drafts" })).toBeChecked();
   });
 
@@ -54,7 +54,7 @@ describe("PositionHeroes suggestions", () => {
     show();
     await userEvent.click(screen.getByRole("button", { name: "No" }));
     expect(rpc).toHaveBeenCalledWith("answer_pool_suggestion", { card: "c1", answer: "no" });
-    expect(screen.queryByTitle("Remove Monkey King")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Remove Monkey King from / })).not.toBeInTheDocument();
   });
 
   it("keeps the suggestion and says so when the answer isn't saved", async () => {
@@ -91,7 +91,7 @@ describe("PositionHeroes Support Copy", () => {
     expect(rpc).toHaveBeenCalledWith("set_favorite_hero", { hero_position: 4, hero: 114, is_on: true });
     expect(screen.getByText("Pos 5 gets the same heroes. Change Pos 5 any time to make it its own list.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /Hard Support/ }));
-    expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Remove Monkey King from / })).toBeInTheDocument();
     expect(screen.getByText("Copied from Pos 4. Change this list any time to make it its own.")).toBeInTheDocument();
   });
 
@@ -101,7 +101,7 @@ describe("PositionHeroes Support Copy", () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop Copying" }));
     expect(rpc).toHaveBeenCalledWith("stop_support_copy");
     expect(screen.queryByText(/gets the same heroes/)).not.toBeInTheDocument();
-    expect(screen.getByTitle("Remove Monkey King")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Remove Monkey King from / })).toBeInTheDocument();
   });
 
   it("says so and keeps the lists when the change isn't saved", async () => {

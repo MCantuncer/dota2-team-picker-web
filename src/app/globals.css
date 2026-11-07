@@ -219,6 +219,20 @@ body {
     padding-inline: 0.75rem;
     font-size: 0.8125rem;
   }
+  /* Rounded actions on a card, such as Add to Top 3 on a hero's card. Taller on phones. */
+  .pill {
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    padding-inline: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  @media (width < 40rem) {
+    .pill {
+      height: 2.875rem;
+      font-size: 0.875rem;
+    }
+  }
   /* Flat copper: the one main action on a screen. */
   .btn-primary {
     background: var(--accent);
