@@ -626,7 +626,31 @@ body {
     opacity: 0;
   }
 
+  /* Work with no known length, such as Reading Your Games: a short bar on a track. Still under reduced motion. */
+  .sweep-track {
+    height: 3px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--line);
+  }
+  .sweep-bar {
+    width: 40%;
+    height: 100%;
+    background: var(--accent);
+  }
+
   @media (prefers-reduced-motion: no-preference) {
+    @keyframes sweep {
+      from {
+        transform: translateX(-100%);
+      }
+      to {
+        transform: translateX(250%);
+      }
+    }
+    .sweep-bar {
+      animation: sweep 1.4s ease-in-out infinite;
+    }
     @keyframes enter {
       from {
         opacity: 0;
