@@ -67,7 +67,7 @@ async function HeaderSession() {
     { data: stackInvites },
     { count: joinRequests },
   ] = await Promise.all([
-    supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier, user_type").eq("id", user.id).single(),
     // Friend requests waiting for this user.
     supabase
       .from("friendships")
@@ -119,7 +119,7 @@ async function HeaderSession() {
           New Draft
         </Link>
         <span aria-hidden className="hidden h-6 w-px bg-line md:block" />
-        <AccountMenu account={account} nav={nav} />
+        <AccountMenu account={account} nav={nav} admin={profile?.user_type === "admin"} />
       </div>
       <PartyInvitePopup userId={user.id} />
       <CaptainPrompt userId={user.id} />
