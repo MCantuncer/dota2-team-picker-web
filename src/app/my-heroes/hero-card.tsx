@@ -142,12 +142,14 @@ export function HeroCard({
           <div className="grid grid-cols-2 gap-2">
             {isTop ? (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill">
-                <Icon name="star" />
+                <span className="[&_svg]:size-3.5">
+                  <Icon name="star" />
+                </span>
                 Remove from Top 3
               </button>
             ) : (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill">
-                <span className="[&_path]:fill-current">
+                <span className="[&_path]:fill-current [&_svg]:size-3.5">
                   <Icon name="star" />
                 </span>
                 Add to Top 3

@@ -297,7 +297,7 @@ export function PositionHeroes({
                     <span className="num text-subtle">{i + 1}</span>
                     {h.name}
                     {isTop && (
-                      <span className="text-accent-bright [&_path]:fill-current">
+                      <span className="text-accent-bright [&_path]:fill-current [&_svg]:size-3.5">
                         <Icon name="star" />
                         <span className="sr-only">, in your Top 3</span>
                       </span>
