@@ -6,6 +6,9 @@ import { toParty, type Party } from "@/lib/party";
 import { toPartyStats, type HeroPool, type PartyPlayer } from "@/lib/party-plan";
 import { createClient } from "@/lib/supabase/client";
 
+/** How often the party's heroes are loaded again while the draft screen is open. */
+const STATS_RELOAD_MS = 60_000;
+
 /**
  * The party on the draft screen, kept live: who is in it, their positions, the draft captain and the
  * party rank. Also loads every member's favorite heroes, rank and match stats, which the database
@@ -68,7 +71,8 @@ export function useLiveParty(initial: Party | null) {
     };
   }, [supabase, partyId, refresh]);
 
-  // Everyone's heroes and stats, loaded again whenever someone joins or leaves.
+  // Everyone's heroes and stats, loaded again whenever someone joins or leaves, when this tab comes
+  // back into view, and every minute, so a member who edits My Heroes mid-party is planned with them.
   const memberKey = (party?.members ?? [])
     .map((m) => m.id)
     .sort()
@@ -76,15 +80,24 @@ export function useLiveParty(initial: Party | null) {
   useEffect(() => {
     if (!memberKey) return;
     let current = true;
-    supabase.rpc("party_player_stats").then(({ data, error }) => {
-      if (!current) return;
-      if (error) {
-        setStats(null);
-        setError(`Could not load your party's heroes: ${error.message}`);
-      } else setStats(toPartyStats(data ?? []));
-    });
+    const load = () =>
+      supabase.rpc("party_player_stats").then(({ data, error }) => {
+        if (!current) return;
+        if (error) {
+          setStats(null);
+          setError(`Could not load your party's heroes: ${error.message}`);
+        } else setStats(toPartyStats(data ?? []));
+      });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    void load();
+    const timer = setInterval(onVisible, STATS_RELOAD_MS);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       current = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [supabase, memberKey]);
 

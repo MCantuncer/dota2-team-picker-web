@@ -20,8 +20,9 @@ export function toHeroPool(rows: { user_id: string; position: number; hero_id: n
 
 /**
  * The five slots for the leader's team plan: each position gets the member who chose it in the
- * lobby (members without one fill the positions nobody chose, in order) and the ally already
- * picked there. Allies entered without a position take the open positions left, in order.
+ * lobby (members without one fill the positions nobody chose, where their heroes fit best) and
+ * the ally already picked there. Allies entered without a position take the open positions left,
+ * in order.
  * `stats` adds each member's Top 3 for the position they play.
  */
 export function toPlanSlots(
@@ -33,11 +34,8 @@ export function toPlanSlots(
   const players = new Map<Position, string>();
   for (const m of members) if (m.position && !players.has(m.position)) players.set(m.position, m.id);
   const free = POSITIONS.filter((p) => !players.has(p));
-  for (const m of members) {
-    if (m.position && players.get(m.position) === m.id) continue;
-    const p = free.shift();
-    if (p) players.set(p, m.id);
-  }
+  const unplaced = members.filter((m) => !(m.position && players.get(m.position) === m.id)).slice(0, free.length);
+  for (const [p, id] of placeByPool(unplaced.map((m) => m.id), free, pool)) players.set(p, id);
 
   const heroes = new Map<Position, number>();
   for (const a of allies) if (a.position && !heroes.has(a.position)) heroes.set(a.position, a.heroId);
@@ -60,6 +58,32 @@ export function toPlanSlots(
       top: (playerId && stats[playerId]?.top[position]) || [],
     };
   });
+}
+
+/**
+ * Free positions for members without one: the placement where they have the most heroes saved for
+ * the positions they get, so nobody lands where their pool is empty while a better seat is free. Ties
+ * keep member order on the lowest positions, so the same party always gets the same answer.
+ */
+function placeByPool(ids: string[], free: Position[], pool: HeroPool): Map<Position, string> {
+  const fits = (id: string, p: Position) => pool[id]?.[p]?.length ?? 0;
+  let best = new Map<Position, string>();
+  let bestFit = -1;
+  const chosen = new Map<Position, string>();
+  const walk = (i: number, fit: number) => {
+    if (i === ids.length) {
+      if (fit > bestFit) [best, bestFit] = [new Map(chosen), fit];
+      return;
+    }
+    for (const p of free) {
+      if (chosen.has(p)) continue;
+      chosen.set(p, ids[i]!);
+      walk(i + 1, fit + fits(ids[i]!, p));
+      chosen.delete(p);
+    }
+  };
+  walk(0, 0);
+  return best;
 }
 
 /** What a party member brings to the Draft Room: their rank and their match stats per hero. */
