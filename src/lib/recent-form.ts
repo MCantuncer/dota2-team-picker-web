@@ -52,18 +52,34 @@ export interface PositionShare {
   wins: number;
 }
 
+export interface PositionsLately {
+  /** Most played first. */
+  positions: PositionShare[];
+  /** Games with no known position, so the rows still add up to the games counted. */
+  unknown: { games: number; wins: number };
+}
+
 /**
  * The positions the player actually played in their latest games (rows newest first), most played first, ties by
- * more wins, then by position number. Games without a known position (OpenDota had no lane data) are left out. Pure.
+ * more wins, then by position number. A game without a known position (STRATZ didn't have it and OpenDota's lane
+ * data couldn't tell core from support) is counted as unknown, not dropped. Pure.
  */
-export function positionsLately(rows: PositionRow[]): PositionShare[] {
+export function positionsLately(rows: PositionRow[]): PositionsLately {
   const byPosition = new Map<number, PositionShare>();
+  const unknown = { games: 0, wins: 0 };
   for (const r of rows.slice(0, FORM_GAMES)) {
-    if (r.position === null || r.position < 1 || r.position > 5) continue;
+    if (r.position === null || r.position < 1 || r.position > 5) {
+      unknown.games++;
+      if (r.is_win) unknown.wins++;
+      continue;
+    }
     const share = byPosition.get(r.position) ?? { position: r.position, games: 0, wins: 0 };
     share.games++;
     if (r.is_win) share.wins++;
     byPosition.set(r.position, share);
   }
-  return [...byPosition.values()].sort((a, b) => b.games - a.games || b.wins - a.wins || a.position - b.position);
+  const positions = [...byPosition.values()].sort(
+    (a, b) => b.games - a.games || b.wins - a.wins || a.position - b.position,
+  );
+  return { positions, unknown };
 }
