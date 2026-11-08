@@ -54,6 +54,7 @@ export function perPlayerColumns(
       bans,
       rankBracket,
       favorites: s.favorites ?? [],
+      top: s.top,
       personal: personal[s.playerId],
       count: engine.heroes.length,
     }),

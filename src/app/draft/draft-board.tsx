@@ -56,6 +56,8 @@ import { isTeammate, SOLO_ME } from "@/lib/solo-queue";
 export interface Player {
   /** Favorite heroes per position; 0 holds heroes for any position. */
   heroes: Record<number, number[]>;
+  /** The player's Top 3 per position (1 to 5), hero ids in slot order. */
+  top: Record<number, number[]>;
   positions: Position[];
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
@@ -150,6 +152,7 @@ export function DraftBoard({
     stacks: party ? NO_STACKS : stacks,
     myPosition: soloPosition,
     myHeroes: player.heroes,
+    myTop: player.top,
     personal: player.personal,
   });
   const lineupPlan = party ? null : lineup.plan;
@@ -241,6 +244,7 @@ export function DraftBoard({
           bans,
           rankBracket: rank ?? undefined,
           favorites,
+          top: player.top[myPosition],
           personal: player.personal,
           count: engine.heroes.length,
         })
@@ -409,7 +413,7 @@ export function DraftBoard({
   const teamPlan =
     pool && (view === "team" || !isPlanner)
       ? planTeam(engine, {
-          slots: toPlanSlots(planMembers, pool, planAllies),
+          slots: toPlanSlots(planMembers, pool, planAllies, planPlayers),
           enemies,
           bans,
           rankBracket: bracket,
@@ -419,7 +423,7 @@ export function DraftBoard({
   const playerColumns =
     pool && isPlanner && view === "players"
       ? perPlayerColumns(engine, {
-          slots: toPlanSlots(planMembers, pool, planAllies),
+          slots: toPlanSlots(planMembers, pool, planAllies, planPlayers),
           personal: Object.fromEntries(Object.entries(planPlayers).map(([id, p]) => [id, p.personal])),
           enemies,
           bans,

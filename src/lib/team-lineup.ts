@@ -190,6 +190,7 @@ export interface LineupRow {
   positions: number[] | null;
   favorites: unknown;
   hero_stats: unknown;
+  top: unknown;
   stacks: unknown;
   is_friend: boolean;
   shared: boolean;
@@ -229,7 +230,7 @@ export function toTeamPeople(rows: LineupRow[]): { people: TeamPerson[]; pool: H
       canAdd: r.shared || r.is_friend,
     };
   });
-  const { pool, players } = toPartyStats(rows.map((r) => (r.shared ? r : { ...r, favorites: {}, hero_stats: {}, rank_tier: null })));
+  const { pool, players } = toPartyStats(rows.map((r) => (r.shared ? r : { ...r, favorites: {}, hero_stats: {}, top: {}, rank_tier: null })));
   return { people, pool, players };
 }
 
@@ -253,6 +254,7 @@ export function teamPlan({
   pool,
   players,
   myHeroes,
+  myTop,
   personal,
 }: {
   seats: Seat[];
@@ -260,6 +262,8 @@ export function teamPlan({
   pool: HeroPool;
   players: Record<string, PartyPlayer>;
   myHeroes: Record<number, number[]>;
+  /** The player's own Top 3 per position. */
+  myTop: Record<number, number[]>;
   personal: Record<number, GamesWins>;
 }): TeamPlan {
   const byPosition = new Map(seats.map((s) => [s.position, s.id]));
@@ -270,7 +274,7 @@ export function teamPlan({
   for (const m of members) {
     if (m.id === SOLO_ME) {
       outPool[SOLO_ME] = myHeroes;
-      outPlayers[SOLO_ME] = { rank: null, personal };
+      outPlayers[SOLO_ME] = { rank: null, personal, top: myTop };
     } else if (byPosition.get(m.position) === m.id) {
       outPool[m.id] = pool[m.id] ?? {};
       if (players[m.id]) outPlayers[m.id] = players[m.id];

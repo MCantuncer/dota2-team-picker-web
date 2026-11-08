@@ -54,6 +54,22 @@ describe("perPlayerColumns", () => {
     expect(b!.outside.has(130)).toBe(false);
   });
 
+  it("passes each player's Top 3 to their suggestions", () => {
+    const cols = perPlayerColumns(engine, {
+      ...base,
+      slots: [
+        { position: 1, playerId: "a", favorites: [139, 140], top: [139] },
+        { position: 2 },
+        { position: 3 },
+        { position: 4 },
+        { position: 5 },
+      ],
+    });
+    const tags = (id: number) => cols[0]!.suggestions.find((s) => s.heroId === id)?.tags ?? [];
+    expect(tags(139)).toContain("Top 3 (+0.5)");
+    expect(tags(140)).not.toContain("Top 3 (+0.5)");
+  });
+
   it("leaves out heroes already in the draft", () => {
     const cols = perPlayerColumns(engine, {
       ...base,

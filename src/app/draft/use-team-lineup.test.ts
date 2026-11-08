@@ -22,7 +22,7 @@ const row = (user_id: string, more: object = {}) => ({
   shared: true,
   ...more,
 });
-const props = (userId: string | null) => ({ userId, enabled: true, stacks, myPosition: 2 as const, myHeroes: {}, personal: {} });
+const props = (userId: string | null) => ({ userId, enabled: true, stacks, myPosition: 2 as const, myHeroes: {}, myTop: {}, personal: {} });
 
 describe("useTeamLineup", () => {
   beforeEach(() => {
