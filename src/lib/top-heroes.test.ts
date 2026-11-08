@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import { daysAgo, fillNumbers, readTopAnswer, topByPosition, topError, topFirst } from "./top-heroes";
 
 describe("readTopAnswer", () => {
-  it("reads the position's Top 3", () => {
+  it("reads the position's Top 5", () => {
     expect(readTopAnswer({ position: 2, top: [74, 11] })).toEqual({ position: 2, top: [74, 11] });
     expect(readTopAnswer({ position: 2, top: [] })).toEqual({ position: 2, top: [] });
+    expect(readTopAnswer({ position: 2, top: [1, 2, 3, 4, 5] })).toEqual({ position: 2, top: [1, 2, 3, 4, 5] });
   });
 
   it("refuses anything else", () => {
     expect(readTopAnswer(null)).toBeNull();
     expect(readTopAnswer({ position: 0, top: [] })).toBeNull();
-    expect(readTopAnswer({ position: 2, top: [1, 2, 3, 4] })).toBeNull();
+    expect(readTopAnswer({ position: 2, top: [1, 2, 3, 4, 5, 6] })).toBeNull();
     expect(readTopAnswer({ position: 2, top: ["74"] })).toBeNull();
   });
 });
@@ -29,7 +30,7 @@ describe("topByPosition", () => {
 });
 
 describe("topFirst", () => {
-  it("puts the Top 3 first in slot order, then the rest as added", () => {
+  it("puts the Top 5 first in slot order, then the rest as added", () => {
     expect(topFirst([1, 2, 3, 4, 5], [4, 2])).toEqual([4, 2, 1, 3, 5]);
   });
 

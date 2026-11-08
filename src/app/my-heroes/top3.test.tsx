@@ -15,7 +15,7 @@ const hero = (id: number, name: string): Hero => ({
   primaryAttr: "int",
   roles: [],
 });
-const heroes = [hero(74, "Invoker"), hero(76, "Outworld Devourer"), hero(14, "Pudge"), hero(13, "Puck"), hero(11, "Shadow Fiend")];
+const heroes = [hero(74, "Invoker"), hero(76, "Outworld Devourer"), hero(14, "Pudge"), hero(13, "Puck"), hero(11, "Shadow Fiend"), hero(17, "Storm Spirit"), hero(39, "Queen of Pain")];
 const lastPlayed = new Date(Date.now() - 7 * 86_400_000 - 3_600_000).toISOString();
 
 const show = (top: number[] = []) =>
@@ -24,7 +24,7 @@ const show = (top: number[] = []) =>
       userId="u1"
       heroes={heroes}
       initialPositions={[2]}
-      initialHeroes={{ 2: [74, 76, 14, 13] }}
+      initialHeroes={{ 2: [74, 76, 14, 13, 17, 39] }}
       initialTop={{ 2: top }}
       fillNumbers={{ "2:74": { games: 58, wins: 22, lastPlayed } }}
     />,
@@ -36,7 +36,7 @@ const chipOrder = () =>
     .getAllByRole("button", { expanded: false })
     .map((b) => b.textContent);
 
-describe("My Heroes Top 3", () => {
+describe("My Heroes Top 5", () => {
   beforeEach(() => rpc.mockReset());
 
   it("opens a filled hero's card with its numbers and both buttons", async () => {
@@ -47,7 +47,7 @@ describe("My Heroes Top 3", () => {
     expect(c).toHaveTextContent("58Games");
     expect(c).toHaveTextContent("38%Won 22");
     expect(c).toHaveTextContent("7 daysLast Played");
-    expect(within(c).getByRole("button", { name: "Add to Top 3" })).toHaveFocus();
+    expect(within(c).getByRole("button", { name: "Add to Top 5" })).toHaveFocus();
     expect(within(c).getByRole("button", { name: "Remove from Mid" })).toBeInTheDocument();
   });
 
@@ -57,56 +57,67 @@ describe("My Heroes Top 3", () => {
     expect(card("Pudge")).not.toHaveTextContent("Games");
   });
 
-  it("adds a hero to the Top 3, stars it and moves it first", async () => {
+  it("adds a hero to the Top 5, stars it and moves it first", async () => {
     rpc.mockResolvedValue({ data: { position: 2, top: [14] }, error: null });
     show();
     await userEvent.click(chip("Pudge"));
-    await userEvent.click(screen.getByRole("button", { name: "Add to Top 3" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
     expect(rpc).toHaveBeenCalledWith("set_top_hero", { hero_position: 2, hero: 14, is_top: true });
-    expect(chip("Pudge, in your Top 3")).toHaveTextContent(/^1Pudge/);
-    expect(screen.getByRole("button", { name: "Remove from Top 3" })).toBeInTheDocument();
+    expect(chip("Pudge, in your Top 5")).toHaveTextContent(/^1Pudge/);
+    expect(screen.getByRole("button", { name: "Remove from Top 5" })).toBeInTheDocument();
   });
 
-  it("asks which hero to replace when the Top 3 is full, and swaps in one step", async () => {
-    rpc.mockResolvedValue({ data: { position: 2, top: [74, 14, 13] }, error: null });
-    show([76, 14, 13]);
+  it("asks which hero to replace when the Top 5 is full, and swaps in one step", async () => {
+    rpc.mockResolvedValue({ data: { position: 2, top: [74, 14, 13, 17, 39] }, error: null });
+    show([76, 14, 13, 17, 39]);
     await userEvent.click(chip("Invoker"));
-    await userEvent.click(screen.getByRole("button", { name: "Add to Top 3" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
     expect(rpc).not.toHaveBeenCalled();
-    const replace = screen.getByRole("dialog", { name: "Add Invoker to Your Top 3" });
-    expect(replace).toHaveTextContent("Your Top 3 is full. Pick the hero Invoker replaces.");
+    const replace = screen.getByRole("dialog", { name: "Add Invoker to Your Top 5" });
+    expect(replace).toHaveTextContent("Your Top 5 is full. Pick the hero Invoker replaces.");
+    expect(within(replace).getAllByRole("button", { name: /^Replace / })).toHaveLength(5);
     await userEvent.click(within(replace).getByRole("button", { name: "Replace Outworld Devourer with Invoker" }));
     expect(rpc).toHaveBeenCalledWith("set_top_hero", { hero_position: 2, hero: 74, is_top: true, replace_hero: 76 });
-    expect(screen.queryByRole("dialog", { name: /Your Top 3/ })).not.toBeInTheDocument();
-    expect(chip("Invoker, in your Top 3")).toHaveTextContent(/^1Invoker/);
+    expect(screen.queryByRole("dialog", { name: /Your Top 5/ })).not.toBeInTheDocument();
+    expect(chip("Invoker, in your Top 5")).toHaveTextContent(/^1Invoker/);
+  });
+
+  it("adds a fourth and a fifth without asking", async () => {
+    rpc.mockResolvedValue({ data: { position: 2, top: [76, 14, 13, 74] }, error: null });
+    show([76, 14, 13]);
+    await userEvent.click(chip("Invoker"));
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
+    expect(rpc).toHaveBeenCalledWith("set_top_hero", { hero_position: 2, hero: 74, is_top: true });
+    expect(screen.queryByRole("dialog", { name: /Your Top 5/ })).not.toBeInTheDocument();
+    expect(chip("Invoker, in your Top 5")).toHaveTextContent(/^4Invoker/);
   });
 
   it("cancels the replace card with Cancel or Escape", async () => {
-    show([76, 14, 13]);
+    show([76, 14, 13, 17, 39]);
     await userEvent.click(chip("Invoker"));
-    await userEvent.click(screen.getByRole("button", { name: "Add to Top 3" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog", { name: /Your Top 3/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Your Top 5/ })).not.toBeInTheDocument();
     await userEvent.click(chip("Invoker"));
-    await userEvent.click(screen.getByRole("button", { name: "Add to Top 3" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
     await userEvent.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog", { name: /Your Top 3/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: /Your Top 5/ })).not.toBeInTheDocument();
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("removes a hero from the Top 3", async () => {
+  it("removes a hero from the Top 5", async () => {
     rpc.mockResolvedValue({ data: { position: 2, top: [] }, error: null });
     show([14]);
-    await userEvent.click(chip("Pudge, in your Top 3"));
-    await userEvent.click(screen.getByRole("button", { name: "Remove from Top 3" }));
+    await userEvent.click(chip("Pudge, in your Top 5"));
+    await userEvent.click(screen.getByRole("button", { name: "Remove from Top 5" }));
     expect(rpc).toHaveBeenCalledWith("set_top_hero", { hero_position: 2, hero: 14, is_top: false });
-    expect(screen.queryByText(", in your Top 3")).not.toBeInTheDocument();
+    expect(screen.queryByText(", in your Top 5")).not.toBeInTheDocument();
   });
 
   it("removes a hero from the position from its card", async () => {
     rpc.mockResolvedValue({ data: { heroes: { "4": [], "5": [] }, support_copy: null, support_copy_from: null }, error: null });
     show([14]);
-    await userEvent.click(chip("Pudge, in your Top 3"));
+    await userEvent.click(chip("Pudge, in your Top 5"));
     await userEvent.click(screen.getByRole("button", { name: "Remove from Mid" }));
     expect(rpc).toHaveBeenCalledWith("set_favorite_hero", { hero_position: 2, hero: 14, is_on: false });
     expect(screen.queryByRole("button", { name: /^\dPudge/ })).not.toBeInTheDocument();
@@ -117,10 +128,10 @@ describe("My Heroes Top 3", () => {
     show([14]);
     await userEvent.click(screen.getByRole("button", { name: "Remove Pudge from Mid" }));
     await userEvent.click(screen.getByRole("button", { name: "Pudge" }));
-    expect(chip("Pudge")).not.toHaveAccessibleName(/in your Top 3/);
+    expect(chip("Pudge")).not.toHaveAccessibleName(/in your Top 5/);
   });
 
-  it("orders the Top 3 first in slot order", () => {
+  it("orders the Top 5 first in slot order", () => {
     show([13, 76]);
     expect(chipOrder().slice(0, 4)).toEqual(["1Puck", "2Outworld Devourer", "3Invoker", "4Pudge"].map((t) => expect.stringContaining(t)));
   });
@@ -133,11 +144,11 @@ describe("My Heroes Top 3", () => {
     expect(chip("Pudge")).toHaveFocus();
   });
 
-  it("says so when the Top 3 isn't saved", async () => {
+  it("says so when the Top 5 isn't saved", async () => {
     rpc.mockResolvedValue({ data: null, error: { code: "22023", message: "boom" } });
     show();
     await userEvent.click(chip("Pudge"));
-    await userEvent.click(screen.getByRole("button", { name: "Add to Top 3" }));
-    expect(screen.getByText("Could not save your Top 3. Please try again.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Add to Top 5" }));
+    expect(screen.getByText("Could not save your Top 5. Please try again.")).toBeInTheDocument();
   });
 });

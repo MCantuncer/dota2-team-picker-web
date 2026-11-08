@@ -22,7 +22,7 @@ export function toHeroPool(rows: { user_id: string; position: number; hero_id: n
  * The five slots for the leader's team plan: each position gets the member who chose it in the
  * lobby (members without one fill the positions nobody chose, in order) and the ally already
  * picked there. Allies entered without a position take the open positions left, in order.
- * `stats` adds each member's Top 3 for the position they play.
+ * `stats` adds each member's Top 5 for the position they play.
  */
 export function toPlanSlots(
   members: PlanMember[],
@@ -56,7 +56,7 @@ export function toPlanSlots(
       playerId,
       heroId: heroes.get(position),
       favorites: own ? [...new Set([...(own[position] ?? []), ...(own[0] ?? [])])] : [],
-      // The position's own Top 3 only; heroes for any position (0) have none.
+      // The position's own Top 5 only; heroes for any position (0) have none.
       top: (playerId && stats[playerId]?.top[position]) || [],
     };
   });
@@ -67,7 +67,7 @@ export interface PartyPlayer {
   /** Rank medal (1 Herald to 8 Immortal), or null when their rank isn't visible. */
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
-  /** Their Top 3 per position (1 to 5), hero ids in slot order. */
+  /** Their Top 5 per position (1 to 5), hero ids in slot order. */
   top: Record<number, number[]>;
 }
 
@@ -93,7 +93,7 @@ function idsByPosition(raw: unknown): Record<number, number[]> {
 }
 
 /**
- * Builds the party's hero pool and each member's rank, stats and Top 3 from `party_player_stats` rows.
+ * Builds the party's hero pool and each member's rank, stats and Top 5 from `party_player_stats` rows.
  * favorites and top are position to hero ids; anything malformed is skipped rather than trusted.
  */
 export function toPartyStats(rows: PartyStatsRow[]): { pool: HeroPool; players: Record<string, PartyPlayer> } {

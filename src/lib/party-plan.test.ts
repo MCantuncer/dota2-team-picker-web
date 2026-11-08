@@ -42,7 +42,7 @@ describe("toPlanSlots", () => {
     expect(slots[1]!.favorites).toEqual([30, 31]);
   });
 
-  it("gives each slot its player's Top 3 for that position only", () => {
+  it("gives each slot its player's Top 5 for that position only", () => {
     const slots = toPlanSlots(
       [
         { id: "a", position: 1 },

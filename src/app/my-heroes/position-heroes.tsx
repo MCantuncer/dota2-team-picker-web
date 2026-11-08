@@ -55,7 +55,7 @@ export function PositionHeroes({
   initialSupportCopy?: SupportCopy;
   /** Shown at the end of the position heading, such as Fill from My Games. */
   headingAction?: ReactNode;
-  /** Each position's Top 3, hero ids in slot order. */
+  /** Each position's Top 5, hero ids in slot order. */
   initialTop?: Record<number, number[]>;
   /** The numbers the fill saved, keyed "position:hero", for heroes it added. */
   fillNumbers?: Record<string, FillNumbers>;
@@ -77,7 +77,7 @@ export function PositionHeroes({
   const [copiedFrom, setCopiedFrom] = useState(initialCopiedFrom);
   /** The hero whose card is open on the active position. */
   const [openHero, setOpenHero] = useState<number | null>(null);
-  /** Add to Top 3 with the Top 3 full: the hero waiting for a slot. */
+  /** Add to Top 5 with the Top 5 full: the hero waiting for a slot. */
   const [replacing, setReplacing] = useState<number | null>(null);
   const [topBusy, setTopBusy] = useState(false);
   const chipRefs = useRef(new Map<number, HTMLButtonElement>());
@@ -166,7 +166,7 @@ export function PositionHeroes({
     if (id !== null) chipRefs.current.get(id)?.focus();
   }
 
-  /** Stars or unstars a hero on the active position; with the Top 3 full, asks which hero to replace. */
+  /** Stars or unstars a hero on the active position; with the Top 5 full, asks which hero to replace. */
   async function setTop(id: number, on: boolean, replace?: number) {
     if (on && replace === undefined && activeTop.length >= TOP_SIZE) {
       setOpenHero(null);
@@ -188,7 +188,7 @@ export function PositionHeroes({
         return setReplacing(id);
       }
       return setError(
-        why === "busy" ? "Your Top 3 changed on another screen. Reload the page and try again." : "Could not save your Top 3. Please try again.",
+        why === "busy" ? "Your Top 5 changed on another screen. Reload the page and try again." : "Could not save your Top 5. Please try again.",
       );
     }
     setError(null);
@@ -299,7 +299,7 @@ export function PositionHeroes({
                     {isTop && (
                       <span className="text-accent-bright">
                         <TopStar />
-                        <span className="sr-only">, in your Top 3</span>
+                        <span className="sr-only">, in your Top 5</span>
                       </span>
                     )}
                     {numbers && (
