@@ -45,6 +45,26 @@ function useOutside(ref: React.RefObject<HTMLElement | null>, onClose: () => voi
   }, [ref]);
 }
 
+/**
+ * The Top 3 star: small and sharp, a little shorter than the text beside it. Filled marks a Top 3 hero;
+ * the outline is for Remove from Top 3.
+ */
+export function TopStar({ outline = false }: { outline?: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="size-2.5 shrink-0"
+      fill={outline ? "none" : "currentColor"}
+      stroke={outline ? "currentColor" : "none"}
+      strokeWidth={2.4}
+      strokeLinejoin="round"
+    >
+      <path d="M12 2.5l2.94 6.24 6.81.82-5.02 4.68 1.3 6.74L12 17.6l-6.03 3.38 1.3-6.74-5.02-4.68 6.81-.82z" />
+    </svg>
+  );
+}
+
 /** The swap arrows on a Replace button. */
 function SwapIcon() {
   return (
@@ -142,14 +162,12 @@ export function HeroCard({
           <div className="grid grid-cols-2 gap-2">
             {isTop ? (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill">
-                <Icon name="star" />
+                <TopStar outline />
                 Remove from Top 3
               </button>
             ) : (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill">
-                <span className="[&_path]:fill-current">
-                  <Icon name="star" />
-                </span>
+                <TopStar />
                 Add to Top 3
               </button>
             )}

@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { NO_SUPPORT_COPY, readSupportLists, supportAddedByAnswer, type SupportCopy, supportCopyNote } from "@/lib/support-copy";
 import { type FillNumbers, readTopAnswer, TOP_SIZE, topError, topFirst } from "@/lib/top-heroes";
 import { Icon } from "@/components/icon";
-import { HeroCard, ReplaceTopCard } from "./hero-card";
+import { HeroCard, ReplaceTopCard, TopStar } from "./hero-card";
 
 const POSITIONS = [
   { n: 1, name: "Carry" },
@@ -297,8 +297,8 @@ export function PositionHeroes({
                     <span className="num text-subtle">{i + 1}</span>
                     {h.name}
                     {isTop && (
-                      <span className="text-accent-bright [&_path]:fill-current">
-                        <Icon name="star" />
+                      <span className="text-accent-bright">
+                        <TopStar />
                         <span className="sr-only">, in your Top 3</span>
                       </span>
                     )}
