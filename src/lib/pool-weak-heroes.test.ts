@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Engine } from "@/lib/engine/score";
 import type { Snapshot } from "@/lib/engine/types";
-import { poolFirst, WEAK_MATCHUP, weakHere, worstMatchup } from "./pick-explain";
+import { poolOnly, WEAK_MATCHUP, weakHere, worstMatchup } from "./pick-explain";
 
 const card = (heroId: number, score: number, enemyCounter = false) => ({
   heroId,
@@ -18,30 +18,30 @@ describe("weakHere", () => {
   });
 });
 
-describe("poolFirst with weak pool heroes", () => {
+describe("poolOnly with weak pool heroes", () => {
   // Best first, as the engine returns them.
   const ranked = [card(10, 14.5), card(20, 14), card(30, 13.6), card(40, 6), card(50, 2), card(94, -3.4)];
 
-  it("drops a pool hero with a score below 0 behind better heroes", () => {
+  it("keeps a weak pool hero in its place by score, with a label, and never adds a hero from outside the pool", () => {
     const weak = (s: (typeof ranked)[number]) => weakHere(s, 0);
-    const { list, outside, weak: dropped } = poolFirst(ranked, new Set([50, 94]), { weak });
-    expect(list.map((s) => s.heroId)).toEqual([50, 10, 20, 30]);
-    expect([...outside]).toEqual([10, 20, 30]);
-    expect(dropped.size).toBe(0);
+    const { list, weak: marked } = poolOnly(ranked, new Set([94, 50]), { weak });
+    expect(list.map((s) => s.heroId)).toEqual([50, 94]);
+    expect([...marked]).toEqual([94]);
   });
 
-  it("drops a pool hero on one bad matchup alone, and marks it when it is still shown", () => {
+  it("marks a pool hero on one bad matchup alone", () => {
     const worst = new Map([[40, -2]]);
     const weak = (s: (typeof ranked)[number]) => weakHere(s, worst.get(s.heroId) ?? 0);
-    const { list, outside, weak: dropped } = poolFirst(ranked, new Set([10, 40]), { weak, outsideMax: 3 });
-    expect(list.map((s) => s.heroId)).toEqual([10, 20, 30, 40]);
-    expect([...outside]).toEqual([20, 30]);
-    expect([...dropped]).toEqual([40]);
+    const { list, weak: marked } = poolOnly(ranked, new Set([10, 40]), { weak });
+    expect(list.map((s) => s.heroId)).toEqual([10, 40]);
+    expect([...marked]).toEqual([40]);
   });
 
-  it("keeps the pool first when no pool hero is weak", () => {
-    const { list } = poolFirst(ranked, new Set([40, 50]), { weak: () => false });
-    expect(list.map((s) => s.heroId)).toEqual([40, 50, 10, 20, 30]);
+  it("lists a pool where every hero is weak, best first", () => {
+    const { list, weak: marked, fromAll } = poolOnly(ranked, new Set([94, 50, 40]), { weak: () => true });
+    expect(list.map((s) => s.heroId)).toEqual([40, 50, 94]);
+    expect(marked.size).toBe(3);
+    expect(fromAll).toBeNull();
   });
 });
 

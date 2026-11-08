@@ -2,7 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icon";
-import { MoveMark, OutsidePool, WeakHere } from "@/components/pick-why";
+import { MoveMark, WeakHere } from "@/components/pick-why";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, ScoreBreakdown, Suggestion } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
@@ -88,6 +88,18 @@ function Column({
         <span className="num text-sm font-normal text-subtle">
           Pos {c.position} {POSITION_NAMES[c.position]}
         </span>
+        {c.fromAll && (
+          <span
+            className="chip ml-auto self-center text-xs font-normal"
+            title={
+              c.fromAll === "none"
+                ? `${name} has no heroes for this position, so these are the best of every hero`
+                : `All of ${name}'s heroes for this position are taken, so these are the best of every hero`
+            }
+          >
+            Any Hero
+          </span>
+        )}
       </h3>
       <ol aria-label={`Suggested heroes for ${name}`} className="flex flex-col">
         {c.suggestions.map((s, i) => (
@@ -111,7 +123,6 @@ function Column({
             badges={
               <>
                 <MoveMark move={moves.get(s.heroId)} />
-                {c.outside.has(s.heroId) && <OutsidePool title={`Not one of ${name}'s heroes for this position`} />}
                 {c.weak.has(s.heroId) && <WeakHere />}
               </>
             }

@@ -1,30 +1,30 @@
 import type { PlanSlot } from "@/lib/engine/plan";
 import type { Engine } from "@/lib/engine/score";
 import type { GamesWins, Position, RankBracket, Suggestion } from "@/lib/engine/types";
-import { poolFirst, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { poolOnly, weakHere, worstMatchup } from "@/lib/pick-explain";
 
-/** Pool heroes shown per player, then the best few outside their pool. */
-const POOL_MAX = 4;
-const OUTSIDE_MAX = 2;
-/** A player with no pool (a Solo Queue teammate) gets the same column length, all ranked on the draft. */
-const NO_POOL_MAX = POOL_MAX + OUTSIDE_MAX;
+/** Heroes shown per player: their own heroes for the position, or the best of every hero without any. */
+const COLUMN_MAX = 6;
 
 /** One player who still has to pick, with their suggestions for the position they play. */
 export interface PlayerColumn {
   playerId: string;
   position: Position;
   suggestions: Suggestion[];
-  /** Not one of the player's heroes for the position. */
-  outside: Set<number>;
   /** One of the player's heroes, but weak in this draft. */
   weak: Set<number>;
+  /**
+   * Why the column lists the best of every hero: "none" when the player has no heroes for the
+   * position (or doesn't share them), "used" when all of theirs are taken. null for their own heroes.
+   */
+  fromAll: "none" | "used" | null;
 }
 
 /**
- * The planner's Per Player view: one column per party member who still has to pick, their own
- * heroes for the position first, then a few others. Each hero goes to one column only: a player
- * whose pool has it, else the player it scores highest for, so the party never gets told to
- * pick the same hero twice.
+ * The planner's Per Player view: one column per party member who still has to pick, with only
+ * their own heroes for the position, best first (any hero when they have none). Each hero goes to
+ * one column only: a player whose pool has it, else the player it scores highest for, so the party
+ * never gets told to pick the same hero twice.
  */
 export function perPlayerColumns(
   engine: Engine,
@@ -75,11 +75,10 @@ export function perPlayerColumns(
   return open.map((s, col) => {
     const own = lists[col]!.filter((x) => best.get(x.heroId)!.col === col);
     const pool = new Set(s.favorites ?? []);
-    const { list, outside, weak } = poolFirst(own, pool, {
-      poolMax: pool.size ? POOL_MAX : NO_POOL_MAX,
-      outsideMax: OUTSIDE_MAX,
+    const { list, weak, fromAll } = poolOnly(own, pool, {
+      max: COLUMN_MAX,
       weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket)),
     });
-    return { playerId: s.playerId, position: s.position, suggestions: list, outside, weak };
+    return { playerId: s.playerId, position: s.position, suggestions: list, weak, fromAll };
   });
 }

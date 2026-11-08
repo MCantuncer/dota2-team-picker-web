@@ -30,17 +30,16 @@ export function toSaved(shown: { heroId: number; score: number }[]): { heroes: n
   return { heroes: top.map((s) => s.heroId), scores: top.map((s) => Math.round(s.score * 100) / 100) };
 }
 
-/** Pool heroes shown at most, before the others. */
-const POOL_MAX = 8;
-/** Heroes outside the pool shown after the pool. */
-const OUTSIDE_MAX = 3;
+/** Heroes listed at most. */
+const LIST_MAX = 8;
 
 /** A single matchup this bad (in win-rate points) makes a pool hero weak in this draft. */
 export const WEAK_MATCHUP = -1.5;
 
 /**
  * True when a hero is weak in this draft: a score below 0, a hard counter on the enemy team, or
- * one matchup at WEAK_MATCHUP or worse (`worstMatchup`, from Engine.counterEdges).
+ * one matchup at WEAK_MATCHUP or worse (`worstMatchup`, from Engine.counterEdges). A label only: the
+ * hero keeps its place by score.
  */
 export function weakHere(s: { score: number; hardCounters: { status: string }[] }, worstMatchup: number): boolean {
   return s.score < 0 || s.hardCounters.some((n) => n.status === "enemy") || worstMatchup <= WEAK_MATCHUP;
@@ -53,26 +52,34 @@ export function worstMatchup(engine: Engine, heroId: number, enemies: number[], 
   return Math.min(0, ...edges.map((e) => e.edge));
 }
 
+/** A player's list: the heroes to show, and which of them are weak in this draft. */
+export interface PickList<T> {
+  list: T[];
+  /** Pool heroes in `list` that are weak in this draft, shown with a label. */
+  weak: Set<number>;
+  /**
+   * Why the list is the best of every hero instead of the pool: "none" when the player has no
+   * heroes for the position, "used" when every one of them is picked, banned or listed for
+   * another player. null for a pool list.
+   */
+  fromAll: "none" | "used" | null;
+}
+
 /**
- * The player's own heroes for the position first, best first, then the best few outside the pool.
- * `ranked` is every suggestion, best first. With an empty pool, the top `poolMax` of all heroes.
- * A pool hero that is `weak` in this draft loses its place up front and competes with the others
- * by score, so a bad pool hero is never listed above better heroes (Can, 2026-11-03).
+ * The heroes a player sees, from `ranked` (every suggestion, best first). With heroes in the pool,
+ * only those, in score order: the pool decides which heroes are listed and the engine decides their
+ * order (Can, 2026-11-08). A weak pool hero keeps its place by score and gets a label, so a bad pool
+ * hero is never listed above better ones (Can, 2026-11-03) and is never swapped for a hero from
+ * outside the pool. Without a pool hero to list, the top `max` of all heroes, and `fromAll` says why.
  */
-export function poolFirst<T extends { heroId: number }>(
+export function poolOnly<T extends { heroId: number }>(
   ranked: T[],
   pool: Set<number>,
-  { poolMax = POOL_MAX, outsideMax = OUTSIDE_MAX, weak = () => false }: { poolMax?: number; outsideMax?: number; weak?: (s: T) => boolean } = {},
-): { list: T[]; outside: Set<number>; weak: Set<number> } {
-  if (!pool.size) return { list: ranked.slice(0, poolMax), outside: new Set(), weak: new Set() };
-  const weakPool = new Set(ranked.filter((s) => pool.has(s.heroId) && weak(s)).map((s) => s.heroId));
-  const mine = ranked.filter((s) => pool.has(s.heroId) && !weakPool.has(s.heroId)).slice(0, poolMax);
-  const others = ranked.filter((s) => !pool.has(s.heroId) || weakPool.has(s.heroId)).slice(0, outsideMax);
-  return {
-    list: [...mine, ...others],
-    outside: new Set(others.filter((s) => !pool.has(s.heroId)).map((s) => s.heroId)),
-    weak: new Set(others.filter((s) => weakPool.has(s.heroId)).map((s) => s.heroId)),
-  };
+  { max = LIST_MAX, weak = () => false }: { max?: number; weak?: (s: T) => boolean } = {},
+): PickList<T> {
+  const list = ranked.filter((s) => pool.has(s.heroId)).slice(0, max);
+  if (!list.length) return { list: ranked.slice(0, max), weak: new Set(), fromAll: pool.size ? "used" : "none" };
+  return { list, weak: new Set(list.filter(weak).map((s) => s.heroId)), fromAll: null };
 }
 
 /** "New" for a hero not in the list before, "Up 2" for one that moved up two places. */
