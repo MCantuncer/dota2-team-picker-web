@@ -1,12 +1,12 @@
 /**
- * Top 3: a player stars up to 3 heroes on each position list (Pos 1 to 5). Starred heroes get a small
+ * Top 5: a player stars up to 5 heroes on each position list (Pos 1 to 5). Starred heroes get a small
  * extra push in pick suggestions. The database keeps the order (set_top_hero); this reads its answer,
  * orders a list for My Heroes and words the numbers a filled hero's card shows.
  */
 
-export const TOP_SIZE = 3;
+export const TOP_SIZE = 5;
 
-/** What set_top_hero returns: the position's Top 3, hero ids in slot order. */
+/** What set_top_hero returns: the position's Top 5, hero ids in slot order. */
 export function readTopAnswer(raw: unknown): { position: number; top: number[] } | null {
   if (typeof raw !== "object" || raw === null) return null;
   const { position, top } = raw as { position?: unknown; top?: unknown };
@@ -15,7 +15,7 @@ export function readTopAnswer(raw: unknown): { position: number; top: number[] }
   return { position, top: top as number[] };
 }
 
-/** Rows of favorite_heroes with their slot, to each position's Top 3 in slot order. */
+/** Rows of favorite_heroes with their slot, to each position's Top 5 in slot order. */
 export function topByPosition(rows: { position: number; hero_id: number; top_slot: number | null }[]): Record<number, number[]> {
   const out: Record<number, number[]> = {};
   for (const r of [...rows].filter((r) => r.top_slot !== null).sort((a, b) => a.top_slot! - b.top_slot!)) {
@@ -24,7 +24,7 @@ export function topByPosition(rows: { position: number; hero_id: number; top_slo
   return out;
 }
 
-/** The list as My Heroes shows it: Top 3 first in slot order, then the rest in the order added. */
+/** The list as My Heroes shows it: Top 5 first in slot order, then the rest in the order added. */
 export function topFirst(list: number[], top: number[]): number[] {
   const starred = top.filter((id) => list.includes(id));
   return [...starred, ...list.filter((id) => !starred.includes(id))];

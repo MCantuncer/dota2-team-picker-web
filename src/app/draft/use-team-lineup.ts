@@ -72,7 +72,7 @@ export function useTeamLineup({
   /** The player's solo position, where they sit when Team starts. */
   myPosition: Position;
   myHeroes: Record<number, number[]>;
-  /** The player's own Top 3 per position. */
+  /** The player's own Top 5 per position. */
   myTop: Record<number, number[]>;
   personal: Record<number, GamesWins>;
 }) {

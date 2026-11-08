@@ -46,8 +46,8 @@ function useOutside(ref: React.RefObject<HTMLElement | null>, onClose: () => voi
 }
 
 /**
- * The Top 3 star: small and sharp, a little shorter than the text beside it. Filled marks a Top 3 hero;
- * the outline is for Remove from Top 3.
+ * The Top 5 star: small and sharp, a little shorter than the text beside it. Filled marks a Top 5 hero;
+ * the outline is for Remove from Top 5.
  */
 export function TopStar({ outline = false }: { outline?: boolean }) {
   return (
@@ -76,7 +76,7 @@ function SwapIcon() {
 
 /**
  * A hero's card on My Heroes, opened from its chip: the numbers from the player's games when the fill
- * added it, then Add to Top 3 or Remove from Top 3, and Remove from the position. A popover under the
+ * added it, then Add to Top 5 or Remove from Top 5, and Remove from the position. A popover under the
  * chip on wider screens, a sheet from the bottom on phones.
  */
 export function HeroCard({
@@ -164,12 +164,12 @@ export function HeroCard({
             {isTop ? (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill w-full">
                 <TopStar outline />
-                Remove from Top 3
+                Remove from Top 5
               </button>
             ) : (
               <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill w-full">
                 <TopStar />
-                Add to Top 3
+                Add to Top 5
               </button>
             )}
             <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary pill w-full">
@@ -193,7 +193,7 @@ function Tile({ value, label, good = false }: { value: ReactNode; label: string;
 }
 
 /**
- * Add to Top 3 with 3 already chosen: the 3 heroes as large tiles, each with a Replace button, and Cancel.
+ * Add to Top 5 with 5 already chosen: the 5 heroes as large tiles (a row of 5 on wider screens, a list on phones), each with a Replace button, and Cancel.
  * Replace swaps in one step.
  */
 export function ReplaceTopCard({
@@ -220,7 +220,7 @@ export function ReplaceTopCard({
         aria-labelledby="replace-title"
         aria-describedby="replace-line"
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-xl flex-col gap-4 overflow-hidden rounded-xl bg-raised shadow-lg ring-1 ring-inset ring-line-hover max-sm:p-0 sm:p-5"
+        className="flex max-h-full w-full max-w-xl flex-col gap-4 overflow-y-auto md:max-w-4xl rounded-xl bg-raised shadow-lg ring-1 ring-inset ring-line-hover max-sm:p-0 sm:p-5"
       >
         <div className="relative h-28 bg-surface sm:hidden">
           <Image src={renderOf(hero.image) ?? hero.image} alt="" fill sizes="100vw" className="object-cover object-[center_25%]" />
@@ -229,14 +229,14 @@ export function ReplaceTopCard({
           <Image src={hero.image} alt="" width={112} height={63} unoptimized className="rounded-md max-sm:hidden" />
           <div className="flex flex-col gap-1">
             <h2 id="replace-title" className="text-lg font-semibold text-fg">
-              Add {hero.name} to Your Top 3
+              Add {hero.name} to Your Top 5
             </h2>
             <p id="replace-line" className="text-sm text-muted">
-              Your Top 3 is full. Pick the hero {hero.name} replaces.
+              Your Top 5 is full. Pick the hero {hero.name} replaces.
             </p>
           </div>
         </div>
-        <ul className="grid gap-2 max-sm:px-4 sm:grid-cols-3 sm:gap-2.5">
+        <ul className="grid gap-2 max-sm:px-4 md:grid-cols-5 md:gap-2.5">
           {top.map((h) => (
             <li key={h.id}>
               <button
@@ -244,11 +244,11 @@ export function ReplaceTopCard({
                 disabled={busy}
                 onClick={() => onReplace(h.id)}
                 aria-label={`Replace ${h.name} with ${hero.name}`}
-                className="group flex w-full items-center gap-3 overflow-hidden rounded-xl bg-surface text-left ring-1 ring-inset ring-line-hover transition-shadow hover:ring-accent disabled:opacity-55 sm:flex-col sm:items-stretch sm:gap-0"
+                className="group flex w-full items-center gap-3 overflow-hidden rounded-xl bg-surface text-left ring-1 ring-inset ring-line-hover transition-shadow hover:ring-accent disabled:opacity-55 md:flex-col md:items-stretch md:gap-0"
               >
-                <Image src={h.image} alt="" width={256} height={144} unoptimized className="aspect-video w-26 object-cover sm:w-full" />
-                <span className="flex flex-1 items-center justify-between gap-2 pr-3 sm:flex-col sm:items-stretch sm:p-2.5">
-                  <span className="text-sm font-semibold text-fg">{h.name}</span>
+                <Image src={h.image} alt="" width={256} height={144} unoptimized className="aspect-video w-26 shrink-0 object-cover md:w-full" />
+                <span className="flex flex-1 items-center justify-between gap-2 pr-3 md:flex-col md:items-stretch md:p-2.5">
+                  <span className="text-sm font-semibold leading-tight text-fg md:min-h-[2.5em]">{h.name}</span>
                   <span className="flex h-8 items-center justify-center gap-1.5 rounded-[10px] bg-accent-tint px-3 text-[0.8125rem] font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
                     <SwapIcon />
                     Replace

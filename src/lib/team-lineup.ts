@@ -262,7 +262,7 @@ export function teamPlan({
   pool: HeroPool;
   players: Record<string, PartyPlayer>;
   myHeroes: Record<number, number[]>;
-  /** The player's own Top 3 per position. */
+  /** The player's own Top 5 per position. */
   myTop: Record<number, number[]>;
   personal: Record<number, GamesWins>;
 }): TeamPlan {

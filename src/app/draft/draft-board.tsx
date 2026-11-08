@@ -57,7 +57,7 @@ import { isTeammate, SOLO_ME } from "@/lib/solo-queue";
 export interface Player {
   /** Favorite heroes per position; 0 holds heroes for any position. */
   heroes: Record<number, number[]>;
-  /** The player's Top 3 per position (1 to 5), hero ids in slot order. */
+  /** The player's Top 5 per position (1 to 5), hero ids in slot order. */
   top: Record<number, number[]>;
   positions: Position[];
   rank: RankBracket | null;

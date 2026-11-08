@@ -49,7 +49,7 @@ describe("toPlanSlots", () => {
     expect(slots.map((s) => s.playerId)).toEqual(["x", "y", undefined, undefined, undefined]);
   });
 
-  it("gives each slot its player's Top 3 for that position only", () => {
+  it("gives each slot its player's Top 5 for that position only", () => {
     const slots = toPlanSlots(
       [
         { id: "a", position: 1 },
