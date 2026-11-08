@@ -33,8 +33,8 @@ describe("PerPlayerView", () => {
               ]),
               suggestion(17, "Storm Spirit", ["Fast into Lina (+0.9)", "x"]),
             ],
-            outside: new Set([17]),
             weak: new Set(),
+            fromAll: "none",
           },
         ]}
         names={{ ali: "Ali" }}
@@ -64,7 +64,8 @@ describe("PerPlayerView", () => {
     // Rows are labeled with the score part they explain; warnings read as Watch Out.
     expect(screen.getAllByText("Counters").length).toBeGreaterThan(0);
 
-    expect(screen.getByText("Outside Pool")).toBeVisible();
+    // Ali has no Mid heroes, so the column says it lists any hero.
+    expect(screen.getByText("Any Hero")).toBeVisible();
 
     await userEvent.click(screen.getByRole("button", { name: "Picked Storm Spirit for Ali" }));
     expect(onPicked).toHaveBeenCalledWith(17, 2);

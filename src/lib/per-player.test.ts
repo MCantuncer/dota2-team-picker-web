@@ -51,7 +51,7 @@ describe("perPlayerColumns", () => {
     expect(a!.suggestions[0]!.heroId).toBe(140);
     expect(b!.suggestions[0]!.heroId).toBe(130);
     expect(b!.suggestions.some((s) => s.heroId === 140)).toBe(false);
-    expect(b!.outside.has(130)).toBe(false);
+    expect(b!.fromAll).toBeNull();
   });
 
   it("passes each player's Top 3 to their suggestions", () => {
@@ -83,14 +83,14 @@ describe("perPlayerColumns", () => {
     expect(shown).not.toContain(20);
   });
 
-  it("gives a player with no pool six heroes, ranked on the draft with none marked Outside Pool", () => {
+  it("gives a player with no pool six heroes, ranked on the draft and marked as any hero", () => {
     const cols = perPlayerColumns(engine, {
       ...base,
       slots: [{ position: 1, playerId: "teammate-1" }, { position: 2, playerId: "me", favorites: [140] }, { position: 3 }, { position: 4 }, { position: 5 }],
     });
     const mate = cols.find((c) => c.playerId === "teammate-1")!;
     expect(mate.suggestions).toHaveLength(6);
-    expect(mate.outside.size).toBe(0);
+    expect(mate.fromAll).toBe("none");
     const scores = mate.suggestions.map((s) => s.score);
     expect(scores).toEqual([...scores].sort((x, y) => y - x));
   });
