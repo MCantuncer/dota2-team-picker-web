@@ -8,6 +8,7 @@ import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamCard } from "./steam-card";
 import { YourGamesCard } from "./your-games-card";
 import { type FillAdded, FillButton, FillCard, FillProvider } from "./hero-fill";
+import { type FillNumbers, fillNumbers, topByPosition } from "@/lib/top-heroes";
 import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
 import { readSupportCopy } from "@/lib/support-copy";
 
@@ -34,7 +35,7 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   const [heroes, { data: positions }, { data: favorites }, { data: profile }, { data: teams }] = await Promise.all([
     getHeroes(),
     supabase.from("favorite_positions").select("position").eq("user_id", user.id),
-    supabase.from("favorite_heroes").select("position, hero_id").eq("user_id", user.id).gt("position", 0).order("created_at"),
+    supabase.from("favorite_heroes").select("position, hero_id, top_slot, copied_from").eq("user_id", user.id).gt("position", 0).order("created_at"),
     supabase
       .from("profiles")
       .select(
@@ -46,7 +47,12 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
   ]);
 
   const heroesByPosition: Record<number, number[]> = {};
-  for (const f of favorites ?? []) (heroesByPosition[f.position] ??= []).push(f.hero_id);
+  const copiedFrom: Record<string, number> = {};
+  for (const f of favorites ?? []) {
+    (heroesByPosition[f.position] ??= []).push(f.hero_id);
+    if (f.copied_from) copiedFrom[`${f.position}:${f.hero_id}`] = f.copied_from;
+  }
+  const topHeroes = topByPosition(favorites ?? []);
   const teamNames = (teams ?? []).flatMap((t) => (t.teams ? [(t.teams as unknown as { name: string }).name] : []));
 
   const showCards = Boolean(profile?.steam_id) && poolCardsEnabled();
@@ -82,12 +88,18 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     }
   }
 
-  // The heroes the fill added that are still listed, for the summary card. Extra: a failed read hides the card.
+  // The heroes the fill added that are still listed, for the summary card and each hero's card. Extra: a failed
+  // read hides the card and the numbers.
   const added: FillAdded = { count: 0, heroes: [] };
-  if (profile?.steam_id && profile.hero_fill_state === "done") {
-    const { data, error } = await supabase.from("hero_fill_picks").select("hero_id, games").eq("user_id", user.id);
+  let filled: Record<string, FillNumbers> = {};
+  if (profile?.steam_id && profile.hero_fill_state) {
+    const { data, error } = await supabase
+      .from("hero_fill_picks")
+      .select("position, hero_id, games, wins, last_played")
+      .eq("user_id", user.id);
     if (error) console.error("My Heroes fill picks:", error.message);
     else {
+      filled = fillNumbers(data);
       const heroById = new Map(heroes.map((h) => [h.id, h]));
       added.count = data.length;
       // A hero filled on two positions shows once.
@@ -160,6 +172,9 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
           initialHeroes={heroesByPosition}
           initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
           headingAction={<FillButton />}
+          initialTop={topHeroes}
+          fillNumbers={filled}
+          initialCopiedFrom={copiedFrom}
         />
       </FillProvider>
     </main>
