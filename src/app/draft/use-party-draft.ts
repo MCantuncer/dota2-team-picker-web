@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { actorsOf, applyAction, lastEntryBy, mergeRows, replay, toAction, type ActionRow, type DraftAction } from "@/lib/draft";
+import type { ListRule } from "@/lib/pick-explain";
 import { createClient } from "@/lib/supabase/client";
 
 /** The database's answer when someone other than the party's draft captain changes the draft. */
@@ -109,10 +110,12 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
 
   /**
    * Saves the suggestions this player sees, so the after-game card and reports can compare them
-   * with the pick. A later call replaces the list.
+   * with the pick, and the admin Pool Check can catch a pool list that showed another hero. `rule`
+   * says how the list was built: "pool" from the player's own heroes, "any" from every hero. A
+   * later call replaces the list.
    */
   const saveSuggestions = useCallback(
-    async (position: number, heroes: number[], scores: number[], chance: number | null) => {
+    async (position: number, heroes: number[], scores: number[], chance: number | null, rule: ListRule) => {
       if (!draftId || !heroes.length) return;
       const { error } = await supabase.rpc("save_draft_suggestions", {
         draft: draftId,
@@ -120,6 +123,7 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
         shown: heroes,
         shown_scores: scores,
         chance: chance ?? undefined,
+        rule,
       });
       // The draft itself is fine; only the after-game comparison misses this list.
       if (error) setError("Couldn't save the suggestions you saw, so the after-game card may leave them out. Your draft is saved.");

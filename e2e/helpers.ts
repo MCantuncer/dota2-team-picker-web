@@ -96,7 +96,7 @@ export async function savedSuggestions(email: string) {
   const db = admin();
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
   if (error) throw error;
-  const { data, error: readError } = await db.from("draft_suggestions").select("position, heroes").eq("user_id", id!);
+  const { data, error: readError } = await db.from("draft_suggestions").select("position, heroes, list_rule, outside").eq("user_id", id!);
   if (readError) throw readError;
   return data;
 }
