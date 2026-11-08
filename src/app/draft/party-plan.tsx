@@ -12,12 +12,15 @@ const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support
  */
 export function PartyPlan({
   plan,
+  pooled,
   names,
   portrait,
   onPicked,
   onBanned,
 }: {
   plan: TeamPlan;
+  /** Positions whose player has heroes saved for it. A hero outside them is labeled there; any other seat plays any hero. */
+  pooled: Set<Position>;
   /** Display names by user id. */
   names: Record<string, string>;
   portrait: (heroId: number, name: string) => React.ReactNode;
@@ -44,11 +47,14 @@ export function PartyPlan({
                   <span data-hero-name className="text-xl font-semibold leading-6 tracking-[-0.02em] text-fg">{slot.name}</span>
                   {slot.locked ? (
                     <span className="micro text-radiant">Picked</span>
+                  ) : !pooled.has(slot.position) ? (
+                    <span className="micro text-subtle" title="No heroes saved for this position, so this is the best of every hero">
+                      Any Hero
+                    </span>
                   ) : (
-                    slot.playerId &&
                     !slot.inPool && (
-                      <span className="micro text-subtle" title="Not one of this player's heroes for this position">
-                        Outside pool
+                      <span className="chip text-xs" title="Every one of this player's heroes for this position is taken">
+                        Outside Pool
                       </span>
                     )
                   )}
@@ -68,6 +74,7 @@ export function PartyPlan({
                         <span key={a.heroId}>
                           {i > 0 && ", "}
                           <span className="text-fg">{a.name}</span> <span className="num">{a.scoreDelta.toFixed(1).replace("-", "−")}</span>
+                          {pooled.has(slot.position) && !a.inPool && <span className="text-subtle"> (Outside Pool)</span>}
                         </span>
                       ))}
                     </p>

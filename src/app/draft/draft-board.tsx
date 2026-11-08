@@ -408,12 +408,15 @@ export function DraftBoard({
   const planAllies: DraftEntry[] = lineupPlan
     ? resolved.map((a) => ({ kind: "ally", heroId: a.heroId, position: a.position }))
     : allies;
+  const planSlots = pool ? toPlanSlots(planMembers, pool, planAllies, planPlayers) : null;
+  // Positions whose player has heroes saved for it, so Team Plan labels only real outsiders.
+  const pooled = new Set((planSlots ?? []).flatMap((s) => (s.favorites?.length ? [s.position] : [])));
   // The team plan (WCST) for the whole party, planned only while it is on screen.
   // Watchers always see the planner's Team Plan; the planner switches between it and their own picks.
   const teamPlan =
-    pool && (view === "team" || !isPlanner)
+    planSlots && (view === "team" || !isPlanner)
       ? planTeam(engine, {
-          slots: toPlanSlots(planMembers, pool, planAllies, planPlayers),
+          slots: planSlots,
           enemies,
           bans,
           rankBracket: bracket,
@@ -421,9 +424,9 @@ export function DraftBoard({
       : null;
   // Per Player: what each member who still has to pick should take, one hero per player.
   const playerColumns =
-    pool && isPlanner && view === "players"
+    planSlots && isPlanner && view === "players"
       ? perPlayerColumns(engine, {
-          slots: toPlanSlots(planMembers, pool, planAllies, planPlayers),
+          slots: planSlots,
           personal: Object.fromEntries(Object.entries(planPlayers).map(([id, p]) => [id, p.personal])),
           enemies,
           bans,
@@ -796,6 +799,7 @@ export function DraftBoard({
           {teamPlan ? (
             <PartyPlan
               plan={teamPlan}
+              pooled={pooled}
               names={planNames}
               portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
               onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
