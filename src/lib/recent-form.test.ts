@@ -28,23 +28,38 @@ describe("positionsLately", () => {
 
   it("counts games and wins per position, most played first", () => {
     const rows = [row(2, true), row(3, false), row(2, true), row(2, false), row(3, true), row(1, false)];
-    expect(positionsLately(rows)).toEqual([
-      { position: 2, games: 3, wins: 2 },
-      { position: 3, games: 2, wins: 1 },
-      { position: 1, games: 1, wins: 0 },
-    ]);
+    expect(positionsLately(rows)).toEqual({
+      positions: [
+        { position: 2, games: 3, wins: 2 },
+        { position: 3, games: 2, wins: 1 },
+        { position: 1, games: 1, wins: 0 },
+      ],
+      unknown: { games: 0, wins: 0 },
+    });
   });
 
-  it("breaks a tie by more wins, and leaves out games with no known position", () => {
-    const rows = [row(4, false), row(5, true), row(null, true), row(9, true)];
-    expect(positionsLately(rows)).toEqual([
-      { position: 5, games: 1, wins: 1 },
-      { position: 4, games: 1, wins: 0 },
-    ]);
+  it("breaks a tie by more wins, and counts games with no known position as unknown", () => {
+    const rows = [row(4, false), row(5, true), row(null, true), row(9, false)];
+    expect(positionsLately(rows)).toEqual({
+      positions: [
+        { position: 5, games: 1, wins: 1 },
+        { position: 4, games: 1, wins: 0 },
+      ],
+      unknown: { games: 2, wins: 1 },
+    });
+  });
+
+  it("adds up to the games counted", () => {
+    const rows = [...Array.from({ length: 16 }, () => row(1, true)), row(4, true), row(4, false), row(2, true), row(null, false)];
+    const { positions, unknown } = positionsLately(rows);
+    expect(positions.reduce((n, p) => n + p.games, 0) + unknown.games).toBe(20);
   });
 
   it("only reads the latest 20 games", () => {
     const rows = [...Array.from({ length: 20 }, () => row(2, true)), row(1, true)];
-    expect(positionsLately(rows)).toEqual([{ position: 2, games: 20, wins: 20 }]);
+    expect(positionsLately(rows)).toEqual({
+      positions: [{ position: 2, games: 20, wins: 20 }],
+      unknown: { games: 0, wins: 0 },
+    });
   });
 });
