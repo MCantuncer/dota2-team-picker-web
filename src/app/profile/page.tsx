@@ -100,7 +100,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
               </p>
             )}
             <div className="grid gap-4 md:grid-cols-2">
-              <PositionsCard positions={played} games={games.data?.length ?? 0} poolPositions={poolPositions} />
+              <PositionsCard played={played} games={games.data?.length ?? 0} poolPositions={poolPositions} />
               <RecentFormCard form={form} />
             </div>
           </>
