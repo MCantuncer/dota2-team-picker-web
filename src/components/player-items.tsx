@@ -40,6 +40,48 @@ export function PlayerItems({ player, heroName, icons, laneNote }: Art & { playe
   );
 }
 
+/**
+ * Lane items finished at the same minute, keyed by the first of them. Players start with the parts (Circlet and
+ * Mantle for Null Talisman), so several small items are done by the same minute; one row says that once instead
+ * of repeating "2 min" on each.
+ */
+export function laneGroups(lane: BuildItem[]): Map<BuildItem, BuildItem[]> {
+  const groups = new Map<BuildItem, BuildItem[]>();
+  let first: BuildItem | undefined;
+  for (const item of lane) {
+    const group = first && groups.get(first);
+    if (first && group && first.minute === item.minute) group.push(item);
+    else {
+      first = item;
+      groups.set(item, [item]);
+    }
+  }
+  return groups;
+}
+
+/** One step for lane items finished at the same minute: their icons on the path, their names, and the minute once. */
+function LaneGroup({ items, rough }: { items: BuildItem[]; rough: boolean }) {
+  // A group has at least one item.
+  const first = items[0]!;
+  const names = items.map((i) => i.name);
+  const label = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : (names[0] ?? "");
+  return (
+    <li className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 py-3">
+      <span className="flex gap-1">
+        {items.map((item) => (
+          <span key={item.itemId} className="rounded-xs shadow-[0_0_0_3px_var(--bg)]">
+            <ItemArt item={item} />
+          </span>
+        ))}
+      </span>
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+        <span className="text-base font-semibold text-fg">{label}</span>
+        <span className="num text-sm text-muted">{items.length > 1 ? `by ${minuteText(first, rough)}` : minuteText(first, rough)}</span>
+      </div>
+    </li>
+  );
+}
+
 function Heading({ title, note }: { title: string; note?: string }) {
   return (
     <div className="flex flex-wrap items-baseline gap-3.5">
@@ -56,6 +98,7 @@ function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
   const steps = [...build.lane.map((item) => ({ item, core: false })), ...build.core.map((item) => ({ item, core: true }))].sort(
     (a, b) => a.item.minute - b.item.minute,
   );
+  const lane = laneGroups(steps.filter((s) => !s.core).map((s) => s.item));
   // The other boots go once, under the core boots (the first core item bought in the lane phase).
   const boots = build.core.find((i) => i.phase === "lane");
   return (
@@ -63,6 +106,11 @@ function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
       <Heading title="Item Journey" note={rough ? "Rough minutes from all games" : "Usual minute, then late after"} />
       <ol className="relative mt-2 before:absolute before:inset-y-5 before:left-[1.375rem] before:w-px before:bg-line-strong">
         {steps.map(({ item, core }) => {
+          if (!core) {
+            const group = lane.get(item);
+            // Each group is drawn once, at its first item.
+            return group ? <LaneGroup key={`lane-${item.itemId}`} items={group} rough={rough} /> : null;
+          }
           const faces = item.effectAgainst?.length ? item.effectAgainst : (item.against ?? []);
           const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
           return (
