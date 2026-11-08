@@ -148,6 +148,9 @@ test("a party draft saves what each player was shown and ends with the after-gam
   await page.goto("/draft");
   await expect(page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li")).toHaveCount(8);
   await expect.poll(async () => (await savedSuggestions(email)).map((r) => r.heroes.length)).toEqual([8]);
+  // No heroes of her own, so the list is from every hero and Pool Check counts it as such.
+  const [saved] = await savedSuggestions(email);
+  expect(saved).toMatchObject({ list_rule: "any", outside: saved!.heroes });
 
   const ally = page.getByLabel("My team pick, e.g. cm5");
   for (const pick of ["cm5", "lion4", "axe3", "sf2", "am1"]) {
