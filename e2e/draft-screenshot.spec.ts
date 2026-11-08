@@ -26,7 +26,7 @@ test("pasting a Dota screenshot fills both teams and the bans", async ({ page })
     );
   }, SCREENSHOT);
 
-  await expect(page.getByText(/Read 8 picks and \d+ bans\./)).toBeVisible({
+  await expect(page.getByText("Read 8 picks and 16 bans.")).toBeVisible({
     timeout: 45_000,
   });
   const mine = page.getByRole("region", { name: "My team" });
@@ -35,5 +35,8 @@ test("pasting a Dota screenshot fills both teams and the bans", async ({ page })
     await expect(mine.getByText(name)).toBeVisible();
   for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny"])
     await expect(enemy.getByText(name)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Unban Pudge" })).toBeVisible();
+  // Every slashed hero, including bans on bright art (Dawnbreaker) that an earlier reader missed.
+  for (const name of ["Pudge", "Dawnbreaker", "Void Spirit", "Sniper", "Lina"])
+    await expect(page.getByRole("button", { name: `Unban ${name}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unban Anti-Mage" })).toHaveCount(0);
 });
