@@ -159,19 +159,20 @@ export function HeroCard({
               <Tile value={daysAgo(new Date(numbers.lastPlayed), new Date())} label="Last Played" />
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Stacked, full width: a long position name (Remove from Hard Support) never squeezes either button. */}
+          <div className="flex flex-col gap-2">
             {isTop ? (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill w-full">
                 <TopStar outline />
                 Remove from Top 3
               </button>
             ) : (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill w-full">
                 <TopStar />
                 Add to Top 3
               </button>
             )}
-            <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary pill">
+            <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary pill w-full">
               <Icon name="trash" />
               Remove from {positionName}
             </button>
