@@ -1,29 +1,41 @@
-# Dota 2 Team Picker: website
+<div align="center">
 
-The website for Dota 2 Team Picker: sign in with Steam, keep your favorite heroes, and
-get hero suggestions during a draft.
+<img src="docs/readme/icon.svg" width="64" height="64" alt="">
 
-The backend (hero data, scoring engine, accounts) lives in
-[dota2-team-picker](https://github.com/MCantuncer/dota2-team-picker). Accounts run on Supabase;
-set them up first with the
-[`services/accounts`](https://github.com/MCantuncer/dota2-team-picker/tree/main/services/accounts)
-README.
+# Dota 2 Team Picker
 
-Built with Next.js (App Router), Tailwind CSS and Supabase Auth.
+**Pick the hero this draft needs.**<br>
+Type the heroes as they come. In under a second you get eight picks for your position,<br>
+each with the reason from this draft.
 
-All UI work follows the [design system](docs/design-system.md): tokens and shared classes in
-`src/app/globals.css`, rules for using them in the doc.
+[![Live Site](https://img.shields.io/website?url=https%3A%2F%2Fdota2-team-picker-web.vercel.app&style=flat-square&label=Live%20Site&up_message=online&up_color=e8a052&down_message=offline&labelColor=1a1815&logo=vercel&logoColor=ece6da)](https://dota2-team-picker-web.vercel.app)
+[![CI](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/ci.yml?branch=main&style=flat-square&label=CI&labelColor=1a1815&logo=githubactions&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/ci.yml)
+[![Browser Tests](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/e2e.yml?branch=main&style=flat-square&label=Browser%20Tests&labelColor=1a1815&logo=playwright&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/e2e.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/codeql.yml?branch=main&style=flat-square&label=CodeQL&labelColor=1a1815&logo=github&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/codeql.yml)
 
-## Pages
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-3a352e?style=flat-square&labelColor=1a1815&logo=nextdotjs&logoColor=ece6da)](https://nextjs.org)
+[![React 19](https://img.shields.io/badge/React-19-3a352e?style=flat-square&labelColor=1a1815&logo=react&logoColor=ece6da)](https://react.dev)
+[![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3a352e?style=flat-square&labelColor=1a1815&logo=typescript&logoColor=ece6da)](https://www.typescriptlang.org)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind%20CSS-4-3a352e?style=flat-square&labelColor=1a1815&logo=tailwindcss&logoColor=ece6da)](https://tailwindcss.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20and%20Postgres-3a352e?style=flat-square&labelColor=1a1815&logo=supabase&logoColor=ece6da)](https://supabase.com)
+[![Vercel](https://img.shields.io/badge/Hosted%20on-Vercel-3a352e?style=flat-square&labelColor=1a1815&logo=vercel&logoColor=ece6da)](https://vercel.com)
 
-| Path            | What it does                                                               |
-| --------------- | -------------------------------------------------------------------------- |
-| `/`             | Home                                                                       |
-| `/login`        | Sign in with Steam, the only way in (the first sign-in makes the account)  |
-| `/signup`       | Old address: opens `/login`                                                |
-| `/auth/confirm` | Finishes Steam sign-in, then sets the session                              |
+<a href="https://dota2-team-picker-web.vercel.app"><img src="docs/readme/landing.jpg" width="860" alt="The home page: a big headline, Sign In with Steam, and an example draft where Earth Spirit is the top pick for mid against Pudge and Anti-Mage"></a>
 
-## Run locally
+</div>
+
+## What You Get
+
+| Feature | What It Does |
+| --- | --- |
+| **Draft Room** | Eight picks for your position, recalculated every round, each with a reason that names this draft's heroes and real numbers. |
+| **Watch Dota** | Press PrtScn in Dota and paste: both teams and the bans fill in by themselves. |
+| **My Heroes** | Your hero pool per position, filled from your Steam games, with a Top 3 that the picks lean on. |
+| **Party and Stacks** | Draft with friends and plan the whole lineup's picks together. |
+| **Game Story** | After the game: items, skills and the full talent tree for your hero, against this enemy lineup. |
+| **Steam Sign-In** | One click, no password. Your rank and hero record are read for you. |
+
+## Quick Start
 
 ```sh
 cp .env.example .env.local   # fill in your Supabase URL and publishable key
@@ -31,45 +43,23 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
-## Tests
+Accounts run on Supabase. Set them up first with the
+[accounts README](https://github.com/MCantuncer/dota2-team-picker/tree/main/services/accounts) in the backend repo.
 
-```sh
-npm test               # Vitest unit and component tests (src/**/*.test.ts[x])
-npm run test:watch
-npm run typecheck      # route types + tsc
-npm run lint
-npm run check:backend  # engine and database type copies match a version on backend main
-npm run sync:backend   # copy them from backend main again
-npm run test:e2e       # Playwright browser tests, see e2e/README.md
-```
+## Where Things Live
 
-`src/lib/engine/` and `src/lib/supabase/database.types.ts` are copied from the backend repo. The Supabase
-clients use the database types, so a query on a missing table or column fails the type check. There is no pin
-file: PR checks accept a copy that matches any version of that file on backend main, and the browser tests run
-against the newest backend commit whose database types match the copy. So a backend change never turns an
-unrelated website PR red, and sync PRs from different threads don't conflict. To pick up backend changes, run
-`npm run sync:backend` in its own PR: it copies the files from backend main. The "Backend drift" workflow
-reports, without blocking anything, when backend main has newer versions.
+| Path | What Is There |
+| --- | --- |
+| [`src/app`](src/app) | Pages (Next.js App Router) |
+| [`src/lib/engine`](src/lib/engine) | The scoring engine, copied from the [backend repo](https://github.com/MCantuncer/dota2-team-picker) |
+| [`src/app/globals.css`](src/app/globals.css) | Design tokens and shared classes, see the [design system](docs/design-system.md) |
+| [`e2e`](e2e) | Playwright browser tests with accessibility checks |
+| [`docs/development.md`](docs/development.md) | Tests, backend copies, CI and deploying to Vercel |
 
-Unit tests cover helpers and client components with React Testing Library. Async Server Components and
-full pages are covered by the browser tests in `e2e/` instead, as the Next.js docs recommend: sign in,
-profile, private-page redirects, parties and the Draft Room, with automatic accessibility checks on every page.
+## Contributing
 
-CI runs on every pull request and on `main`: lint, type check, unit tests with coverage, the build, the
-backend copy check, dependency review (fails on a new package with a known high or critical
-vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request: it holds the code standards and the checklist
+every change follows.
 
-Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): it holds the code standards and the
-checklist every change follows.
-
-## Deploy on Vercel (free)
-
-1. On [vercel.com/new](https://vercel.com/new), import this repository. Vercel detects Next.js.
-2. Under **Environment Variables**, add `NEXT_PUBLIC_SUPABASE_URL` and
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase dashboard (Project Settings > API).
-3. Deploy, then put the site address into Supabase: **Authentication > URL Configuration > Site
-   URL**, and the `SITE_URL` secret of the Steam login function.
-
-Only `main` deploys. `vercel.json` turns off preview deployments for `feature/`, `bugfix/`, `dependabot/` and
-`claude/` branches: CI already builds and browser-tests every pull request, Steam sign-in only returns to the
-production address, and each preview build is billed in Build CPU Minutes.
+<sub>Match data from OpenDota and STRATZ. Hero art © Valve Corporation. Not affiliated with or endorsed by Valve.
+Dota 2 is a trademark of Valve Corporation.</sub>
