@@ -43,3 +43,8 @@ vulnerability), and CodeQL. Dependabot opens grouped update PRs weekly.
    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase dashboard (Project Settings > API).
 3. Deploy, then put the site address into Supabase: **Authentication > URL Configuration > Site
    URL**, and the `SITE_URL` secret of the Steam login function.
+
+Only `main` deploys. `vercel.json` turns off preview deployments for `feature/`, `bugfix/`, `dependabot/` and
+`claude/` branches: CI already builds and browser-tests every pull request, Steam sign-in only returns to the
+production address, and each preview build is billed in Build CPU Minutes. A branch with any other prefix still
+gets a preview, so add new prefixes to `vercel.json`.
