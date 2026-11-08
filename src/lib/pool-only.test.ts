@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Engine } from "@/lib/engine/score";
 import { POSITIONS, type GamesWins, type Position, type RankBracket, type Snapshot } from "@/lib/engine/types";
 import { perPlayerColumns } from "@/lib/per-player";
-import { poolOnly, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { OUTSIDER_Z, poolOnly, provenOutsider, weakHere, worstMatchup } from "@/lib/pick-explain";
 
 /**
  * The pool rule on many random drafts: a list built from a player's pool holds only pool heroes, in
@@ -74,14 +74,26 @@ const randomPool = () => [...ids].sort(() => rnd() - 0.5).slice(0, Math.floor(rn
 // test files, which passed the 5 s default on 2026-11-08.
 describe("pool-only lists on random drafts", { timeout: 30_000 }, () => {
   it("My Picks lists only pool heroes, in score order, and every open one while there is room", () => {
+    let outsiders = 0;
     for (let n = 0; n < 300; n++) {
       const draft = randomDraft();
       const myPosition = pick(draft.open) as Position;
       const pool = randomPool();
       const ranked = engine.suggest({ ...draft, myPosition, favorites: pool, count: engine.heroes.length });
-      const { list, weak, fromAll } = poolOnly(ranked, new Set(pool), {
+      const picks = poolOnly(ranked, new Set(pool), {
         weak: (s) => weakHere(s, worstMatchup(engine, s.heroId, draft.enemies, myPosition, draft.rankBracket)),
       });
+      const { list, weak, fromAll } = picks;
+      const outsider = provenOutsider(ranked, new Set(pool), picks);
+      if (outsider) {
+        outsiders++;
+        // One hero, the best from outside the pool, and only past the margin over the pool's best.
+        expect(fromAll).toBeNull();
+        expect(pool).not.toContain(outsider.pick.heroId);
+        expect(outsider.pick).toBe(ranked.find((s) => !pool.includes(s.heroId)));
+        expect(outsider.over).toBe(list[0]);
+        expect(outsider.pick.score - list[0]!.score).toBeGreaterThan(OUTSIDER_Z * Math.hypot(outsider.pick.error, list[0]!.error));
+      }
       const taken = new Set([...draft.allies.map((a) => a.heroId), ...draft.enemies, ...draft.bans]);
       const open = pool.filter((id) => !taken.has(id));
 
@@ -97,6 +109,9 @@ describe("pool-only lists on random drafts", { timeout: 30_000 }, () => {
         expect(weak.size).toBe(0);
       }
     }
+    // The rule is tested, not skipped: some random drafts have a proven outsider, most do not.
+    expect(outsiders).toBeGreaterThan(0);
+    expect(outsiders).toBeLessThan(300);
   });
 
   it("Per Player lists each player's own heroes only, and never the same hero twice", () => {
@@ -107,12 +122,18 @@ describe("pool-only lists on random drafts", { timeout: 30_000 }, () => {
         return ally ? { position, playerId: `p${position}`, heroId: ally.heroId } : { position, playerId: `p${position}`, favorites: randomPool() };
       });
       const cols = perPlayerColumns(engine, { slots, personal: {}, enemies: draft.enemies, bans: draft.bans, rankBracket: draft.rankBracket });
-      const shown = cols.flatMap((c) => c.suggestions.map((s) => s.heroId));
+      // An outside hero shown under one column is in no other column either.
+      const shown = cols.flatMap((c) => [...c.suggestions.map((s) => s.heroId), ...(c.outsider ? [c.outsider.pick.heroId] : [])]);
       expect(new Set(shown).size).toBe(shown.length);
       for (const c of cols) {
         const pool = slots.find((s) => s.position === c.position)!.favorites ?? [];
         if (c.fromAll === null) for (const s of c.suggestions) expect(pool).toContain(s.heroId);
         else expect(c.fromAll).toBe(pool.length ? "used" : "none");
+        if (c.outsider) {
+          expect(c.fromAll).toBeNull();
+          expect(pool).not.toContain(c.outsider.pick.heroId);
+          expect(c.outsider.gap).toBeGreaterThan(c.outsider.margin);
+        }
       }
     }
   });

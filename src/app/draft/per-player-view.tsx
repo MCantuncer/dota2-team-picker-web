@@ -2,12 +2,12 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icon";
-import { MoveMark, WeakHere } from "@/components/pick-why";
+import { MoveMark, OutsidePool, WeakHere } from "@/components/pick-why";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, ScoreBreakdown, Suggestion } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
 import type { PlayerColumn } from "@/lib/per-player";
-import { useRankMoves } from "@/lib/pick-explain";
+import { outsiderText, useRankMoves } from "@/lib/pick-explain";
 import { reasonRow, type ReasonKind } from "@/lib/reason-rows";
 
 /**
@@ -81,6 +81,29 @@ function Column({
     `${c.playerId}:${c.position}`,
   );
   const headingId = `per-player-${c.playerId}`;
+  const card = (s: Suggestion, top: boolean, badges: ReactNode) => (
+    <HeroCard
+      // A new top hero after a pick or ban starts open again.
+      key={`${s.heroId}:${top}`}
+      suggestion={s}
+      top={top}
+      playerName={name}
+      portrait={portrait(s.heroId, s.name)}
+      face={(id) => {
+        const heroName = heroes.find((h) => h.id === id)?.name ?? "";
+        // The name on hover; screen readers get it from the row's line.
+        return (
+          <span title={heroName} className="block">
+            {portrait(id, heroName, "chip")}
+          </span>
+        );
+      }}
+      heroes={heroes}
+      badges={badges}
+      onPicked={() => onPicked(s.heroId, c.position)}
+      onBanned={() => onBanned(s.heroId)}
+    />
+  );
   return (
     <section aria-labelledby={headingId} className="flex min-w-0 flex-col">
       <h3 id={headingId} className="flex items-baseline gap-2 pb-2 font-semibold text-fg">
@@ -102,35 +125,25 @@ function Column({
         )}
       </h3>
       <ol aria-label={`Suggested heroes for ${name}`} className="flex flex-col">
-        {c.suggestions.map((s, i) => (
-          <HeroCard
-            // A new top hero after a pick or ban starts open again.
-            key={`${s.heroId}:${i === 0}`}
-            suggestion={s}
-            top={i === 0}
-            playerName={name}
-            portrait={portrait(s.heroId, s.name)}
-            face={(id) => {
-              const heroName = heroes.find((h) => h.id === id)?.name ?? "";
-              // The name on hover; screen readers get it from the row's line.
-              return (
-                <span title={heroName} className="block">
-                  {portrait(id, heroName, "chip")}
-                </span>
-              );
-            }}
-            heroes={heroes}
-            badges={
-              <>
-                <MoveMark move={moves.get(s.heroId)} />
-                {c.weak.has(s.heroId) && <WeakHere />}
-              </>
-            }
-            onPicked={() => onPicked(s.heroId, c.position)}
-            onBanned={() => onBanned(s.heroId)}
-          />
-        ))}
+        {c.suggestions.map((s, i) =>
+          card(
+            s,
+            i === 0,
+            <>
+              <MoveMark move={moves.get(s.heroId)} />
+              {c.weak.has(s.heroId) && <WeakHere />}
+            </>,
+          ),
+        )}
       </ol>
+      {c.outsider && (
+        <div className="mt-4 flex flex-col">
+          <p className="pb-2 text-xs text-muted">{outsiderText(c.outsider, name)}</p>
+          <ol aria-label={`Hero from outside ${name}'s pool`} className="flex flex-col">
+            {card(c.outsider.pick, false, <OutsidePool title={`Not one of ${name}'s heroes for this position`} />)}
+          </ol>
+        </div>
+      )}
     </section>
   );
 }
