@@ -535,3 +535,39 @@ export async function seedFill(email: string, state: "done" | "failed") {
   });
   if (pickError) throw pickError;
 }
+
+/** Saves Mid heroes for the user, starring `top` in that slot order, as My Heroes and set_top_hero would. */
+export async function seedMidHeroes(email: string, heroes: number[], top: number[] = []) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  if (!id) throw new Error(`No user ${email}`);
+  const { error: positionError } = await db.from("favorite_positions").insert({ user_id: id, position: 2 });
+  if (positionError) throw positionError;
+  const { error: heroError } = await db.from("favorite_heroes").insert(
+    heroes.map((hero_id, i) => ({
+      user_id: id,
+      position: 2,
+      hero_id,
+      top_slot: top.includes(hero_id) ? top.indexOf(hero_id) + 1 : null,
+      created_at: new Date(Date.now() - (heroes.length - i) * 1000).toISOString(),
+    })),
+  );
+  if (heroError) throw heroError;
+}
+
+/** The user's Mid Top 3 as saved, hero ids in slot order. */
+export async function savedMidTop(email: string) {
+  const db = admin();
+  const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
+  if (error) throw error;
+  const { data, error: readError } = await db
+    .from("favorite_heroes")
+    .select("hero_id, top_slot")
+    .eq("user_id", id!)
+    .eq("position", 2)
+    .not("top_slot", "is", null)
+    .order("top_slot");
+  if (readError) throw readError;
+  return data.map((r) => r.hero_id);
+}
