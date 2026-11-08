@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { poolOnly, rankMoves, reactingTo, SAVED_SUGGESTIONS, toSaved } from "./pick-explain";
+import { outsiderText, poolOnly, provenOutsider, rankMoves, reactingTo, SAVED_SUGGESTIONS, toSaved } from "./pick-explain";
 
 describe("reactingTo", () => {
   it("says the list is a blind pick before anyone picks", () => {
@@ -60,5 +60,37 @@ describe("toSaved", () => {
     expect(saved.heroes).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(saved.heroes).toHaveLength(SAVED_SUGGESTIONS);
     expect(saved.scores[1]).toBe(9.67);
+  });
+});
+
+describe("provenOutsider", () => {
+  const s = (heroId: number, score: number, error = 2) => ({ heroId, name: `Hero ${heroId}`, score, error });
+
+  it("shows the best outside hero when it beats the best pool hero by more than the margin", () => {
+    // Margin: 1.645 * hypot(2, 2) = 4.65.
+    const ranked = [s(10, 15), s(20, 12), s(30, 10)];
+    const lists = poolOnly(ranked, new Set([30]));
+    const o = provenOutsider(ranked, new Set([30]), lists)!;
+    expect(o.pick.heroId).toBe(10);
+    expect(o.over.heroId).toBe(30);
+    expect(o.gap).toBe(5);
+    expect(o.margin).toBeCloseTo(1.645 * Math.hypot(2, 2), 6);
+    expect(outsiderText(o)).toBe("Scores 5.0 above Hero 30, your best, more than the 4.7 the data could be off by.");
+    expect(outsiderText(o, "Pal")).toMatch(/, Pal's best,/);
+  });
+
+  it("shows nothing when the gap is inside the margin", () => {
+    const ranked = [s(10, 14), s(30, 10)];
+    expect(provenOutsider(ranked, new Set([30]), poolOnly(ranked, new Set([30])))).toBeNull();
+    // The same gap clears a smaller margin.
+    const sure = [s(10, 14, 1), s(30, 10, 1)];
+    expect(provenOutsider(sure, new Set([30]), poolOnly(sure, new Set([30])))?.pick.heroId).toBe(10);
+  });
+
+  it("shows nothing when the best hero is in the pool, or the list is from every hero", () => {
+    const ranked = [s(10, 20), s(20, 5, 0), s(30, 1, 0)];
+    expect(provenOutsider(ranked, new Set([10, 30]), poolOnly(ranked, new Set([10, 30])))).toBeNull();
+    expect(provenOutsider(ranked, new Set(), poolOnly(ranked, new Set()))).toBeNull();
+    expect(provenOutsider(ranked, new Set([99]), poolOnly(ranked, new Set([99])))).toBeNull();
   });
 });

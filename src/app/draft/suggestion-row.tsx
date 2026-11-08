@@ -22,7 +22,8 @@ export function SuggestionRow({
 }: {
   suggestion: Suggestion;
   portrait: ReactNode;
-  rank: number;
+  /** The place in the list; null for a row shown outside it. */
+  rank: number | null;
   /** The score with its sign, such as "+10.6". */
   scoreText: string;
   badges: ReactNode;
@@ -43,7 +44,7 @@ export function SuggestionRow({
         onClick={() => setOpen((o) => !o)}
         className="grid w-full grid-cols-[1.25rem_4rem_minmax(0,1fr)_auto] items-center gap-x-3 px-2 py-3 text-left hover:bg-hover"
       >
-        <span className="num text-subtle">{rank}</span>
+        <span className="num text-subtle">{rank ?? ""}</span>
         {portrait}
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-fg">
