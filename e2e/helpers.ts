@@ -556,7 +556,7 @@ export async function seedMidHeroes(email: string, heroes: number[], top: number
   if (heroError) throw heroError;
 }
 
-/** The user's Mid Top 3 as saved, hero ids in slot order. */
+/** The user's Mid Top 5 as saved, hero ids in slot order. */
 export async function savedMidTop(email: string) {
   const db = admin();
   const { data: id, error } = await db.rpc("user_id_by_email", { address: email });
