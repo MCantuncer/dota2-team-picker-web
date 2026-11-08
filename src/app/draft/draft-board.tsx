@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
+import { MoveMark, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -18,7 +19,7 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { poolFirst, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { poolOnly, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
@@ -232,8 +233,7 @@ export function DraftBoard({
   const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
-  // Your heroes for the position come first, then the best few outside your pool. A pool hero that
-  // is weak in this draft drops back and competes with the others by score.
+  // Only your heroes for the position, best first; a weak one keeps its place and gets a label.
   const favorites = [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])];
   const ranked =
     engine && !mine
@@ -249,7 +249,7 @@ export function DraftBoard({
           count: engine.heroes.length,
         })
       : [];
-  const { list: suggestions, outside, weak } = poolFirst(ranked, new Set(favorites), {
+  const { list: suggestions, weak, fromAll } = poolOnly(ranked, new Set(favorites), {
     weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined) : 0),
   });
 
@@ -483,13 +483,24 @@ export function DraftBoard({
                 })}
               </p>
             )}
+            {signedIn && fromAll && suggestions.length > 0 && (
+              <div className="notice flex flex-wrap items-center gap-3 text-sm">
+                <span className="flex-1">
+                  {fromAll === "none"
+                    ? `No ${POSITION_NAMES[myPosition - 1]} heroes in My Heroes yet, so these are the best of every hero.`
+                    : `Your ${POSITION_NAMES[myPosition - 1]} heroes are all picked or banned, so these are the best of every hero.`}
+                </span>
+                <Link href="/my-heroes" className="btn btn-secondary btn-sm">
+                  Add {POSITION_NAMES[myPosition - 1]} Heroes
+                </Link>
+              </div>
+            )}
             <ol aria-label="Suggested heroes" className="flex flex-col">
               {suggestions.map((s, i) => (
                 <SuggestionCard
                   key={s.heroId}
                   suggestion={s}
                   move={moves.get(s.heroId)}
-                  outsidePool={outside.has(s.heroId)}
                   weakHere={weak.has(s.heroId)}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
@@ -1024,7 +1035,6 @@ function SuggestionCard({
   rank,
   position,
   move,
-  outsidePool,
   weakHere,
   gain,
   onPicked,
@@ -1036,8 +1046,6 @@ function SuggestionCard({
   position: Position;
   /** "New" or "Up 2" since the last pick or ban. */
   move?: string;
-  /** Not one of the player's heroes for this position. */
-  outsidePool?: boolean;
   /** One of the player's heroes, but weak in this draft. */
   weakHere?: boolean;
   /** Change in my team's win chance, in points, when it is known. */
@@ -1076,7 +1084,6 @@ function SuggestionCard({
         )}
         <span className="flex items-center gap-2 text-sm text-accent">
           Best Pick Right Now <MoveMark move={move} />
-          {outsidePool && <OutsidePool />}
           {weakHere && <WeakHere />}
         </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
@@ -1113,7 +1120,6 @@ function SuggestionCard({
       badges={
         <>
           <MoveMark move={move} />
-          {outsidePool && <OutsidePool />}
           {weakHere && <WeakHere />}
         </>
       }
