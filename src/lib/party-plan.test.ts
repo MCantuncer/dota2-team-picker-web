@@ -41,6 +41,21 @@ describe("toPlanSlots", () => {
     expect(slots.map((s) => s.heroId)).toEqual([7, 8, undefined, undefined, undefined]);
     expect(slots[1]!.favorites).toEqual([30, 31]);
   });
+
+  it("gives each slot its player's Top 3 for that position only", () => {
+    const slots = toPlanSlots(
+      [
+        { id: "a", position: 1 },
+        { id: "c", position: 2 },
+      ],
+      pool,
+      [],
+      { a: { top: { 1: [10], 2: [99] } }, c: { top: {} } },
+    );
+    expect(slots[0]!.top).toEqual([10]);
+    expect(slots[1]!.top).toEqual([]);
+    expect(slots[2]!.top).toEqual([]);
+  });
 });
 
 describe("toHeroPool", () => {
@@ -59,21 +74,22 @@ describe("toHeroPool", () => {
 describe("toPartyStats", () => {
   it("builds the pool and each member's rank and stats", () => {
     const { pool, players } = toPartyStats([
-      { user_id: "a", rank_tier: 54, favorites: { "1": [10, 12], "0": [11] }, hero_stats: { "10": { games: 8, wins: 5 } } },
+      { user_id: "a", rank_tier: 54, favorites: { "1": [10, 12], "0": [11] }, hero_stats: { "10": { games: 8, wins: 5 } }, top: { "1": [12] } },
       { user_id: "b", rank_tier: null, favorites: {}, hero_stats: {} },
     ]);
     expect(pool).toEqual({ a: { 1: [10, 12], 0: [11] }, b: {} });
-    expect(players.a).toEqual({ rank: 5, personal: { "10": { games: 8, wins: 5 } } });
+    expect(players.a).toEqual({ rank: 5, personal: { "10": { games: 8, wins: 5 } }, top: { 1: [12] } });
     expect(players.b!.rank).toBeNull();
+    expect(players.b!.top).toEqual({});
   });
 
   it("skips malformed favorites instead of trusting them", () => {
     const { pool, players } = toPartyStats([
-      { user_id: "a", rank_tier: 80, favorites: { "1": [10, "x", 1.5], "2": "nope" }, hero_stats: null },
+      { user_id: "a", rank_tier: 80, favorites: { "1": [10, "x", 1.5], "2": "nope" }, hero_stats: null, top: { "1": ["x", 10] } },
       { user_id: "b", rank_tier: 10, favorites: [1, 2], hero_stats: [] },
     ]);
     expect(pool).toEqual({ a: { 1: [10] }, b: {} });
-    expect(players.a).toEqual({ rank: 8, personal: {} });
+    expect(players.a).toEqual({ rank: 8, personal: {}, top: { 1: [10] } });
     expect(players.b!.personal).toEqual({});
   });
 });

@@ -167,6 +167,7 @@ describe("toTeamPeople and teamPlan", () => {
       positions: [3, 1, 9],
       favorites: { "3": [2], "1": [8] },
       hero_stats: { "8": { games: 10, wins: 6 } },
+      top: { "3": [2] },
       stacks: [{ id: "s1", name: "Night Owls", joined_at: "2026-11-01", role: "player" }, { bad: true }],
       is_friend: true,
       shared: true,
@@ -179,11 +180,12 @@ describe("toTeamPeople and teamPlan", () => {
       positions: [5],
       favorites: { "5": [50] },
       hero_stats: {},
+      top: { "5": [50] },
       stacks: [],
       is_friend: true,
       shared: false,
     },
-    { user_id: "own", display_name: "Own", avatar_url: null, rank_tier: null, positions: [], favorites: {}, hero_stats: {}, stacks: [{ id: "s1", name: "Night Owls", joined_at: null, role: "owner" }], is_friend: false, shared: false },
+    { user_id: "own", display_name: "Own", avatar_url: null, rank_tier: null, positions: [], favorites: {}, hero_stats: {}, top: {}, stacks: [{ id: "s1", name: "Night Owls", joined_at: null, role: "owner" }], is_friend: false, shared: false },
   ];
   const { people, pool, players } = toTeamPeople(rows);
 
@@ -193,7 +195,9 @@ describe("toTeamPeople and teamPlan", () => {
     expect(people[2].canAdd).toBe(false);
     expect(pool.shy).toEqual({});
     expect(players.shy.rank).toBeNull();
+    expect(players.shy.top).toEqual({});
     expect(pool.pal).toEqual({ 1: [8], 3: [2] });
+    expect(players.pal.top).toEqual({ 3: [2] });
   });
 
   it("plans every position: the player, seated people with their heroes, and teammates in open seats", () => {
@@ -207,17 +211,19 @@ describe("toTeamPeople and teamPlan", () => {
       pool,
       players,
       myHeroes: { 2: [11] },
+      myTop: { 2: [11] },
       personal: {},
     });
     expect(plan.members.map((m) => m.id)).toEqual(["teammate-1", SOLO_ME, "pal", "teammate-4", "shy"]);
     expect(plan.pool).toEqual({ "teammate-1": {}, [SOLO_ME]: { 2: [11] }, pal: { 1: [8], 3: [2] }, "teammate-4": {}, shy: {} });
     expect(plan.names).toMatchObject({ [SOLO_ME]: "You", pal: "Pal", shy: "Unnamed", "teammate-1": "Teammate" });
     expect(plan.players.pal.rank).toBe(5);
+    expect(plan.players[SOLO_ME].top).toEqual({ 2: [11] });
     expect(plan.myPosition).toBe(2);
     expect(plan.members.filter((m) => isTeammate(m.id)).map((m) => m.position)).toEqual([1, 4]);
   });
 
   it("has no position for the player when they plan for others", () => {
-    expect(teamPlan({ seats: [{ id: "pal", position: 1 }], people, pool, players, myHeroes: {}, personal: {} }).myPosition).toBeNull();
+    expect(teamPlan({ seats: [{ id: "pal", position: 1 }], people, pool, players, myHeroes: {}, myTop: {}, personal: {} }).myPosition).toBeNull();
   });
 });

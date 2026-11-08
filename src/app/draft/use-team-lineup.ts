@@ -63,6 +63,7 @@ export function useTeamLineup({
   stacks,
   myPosition,
   myHeroes,
+  myTop,
   personal,
 }: {
   userId: string | null;
@@ -71,6 +72,8 @@ export function useTeamLineup({
   /** The player's solo position, where they sit when Team starts. */
   myPosition: Position;
   myHeroes: Record<number, number[]>;
+  /** The player's own Top 3 per position. */
+  myTop: Record<number, number[]>;
   personal: Record<number, GamesWins>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -176,6 +179,7 @@ export function useTeamLineup({
           pool: loaded?.pool ?? {},
           players: loaded?.players ?? {},
           myHeroes,
+          myTop,
           personal,
         })
       : null;
