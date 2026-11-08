@@ -82,6 +82,51 @@ export function poolOnly<T extends { heroId: number }>(
   return { list, weak: new Set(list.filter(weak).map((s) => s.heroId)), fromAll: null };
 }
 
+/**
+ * How many standard errors an outside hero must clear the best pool hero by: 1.645 is the one-sided
+ * 95% line, so a hero shown from outside the pool is better with 95% confidence, not by noise.
+ */
+export const OUTSIDER_Z = 1.645;
+
+/** The one hero from outside the pool worth showing, and the numbers that prove it. */
+export interface Outsider<T> {
+  pick: T;
+  /** The best pool hero it beats. */
+  over: T;
+  /** Score points above `over`. */
+  gap: number;
+  /** The gap it had to clear: OUTSIDER_Z times both scores' combined error. */
+  margin: number;
+}
+
+/**
+ * The best hero outside the pool, when it beats the pool's best hero by more than the error in
+ * both scores (Can, 2026-11-08: pool only, plus one proven outsider). Only for a pool list: a list
+ * from every hero already shows the best of all. The pool heroes' scores include their favorite
+ * and comfort boosts, so the outsider has to win without them.
+ */
+export function provenOutsider<T extends { heroId: number; score: number; error: number }>(
+  ranked: T[],
+  pool: Set<number>,
+  { list, fromAll }: PickList<T>,
+): Outsider<T> | null {
+  const over = list[0];
+  const pick = ranked.find((s) => !pool.has(s.heroId));
+  if (fromAll || !over || !pick) return null;
+  const gap = pick.score - over.score;
+  const margin = OUTSIDER_Z * Math.hypot(pick.error, over.error);
+  return gap > margin ? { pick, over, gap, margin } : null;
+}
+
+/**
+ * The outsider's reason, with its numbers: "Scores 6.2 above Puck, your best, more than the 4.1 the
+ * data could be off by." `owner` names whose pool it is when that isn't the reader's.
+ */
+export function outsiderText({ over, gap, margin }: Outsider<{ name: string }>, owner?: string): string {
+  const best = owner ? `${owner}'s best` : "your best";
+  return `Scores ${gap.toFixed(1)} above ${over.name}, ${best}, more than the ${margin.toFixed(1)} the data could be off by.`;
+}
+
 /** "New" for a hero not in the list before, "Up 2" for one that moved up two places. */
 export function rankMoves(before: number[] | null, now: number[]): Map<number, string> {
   const moves = new Map<number, string>();

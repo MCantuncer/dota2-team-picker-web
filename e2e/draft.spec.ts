@@ -196,3 +196,20 @@ test("a hero in the player's Top 5 gets its small boost in the draft", async ({ 
   await expect(invoker.getByText("Favorite (+1.5)")).toBeVisible();
   await expect(invoker.getByText("Top 5 (+0.5)")).toHaveCount(0);
 });
+
+test("a hero from outside the pool shows under the list only when it clearly beats the pool", async ({ page }) => {
+  const email = uniqueEmail("draft-outsider");
+  await newPlayer(page, email, "Draft Outsider");
+  // Nature's Prophet is one of the weakest mids in the data, so the best mid clears the margin.
+  await seedMidHeroes(email, [53]);
+  await page.goto("/draft");
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  await expect(picks).toHaveCount(1);
+  await expect(picks.first()).toContainText("Nature's Prophet");
+
+  const outside = page.getByRole("list", { name: "Hero from outside your pool" }).locator(":scope > li");
+  await expect(outside).toHaveCount(1);
+  await expect(outside.getByText("Outside Pool")).toBeVisible();
+  await expect(page.getByText(/^Scores \d+\.\d above Nature's Prophet, your best, more than the \d+\.\d the data could be off by\.$/)).toBeVisible();
+  await expectAccessible(page);
+});

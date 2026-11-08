@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, PickWhy, WeakHere } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import { Kbd } from "@/components/kbd";
@@ -19,7 +19,7 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { poolOnly, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { outsiderText, poolOnly, provenOutsider, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
@@ -249,9 +249,13 @@ export function DraftBoard({
           count: engine.heroes.length,
         })
       : [];
-  const { list: suggestions, weak, fromAll } = poolOnly(ranked, new Set(favorites), {
+  const poolIds = new Set(favorites);
+  const picks = poolOnly(ranked, poolIds, {
     weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined) : 0),
   });
+  const { list: suggestions, weak, fromAll } = picks;
+  // Shown after the list and never saved with it: the saved list is the pool list.
+  const outsider = provenOutsider(ranked, poolIds, picks);
 
   const allyIds = allies.map((e) => e.heroId);
   const moves = useRankMoves(
@@ -528,6 +532,40 @@ export function DraftBoard({
                 />
               ))}
             </ol>
+            {outsider && (
+              <section aria-labelledby="outsider-heading" className="mt-6">
+                <h3 id="outsider-heading" className="px-2 pb-1 text-sm text-subtle">
+                  Worth a Look from Outside Your Pool
+                </h3>
+                <p className="px-2 pb-2 text-sm text-muted">{outsiderText(outsider)}</p>
+                <ol aria-label="Hero from outside your pool" className="flex flex-col">
+                  <SuggestionCard
+                    suggestion={outsider.pick}
+                    outside
+                    portrait={portraits[outsider.pick.heroId]}
+                    rank={null}
+                    position={myPosition}
+                    gain={pickGain(engine, outsider.pick.heroId, allyIds, enemies, bracket)}
+                    onPicked={
+                      locked
+                        ? undefined
+                        : () => {
+                            placeAlly(outsider.pick.heroId, myPosition);
+                            refocus("ally");
+                          }
+                    }
+                    onBanned={
+                      locked
+                        ? undefined
+                        : () => {
+                            act({ kind: "ban", heroId: outsider.pick.heroId });
+                            refocus("bans");
+                          }
+                    }
+                  />
+                </ol>
+              </section>
+            )}
             </>
           );
   const picksHeading = (
@@ -1040,18 +1078,22 @@ function SuggestionCard({
   position,
   move,
   weakHere,
+  outside,
   gain,
   onPicked,
   onBanned,
 }: {
   suggestion: Suggestion;
   portrait?: string;
-  rank: number;
+  /** The place in the list; null for the outside hero shown after it. */
+  rank: number | null;
   position: Position;
   /** "New" or "Up 2" since the last pick or ban. */
   move?: string;
   /** One of the player's heroes, but weak in this draft. */
   weakHere?: boolean;
+  /** Not one of the player's heroes for the position. */
+  outside?: boolean;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -1125,6 +1167,7 @@ function SuggestionCard({
         <>
           <MoveMark move={move} />
           {weakHere && <WeakHere />}
+          {outside && <OutsidePool />}
         </>
       }
       gainText={gainText}

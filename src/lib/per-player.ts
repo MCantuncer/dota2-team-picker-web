@@ -1,7 +1,7 @@
 import type { PlanSlot } from "@/lib/engine/plan";
 import type { Engine } from "@/lib/engine/score";
 import type { GamesWins, Position, RankBracket, Suggestion } from "@/lib/engine/types";
-import { poolOnly, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { type Outsider, poolOnly, provenOutsider, weakHere, worstMatchup } from "@/lib/pick-explain";
 
 /** Heroes shown per player: their own heroes for the position, or the best of every hero without any. */
 const COLUMN_MAX = 6;
@@ -18,6 +18,8 @@ export interface PlayerColumn {
    * position (or doesn't share them), "used" when all of theirs are taken. null for their own heroes.
    */
   fromAll: "none" | "used" | null;
+  /** The one hero from outside the player's pool that clearly beats their best, shown after the list. */
+  outsider: Outsider<Suggestion> | null;
 }
 
 /**
@@ -75,10 +77,12 @@ export function perPlayerColumns(
   return open.map((s, col) => {
     const own = lists[col]!.filter((x) => best.get(x.heroId)!.col === col);
     const pool = new Set(s.favorites ?? []);
-    const { list, weak, fromAll } = poolOnly(own, pool, {
+    const picks = poolOnly(own, pool, {
       max: COLUMN_MAX,
       weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket)),
     });
-    return { playerId: s.playerId, position: s.position, suggestions: list, weak, fromAll };
+    // From this column's own heroes, so no other column lists it or shows it as its outsider.
+    const outsider = provenOutsider(own, pool, picks);
+    return { playerId: s.playerId, position: s.position, suggestions: picks.list, weak: picks.weak, fromAll: picks.fromAll, outsider };
   });
 }
