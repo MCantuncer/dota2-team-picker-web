@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     return [{ source: "/admin/captain", destination: "/draft", permanent: true }];
   },
   images: {
+    // Steam sends hero art and avatars without a Cache-Control header, so the 4 hour default made Vercel
+    // resize the same images again several times a day. Hero art changes only with a game patch.
+    minimumCacheTTL: 2678400, // 31 days
     remotePatterns: [
       // Hero portraits and Steam avatars.
       new URL("https://cdn.cloudflare.steamstatic.com/apps/dota2/images/**"),
