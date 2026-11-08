@@ -70,7 +70,9 @@ function randomDraft() {
 /** A random pool of 0 to 10 heroes; some of them may already be in the draft. */
 const randomPool = () => [...ids].sort(() => rnd() - 0.5).slice(0, Math.floor(rnd() * 11));
 
-describe("pool-only lists on random drafts", () => {
+// Hundreds of full engine rankings: about 2 s alone, but CI runs them with coverage next to other
+// test files, which passed the 5 s default on 2026-11-08.
+describe("pool-only lists on random drafts", { timeout: 30_000 }, () => {
   it("My Picks lists only pool heroes, in score order, and every open one while there is room", () => {
     for (let n = 0; n < 300; n++) {
       const draft = randomDraft();
