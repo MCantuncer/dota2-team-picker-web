@@ -182,7 +182,7 @@ test("the draft screen shows the game plan once both teams are in", async ({ pag
   await expectAccessible(page);
 });
 
-test("a hero in the player's Top 3 gets its small boost in the draft", async ({ page }) => {
+test("a hero in the player's Top 5 gets its small boost in the draft", async ({ page }) => {
   const email = uniqueEmail("draft-top3");
   await newPlayer(page, email, "Draft Top");
   await seedMidHeroes(email, [74, 76], [76]);
@@ -190,9 +190,9 @@ test("a hero in the player's Top 3 gets its small boost in the draft", async ({ 
   const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
   // The best pick shows its reasons open.
   await expect(picks.first()).toContainText("Outworld Devourer");
-  await expect(picks.first().getByText("Top 3 (+0.5)")).toBeVisible();
+  await expect(picks.first().getByText("Top 5 (+0.5)")).toBeVisible();
   const invoker = picks.filter({ hasText: "Invoker" });
   await invoker.getByRole("button", { name: /Invoker/ }).click();
   await expect(invoker.getByText("Favorite (+1.5)")).toBeVisible();
-  await expect(invoker.getByText("Top 3 (+0.5)")).toHaveCount(0);
+  await expect(invoker.getByText("Top 5 (+0.5)")).toHaveCount(0);
 });

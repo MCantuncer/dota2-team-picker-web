@@ -54,7 +54,7 @@ describe("perPlayerColumns", () => {
     expect(b!.fromAll).toBeNull();
   });
 
-  it("passes each player's Top 3 to their suggestions", () => {
+  it("passes each player's Top 5 to their suggestions", () => {
     const cols = perPlayerColumns(engine, {
       ...base,
       slots: [
@@ -66,8 +66,8 @@ describe("perPlayerColumns", () => {
       ],
     });
     const tags = (id: number) => cols[0]!.suggestions.find((s) => s.heroId === id)?.tags ?? [];
-    expect(tags(139)).toContain("Top 3 (+0.5)");
-    expect(tags(140)).not.toContain("Top 3 (+0.5)");
+    expect(tags(139)).toContain("Top 5 (+0.5)");
+    expect(tags(140)).not.toContain("Top 5 (+0.5)");
   });
 
   it("leaves out heroes already in the draft", () => {
