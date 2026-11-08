@@ -111,4 +111,13 @@ describe("positionActions", () => {
   it("clears a choice", () => {
     expect(positionActions(resolved, 1, null)).toEqual([{ kind: "ally", heroId: 1, position: null }]);
   });
+  it("swaps enemies the same way", () => {
+    const enemies = resolveAllyPositions([{ heroId: 6, kind: "enemy", position: 2 }, { heroId: 2, kind: "enemy", position: null }], [], fit);
+    // The flex hero set at mid; the other mid is guessed elsewhere, then set at mid and the flex hero is sent back to a guess.
+    expect(enemies.map((e) => [e.position, e.isGuess])).toEqual([[2, false], [1, true]]);
+    expect(positionActions(enemies, 2, 2, "enemy")).toEqual([
+      { kind: "enemy", heroId: 6, position: null },
+      { kind: "enemy", heroId: 2, position: 2 },
+    ]);
+  });
 });

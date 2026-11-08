@@ -26,8 +26,13 @@ describe("applyAction", () => {
     expect(applyAction(draft, { kind: "ally", heroId: 2, position: 3 })).toEqual([{ heroId: 2, kind: "ally", position: 3 }]);
   });
 
-  it("gives enemies and bans no position", () => {
-    expect(replay([{ kind: "enemy", heroId: 3, position: 2 }])[0]!.position).toBeNull();
+  it("changes an enemy's position when the enemy is entered again", () => {
+    const draft = replay([{ kind: "enemy", heroId: 3 }]);
+    expect(applyAction(draft, { kind: "enemy", heroId: 3, position: 2 })).toEqual([{ heroId: 3, kind: "enemy", position: 2 }]);
+  });
+
+  it("gives bans no position", () => {
+    expect(replay([{ kind: "ban", heroId: 3, position: 2 }])[0]!.position).toBeNull();
   });
 
   it("stops a team at five picks", () => {
