@@ -53,6 +53,9 @@ export function worstMatchup(engine: Engine, heroId: number, enemies: number[], 
 }
 
 /** A player's list: the heroes to show, and which of them are weak in this draft. */
+/** How a saved list was built: from the player's own heroes, or from every hero when none are left. */
+export type ListRule = "pool" | "any";
+
 export interface PickList<T> {
   list: T[];
   /** Pool heroes in `list` that are weak in this draft, shown with a label. */

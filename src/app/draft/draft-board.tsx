@@ -19,7 +19,7 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { poolOnly, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { type ListRule, poolOnly, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
@@ -272,13 +272,14 @@ export function DraftBoard({
       ? JSON.stringify({
           ...toSaved(suggestions),
           chance: chance === null ? null : Math.round(chance * 1000) / 1000,
+          rule: fromAll ? "any" : "pool",
         })
       : null;
   const { saveSuggestions } = shared;
   useEffect(() => {
     if (!shown) return;
-    const { heroes, scores, chance } = JSON.parse(shown) as { heroes: number[]; scores: number[]; chance: number | null };
-    const timer = setTimeout(() => void saveSuggestions(myPosition, heroes, scores, chance), 1500);
+    const { heroes, scores, chance, rule } = JSON.parse(shown) as { heroes: number[]; scores: number[]; chance: number | null; rule: ListRule };
+    const timer = setTimeout(() => void saveSuggestions(myPosition, heroes, scores, chance, rule), 1500);
     return () => clearTimeout(timer);
   }, [shown, myPosition, saveSuggestions]);
 

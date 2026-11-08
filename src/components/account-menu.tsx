@@ -54,6 +54,7 @@ export function Avatar({ account, size }: { account: Account; size: number }) {
 const ADMIN_PAGES = [
   { href: "/admin/players", label: "Players" },
   { href: "/admin/fill-check", label: "Fill Check" },
+  { href: "/admin/pool-check", label: "Pool Check" },
 ];
 
 const itemClass =
