@@ -37,9 +37,16 @@ describe("toPlanSlots", () => {
         { heroId: 8, kind: "ally", position: 2 },
       ],
     );
-    expect(slots.map((s) => s.playerId)).toEqual(["a", "c", "b", undefined, undefined]);
+    // b has heroes only for Pos 5, so b goes there; c's heroes fit any position, so c takes the first free one.
+    expect(slots.map((s) => s.playerId)).toEqual(["a", "c", undefined, undefined, "b"]);
     expect(slots.map((s) => s.heroId)).toEqual([7, 8, undefined, undefined, undefined]);
     expect(slots[1]!.favorites).toEqual([30, 31]);
+    expect(slots[4]!.favorites).toEqual([20]);
+  });
+
+  it("keeps member order on the lowest free positions when pools don't decide", () => {
+    const slots = toPlanSlots([{ id: "x", position: null }, { id: "y", position: null }], {}, []);
+    expect(slots.map((s) => s.playerId)).toEqual(["x", "y", undefined, undefined, undefined]);
   });
 
   it("gives each slot its player's Top 5 for that position only", () => {
