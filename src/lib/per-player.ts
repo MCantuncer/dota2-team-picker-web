@@ -1,6 +1,6 @@
 import type { PlanSlot } from "@/lib/engine/plan";
 import type { Engine } from "@/lib/engine/score";
-import type { GamesWins, Position, RankBracket, Suggestion } from "@/lib/engine/types";
+import type { EnemyPositions, GamesWins, Position, RankBracket, Suggestion } from "@/lib/engine/types";
 import { type Outsider, poolOnly, provenOutsider, weakHere, worstMatchup } from "@/lib/pick-explain";
 
 /** Heroes shown per player: their own heroes for the position, or the best of every hero without any. */
@@ -34,6 +34,7 @@ export function perPlayerColumns(
     slots,
     personal,
     enemies,
+    enemyPositions,
     bans,
     rankBracket,
   }: {
@@ -42,6 +43,8 @@ export function perPlayerColumns(
     /** Each player's own record per hero, by player id. */
     personal: Record<string, Record<number, GamesWins>>;
     enemies: number[];
+    /** Enemy positions set by hand; the rest are guessed. */
+    enemyPositions?: EnemyPositions;
     bans: number[];
     rankBracket?: RankBracket;
   },
@@ -53,6 +56,7 @@ export function perPlayerColumns(
       myPosition: s.position,
       allies,
       enemies,
+      enemyPositions,
       bans,
       rankBracket,
       favorites: s.favorites ?? [],
@@ -79,7 +83,7 @@ export function perPlayerColumns(
     const pool = new Set(s.favorites ?? []);
     const picks = poolOnly(own, pool, {
       max: COLUMN_MAX,
-      weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket)),
+      weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket, enemyPositions)),
     });
     // From this column's own heroes, so no other column lists it or shows it as its outsider.
     const outsider = provenOutsider(own, pool, picks);

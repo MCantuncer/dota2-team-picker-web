@@ -71,6 +71,25 @@ test("the draft screen guesses ally positions and swaps them in one click", asyn
   await expectAccessible(page);
 });
 
+test("the draft screen lets the player set enemy positions over the guess", async ({ page }) => {
+  await page.goto("/draft");
+  const enemy = page.getByLabel("Enemy pick, e.g. sf2");
+  await enemy.fill("sf2 pa");
+  await enemy.press("Enter");
+
+  // A digit sets the position; without one the engine's guess shows dashed.
+  await expect(chosen(page, "Shadow Fiend")).toHaveAccessibleName(/^Pos 2/);
+  const pa = page.getByRole("radiogroup", { name: "Phantom Assassin position" });
+  await expect(pa.getByRole("radio", { name: /guessed/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Enemy" }).getByText("Dashed positions are guesses")).toBeVisible();
+
+  // Moving Phantom Assassin to mid swaps Shadow Fiend back to a guess, so two enemies never share one.
+  await pa.getByRole("radio", { name: /^Pos 2/ }).click();
+  await expect(chosen(page, "Phantom Assassin")).toHaveAccessibleName(/^Pos 2/);
+  await expect(page.getByRole("radiogroup", { name: "Shadow Fiend position" }).getByRole("radio", { name: /guessed/ })).toBeVisible();
+  await expectAccessible(page);
+});
+
 test("the draft screen shows the win chance once a checked model exists", async ({ page }) => {
   // The live data has no checked model yet, so add one that favours neither side.
   await page.route(SNAPSHOT_URL, async (route) => {

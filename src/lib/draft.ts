@@ -1,6 +1,6 @@
 import type { Position } from "@/lib/engine/types";
 
-/** Where a hero sits in a draft: on your team (with its position when known), on the enemy team, or banned. */
+/** Where a hero sits in a draft: on a team (with its position when a player set it), or banned. */
 export interface DraftEntry {
   heroId: number;
   kind: "ally" | "enemy" | "ban";
@@ -19,16 +19,16 @@ export const MAX_BANS = 24;
 
 /**
  * The draft after one action, by the same rules as the party draft table: a hero is in the draft
- * once, a team has 5 picks, at most 24 bans, and only your own picks have a position. Entering an
- * ally again only changes its position. An action that breaks a rule returns the draft unchanged.
+ * once, a team has 5 picks, at most 24 bans, and only picks have a position. Entering a pick again
+ * for the same team only changes its position. An action that breaks a rule returns the draft unchanged.
  */
 export function applyAction(draft: DraftEntry[], action: DraftAction): DraftEntry[] {
   const current = draft.find((e) => e.heroId === action.heroId);
   if (action.kind === "remove") return current ? draft.filter((e) => e !== current) : draft;
 
-  const position = action.kind === "ally" ? (action.position ?? null) : null;
+  const position = action.kind === "ban" ? null : (action.position ?? null);
   if (current) {
-    if (current.kind !== "ally" || action.kind !== "ally" || current.position === position) return draft;
+    if (current.kind === "ban" || current.kind !== action.kind || current.position === position) return draft;
     return draft.map((e) => (e === current ? { ...e, position } : e));
   }
   const count = draft.filter((e) => e.kind === action.kind).length;

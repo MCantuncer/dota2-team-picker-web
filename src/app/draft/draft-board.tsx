@@ -13,7 +13,7 @@ import { SteamButton } from "@/components/steam-button";
 import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
-import { POSITIONS, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
+import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
@@ -231,6 +231,9 @@ export function DraftBoard({
   const seatedPositions = lineup.seats.map((s) => s.position);
   const reserved = party && lobbyPositions.length ? lobbyPositions : lineupPlan ? seatedPositions : [myPosition];
   const resolved = engine ? resolveAllyPositions(allies, reserved, (id) => engine.fit(id)) : [];
+  // Enemies get the same picker: the engine's guess dashed, and only the positions a player set count as known.
+  const resolvedEnemies = engine ? resolveAllyPositions(draft.filter((e) => e.kind === "enemy"), [], (id) => engine.fit(id)) : [];
+  const enemyPositions: EnemyPositions = Object.fromEntries(resolvedEnemies.flatMap((e) => (e.isGuess ? [] : [[e.heroId, e.position]])));
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
   // Only your heroes for the position, best first; a weak one keeps its place and gets a label.
@@ -241,6 +244,7 @@ export function DraftBoard({
           myPosition,
           allies: allies.map((e) => ({ heroId: e.heroId, position: e.position ?? undefined })),
           enemies,
+          enemyPositions,
           bans,
           rankBracket: rank ?? undefined,
           favorites,
@@ -251,7 +255,7 @@ export function DraftBoard({
       : [];
   const poolIds = new Set(favorites);
   const picks = poolOnly(ranked, poolIds, {
-    weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined) : 0),
+    weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined, enemyPositions) : 0),
   });
   const { list: suggestions, weak, fromAll } = picks;
   // Shown after the list and never saved with it: the saved list is the pool list.
@@ -260,7 +264,7 @@ export function DraftBoard({
   const allyIds = allies.map((e) => e.heroId);
   const moves = useRankMoves(
     suggestions.map((s) => s.heroId),
-    JSON.stringify([allyIds, enemies, bans]),
+    JSON.stringify([allyIds, enemies, enemyPositions, bans]),
     String(myPosition),
   );
   const bracket = rank ?? undefined;
@@ -288,7 +292,7 @@ export function DraftBoard({
   }, [shown, myPosition, saveSuggestions]);
 
   // Once both teams are in with every ally's position, the game plan for our side.
-  const gamePlan = engine ? finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups) : null;
+  const gamePlan = engine ? finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups, enemyPositions) : null;
 
   // The list this player saw last before their pick, kept for the saved game.
   const shownNow = suggestions.slice(0, 8).map((s) => s.heroId);
@@ -393,6 +397,9 @@ export function DraftBoard({
   };
   /** Puts an ally in a position, swapping with whoever held it, so no two allies share one. */
   const placeAlly = (heroId: number, position: Position | null) => act(...positionActions(resolved, heroId, position));
+  /** Sets where an enemy plays, swapping with the enemy set there, so the engine stops guessing it. */
+  const placeEnemy = (heroId: number, position: Position | null) =>
+    act(...positionActions(resolvedEnemies, heroId, position, "enemy"));
   const choosePosition = (p: Position) => {
     // In Team the player's seat moves too, swapping with whoever sat there.
     if (lineupPlan?.myPosition) lineup.place(SOLO_ME, p);
@@ -423,6 +430,7 @@ export function DraftBoard({
       ? planTeam(engine, {
           slots: planSlots,
           enemies,
+          enemyPositions,
           bans,
           rankBracket: bracket,
         })
@@ -434,6 +442,7 @@ export function DraftBoard({
           slots: planSlots,
           personal: Object.fromEntries(Object.entries(planPlayers).map(([id, p]) => [id, p.personal])),
           enemies,
+          enemyPositions,
           bans,
           rankBracket: bracket,
         })
@@ -685,7 +694,7 @@ export function DraftBoard({
       ) : (
         <p className="text-xs text-subtle">
           Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
-          (<span className="text-muted">pa sf</span>). Add a digit for an ally&apos;s position (<span className="text-muted">cm5</span>).
+          (<span className="text-muted">pa sf</span>). Add a digit for a hero&apos;s position (<span className="text-muted">cm5</span>, <span className="text-muted">sf2</span>).
           <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
           {party &&
             (captainId
@@ -772,18 +781,43 @@ export function DraftBoard({
           {!locked && enemies.length < TEAM_SIZE && (
             <HeroInput
               id="enemy"
-              placeholder="Enemy pick"
+              placeholder="Enemy pick, e.g. sf2"
               search={search}
               exclude={taken}
-              onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "enemy" as const, heroId })))}
+              withPosition
+              onPick={(picked) =>
+                act(
+                  ...picked.flatMap((p) =>
+                    p.position === null
+                      ? [{ kind: "enemy" as const, heroId: p.heroId, position: null }]
+                      : positionActions(resolvedEnemies, p.heroId, p.position, "enemy"),
+                  ),
+                )
+              }
               onUndo={() => undoLast("enemy")}
             />
           )}
           <Slots>
-            {enemies.map((id) => (
-              <Slot key={id} hero={hero(id)} portrait={portraits[id]} by={captainId ? undefined : enteredBy(id)} onRemove={locked ? undefined : () => act({ kind: "remove", heroId: id })} />
+            {resolvedEnemies.map((e) => (
+              <Slot
+                key={e.heroId}
+                hero={hero(e.heroId)}
+                portrait={portraits[e.heroId]}
+                by={captainId ? undefined : enteredBy(e.heroId)}
+                onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
+              >
+                <PositionPicker
+                  heroName={hero(e.heroId).name}
+                  position={e.position}
+                  isGuess={e.isGuess}
+                  onChange={locked ? undefined : (p) => placeEnemy(e.heroId, p)}
+                />
+              </Slot>
             ))}
           </Slots>
+          {resolvedEnemies.some((e) => e.isGuess) && (
+            <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
+          )}
         </TeamPanel>
 
         <section aria-labelledby="bans-title" className="flex flex-col gap-3 self-start border-t border-line pt-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
@@ -859,7 +893,7 @@ export function DraftBoard({
             <PerPlayerView
               columns={playerColumns}
               names={planNames}
-              draftKey={JSON.stringify([allyIds, enemies, bans])}
+              draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
               heroes={engine.heroes}
               portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
               onPicked={(heroId, position) => placeAlly(heroId, position)}
