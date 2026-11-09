@@ -37,8 +37,11 @@ const EMPTY_BELOW = 0.6;
  * below this share is a preview, not a pick.
  */
 const LOCKED_COLOUR = 0.5;
-/** Share of the diagonal that must be the red ban slash. */
-const SLASH_SHARE = 0.6;
+/**
+ * Share of the slash line that must be clearly redder than the art beside it. Measured on real hero
+ * select screenshots at 720 to 1440 px high: banned cells score 0.92 or more, other cells 0.7 or less.
+ */
+const SLASH_SHARE = 0.8;
 
 /** Compares screenshots with every hero's portrait. Build it once; reading is then fast. */
 export class DraftReader {
@@ -114,8 +117,19 @@ export class DraftReader {
 }
 
 /**
- * How much of a grid cell's rising diagonal is clearly redder than the pixels beside it. Banned
- * heroes carry a thin red slash from bottom left to top right; portrait art rarely lines up that way.
+ * Where the ban slash runs in a grid cell, measured on real screenshots: from 14% of the width at the
+ * bottom edge to 90% at the top edge, about 5 px wide at 1440 px high. Every number scales with the
+ * cell, so it holds at any resolution.
+ */
+const SLASH = { bottomX: 0.14, topX: 0.9, sideGap: 5, shifts: 4, shiftStep: 0.75, points: 50, margin: 0.06 };
+/** How much redder than the art beside it a point must be to count as slash. */
+const SLASH_CONTRAST = 4;
+
+/**
+ * How much of a grid cell's ban slash line is clearly redder than the pixels beside it. A banned hero's
+ * cell is tinted red and carries a lighter red slash from bottom left to top right. The slash is
+ * compared with the average of the art on both sides, not the brighter side only, so a ban still reads
+ * on bright art (light hair, gold armour) where one side is almost as red as the slash.
  */
 export function slashShare(px: Pixels, r: { x: number; y: number; w: number; h: number }): number {
   const redness = (x: number, y: number) => {
@@ -125,17 +139,23 @@ export function slashShare(px: Pixels, r: { x: number; y: number; w: number; h: 
     return px.data[i] - (px.data[i + 1] + px.data[i + 2]) / 2;
   };
   const k = r.h / 98;
+  const gap = SLASH.sideGap * k;
   let best = 0;
-  for (let shift = -4; shift <= 4; shift++) {
+  // Small sideways shifts absorb a cell a pixel or two off from the measured layout.
+  for (let shift = -SLASH.shifts; shift <= SLASH.shifts; shift++) {
     let red = 0,
       total = 0;
-    for (let s = 0; s < 50; s++) {
-      const t = s / 49;
-      const x = r.x + r.w * (0.15 + 0.7 * t) + shift * k;
-      const y = r.y + r.h * (0.88 - 0.76 * t);
+    for (let s = 0; s < SLASH.points; s++) {
+      // From the top of the cell down, keeping off the very top and bottom edges.
+      const v = SLASH.margin + (1 - 2 * SLASH.margin) * ((s + 0.5) / SLASH.points);
+      const y = r.y + r.h * v;
+      const x = r.x + r.w * (SLASH.topX + (SLASH.bottomX - SLASH.topX) * v) + shift * SLASH.shiftStep * k;
       if (x < r.x || x >= r.x + r.w) continue;
       total++;
-      if (redness(x, y) - Math.max(redness(x - 6 * k, y), redness(x + 6 * k, y)) > 6) red++;
+      const left = redness(x - gap, y),
+        right = redness(x + gap, y),
+        centre = redness(x, y);
+      if (centre - (left + right) / 2 > SLASH_CONTRAST && centre - Math.max(left, right) > -SLASH_CONTRAST) red++;
     }
     if (total) best = Math.max(best, red / total);
   }

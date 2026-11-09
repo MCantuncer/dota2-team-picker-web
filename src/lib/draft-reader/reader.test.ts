@@ -42,13 +42,26 @@ function drawSlot(px: Pixels, r: Rect, art: Pixels) {
     }
 }
 
-/** Draws the red ban slash across a grid cell. */
-function drawSlash(px: Pixels, r: Rect) {
-  for (let s = 0; s < 400; s++) {
-    const t = s / 399,
-      x = Math.round(r.x + r.w * (0.15 + 0.7 * t)),
-      y = Math.round(r.y + r.h * (0.88 - 0.76 * t));
-    for (let w = -1; w <= 1; w++) px.data.set([150, 60, 50, 255], (y * px.width + x + w) * 4);
+/**
+ * Draws a ban the way Dota does: the cell tinted red (`left` and `right` of the slash) and a lighter red
+ * slash, about 5 px wide at 1440 px high, from 14% of the width at the bottom to 90% at the top.
+ */
+function drawBan(
+  px: Pixels,
+  r: Rect,
+  colours: { left: number[]; right: number[]; slash: number[] } = {
+    left: [60, 46, 49],
+    right: [60, 46, 49],
+    slash: [96, 62, 66],
+  },
+) {
+  const half = (2.5 * r.h) / 98;
+  for (let y = r.y; y < r.y + r.h; y++) {
+    const centre = r.x + r.w * (0.9 - 0.76 * ((y - r.y) / r.h));
+    for (let x = r.x; x < r.x + r.w; x++) {
+      const colour = Math.abs(x - centre) <= half ? colours.slash : x < centre ? colours.left : colours.right;
+      px.data.set([...colour, 255], (y * px.width + x) * 4);
+    }
   }
 }
 
@@ -101,8 +114,22 @@ describe("DraftReader", () => {
   it("finds banned heroes by the slash on their grid cell, in name order per attribute", () => {
     const px = screen();
     // Strength block in name order: Axe, Pudge. Pudge is the second cell.
-    drawSlash(px, cellRect("str", 1, W, H));
+    drawBan(px, cellRect("str", 1, W, H));
     expect(reader.read(px).bans).toEqual([14]);
+  });
+
+  it("finds a ban on bright art, where one side of the slash is almost as red as the slash", () => {
+    // Measured on a real banned Dawnbreaker cell: light art left of the slash, dark art right of it.
+    const colours = { left: [90, 60, 62], right: [60, 46, 49], slash: [96, 62, 66] };
+    for (const [width, height] of [
+      [3440, 1440],
+      [1920, 1080],
+      [1280, 720],
+    ]) {
+      const px = { data: new Uint8ClampedArray(width * height * 4).fill(40), width, height };
+      drawBan(px, cellRect("int", 1, width, height), colours);
+      expect(reader.read(px).bans).toEqual([26]);
+    }
   });
 
   it("scales the layout with the screen height", () => {
@@ -121,7 +148,14 @@ describe("slashShare", () => {
     const px = screen();
     const r = cellRect("int", 0, W, H);
     expect(slashShare(px, r)).toBeLessThan(0.1);
-    drawSlash(px, r);
-    expect(slashShare(px, r)).toBeGreaterThan(0.8);
+    drawBan(px, r);
+    expect(slashShare(px, r)).toBeGreaterThan(0.9);
+  });
+
+  it("is low on a red cell with no slash, such as a hero picked earlier", () => {
+    const px = screen();
+    const r = cellRect("int", 0, W, H);
+    drawBan(px, r, { left: [70, 46, 49], right: [70, 46, 49], slash: [70, 46, 49] });
+    expect(slashShare(px, r)).toBeLessThan(0.1);
   });
 });
