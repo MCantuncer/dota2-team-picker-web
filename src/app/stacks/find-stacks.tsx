@@ -78,11 +78,19 @@ export function FindStacks({
     setRequests((cur) => Object.fromEntries(Object.entries(cur).filter(([id]) => id !== stack.id)));
   };
 
-  const card = (s: StackCard, hot = false) => {
+  /** `hot` is the Stack's place in Hot Stacks, from 1. */
+  const card = (s: StackCard, hot?: number) => {
     const request = requests[s.id];
     const rank = s.averageRank ? rankName(s.averageRank) : null;
     return (
       <li key={s.id} className="stack-banner group relative flex min-w-0 flex-col">
+        {hot && (
+          // A warm light from the Hot ribbon's corner.
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-radial-[at_100%_0%] from-accent/14 to-transparent to-55%"
+          />
+        )}
         <div className="flex items-center gap-3.5 p-4 pb-3.5">
           {s.averageRank && rank ? (
             <RankMedal rankTier={s.averageRank} size={60} />
@@ -106,9 +114,13 @@ export function FindStacks({
             </span>
           </span>
           {hot && (
-            <span className="chip chip-accent shrink-0 self-start">
+            <span
+              title={`Number ${hot} in Hot Stacks: most games together in the last 2 weeks`}
+              className="-mt-4 flex h-8 shrink-0 items-center gap-1.5 self-start rounded-b-md bg-linear-to-b from-accent-bright to-accent pr-2.5 pl-2 text-sm font-semibold text-on-accent shadow-md shadow-accent/20"
+            >
               <Icon name="flame" />
               Hot
+              <span className="num rounded-sm bg-on-accent/15 px-1 leading-5">#{hot}</span>
             </span>
           )}
         </div>
@@ -178,7 +190,7 @@ export function FindStacks({
             <Icon name="flame" />
             Hot Stacks
           </h3>
-          <ul className={grid}>{hot.map((s) => card(s, true))}</ul>
+          <ul className={grid}>{hot.map((s, i) => card(s, i + 1))}</ul>
         </section>
       )}
 

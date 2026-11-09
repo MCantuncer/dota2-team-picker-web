@@ -26,7 +26,7 @@ describe("FindStacks", () => {
     render(<FindStacks hot={[owls]} all={[]} mine={[]} requests={{}} />);
     const hot = screen.getByRole("region", { name: "Hot Stacks" });
     const card = within(hot).getByRole("listitem");
-    expect(card).toHaveTextContent("Hot");
+    expect(card).toHaveTextContent("Hot#1");
     expect(card).toHaveTextContent("Ana");
     expect(card).toHaveTextContent("Players4");
     expect(card).toHaveTextContent("Games in 2 Weeks6");
