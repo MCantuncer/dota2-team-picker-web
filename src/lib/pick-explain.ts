@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Engine } from "@/lib/engine/score";
-import type { Position, RankBracket } from "@/lib/engine/types";
+import type { EnemyPositions, Position, RankBracket } from "@/lib/engine/types";
 
 /** "A", "A and B", "A, B and C". */
 const list = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : (items[0] ?? ""));
@@ -45,10 +45,17 @@ export function weakHere(s: { score: number; hardCounters: { status: string }[] 
   return s.score < 0 || s.hardCounters.some((n) => n.status === "enemy") || worstMatchup <= WEAK_MATCHUP;
 }
 
-/** The worst counter points the hero has against the enemies picked so far, 0 with none. */
-export function worstMatchup(engine: Engine, heroId: number, enemies: number[], pos: Position, bracket?: RankBracket): number {
+/** The worst counter points the hero has against the enemies picked so far, 0 with none. `known`: enemy positions set by hand. */
+export function worstMatchup(
+  engine: Engine,
+  heroId: number,
+  enemies: number[],
+  pos: Position,
+  bracket?: RankBracket,
+  known?: EnemyPositions,
+): number {
   if (!enemies.length) return 0;
-  const edges = engine.counterEdges(heroId, enemies, engine.laneChances(enemies, pos), bracket);
+  const edges = engine.counterEdges(heroId, enemies, engine.laneChances(enemies, pos, known), bracket);
   return Math.min(0, ...edges.map((e) => e.edge));
 }
 

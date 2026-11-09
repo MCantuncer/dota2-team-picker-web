@@ -2,7 +2,7 @@ import type { DraftAction, DraftEntry } from "@/lib/draft";
 import type { PositionFit } from "@/lib/engine/positions";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 
-/** An ally's position on screen: the one a player chose, or the likeliest free one when nobody has. */
+/** A pick's position on screen: the one a player chose, or the likeliest free one when nobody has. Used for both teams. */
 export interface AllyPosition {
   heroId: number;
   position: Position;
@@ -10,7 +10,7 @@ export interface AllyPosition {
 }
 
 /**
- * Every ally's position. Chosen positions stay as they are. The rest get the free positions that fit them best
+ * Every ally's (or, with no `reserved`, every enemy's) position. Chosen positions stay as they are. The rest get the free positions that fit them best
  * together, by how often each hero is played in each position (`fit`). `reserved` positions (yours, or every party
  * member's lobby position, so all screens guess alike) stay free while nobody chose them and the rest of the team
  * still fits around them. A position chosen for two heroes, as a half-finished swap can leave it, keeps the first
@@ -66,21 +66,22 @@ function bestAssignment(fits: PositionFit[], free: Position[]): Position[] {
 }
 
 /**
- * The draft actions that put an ally in `position`, so no two allies share one. The ally holding it moves to this
- * hero's old position (a swap), or back to a guess when this hero had none. `position` null clears the choice.
+ * The draft actions that put a pick in `position`, so no two heroes of a team share one. The hero holding it moves to
+ * this hero's old position (a swap), or back to a guess when this hero had none. `position` null clears the choice.
  */
 export function positionActions(
   resolved: AllyPosition[],
   heroId: number,
   position: Position | null,
+  kind: "ally" | "enemy" = "ally",
 ): DraftAction[] {
   const self = resolved.find((a) => a.heroId === heroId);
   const holder = position === null ? undefined : resolved.find((a) => a.heroId !== heroId && a.position === position && !a.isGuess);
   const actions: DraftAction[] = [];
   if (holder) {
     const back = self && !self.isGuess ? self.position : null;
-    actions.push({ kind: "ally", heroId: holder.heroId, position: back });
+    actions.push({ kind, heroId: holder.heroId, position: back });
   }
-  actions.push({ kind: "ally", heroId, position });
+  actions.push({ kind, heroId, position });
   return actions;
 }

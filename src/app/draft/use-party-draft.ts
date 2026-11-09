@@ -91,7 +91,7 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
         draft: draftId,
         action: a.kind,
         hero: a.heroId,
-        pos: a.kind === "ally" ? (a.position ?? undefined) : undefined,
+        pos: a.kind === "ally" || a.kind === "enemy" ? (a.position ?? undefined) : undefined,
       });
       if (error) {
         setError(error.code === CAPTAIN_ONLY ? CAPTAIN_ONLY_TEXT : `Not saved: ${error.message}`);
