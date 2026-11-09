@@ -12,7 +12,7 @@ interface Art {
 }
 
 /**
- * The Item Build tab (accepted C board): start items as icons only (names on hover), then the Item
+ * The Item Build tab (accepted C board): start and usual lane items as icons only (names on hover), then the Item
  * Journey, one step per core item with its minute, why it is in this game and the enemies it works on,
  * and beside it Their Threats, each group of enemies with the item that answers them.
  */
@@ -23,15 +23,18 @@ export function PlayerItems({ player, heroName, icons, laneNote }: Art & { playe
     <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_21rem]">
       <div className="flex min-w-0 flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <Heading title="Start" note={laneNote} />
-          <ul aria-label="Start items" className="flex flex-wrap items-center gap-1.5">
-            {build.start.map((item) => (
-              <li key={item.itemId} title={item.count ? `${item.count} ${item.name}` : item.name} className="flex items-center gap-1">
-                <ItemArt item={item} />
-                {item.count && <span className="num text-xs text-muted">x{item.count}</span>}
-              </li>
-            ))}
-          </ul>
+          <Heading title="Start and Lane" note={laneNote} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <ItemStrip label="Start items" items={build.start} />
+            {usualLane(build).length > 0 && (
+              <>
+                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-subtle" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M6 3l5 5-5 5" />
+                </svg>
+                <ItemStrip label="Lane items, in buy order" items={usualLane(build)} />
+              </>
+            )}
+          </div>
         </div>
         <Journey build={build} heroName={heroName} icons={icons} />
       </div>
@@ -41,44 +44,25 @@ export function PlayerItems({ player, heroName, icons, laneNote }: Art & { playe
 }
 
 /**
- * Lane items finished at the same minute, keyed by the first of them. Players start with the parts (Circlet and
- * Mantle for Null Talisman), so several small items are done by the same minute; one row says that once instead
- * of repeating "2 min" on each.
+ * The lane items players usually buy, in buy order. They carry no minute: STRATZ gives each item's
+ * average minute on its own, so side by side they can make a path no one could pay for (Null Talisman,
+ * Bracer and Magic Wand all by minute 2 is 1,470 gold). Items this draft asks for are Item Journey steps instead.
  */
-export function laneGroups(lane: BuildItem[]): Map<BuildItem, BuildItem[]> {
-  const groups = new Map<BuildItem, BuildItem[]>();
-  let first: BuildItem | undefined;
-  for (const item of lane) {
-    const group = first && groups.get(first);
-    if (first && group && first.minute === item.minute) group.push(item);
-    else {
-      first = item;
-      groups.set(item, [item]);
-    }
-  }
-  return groups;
+export function usualLane(build: Pick<ItemBuild, "lane">): BuildItem[] {
+  return build.lane.filter((i) => !i.draft);
 }
 
-/** One step for lane items finished at the same minute: their icons on the path, their names, and the minute once. */
-function LaneGroup({ items, rough }: { items: BuildItem[]; rough: boolean }) {
-  // A group has at least one item.
-  const first = items[0]!;
-  const names = items.map((i) => i.name);
-  const label = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : (names[0] ?? "");
+/** Item icons in a row, names on hover, with a count for copies. */
+function ItemStrip({ label, items }: { label: string; items: BuildItem[] }) {
   return (
-    <li className="relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 py-3">
-      <span className="flex gap-1">
-        {items.map((item) => (
-          <span key={item.itemId} className="rounded-xs shadow-[0_0_0_3px_var(--bg)]">
-            <ItemArt item={item} />
-          </span>
-        ))}
-      </span>
-      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
-        <span className="text-base font-semibold text-fg">{label}</span>
-        <span className="num text-sm text-muted">{items.length > 1 ? `by ${minuteText(first, rough)}` : minuteText(first, rough)}</span>
-      </div>
-    </li>
+    <ul aria-label={label} className="flex flex-wrap items-center gap-1.5">
+      {items.map((item) => (
+        <li key={item.itemId} title={item.count ? `${item.count} ${item.name}` : item.name} className="flex items-center gap-1">
+          <ItemArt item={item} />
+          {item.count && <span className="num text-xs text-muted">x{item.count}</span>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -94,11 +78,10 @@ function Heading({ title, note }: { title: string; note?: string }) {
 /** The core items in buy order, each with its minute, its line for this game and the faces it answers. */
 function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
   const rough = build.timings === "around";
-  // Lane items are steps too: the journey is every item after the start, in buy order.
-  const steps = [...build.lane.map((item) => ({ item, core: false })), ...build.core.map((item) => ({ item, core: true }))].sort(
+  // Lane items this draft asks for (an early Magic Wand against spell spammers) are steps with their reason.
+  const steps = [...build.lane.filter((item) => item.draft).map((item) => ({ item, core: false })), ...build.core.map((item) => ({ item, core: true }))].sort(
     (a, b) => a.item.minute - b.item.minute,
   );
-  const lane = laneGroups(steps.filter((s) => !s.core).map((s) => s.item));
   // The other boots go once, under the core boots (the first core item bought in the lane phase).
   const boots = build.core.find((i) => i.phase === "lane");
   return (
@@ -106,11 +89,6 @@ function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
       <Heading title="Item Journey" note={rough ? "Rough minutes from all games" : "Usual minute, then late after"} />
       <ol className="relative mt-2 before:absolute before:inset-y-5 before:left-[1.375rem] before:w-px before:bg-line-strong">
         {steps.map(({ item, core }) => {
-          if (!core) {
-            const group = lane.get(item);
-            // Each group is drawn once, at its first item.
-            return group ? <LaneGroup key={`lane-${item.itemId}`} items={group} rough={rough} /> : null;
-          }
           const faces = item.effectAgainst?.length ? item.effectAgainst : (item.against ?? []);
           const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
           return (
