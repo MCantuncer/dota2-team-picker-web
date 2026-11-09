@@ -12,7 +12,7 @@ interface Art {
 }
 
 /**
- * The Item Build tab (accepted C board): start items as icons only (names on hover), then the Item
+ * The Item Build tab (accepted C board): start and usual lane items as icons only (names on hover), then the Item
  * Journey, one step per core item with its minute, why it is in this game and the enemies it works on,
  * and beside it Their Threats, each group of enemies with the item that answers them.
  */
@@ -23,20 +23,46 @@ export function PlayerItems({ player, heroName, icons, laneNote }: Art & { playe
     <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_21rem]">
       <div className="flex min-w-0 flex-col gap-8">
         <div className="flex flex-col gap-2.5">
-          <Heading title="Start" note={laneNote} />
-          <ul aria-label="Start items" className="flex flex-wrap items-center gap-1.5">
-            {build.start.map((item) => (
-              <li key={item.itemId} title={item.count ? `${item.count} ${item.name}` : item.name} className="flex items-center gap-1">
-                <ItemArt item={item} />
-                {item.count && <span className="num text-xs text-muted">x{item.count}</span>}
-              </li>
-            ))}
-          </ul>
+          <Heading title="Start and Lane" note={laneNote} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <ItemStrip label="Start items" items={build.start} />
+            {usualLane(build).length > 0 && (
+              <>
+                <svg aria-hidden viewBox="0 0 16 16" className="size-4 text-subtle" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M6 3l5 5-5 5" />
+                </svg>
+                <ItemStrip label="Lane items, in buy order" items={usualLane(build)} />
+              </>
+            )}
+          </div>
         </div>
         <Journey build={build} heroName={heroName} icons={icons} />
       </div>
       <Threats player={player} heroName={heroName} icons={icons} />
     </div>
+  );
+}
+
+/**
+ * The lane items players usually buy, in buy order. They carry no minute: STRATZ gives each item's
+ * average minute on its own, so side by side they can make a path no one could pay for (Null Talisman,
+ * Bracer and Magic Wand all by minute 2 is 1,470 gold). Items this draft asks for are Item Journey steps instead.
+ */
+export function usualLane(build: Pick<ItemBuild, "lane">): BuildItem[] {
+  return build.lane.filter((i) => !i.draft);
+}
+
+/** Item icons in a row, names on hover, with a count for copies. */
+function ItemStrip({ label, items }: { label: string; items: BuildItem[] }) {
+  return (
+    <ul aria-label={label} className="flex flex-wrap items-center gap-1.5">
+      {items.map((item) => (
+        <li key={item.itemId} title={item.count ? `${item.count} ${item.name}` : item.name} className="flex items-center gap-1">
+          <ItemArt item={item} />
+          {item.count && <span className="num text-xs text-muted">x{item.count}</span>}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -52,8 +78,8 @@ function Heading({ title, note }: { title: string; note?: string }) {
 /** The core items in buy order, each with its minute, its line for this game and the faces it answers. */
 function Journey({ build, heroName, icons }: Art & { build: ItemBuild }) {
   const rough = build.timings === "around";
-  // Lane items are steps too: the journey is every item after the start, in buy order.
-  const steps = [...build.lane.map((item) => ({ item, core: false })), ...build.core.map((item) => ({ item, core: true }))].sort(
+  // Lane items this draft asks for (an early Magic Wand against spell spammers) are steps with their reason.
+  const steps = [...build.lane.filter((item) => item.draft).map((item) => ({ item, core: false })), ...build.core.map((item) => ({ item, core: true }))].sort(
     (a, b) => a.item.minute - b.item.minute,
   );
   // The other boots go once, under the core boots (the first core item bought in the lane phase).

@@ -119,8 +119,8 @@ describe("GameStoryPanel", () => {
     renderPanel(1);
     expect(screen.getByText("17 min, late after 20")).toBeInTheDocument();
     expect(screen.getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
-    // Lane items are steps too, and the other boots sit under the boots.
-    expect(screen.getByText("Wraith Band")).toBeInTheDocument();
+    // The usual lane items are icons after the start, with no minute; the other boots sit under the boots.
+    expect(within(screen.getByRole("list", { name: "Lane items, in buy order" })).getByAltText("Wraith Band")).toBeInTheDocument();
     expect(screen.getByText(/Or Power Treads at/)).toBeInTheDocument();
   });
 
