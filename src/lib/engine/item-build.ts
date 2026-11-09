@@ -181,6 +181,36 @@ export function coreTimingItems(
   return withoutAlternatives(big, ([id, minute]) => ({ id, minute }), items).slice(0, slots);
 }
 
+/**
+ * The start one player can really buy: items are kept in `priority` order (the most held first, unless
+ * the lane asks for something), each copy while the total stays within STARTING_GOLD, and are then
+ * told in their start order. STRATZ counts each start item on its own, so the popular items together
+ * can cost more than a player has (Necrophos mid: Tango, 2 Iron Branches, Circlet, Mantle, Magic Stick
+ * and Faerie Fire is 760 gold). An item missing from `items` has no known price and is left out.
+ * `priority` must hold the same objects as `start`; any other item is left out.
+ * TODO: STRATZ counts given copies (a support's spare Tango) with bought ones (data/item-starts.ts),
+ * so they are charged here as if bought. Keeping the given count apart needs a data change.
+ */
+export function affordableStart(start: BuildItem[], items: Record<string, ItemInfo>, priority: BuildItem[] = start): BuildItem[] {
+  let gold = STARTING_GOLD;
+  const kept = new Map<BuildItem, number>();
+  for (const item of priority) {
+    const info = items[item.itemId];
+    if (!info) continue;
+    const count = item.count ?? 1;
+    const copies = info.cost > 0 ? Math.min(count, Math.floor(gold / info.cost)) : count;
+    if (copies === 0) continue;
+    gold -= copies * info.cost;
+    kept.set(item, copies);
+  }
+  return start.flatMap((item) => {
+    const copies = kept.get(item);
+    if (!copies) return [];
+    const { count: _, ...rest } = item;
+    return [copies > 1 ? { ...rest, count: copies } : rest];
+  });
+}
+
 /** Enemy heroes named in one reason, those with the most matching threats first. */
 const REASON_NAMES = 3;
 
@@ -188,6 +218,8 @@ const REASON_NAMES = 3;
 const MIN_POPULARITY = 0.1;
 export const CORE_ITEMS = 6;
 const START_ITEMS = 5;
+/** Gold every player has at the start of the game. */
+export const STARTING_GOLD = 600;
 const LANE_ITEMS = 2;
 const SITUATIONAL_ITEMS = 3;
 /** A hero is a right-click hero when more than this share of its core item buys add to attacks. */
@@ -279,9 +311,14 @@ export function itemBuild(
   };
 
   const starts = data.itemStarts?.[heroId]?.[position];
-  // STRATZ's start for this position when there is one, else OpenDota's for the hero.
+  // STRATZ's start for this position when there is one, else OpenDota's for the hero, most held first.
+  // Together they can cost more than a player has: the lane rules cut them to 600 gold (laneAdjusted).
   const start = starts?.start.length
-    ? starts.start.filter(([id]) => items[id]).map(([id, count]) => ({ ...toItem(String(id), 0), ...(count > 1 ? { count } : {}) }))
+    ? starts.start
+        .filter(([id]) => items[id])
+        // A support who holds the ward pack does not also hold single Sentry Wards.
+        .filter(([id]) => items[id]?.key !== "ward_sentry" || !starts.start.some(([other]) => items[other]?.key === "ward_dispenser"))
+        .map(([id, count]) => ({ ...toItem(String(id), 0), ...(count > 1 ? { count } : {}) }))
     : Object.entries(phases.start)
     // A support's start list holds both the ward pack and single wards; keep the pack.
     .filter(([id]) => items[id]?.key !== "ward_sentry" || !phases.start[idOf("ward_dispenser") ?? ""])
