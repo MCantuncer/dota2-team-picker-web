@@ -1164,7 +1164,8 @@ function SuggestionCard({
           />
         )}
         <span className="flex items-center gap-2 text-sm text-accent">
-          Best Pick Right Now <MoveMark move={move} />
+          {/* A pool hero that is weak here is the best the player has, not a strong pick. */}
+          {weakHere ? "Best of Your Heroes" : "Best Pick Right Now"} <MoveMark move={move} />
           {weakHere && <WeakHere />}
         </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
