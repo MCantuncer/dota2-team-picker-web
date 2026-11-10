@@ -28,6 +28,21 @@ describe("readActions", () => {
   it("leaves heroes already in the draft alone, so their typed positions stay", () => {
     expect(readActions(read, "radiant", new Set([5, 1])).map((a) => a.heroId)).toEqual([26, 14, 11]);
   });
+
+  it("puts the hero in your own slot at your position, when you have no hero yet", () => {
+    const withMe: DraftRead = { ...read, me: { side: "dire", slot: 1, by: "name" } };
+    const allies = (position: 2 | null) => readActions(withMe, "dire", new Set(), position).filter((a) => a.kind === "ally");
+    expect(allies(2)).toEqual([
+      { kind: "ally", heroId: 26 },
+      { kind: "ally", heroId: 14, position: 2 },
+    ]);
+    // You already have a hero: nothing is placed.
+    expect(allies(null).every((a) => a.position === undefined)).toBe(true);
+    // Your slot is on the other side, or empty: nothing is placed.
+    expect(readActions(withMe, "radiant", new Set(), 2).some((a) => a.position !== undefined)).toBe(false);
+    const emptySlot: DraftRead = { ...read, me: { side: "dire", slot: 3, by: "glow" } };
+    expect(readActions(emptySlot, "dire", new Set(), 2).some((a) => a.position !== undefined)).toBe(false);
+  });
 });
 
 describe("LiveReads", () => {

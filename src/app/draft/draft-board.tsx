@@ -248,6 +248,8 @@ export function DraftBoard({
   // Heroes the screen reader put in My team (newest last), and those the player said aren't theirs.
   const [screenAllies, setScreenAllies] = useState<number[]>([]);
   const [notMine, setNotMine] = useState<ReadonlySet<number>>(new Set());
+  // The reader found your own slot (by your Steam name or its glow), so it knows which hero is yours.
+  const [ownSlotFound, setOwnSlotFound] = useState(false);
   // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
   const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
   // Team holds the seated players' positions; teammates in open seats go where their hero fits best.
@@ -259,7 +261,7 @@ export function DraftBoard({
   const enemyPositions: EnemyPositions = Object.fromEntries(resolvedEnemies.flatMap((e) => (e.isGuess ? [] : [[e.heroId, e.position]])));
   // The screen shows heroes but not who plays them, so a hero read into My team goes to a guessed position and your
   // picks go on. Until you have a hero, ask about the newest one read whose position nobody set.
-  const askPick = mine
+  const askPick = mine || ownSlotFound
     ? undefined
     : screenAllies.findLast((id) => !notMine.has(id) && resolved.some((a) => a.heroId === id && a.isGuess));
 
@@ -414,6 +416,7 @@ export function DraftBoard({
     setCheckInDone(false);
     setScreenAllies([]);
     setNotMine(new Set());
+    setOwnSlotFound(false);
     if (party) void shared.newDraft();
     else {
       change([]);
@@ -859,8 +862,13 @@ export function DraftBoard({
           onSideChange={setMySide}
           steamName={player.steamName ?? null}
           onRead={(read, side) => {
-            const actions = readActions(read, side, taken);
+            // With your own slot found, the hero in it goes to your position; without it, ask which hero is yours.
+            const actions = readActions(read, side, taken, mine ? null : myPosition);
             if (actions.length) act(...actions);
+            if (read.me) {
+              if (!ownSlotFound) setOwnSlotFound(true);
+              return;
+            }
             const allies = actions.flatMap((a) => (a.kind === "ally" ? [a.heroId] : []));
             if (allies.length) setScreenAllies((ids) => [...ids, ...allies]);
           }}
