@@ -821,7 +821,7 @@ export function DraftBoard({
         <ScreenshotPaste
           heroes={engine.heroes}
           portraits={portraits}
-          inDraft={taken}
+          draft={draft}
           side={mySide}
           onSideChange={setMySide}
           steamName={player.steamName ?? null}

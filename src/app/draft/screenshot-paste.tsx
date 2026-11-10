@@ -2,9 +2,11 @@
 
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 import { Kbd } from "@/components/kbd";
+import type { DraftEntry } from "@/lib/draft";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { nameToFind } from "@/lib/draft-reader/draw-name";
 import { loadReader, pixelsOf } from "@/lib/draft-reader/load";
+import { readLooks } from "@/lib/draft-reader/looks-storage";
 import type { Ink } from "@/lib/draft-reader/name";
 import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
 import type { HeroInfo } from "@/lib/engine/types";
@@ -13,8 +15,8 @@ import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 interface ScreenshotPasteProps {
   heroes: HeroInfo[];
   portraits: Record<number, string>;
-  /** Heroes already in the draft (picks and bans). */
-  inDraft: Set<number>;
+  /** The draft so far, to leave heroes in it alone, and to tell heroes added by hand (which Watch Dota learns the look of) from heroes it read. */
+  draft: DraftEntry[];
   /** Which side the player is on this game, or null until it is known. The board lays the teams out by it. */
   side: Side | null;
   onSideChange: (side: Side) => void;
@@ -32,15 +34,15 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
  * the top bar (and the glow Dota puts under it); you can always set it by hand. Nothing leaves the
  * browser.
  */
-export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange, steamName, onRead }: ScreenshotPasteProps) {
+export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, steamName, onRead }: ScreenshotPasteProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   // Who set the side: the player by hand, or the reader from the screen. A side set by hand stands
   // until the draft is cleared for the next game.
   const [sideBy, setSideBy] = useState<"hand" | "screen" | null>(null);
-  const [draftEmpty, setDraftEmpty] = useState(inDraft.size === 0);
-  if ((inDraft.size === 0) !== draftEmpty) {
-    setDraftEmpty(inDraft.size === 0);
-    if (inDraft.size === 0 && sideBy === "hand") setSideBy(null);
+  const [draftEmpty, setDraftEmpty] = useState(draft.length === 0);
+  if ((draft.length === 0) !== draftEmpty) {
+    setDraftEmpty(draft.length === 0);
+    if (draft.length === 0 && sideBy === "hand") setSideBy(null);
   }
   const reader = useRef<Promise<DraftReader> | null>(null);
   const myName = useRef<Ink[] | null | undefined>(undefined);
@@ -55,7 +57,7 @@ export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange
     return read.me.side;
   };
 
-  const watch = useWatchDota(heroes, portraits, inDraft, steamName, (read) => {
+  const watch = useWatchDota(heroes, portraits, draft, side, steamName, (read) => {
     const mine = sideFor(read);
     if (mine) onRead(read, mine);
   });
@@ -68,7 +70,7 @@ export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange
     e.preventDefault();
     setStatus({ kind: "reading" });
     try {
-      reader.current ??= loadReader(heroes, portraits);
+      reader.current ??= loadReader(heroes, portraits, readLooks());
       if (myName.current === undefined) myName.current = nameToFind(steamName);
       const [r, px] = await Promise.all([reader.current, pixelsOf(file)]);
       const read = r.read(px, myName.current);
@@ -169,6 +171,12 @@ export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange
         {watch.state === "failed" && (
           <span className="notice notice-error text-xs">
             Couldn&apos;t keep reading the Dota window. Try Watch Dota again.
+          </span>
+        )}
+        {watch.learned !== null && (
+          <span className="notice notice-done text-xs">
+            Learned how {heroes.find((h) => h.id === watch.learned)?.name ?? "that hero"} looks on your screen. Watch Dota
+            reads it by itself from now on.
           </span>
         )}
         {status.kind === "reading" && <span className="text-muted">Reading the screenshot…</span>}

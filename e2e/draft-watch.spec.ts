@@ -77,3 +77,26 @@ test("Watch Dota finds your side from your Steam name, and a side set by hand wi
   await expect(side.getByRole("button", { name: "Radiant", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Found ct'x on Dire")).toHaveCount(0);
 });
+
+test("Watch Dota learns a hero's look when you add it by hand, and reads it by itself next time", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(90_000);
+  // Our first slot shows Invoker's persona art, which no store portrait matches.
+  await fakeDotaWindow(page, "draft-strategy-ten-picked.png");
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  const mine = page.getByRole("region", { name: "My team" });
+  await expect(mine.getByText("Omniknight")).toBeVisible({ timeout: 45_000 });
+  await expect(mine.getByText("Invoker")).toHaveCount(0);
+
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("invoker");
+  await ally.press("Enter");
+  await expect(page.getByText("Learned how Invoker looks on your screen")).toBeVisible({ timeout: 10_000 });
+
+  // Next game: the draft starts empty and Watch Dota reads Invoker on its own.
+  await mine.getByRole("button", { name: "Remove Invoker" }).click();
+  await page.getByRole("button", { name: "Stop" }).click();
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await expect(mine.getByText("Invoker")).toBeVisible({ timeout: 45_000 });
+});
