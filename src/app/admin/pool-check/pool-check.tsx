@@ -6,20 +6,21 @@ import { listsText, type PoolCheck, type PoolSlip } from "@/lib/admin-pool-check
 export function CheckStrip({ check }: { check: PoolCheck }) {
   const cells = [
     { label: "Slips", value: check.slips, detail: "Should always be 0", tone: check.slips > 0 ? "text-danger" : "text-accent" },
-    { label: "Pool Lists", value: check.poolLists, detail: "From the player's own heroes", tone: "text-fg" },
+    { label: "Pool Lists", value: check.poolLists, detail: "From My Heroes only", tone: "text-fg" },
+    { label: "Played Lists", value: check.playedLists, detail: "My Heroes and heroes played 10+ times", tone: "text-fg" },
     { label: "Any Hero Lists", value: check.anyLists, detail: "No own heroes left to show", tone: "text-fg" },
     { label: "Older Lists", value: check.unknownLists, detail: "Saved without the rule", tone: "text-fg" },
   ];
   return (
     <div className="flex flex-col gap-2">
-      <dl className="card grid grid-cols-1 sm:grid-cols-4">
+      <dl className="card grid grid-cols-1 md:grid-cols-5">
         {cells.map((c) => (
           <div
             key={c.label}
-            className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 border-line px-5 py-4 not-first:border-t sm:flex-col sm:items-start sm:justify-start sm:gap-1 sm:px-6 sm:py-5 sm:not-first:border-l sm:not-first:border-t-0"
+            className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 border-line px-5 py-4 not-first:border-t md:flex-col md:items-start md:justify-start md:gap-1 md:px-6 md:py-5 md:not-first:border-l md:not-first:border-t-0"
           >
             <dt className="text-sm font-medium text-muted">{c.label}</dt>
-            <dd className={`num text-3xl leading-tight tracking-tight sm:text-4xl ${c.tone}`}>{c.value}</dd>
+            <dd className={`num text-3xl leading-tight tracking-tight md:text-4xl ${c.tone}`}>{c.value}</dd>
             <dd className="w-full text-xs text-subtle">{c.detail}</dd>
           </div>
         ))}
@@ -37,7 +38,7 @@ const ROW =
 /** Each slip: whose list, the position, the outside heroes it showed, and when. */
 export function Slips({ slips, heroes, nowMs }: { slips: PoolSlip[]; heroes: { id: number; name: string; icon: string }[]; nowMs: number }) {
   if (slips.length === 0) {
-    return <p className="card px-5 py-6 text-sm text-muted">No slips. Every pool list showed only the player&apos;s own heroes.</p>;
+    return <p className="card px-5 py-6 text-sm text-muted">No slips. Every Pool and Played list showed only the player&apos;s own heroes.</p>;
   }
   const byId = new Map(heroes.map((h) => [h.id, h]));
   return (

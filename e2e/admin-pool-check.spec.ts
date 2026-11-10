@@ -31,6 +31,7 @@ test("a party list from the player's own heroes is saved as a pool list, and an 
   await page.getByRole("menuitem", { name: "Pool Check" }).click();
   await expect(page.getByRole("heading", { name: "Pool Check", level: 1 })).toBeVisible();
   await expect(page.getByRole("term").filter({ hasText: "Pool Lists" })).toBeVisible();
+  await expect(page.getByRole("term").filter({ hasText: "Played Lists" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Latest Slips" })).toBeVisible();
   await expectAccessible(page);
 });

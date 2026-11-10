@@ -1,7 +1,8 @@
 /**
  * Admin Pool Check page: reading admin_pool_check and admin_pool_slips. A slip is a party list built
- * from a player's own heroes ("pool") that still showed a hero from outside them; the server works
- * out the outside heroes from My Heroes when the list is saved, so the count should always be 0.
+ * from a player's own heroes ("pool": My Heroes; "played": My Heroes plus heroes played 10 or more times)
+ * that still showed a hero from outside them; the server works out the outside heroes when the list is
+ * saved, so the count should always be 0.
  */
 
 /** How far back the page counts, in days. */
@@ -12,6 +13,8 @@ export const SLIP_ROWS = 20;
 export interface PoolCheck {
   lists: number;
   poolLists: number;
+  /** Built from My Heroes plus the heroes the player has played. */
+  playedLists: number;
   slips: number;
   anyLists: number;
   /** Saved before the rule was recorded, or by an older page. */
@@ -36,11 +39,12 @@ export function readCheck(rows: unknown): PoolCheck | null {
   const row: unknown = Array.isArray(rows) ? rows[0] : null;
   if (!row || typeof row !== "object") return null;
   const r = row as Record<string, unknown>;
-  const { lists, pool_lists, slips, any_lists, unknown_lists, players } = r;
-  if (![lists, pool_lists, slips, any_lists, unknown_lists, players].every(count)) return null;
+  const { lists, pool_lists, played_lists, slips, any_lists, unknown_lists, players } = r;
+  if (![lists, pool_lists, played_lists, slips, any_lists, unknown_lists, players].every(count)) return null;
   return {
     lists: lists as number,
     poolLists: pool_lists as number,
+    playedLists: played_lists as number,
     slips: slips as number,
     anyLists: any_lists as number,
     unknownLists: unknown_lists as number,
