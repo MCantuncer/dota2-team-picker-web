@@ -1,13 +1,16 @@
 import { expect } from "@playwright/test";
-import { fakeDotaWindow, test } from "./helpers";
+import { fakeDotaWindow, linkSteam, newPlayer, test } from "./helpers";
 
 test("Watch Dota reads both teams and the bans off the shared window", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
   test.setTimeout(60_000);
   await fakeDotaWindow(page);
   await page.goto("/draft");
-  await page.getByRole("button", { name: "Watch as Radiant" }).click();
+  await page.getByRole("button", { name: "Watch Dota" }).click();
   await expect(page.getByText("Watching Dota")).toBeVisible({ timeout: 45_000 });
+  // This frame has the names blanked out, so the side is chosen by hand.
+  await expect(page.getByText("Choose your team so picks go to the right side.")).toBeVisible();
+  await page.getByRole("region", { name: "Read the Dota screen" }).getByRole("button", { name: "Radiant", exact: true }).click();
   const mine = page.getByRole("region", { name: "My team" });
   const enemy = page.getByRole("region", { name: "Enemy" });
   for (const name of ["Crystal Maiden", "Warlock", "Juggernaut", "Omniknight"])
@@ -27,7 +30,7 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   expect((await download).suggestedFilename()).toMatch(/^watch-dota-.+\.png$/);
 
   await page.getByRole("button", { name: "Stop" }).click();
-  await expect(page.getByRole("button", { name: "Watch as Radiant" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch Dota" })).toBeVisible();
 });
 
 test("Watch Dota reads the enemy's last pick at strategy time, and the Game Story follows", async ({ page }, testInfo) => {
@@ -35,7 +38,9 @@ test("Watch Dota reads the enemy's last pick at strategy time, and the Game Stor
   test.setTimeout(60_000);
   await fakeDotaWindow(page, "draft-strategy-ten-picked.png");
   await page.goto("/draft");
-  await page.getByRole("button", { name: "Watch as Radiant" }).click();
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  // Signed out there is no Steam name, but Dota's glow under your own name still shows your side.
+  await expect(page.getByText("Found you on Radiant")).toBeVisible({ timeout: 45_000 });
   const enemy = page.getByRole("region", { name: "Enemy" });
   // Lich is their last pick: Ranked All Pick shows it only once strategy time starts.
   for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny", "Lich"])
@@ -48,4 +53,27 @@ test("Watch Dota reads the enemy's last pick at strategy time, and the Game Stor
   await ally.fill("snap");
   await ally.press("Enter");
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
+});
+
+test("Watch Dota finds your side from your Steam name, and a side set by hand wins", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  const email = `watch-side-${Date.now()}@example.com`;
+  await newPlayer(page, email, "Watcher");
+  await linkSteam(email, "ct'x");
+  // The strategy time frame with the name "ct'x" (and the glow under it) moved to Dire's third slot.
+  await fakeDotaWindow(page, "draft-strategy-dire.png");
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await expect(page.getByText("Found ct'x on Dire")).toBeVisible({ timeout: 45_000 });
+  const side = page.getByRole("region", { name: "Read the Dota screen" });
+  await expect(side.getByRole("button", { name: "Dire", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const mine = page.getByRole("region", { name: "My team" });
+  for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny", "Lich"]) await expect(mine.getByText(name)).toBeVisible({ timeout: 15_000 });
+
+  // The player knows better: a side chosen by hand stays, though the window still shows Dire.
+  await side.getByRole("button", { name: "Radiant", exact: true }).click();
+  await page.waitForTimeout(2_000);
+  await expect(side.getByRole("button", { name: "Radiant", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Found ct'x on Dire")).toHaveCount(0);
 });

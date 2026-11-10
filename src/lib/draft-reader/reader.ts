@@ -1,4 +1,5 @@
 import { cellRect, GRID_COLUMNS, slotRects, type Attribute, type Side } from "./geometry";
+import { findMe, type Ink, type SideRead } from "./name";
 import { colourfulness, leftPart, portraitLeftPatch, portraitPatch, portraitRect, similarity, slotPatches, type Pixels } from "./match";
 
 /** A hero the reader knows: its id, name, primary attribute, and its store portrait's pixels. */
@@ -22,6 +23,8 @@ export interface DraftRead {
   radiant: SlotRead[];
   dire: SlotRead[];
   bans: number[];
+  /** Your own slot, found from your Steam name and the glow under it; null when the reader can't tell. */
+  me?: SideRead | null;
 }
 
 /** A slot is that hero when it matches this well and clearly better than the next best hero. */
@@ -61,7 +64,8 @@ export class DraftReader {
     for (const h of byName) if (h.primaryAttr in GRID_COLUMNS) this.grid[h.primaryAttr as Attribute].push(h.id);
   }
 
-  read(px: Pixels): DraftRead {
+  /** Reads a screenshot. `name` is your Steam name as nameToFind drew it, to find your side by. */
+  read(px: Pixels, name: Ink[] | null = null): DraftRead {
     const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => {
       const whole = this.readSlot(slotPatches(px, r), "patch", colourfulness(px, r));
       // Not sure on the whole portrait: your own slot's level badge may cover its right side.
@@ -75,6 +79,7 @@ export class DraftReader {
       radiant,
       dire,
       bans: this.readBans(px).filter((id) => !picked.has(id)),
+      me: findMe(px, name),
     };
   }
 

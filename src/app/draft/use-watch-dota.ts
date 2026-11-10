@@ -27,12 +27,15 @@ export function canWatch(): boolean {
 
 /**
  * Live read: the player shares the Dota window once, and a worker reads the picks and bans off it
- * twice a second. Only new, steady heroes are passed to onRead. Nothing leaves the browser.
+ * twice a second. Only new, steady heroes (and your side, once steady) are passed to onRead. Nothing
+ * leaves the browser.
  */
 export function useWatchDota(
   heroes: HeroInfo[],
   portraits: Record<number, string>,
   inDraft: Set<number>,
+  /** Your Steam name, to find your side by; null without one. */
+  steamName: string | null,
   onRead: (read: DraftRead) => void,
 ) {
   const [state, setState] = useState<WatchState>("off");
@@ -90,7 +93,7 @@ export function useWatchDota(
         stop();
         setState("off");
       });
-      worker.postMessage({ heroes: await loadReaderHeroes(heroes, portraits) } satisfies WatchRequest);
+      worker.postMessage({ heroes: await loadReaderHeroes(heroes, portraits), name: steamName } satisfies WatchRequest);
       const { readable } = new MediaStreamTrackProcessor({ track });
       worker.postMessage({ frames: readable } satisfies WatchRequest, [readable]);
     } catch (err) {

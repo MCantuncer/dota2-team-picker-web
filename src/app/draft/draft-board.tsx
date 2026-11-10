@@ -8,6 +8,7 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
+import type { Side } from "@/lib/draft-reader/geometry";
 import { Kbd } from "@/components/kbd";
 import { SteamButton } from "@/components/steam-button";
 import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
@@ -62,6 +63,8 @@ export interface Player {
   positions: Position[];
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
+  /** The player's Steam name, as Dota writes it under their slot, to find their side on Watch Dota. */
+  steamName?: string | null;
 }
 
 /** The signed-in player's party, when they are in one: its draft is shared by everyone in it. */
@@ -142,6 +145,8 @@ export function DraftBoard({
   // before the page renders (it is in the background while Dota is in front), and the second must build
   // on the first.
   const latestSolo = useRef<DraftEntry[]>([]);
+  // Your side changes every game, so it is chosen each time rather than remembered.
+  const [mySide, setMySide] = useState<Side | null>(null);
   const [soloPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null);
@@ -720,6 +725,9 @@ export function DraftBoard({
           heroes={engine.heroes}
           portraits={portraits}
           inDraft={taken}
+          side={mySide}
+          onSideChange={setMySide}
+          steamName={player.steamName ?? null}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);

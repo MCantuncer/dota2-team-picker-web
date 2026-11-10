@@ -1,9 +1,14 @@
+import { nameToFind } from "./draw-name";
 import { slotRects } from "./geometry";
+import type { Ink } from "./name";
 import { DraftReader, type DraftRead, type ReaderHero } from "./reader";
 import { logLine, WatchLog } from "./watch-log";
 
-/** Sent to the watcher: first the heroes, then the shared window's frames. */
-export type WatchRequest = { heroes: ReaderHero[] } | { frames: ReadableStream<VideoFrame> } | { save: true };
+/** Sent to the watcher: first the heroes and your Steam name, then the shared window's frames. */
+export type WatchRequest =
+  | { heroes: ReaderHero[]; name: string | null }
+  | { frames: ReadableStream<VideoFrame> }
+  | { save: true };
 /** Sent back about twice a second, and the last frame read plus the watch log when asked to save it. */
 export type WatchReply = { read: DraftRead } | { black: true } | { error: string } | { frame: Blob };
 
@@ -19,6 +24,8 @@ const scope = self as unknown as {
 };
 let reader: DraftReader | null = null;
 let names = new Map<number, string>();
+/** Your Steam name, drawn once, to find your side by. */
+let myName: Ink[] | null = null;
 /** The last frame read, exactly as the reader saw it, kept so the player can save it for a bug report. */
 let canvas: OffscreenCanvas | null = null;
 /**
@@ -35,6 +42,7 @@ scope.onmessage = ({ origin, data }) => {
   if ("heroes" in data && Array.isArray(data.heroes)) {
     reader = new DraftReader(data.heroes);
     names = new Map(data.heroes.map((h) => [h.id, h.name]));
+    myName = typeof data.name === "string" ? nameToFind(data.name) : null;
   }
   else if ("frames" in data && data.frames instanceof ReadableStream) void watch(data.frames);
   else if ("save" in data && data.save === true) void save();
@@ -94,7 +102,7 @@ async function watch(frames: ReadableStream<VideoFrame>) {
         const px = ctx.getImageData(0, 0, w, h);
         if (isBlack(px)) scope.postMessage({ black: true } satisfies WatchReply);
         else {
-          const read = reader.read(px);
+          const read = reader.read(px, myName);
           scope.postMessage({ read } satisfies WatchReply);
           keep(read, canvas, now);
         }
