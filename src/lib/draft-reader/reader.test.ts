@@ -143,6 +143,75 @@ describe("DraftReader", () => {
   });
 });
 
+describe("DraftReader.learn", () => {
+  // Art the store portraits don't have, like a persona or an arcana.
+  const persona = portrait(17);
+  /** Other new art: diagonal colour stripes. */
+  function stripes(): Pixels {
+    const data = new Uint8ClampedArray(256 * 144 * 4);
+    for (let y = 0; y < 144; y++)
+      for (let x = 0; x < 256; x++) data.set(Math.floor((x + 2 * y) / 20) % 2 ? [230, 200, 40, 255] : [20, 40, 120, 255], (y * 256 + x) * 4);
+    return { data, width: 256, height: 144 };
+  }
+  /** `art` with a share of `over` mixed in, like a cosmetic that changes part of a hero's look. */
+  function mix(art: Pixels, over: Pixels, share: number): Pixels {
+    return { ...art, data: art.data.map((v, i) => Math.round(v * (1 - share) + over.data[i]! * share)) };
+  }
+
+  it("learns a hero's look from the one slot it can't read, then reads the hero by it at any size", () => {
+    const px = screen();
+    drawSlot(px, slotRects("radiant", W, H)[1], persona);
+    drawSlot(px, slotRects("radiant", W, H)[2], heroes[2].portrait);
+    const reader = new DraftReader(heroes);
+    expect(reader.read(px).radiant[1].heroId).toBeNull();
+    const look = reader.learn(px, "radiant", 26);
+    expect(look).not.toBeNull();
+
+    // Next game, on a smaller screen and in an enemy slot.
+    const small = { data: new Uint8ClampedArray(1920 * 1080 * 4).fill(40), width: 1920, height: 1080 };
+    drawSlot(small, slotRects("dire", 1920, 1080)[3], persona);
+    const read = new DraftReader(heroes, [look!]).read(small);
+    expect(read.dire[3]).toMatchObject({ heroId: 26, learned: true });
+    expect(read.radiant.every((s) => s.heroId === null)).toBe(true);
+  });
+
+  it("learns nothing from empty slots, or when two slots could be the hero", () => {
+    const reader = new DraftReader(heroes);
+    expect(reader.learn(screen(), "radiant", 26)).toBeNull();
+    const px = screen();
+    drawSlot(px, slotRects("dire", W, H)[0], persona);
+    drawSlot(px, slotRects("dire", W, H)[4], stripes());
+    expect(reader.learn(px, "dire", 26)).toBeNull();
+    expect(reader.learn(px, "radiant", 26)).toBeNull();
+  });
+
+  it("learns from a slot read as a hero the player removed, and forgets on request", () => {
+    const px = screen();
+    // Lion in a cosmetic the reader takes for Crystal Maiden; the player removed her and added Lion.
+    drawSlot(px, slotRects("radiant", W, H)[0], mix(heroes[2].portrait, stripes(), 0.4));
+    const reader = new DraftReader(heroes);
+    expect(reader.read(px).radiant[0].heroId).toBe(5);
+    expect(reader.learn(px, "radiant", 26)).toBeNull();
+    expect(reader.learn(px, "radiant", 26, new Set([5]))).not.toBeNull();
+    expect(reader.read(px).radiant[0]).toMatchObject({ heroId: 26, learned: true });
+    reader.forget(26);
+    expect(reader.read(px).radiant[0].heroId).toBe(5);
+  });
+
+  it("does not learn a grey preview", () => {
+    const px = screen();
+    const r = slotRects("radiant", W, H)[0];
+    drawSlot(px, r, persona);
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const i = (y * W + x) * 4;
+        const grey = 0.3 * px.data[i] + 0.59 * px.data[i + 1] + 0.11 * px.data[i + 2];
+        px.data.set([grey, grey, grey], i);
+      }
+    expect(new DraftReader(heroes).learn(px, "radiant", 26)).toBeNull();
+  });
+});
+
 describe("slashShare", () => {
   it("is high on a slashed cell and low on a plain one", () => {
     const px = screen();

@@ -2,8 +2,10 @@
 
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 import { Kbd } from "@/components/kbd";
+import type { DraftEntry } from "@/lib/draft";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { loadReader, pixelsOf } from "@/lib/draft-reader/load";
+import { readLooks } from "@/lib/draft-reader/looks-storage";
 import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
 import type { HeroInfo } from "@/lib/engine/types";
 import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
@@ -11,8 +13,8 @@ import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 interface ScreenshotPasteProps {
   heroes: HeroInfo[];
   portraits: Record<number, string>;
-  /** Heroes already in the draft (picks and bans). */
-  inDraft: Set<number>;
+  /** The draft so far, to leave heroes in it alone, and to tell heroes added by hand (which Watch Dota learns the look of) from heroes it read. */
+  draft: DraftEntry[];
   /** Which side the player is on this game, or null until they choose. The board lays the teams out by it. */
   side: Side | null;
   onSideChange: (side: Side) => void;
@@ -26,10 +28,10 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
  * twice a second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
  * come from the top bar and the bans from the hero grid. Nothing leaves the browser.
  */
-export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange: setSide, onRead }: ScreenshotPasteProps) {
+export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange: setSide, onRead }: ScreenshotPasteProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const reader = useRef<Promise<DraftReader> | null>(null);
-  const watch = useWatchDota(heroes, portraits, inDraft, (read) => {
+  const watch = useWatchDota(heroes, portraits, draft, side, (read) => {
     if (side) onRead(read, side);
   });
   // Known only in the browser; the server renders without the button.
@@ -45,7 +47,7 @@ export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange
     }
     setStatus({ kind: "reading" });
     try {
-      reader.current ??= loadReader(heroes, portraits);
+      reader.current ??= loadReader(heroes, portraits, readLooks());
       const [r, px] = await Promise.all([reader.current, pixelsOf(file)]);
       const read = r.read(px);
       onRead(read, side);
@@ -129,6 +131,12 @@ export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange
         {watch.state === "failed" && (
           <span className="notice notice-error text-xs">
             Couldn&apos;t keep reading the Dota window. Try Watch Dota again.
+          </span>
+        )}
+        {watch.learned !== null && (
+          <span className="notice notice-done text-xs">
+            Learned how {heroes.find((h) => h.id === watch.learned)?.name ?? "that hero"} looks on your screen. Watch Dota
+            reads it by itself from now on.
           </span>
         )}
         {status.kind === "reading" && <span className="text-muted">Reading the screenshot…</span>}
