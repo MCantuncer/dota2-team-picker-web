@@ -58,7 +58,7 @@ export function SuggestionRow({
         {portrait}
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-fg">
-            {s.name}
+            <span>{s.name}</span>
             {badges}
           </span>
           {!open && verdict && <span className="line-clamp-3 text-sm text-subtle">{verdict.text}</span>}

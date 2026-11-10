@@ -235,7 +235,8 @@ test("a hero in the player's Top 5 gets its small boost in the draft", async ({ 
   // The best pick shows its reasons open.
   await expect(picks.first()).toContainText("Outworld Devourer");
   await expect(picks.first().getByText("Top 5 (+0.5)")).toBeVisible();
-  const invoker = picks.filter({ hasText: "Invoker" });
+  // The row's own name, since verdict lines name other heroes too.
+  const invoker = picks.filter({ has: page.getByText("Invoker", { exact: true }) });
   await invoker.getByRole("button", { name: /Invoker/ }).click();
   await expect(invoker.getByText("Favorite (+1.5)")).toBeVisible();
   await expect(invoker.getByText("Top 5 (+0.5)")).toHaveCount(0);
@@ -266,10 +267,11 @@ test("heroes the player has played join their own heroes in one list, marked Out
   await seedHeroStats(email);
   await page.goto("/draft");
   const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
-  const played = picks.filter({ hasText: "Outworld Devourer" });
+  // Each row by its own name, since verdict lines name the best pick too.
+  const played = picks.filter({ has: page.getByText("Outworld Devourer", { exact: true }) });
   await expect(played).toHaveCount(1);
   await expect(played.getByText("Outside Pool")).toBeVisible();
-  const own = picks.filter({ hasText: "Nature's Prophet" });
+  const own = picks.filter({ has: page.getByText("Nature's Prophet", { exact: true }) });
   await expect(own).toHaveCount(1);
   await expect(own.getByText("Outside Pool")).toHaveCount(0);
   // The first is the best pick; every other row says how far behind it is and why.
