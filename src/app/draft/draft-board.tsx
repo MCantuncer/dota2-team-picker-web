@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
@@ -42,6 +41,7 @@ import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { DraftCaptainBar } from "./draft-captain-bar";
+import { EmptyPoolNotice } from "./empty-pool-notice";
 import { PartyPlan } from "./party-plan";
 import { PerPlayerView } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
@@ -540,18 +540,7 @@ export function DraftBoard({
                 })}
               </p>
             )}
-            {signedIn && fromAll && suggestions.length > 0 && (
-              <div className="notice flex flex-wrap items-center gap-3 text-sm">
-                <span className="flex-1">
-                  {fromAll === "none"
-                    ? `No ${POSITION_NAMES[myPosition - 1]} heroes in My Heroes yet, so these are the best of every hero.`
-                    : `Your ${POSITION_NAMES[myPosition - 1]} heroes are all picked or banned, so these are the best of every hero.`}
-                </span>
-                <Link href="/my-heroes" className="btn btn-secondary btn-sm">
-                  Add {POSITION_NAMES[myPosition - 1]} Heroes
-                </Link>
-              </div>
-            )}
+            {signedIn && fromAll && suggestions.length > 0 && <EmptyPoolNotice position={myPosition} reason={fromAll} />}
             <ol aria-label="Suggested heroes" className="flex flex-col">
               {suggestions.map((s, i) => (
                 <SuggestionCard
