@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Page } from "@playwright/test";
-import { expectAccessible, heroData, newPlayer, savedSuggestions, seedMidHeroes, test, uniqueEmail } from "./helpers";
+import { expectAccessible, heroData, newPlayer, savedSuggestions, seedHeroStats, seedMidHeroes, test, uniqueEmail } from "./helpers";
 
 /** The position chosen for an ally, as its checked radio. */
 const chosen = (page: Page, hero: string) =>
@@ -254,5 +254,22 @@ test("a hero from outside the pool shows under the list only when it clearly bea
   await expect(outside).toHaveCount(1);
   await expect(outside.getByText("Outside Pool")).toBeVisible();
   await expect(page.getByText(/^Scores \d+\.\d above Nature's Prophet, your best, more than the \d+\.\d the data could be off by\.$/)).toBeVisible();
+  await expectAccessible(page);
+});
+
+test("heroes the player has played join their own heroes in one list, marked Outside Pool", async ({ page }) => {
+  const email = uniqueEmail("draft-played");
+  await newPlayer(page, email, "Draft Played");
+  // Only Nature's Prophet in My Heroes, but a six month record with Invoker and Outworld Devourer.
+  await seedMidHeroes(email, [53]);
+  await seedHeroStats(email);
+  await page.goto("/draft");
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  const played = picks.filter({ hasText: "Outworld Devourer" });
+  await expect(played).toHaveCount(1);
+  await expect(played.getByText("Outside Pool")).toBeVisible();
+  const own = picks.filter({ hasText: "Nature's Prophet" });
+  await expect(own).toHaveCount(1);
+  await expect(own.getByText("Outside Pool")).toHaveCount(0);
   await expectAccessible(page);
 });
