@@ -7,5 +7,18 @@
       "dependabot/**": false,
       "claude/**": false
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "dota2-team-picker-web.vercel.app"
+        }
+      ],
+      "destination": "https://www.dota2teampicker.com/:path*",
+      "permanent": true
+    }
+  ]
 }
