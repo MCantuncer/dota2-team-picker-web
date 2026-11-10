@@ -29,6 +29,7 @@ const seat = (id: string, role: Seat["role"], heroes: number[] = []): Seat => ({
   role,
   rankTier: null,
   position: heroes.length ? 1 : null,
+  played: null,
   positions: heroes.length ? [1] : [],
   heroes,
   shared: heroes.length > 0,

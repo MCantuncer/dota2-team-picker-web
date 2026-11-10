@@ -14,6 +14,7 @@ const seat = (id: string, over: Partial<Seat> = {}): Seat => ({
   role: "player",
   rankTier: 73,
   position: 1,
+  played: null,
   positions: [1],
   heroes: [8, 44, 114, 1],
   shared: true,

@@ -15,7 +15,7 @@ interface ScreenshotPasteProps {
   portraits: Record<number, string>;
   /** Heroes already in the draft (picks and bans). */
   inDraft: Set<number>;
-  /** Which side the player is on this game, or null until it is known. */
+  /** Which side the player is on this game, or null until it is known. The board lays the teams out by it. */
   side: Side | null;
   onSideChange: (side: Side) => void;
   /** The player's Steam name, which Dota writes under their slot: the reader finds their side by it. */

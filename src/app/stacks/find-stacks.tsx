@@ -1,9 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
-import { StackCrest } from "@/components/stacks/stack-crest";
+import { Avatar } from "@/components/account-menu";
+import { RankMedal } from "@/components/rank-medal";
+import { rankName } from "@/lib/rank";
 import { toStackCard, type StackCard } from "@/lib/stacks";
 import { createClient } from "@/lib/supabase/client";
 
@@ -75,59 +78,99 @@ export function FindStacks({
     setRequests((cur) => Object.fromEntries(Object.entries(cur).filter(([id]) => id !== stack.id)));
   };
 
-  const card = (s: StackCard, hot = false) => {
+  /** `hot` is the Stack's place in Hot Stacks, from 1. */
+  const card = (s: StackCard, hot?: number) => {
     const request = requests[s.id];
+    const rank = s.averageRank ? rankName(s.averageRank) : null;
     return (
-      <li
-        key={s.id}
-        className="relative flex min-w-0 flex-col gap-3 rounded-md bg-surface p-4 ring-1 ring-inset ring-line transition-colors hover:bg-raised hover:ring-line-hover"
-      >
-        <span className="flex items-start gap-3">
-          <StackCrest name={s.name} />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <Link href={`/stacks/${s.id}`} className="row-link truncate font-semibold">
+      <li key={s.id} className="stack-banner group relative flex min-w-0 flex-col">
+        {hot && (
+          // A warm light from the Hot ribbon's corner.
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-radial-[at_100%_0%] from-accent/14 to-transparent to-55%"
+          />
+        )}
+        <div className="flex items-center gap-3.5 p-4 pb-3.5">
+          {s.averageRank && rank ? (
+            <RankMedal rankTier={s.averageRank} size={60} />
+          ) : (
+            <Image src="/ranks/rank_icon_0.png" alt="" aria-hidden width={60} height={60} className="shrink-0 opacity-60" />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <Link
+              href={`/stacks/${s.id}`}
+              className="row-link text-lg leading-6 font-semibold break-words transition-colors group-hover:text-accent-bright"
+            >
               {s.name}
             </Link>
-            <span className="flex items-center gap-1 text-sm text-subtle">
-              <Icon name="crown" />
+            <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
+              <Avatar account={{ name: s.ownerName, avatarUrl: s.ownerAvatarUrl, detail: null, steamLinked: false }} size={20} />
               <span className="truncate">{s.ownerName}</span>
+              <span className="flex shrink-0 items-center gap-1 text-subtle">
+                <Icon name="crown" />
+                Owner
+              </span>
             </span>
           </span>
           {hot && (
-            <span className="chip chip-accent shrink-0">
+            <span
+              title={`Number ${hot} in Hot Stacks: most games together in the last 2 weeks`}
+              className="-mt-4 flex h-8 shrink-0 items-center gap-1.5 self-start rounded-b-md bg-linear-to-b from-accent-bright to-accent pr-2.5 pl-2 text-sm font-semibold text-on-accent shadow-md shadow-accent/20"
+            >
               <Icon name="flame" />
               Hot
+              <span className="num rounded-sm bg-on-accent/15 px-1 leading-5">#{hot}</span>
             </span>
           )}
-        </span>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
-          <span className="flex items-center gap-1.5">
-            <Icon name="users" />
-            <span className="num text-fg">{s.members}</span> {s.members === 1 ? "Player" : "Players"}
-          </span>
-          {s.games > 0 && (
-            <span className="flex items-center gap-1.5">
-              <Icon name="swords" />
-              <span className="num text-fg">{s.games}</span> {s.games === 1 ? "Game" : "Games"} in 2 Weeks
-            </span>
-          )}
-        </span>
-        <span className="relative z-10 mt-auto flex min-h-8 items-center justify-end gap-2 self-end">
+        </div>
+
+        <dl className="grid grid-cols-3 border-y border-line bg-bg/40">
+          <Fact label={s.members === 1 ? "Player" : "Players"}>
+            <span className="num">{s.members}</span>
+          </Fact>
+          <Fact label="Games in 2 Weeks">
+            <span className={s.games ? "num" : "num text-subtle"}>{s.games}</span>
+          </Fact>
+          <Fact label="Average Rank">{rank ?? <span className="text-subtle">No Rank</span>}</Fact>
+        </dl>
+
+        <div className="relative z-10 mt-auto flex min-h-14 items-center gap-2 px-4 py-2.5">
           {own.has(s.id) ? (
-            <span className="chip">Your Stack</span>
+            <>
+              <span className="flex items-center gap-1.5 text-sm text-muted">
+                <span aria-hidden className="grid size-5 place-items-center rounded-full bg-radiant text-bg">
+                  <Icon name="check" />
+                </span>
+                Your Stack
+              </span>
+              <Link href={`/stacks/${s.id}`} className="btn btn-secondary btn-sm ml-auto">
+                Stack Page
+                <Icon name="chevronRight" />
+              </Link>
+            </>
           ) : request ? (
             <>
-              <span className="text-xs text-subtle">Asked</span>
-              <button onClick={() => cancel(s, request)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
+              <span className="flex items-center gap-1.5 text-sm text-muted">
+                <Icon name="clock" />
+                Request Sent
+              </span>
+              <button
+                onClick={() => cancel(s, request)}
+                disabled={busy === s.id}
+                className="btn btn-ghost btn-sm ml-auto"
+              >
+                <Icon name="x" />
                 Cancel
               </button>
             </>
           ) : (
-            <button onClick={() => ask(s)} disabled={busy === s.id} className="btn btn-secondary btn-sm">
+            <button onClick={() => ask(s)} disabled={busy === s.id} className="btn btn-secondary btn-sm w-full">
+              <Icon name="userPlus" />
               Ask to Join
             </button>
           )}
-        </span>
+        </div>
       </li>
     );
   };
@@ -147,7 +190,7 @@ export function FindStacks({
             <Icon name="flame" />
             Hot Stacks
           </h3>
-          <ul className={grid}>{hot.map((s) => card(s, true))}</ul>
+          <ul className={grid}>{hot.map((s, i) => card(s, i + 1))}</ul>
         </section>
       )}
 
@@ -207,6 +250,16 @@ export function FindStacks({
           </button>
         )}
       </section>
+    </div>
+  );
+}
+
+/** One number on a Stack card: the value over its label. */
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-0.5 px-1 py-2.5 text-center not-first:border-l not-first:border-line">
+      <dt className="micro order-2 whitespace-nowrap text-subtle">{label}</dt>
+      <dd className="text-base font-semibold text-fg">{children}</dd>
     </div>
   );
 }
