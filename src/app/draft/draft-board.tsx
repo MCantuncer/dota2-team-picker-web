@@ -8,6 +8,7 @@ import { GameStoryPanel } from "@/components/game-story-panel";
 import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
+import type { Side } from "@/lib/draft-reader/geometry";
 import { Kbd } from "@/components/kbd";
 import { SteamButton } from "@/components/steam-button";
 import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
@@ -82,6 +83,9 @@ const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", 
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
 const NO_STACKS: PlannableStack[] = [];
+// Where a team panel sits on wide screens: left of the picks, or right of them.
+const LEFT = "xl:col-start-1 xl:row-start-1";
+const RIGHT = "xl:col-start-3 xl:row-start-1";
 const NOTICE = { enemy: "notice-error", open: "notice-warn", out: "notice-done" } as const;
 
 /** A signed score with one decimal and a real minus sign. */
@@ -142,6 +146,8 @@ export function DraftBoard({
   // before the page renders (it is in the background while Dota is in front), and the second must build
   // on the first.
   const latestSolo = useRef<DraftEntry[]>([]);
+  // Your side changes every game, so it is chosen each time rather than remembered.
+  const [mySide, setMySide] = useState<Side | null>(null);
   const [soloPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null);
@@ -584,6 +590,100 @@ export function DraftBoard({
     </>
   );
 
+  // On Dire the Enemy (Radiant) comes first, as in the top bar in Dota. The DOM follows the screen, so Tab goes
+  // from box to box left to right.
+  const enemyFirst = mySide === "dire";
+  const myTeamPanel = (
+    <TeamPanel title="My Team" side={mySide ?? "radiant"} known={mySide !== null} count={allies.length} className={enemyFirst ? RIGHT : LEFT}>
+      {!locked && allies.length < TEAM_SIZE && (
+        <HeroInput
+          id="ally"
+          inputRef={allyRef}
+          placeholder="My team pick, e.g. cm5"
+          search={search}
+          exclude={taken}
+          withPosition
+          onPick={(picked) =>
+            // One act for the whole line: each act starts from the draft as this render saw it.
+            act(
+              ...picked.flatMap((p) =>
+                p.position === null
+                  ? [{ kind: "ally" as const, heroId: p.heroId, position: null }]
+                  : positionActions(resolved, p.heroId, p.position),
+              ),
+            )
+          }
+          onUndo={() => undoLast("ally")}
+        />
+      )}
+      <Slots>
+        {resolved.map((a) => (
+          <Slot
+            key={a.heroId}
+            hero={hero(a.heroId)}
+            portrait={portraits[a.heroId]}
+            by={captainId ? undefined : enteredBy(a.heroId)}
+            onRemove={locked ? undefined : () => act({ kind: "remove", heroId: a.heroId })}
+          >
+            <PositionPicker
+              heroName={hero(a.heroId).name}
+              position={a.position}
+              isGuess={a.isGuess}
+              onChange={locked ? undefined : (p) => placeAlly(a.heroId, p)}
+            />
+          </Slot>
+        ))}
+      </Slots>
+      {resolved.some((a) => a.isGuess) && (
+        <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
+      )}
+    </TeamPanel>
+  );
+  const enemyPanel = (
+    <TeamPanel title="Enemy" side={mySide === "dire" ? "radiant" : "dire"} known={mySide !== null} count={enemies.length} className={enemyFirst ? LEFT : RIGHT}>
+      {!locked && enemies.length < TEAM_SIZE && (
+        <HeroInput
+          id="enemy"
+          placeholder="Enemy pick, e.g. sf2"
+          search={search}
+          exclude={taken}
+          withPosition
+          onPick={(picked) =>
+            act(
+              ...picked.flatMap((p) =>
+                p.position === null
+                  ? [{ kind: "enemy" as const, heroId: p.heroId, position: null }]
+                  : positionActions(resolvedEnemies, p.heroId, p.position, "enemy"),
+              ),
+            )
+          }
+          onUndo={() => undoLast("enemy")}
+        />
+      )}
+      <Slots>
+        {resolvedEnemies.map((e) => (
+          <Slot
+            key={e.heroId}
+            hero={hero(e.heroId)}
+            portrait={portraits[e.heroId]}
+            by={captainId ? undefined : enteredBy(e.heroId)}
+            onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
+          >
+            <PositionPicker
+              heroName={hero(e.heroId).name}
+              position={e.position}
+              isGuess={e.isGuess}
+              onChange={locked ? undefined : (p) => placeEnemy(e.heroId, p)}
+            />
+          </Slot>
+        ))}
+      </Slots>
+      {resolvedEnemies.some((e) => e.isGuess) && (
+        <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
+      )}
+    </TeamPanel>
+  );
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-line pb-4">
@@ -720,6 +820,8 @@ export function DraftBoard({
           heroes={engine.heroes}
           portraits={portraits}
           inDraft={taken}
+          side={mySide}
+          onSideChange={setMySide}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);
@@ -729,96 +831,11 @@ export function DraftBoard({
 
       {chance !== null && <WinBar chance={chance} />}
 
-      {/* Wide screens put the picks between the teams, like a draft overlay, with the bans under My team. The DOM
-          keeps My team, Enemy, Bans, picks so Tab still goes from box to box. */}
+      {/* Wide screens put the picks between the teams, like a draft overlay, with the bans under the left team. The
+          DOM keeps the two teams, Bans, picks so Tab still goes from box to box. */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)] xl:grid-rows-[auto_1fr]">
-        <TeamPanel title="My Team" side="radiant" count={allies.length}>
-          {!locked && allies.length < TEAM_SIZE && (
-            <HeroInput
-              id="ally"
-              inputRef={allyRef}
-              placeholder="My team pick, e.g. cm5"
-              search={search}
-              exclude={taken}
-              withPosition
-              onPick={(picked) =>
-                // One act for the whole line: each act starts from the draft as this render saw it.
-                act(
-                  ...picked.flatMap((p) =>
-                    p.position === null
-                      ? [{ kind: "ally" as const, heroId: p.heroId, position: null }]
-                      : positionActions(resolved, p.heroId, p.position),
-                  ),
-                )
-              }
-              onUndo={() => undoLast("ally")}
-            />
-          )}
-          <Slots>
-            {resolved.map((a) => (
-              <Slot
-                key={a.heroId}
-                hero={hero(a.heroId)}
-                portrait={portraits[a.heroId]}
-                by={captainId ? undefined : enteredBy(a.heroId)}
-                onRemove={locked ? undefined : () => act({ kind: "remove", heroId: a.heroId })}
-              >
-                <PositionPicker
-                  heroName={hero(a.heroId).name}
-                  position={a.position}
-                  isGuess={a.isGuess}
-                  onChange={locked ? undefined : (p) => placeAlly(a.heroId, p)}
-                />
-              </Slot>
-            ))}
-          </Slots>
-          {resolved.some((a) => a.isGuess) && (
-            <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
-          )}
-        </TeamPanel>
-
-        <TeamPanel title="Enemy" side="dire" count={enemies.length} className="xl:col-start-3 xl:row-start-1">
-          {!locked && enemies.length < TEAM_SIZE && (
-            <HeroInput
-              id="enemy"
-              placeholder="Enemy pick, e.g. sf2"
-              search={search}
-              exclude={taken}
-              withPosition
-              onPick={(picked) =>
-                act(
-                  ...picked.flatMap((p) =>
-                    p.position === null
-                      ? [{ kind: "enemy" as const, heroId: p.heroId, position: null }]
-                      : positionActions(resolvedEnemies, p.heroId, p.position, "enemy"),
-                  ),
-                )
-              }
-              onUndo={() => undoLast("enemy")}
-            />
-          )}
-          <Slots>
-            {resolvedEnemies.map((e) => (
-              <Slot
-                key={e.heroId}
-                hero={hero(e.heroId)}
-                portrait={portraits[e.heroId]}
-                by={captainId ? undefined : enteredBy(e.heroId)}
-                onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
-              >
-                <PositionPicker
-                  heroName={hero(e.heroId).name}
-                  position={e.position}
-                  isGuess={e.isGuess}
-                  onChange={locked ? undefined : (p) => placeEnemy(e.heroId, p)}
-                />
-              </Slot>
-            ))}
-          </Slots>
-          {resolvedEnemies.some((e) => e.isGuess) && (
-            <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
-          )}
-        </TeamPanel>
+        {enemyFirst ? enemyPanel : myTeamPanel}
+        {enemyFirst ? myTeamPanel : enemyPanel}
 
         <section aria-labelledby="bans-title" className="flex flex-col gap-3 self-start border-t border-line pt-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
           <h2 id="bans-title" className="section-title">
@@ -987,12 +1004,15 @@ function WinBar({ chance }: { chance: number }) {
 function TeamPanel({
   title,
   side,
+  known,
   count,
   className = "",
   children,
 }: {
   title: string;
-  side: "radiant" | "dire";
+  side: Side;
+  /** The player chose their side, so the panel names it. */
+  known: boolean;
   count: number;
   className?: string;
   children: React.ReactNode;
@@ -1005,6 +1025,11 @@ function TeamPanel({
       <h2 className="section-title flex items-baseline gap-2">
         <span aria-hidden className={`h-2 w-2 self-center rounded-full ${side === "radiant" ? "bg-radiant" : "bg-dire"}`} />
         {title} <span className="num text-subtle">{count}/5</span>
+        {known && (
+          <span className={`micro ml-auto ${side === "radiant" ? "text-radiant" : "text-dire"}`}>
+            {side === "radiant" ? "Radiant" : "Dire"}
+          </span>
+        )}
       </h2>
       {children}
     </section>
