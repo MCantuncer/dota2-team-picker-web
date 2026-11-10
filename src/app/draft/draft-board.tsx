@@ -231,6 +231,9 @@ export function DraftBoard({
   const enemies = heroesOf(draft, "enemy");
   const bans = heroesOf(draft, "ban");
   const mine = allies.find((e) => e.position === myPosition);
+  // Heroes the screen reader put in My team (newest last), and those the player said aren't theirs.
+  const [screenAllies, setScreenAllies] = useState<number[]>([]);
+  const [notMine, setNotMine] = useState<ReadonlySet<number>>(new Set());
   // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
   const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
   // Team holds the seated players' positions; teammates in open seats go where their hero fits best.
@@ -240,6 +243,11 @@ export function DraftBoard({
   // Enemies get the same picker: the engine's guess dashed, and only the positions a player set count as known.
   const resolvedEnemies = engine ? resolveAllyPositions(draft.filter((e) => e.kind === "enemy"), [], (id) => engine.fit(id)) : [];
   const enemyPositions: EnemyPositions = Object.fromEntries(resolvedEnemies.flatMap((e) => (e.isGuess ? [] : [[e.heroId, e.position]])));
+  // The screen shows heroes but not who plays them, so a hero read into My team goes to a guessed position and your
+  // picks go on. Until you have a hero, ask about the newest one read whose position nobody set.
+  const askPick = mine
+    ? undefined
+    : screenAllies.findLast((id) => !notMine.has(id) && resolved.some((a) => a.heroId === id && a.isGuess));
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
   // Only your heroes for the position, best first; a weak one keeps its place and gets a label.
@@ -389,6 +397,8 @@ export function DraftBoard({
   };
   const startOver = () => {
     setCheckInDone(false);
+    setScreenAllies([]);
+    setNotMine(new Set());
     if (party) void shared.newDraft();
     else {
       change([]);
@@ -497,6 +507,15 @@ export function DraftBoard({
             </p>
           ) : (
             <>
+            {askPick !== undefined && !locked && (
+              <DidYouPick
+                hero={hero(askPick)}
+                portrait={portraits[askPick]}
+                position={myPosition}
+                onYes={() => placeAlly(askPick, myPosition)}
+                onNo={() => setNotMine((s) => new Set([...s, askPick]))}
+              />
+            )}
             {suggestions.length > 0 && (
               <p className="text-sm text-subtle">
                 {reactingTo({
@@ -825,6 +844,8 @@ export function DraftBoard({
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);
+            const allies = actions.flatMap((a) => (a.kind === "ally" ? [a.heroId] : []));
+            if (allies.length) setScreenAllies((ids) => [...ids, ...allies]);
           }}
         />
       )}
@@ -1052,6 +1073,53 @@ function Slots({ children }: { children: React.ReactNode[] }) {
 }
 
 const SLOT = "flex h-16 gap-3 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line";
+
+/**
+ * Asks whether a hero the screen reader put in My team is your own pick. Dota's top bar shows heroes, not who
+ * plays them, so without an answer the hero takes a guessed position and your picks go on.
+ */
+export function DidYouPick({
+  hero,
+  portrait,
+  position,
+  onYes,
+  onNo,
+}: {
+  hero: HeroInfo;
+  portrait?: string;
+  position: Position;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-labelledby="did-you-pick"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line"
+    >
+      {/* Portrait and question stay side by side; the buttons go under them when the column is narrow. */}
+      <span className="flex min-w-0 flex-1 basis-80 items-center gap-3">
+        <Portrait hero={hero} src={portrait} size="slot" />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span id="did-you-pick" className="font-medium leading-tight text-fg">
+            Did you pick {hero.name}?
+          </span>
+          <span className="text-sm text-muted">
+            Read from your Dota screen into My Team. If it&apos;s yours, it takes your Pos {position} spot.
+          </span>
+        </span>
+      </span>
+      <span className="flex shrink-0 gap-2 pb-1 pl-1 sm:p-0">
+        <button onClick={onYes} className="btn btn-primary btn-sm">
+          Yes, My Pick
+        </button>
+        <button onClick={onNo} className="btn btn-secondary btn-sm">
+          Not Me
+        </button>
+      </span>
+    </div>
+  );
+}
 
 /** One pick: portrait, name and Remove on top, and its controls (an ally's position) under the name. */
 function Slot({

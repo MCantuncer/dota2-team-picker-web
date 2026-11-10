@@ -49,3 +49,21 @@ test("Watch Dota reads the enemy's last pick at strategy time, and the Game Stor
   await ally.press("Enter");
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
 });
+
+test("Watch Dota asks whether a hero it put in My team is your pick", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  await fakeDotaWindow(page);
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch as Radiant" }).click();
+  // The newest hero read into My team comes first.
+  const ask = page.getByRole("group", { name: "Did you pick Omniknight?" });
+  await expect(ask).toBeVisible({ timeout: 45_000 });
+  await ask.getByRole("button", { name: "Not Me" }).click();
+  const next = page.getByRole("group", { name: /^Did you pick / });
+  await expect(next).toBeVisible();
+  const heroName = (await next.locator("#did-you-pick").innerText()).replace(/^Did you pick (.+)\?$/, "$1");
+  await next.getByRole("button", { name: "Yes, My Pick" }).click();
+  await expect(page.getByText(`You're on ${heroName}. Good luck!`)).toBeVisible();
+  await expect(page.getByRole("group", { name: /^Did you pick / })).toHaveCount(0);
+});
