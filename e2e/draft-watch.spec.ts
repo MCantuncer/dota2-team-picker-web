@@ -78,6 +78,26 @@ test("Watch Dota finds your side from your Steam name, and a side set by hand wi
   await expect(page.getByText("Found ct'x on Dire")).toHaveCount(0);
 });
 
+test("Watch Dota asks whether a hero it put in My team is your pick", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  await fakeDotaWindow(page);
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  // This frame has the names blanked out, so the side is chosen by hand.
+  await page.getByRole("region", { name: "Read the Dota screen" }).getByRole("button", { name: "Radiant", exact: true }).click();
+  // The newest hero read into My team comes first.
+  const ask = page.getByRole("group", { name: "Did you pick Omniknight?" });
+  await expect(ask).toBeVisible({ timeout: 45_000 });
+  await ask.getByRole("button", { name: "Not Me" }).click();
+  const next = page.getByRole("group", { name: /^Did you pick / });
+  await expect(next).toBeVisible();
+  const heroName = (await next.locator("#did-you-pick").innerText()).replace(/^Did you pick (.+)\?$/, "$1");
+  await next.getByRole("button", { name: "Yes, My Pick" }).click();
+  await expect(page.getByText(`You're on ${heroName}. Good luck!`)).toBeVisible();
+  await expect(page.getByRole("group", { name: /^Did you pick / })).toHaveCount(0);
+});
+
 test("Watch Dota learns a hero's look when you add it by hand, and reads it by itself next time", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
   test.setTimeout(90_000);
