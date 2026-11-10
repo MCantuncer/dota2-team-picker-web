@@ -2,15 +2,19 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
-import { PickWhy } from "@/components/pick-why";
+import { PickWhy, VerdictLines } from "@/components/pick-why";
 import type { Suggestion } from "@/lib/engine/types";
+import type { Verdict } from "@/lib/engine/verdict";
 
 /**
- * Ranks 2 to 8. Closed, a row is the hero, its main reason and the score, with nothing on top of it. Opening the row
- * shows every reason and gives Picked and Banned a line of their own under them, so actions never cover text.
+ * Ranks 2 to 8. Closed, a row is the hero, its verdict against the best pick (or its main reason without one) and the
+ * score, with the player's record note on a line of its own. Opening the row shows the verdict in full and every
+ * reason, and gives Picked and Banned a line of their own under them, so actions never cover text.
  */
 export function SuggestionRow({
   suggestion: s,
+  verdict,
+  leader,
   portrait,
   rank,
   scoreText,
@@ -21,6 +25,10 @@ export function SuggestionRow({
   onBanned,
 }: {
   suggestion: Suggestion;
+  /** Where the hero stands against the best pick on the list, and why. */
+  verdict?: Verdict;
+  /** The best pick's name, shown over the other rows, since their verdicts compare with it. */
+  leader?: string;
   portrait: ReactNode;
   /** The place in the list; null for a row shown outside it. */
   rank: number | null;
@@ -36,7 +44,9 @@ export function SuggestionRow({
   const panelId = useId();
   return (
     <li className={`border-t border-line ${open ? "bg-surface" : ""}`}>
-      {rank === 2 && <span className="block bg-bg px-2 pb-1 pt-3 text-sm text-subtle">Also Strong</span>}
+      {rank === 2 && (
+        <span className="block bg-bg px-2 pb-1 pt-3 text-sm text-subtle">{leader ? `Other Picks, Compared with ${leader}` : "Other Picks"}</span>
+      )}
       <button
         type="button"
         aria-expanded={open}
@@ -51,7 +61,9 @@ export function SuggestionRow({
             {s.name}
             {badges}
           </span>
-          {!open && s.reasons[0] && <span className="truncate text-sm text-subtle">{s.reasons[0]}</span>}
+          {!open && verdict && <span className="line-clamp-3 text-sm text-subtle">{verdict.text}</span>}
+          {!open && !verdict && s.reasons[0] && <span className="truncate text-sm text-subtle">{s.reasons[0]}</span>}
+          {!open && verdict?.note && <span className="line-clamp-2 text-sm text-accent">{verdict.note}</span>}
         </span>
         <span className="flex items-center gap-2">
           {gainText}
@@ -68,6 +80,7 @@ export function SuggestionRow({
       <div id={panelId} hidden={!open} className="px-2 pb-4 pt-3 sm:pl-[7.25rem]">
         {open && (
           <>
+            {verdict && <VerdictLines verdict={verdict} className="mb-3 text-sm" />}
             <PickWhy suggestion={s} className="text-sm text-fg/85" />
             {onPicked && onBanned && (
               <div className="mt-3 flex gap-2">

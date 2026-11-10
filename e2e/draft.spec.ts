@@ -272,5 +272,8 @@ test("heroes the player has played join their own heroes in one list, marked Out
   const own = picks.filter({ hasText: "Nature's Prophet" });
   await expect(own).toHaveCount(1);
   await expect(own.getByText("Outside Pool")).toHaveCount(0);
+  // The first is the best pick; every other row says how far behind it is and why.
+  await expect(picks.first()).toContainText(/(Clear Best Pick|Best Pick Right Now)/);
+  await expect(picks.nth(1)).toContainText(/\d+\.\d points behind /);
   await expectAccessible(page);
 });

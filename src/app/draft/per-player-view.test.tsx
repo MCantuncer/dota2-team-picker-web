@@ -4,11 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import type { Suggestion } from "@/lib/engine/types";
 import { PerPlayerView } from "./per-player-view";
 
-const suggestion = (heroId: number, name: string, reasons: string[]): Suggestion =>
+const suggestion = (heroId: number, name: string, reasons: string[], score = 2.4): Suggestion =>
   ({
     heroId,
     name,
-    score: 2.4,
+    score,
+    error: 0.5,
+    breakdown: { counter: 0, synergy: 0, meta: score, positionFit: 0, teamNeeds: 0, comfort: 0, flex: 0, pickSafety: 0 },
+    counterBy: [],
+    synergyBy: [],
+    record: null,
     reasons,
     summary: "",
     tags: [],
@@ -31,7 +36,7 @@ describe("PerPlayerView", () => {
                 "Your record 12-8",
                 "Watch out: loses to Lina (-1.2)",
               ]),
-              suggestion(17, "Storm Spirit", ["Fast into Lina (+0.9)", "x"]),
+              suggestion(17, "Storm Spirit", ["Fast into Lina (+0.9)", "x"], 1.4),
             ],
             weak: new Set(),
             played: new Set(),
@@ -50,8 +55,9 @@ describe("PerPlayerView", () => {
 
     expect(screen.getByRole("heading", { name: /Ali Pos 2 Mid/ })).toBeVisible();
     expect(screen.getByText("Your record 12-8")).toBeVisible();
-    // A closed card shows its main reason; opening it shows the rest.
-    expect(screen.getByText("Fast into Lina (+0.9)")).toBeVisible();
+    // A closed card shows its verdict against the column's best; opening it shows every reason.
+    expect(screen.getByText("1.0 points behind: lower win rate (-1.0).")).toBeVisible();
+    expect(screen.queryByText("Fast into Lina (+0.9)")).toBeNull();
     expect(screen.queryByText("X")).toBeNull();
     const storm = screen.getByRole("button", {
       name: /Storm Spirit/,

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, OutsidePool, PickWhy, WeakHere } from "@/components/pick-why";
+import { MoveMark, OutsidePool, PickWhy, VerdictLines, WeakHere } from "@/components/pick-why";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
@@ -19,6 +19,7 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
+import { type Verdict, verdicts } from "@/lib/engine/verdict";
 import {
   type ListRule,
   listRule,
@@ -287,6 +288,8 @@ export function DraftBoard({
     weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined, enemyPositions) : 0),
   });
   const { list: suggestions, weak, played, fromAll } = picks;
+  // Each listed hero against the first: is it a clear best pick, and why is every other one behind it.
+  const verdictOf = new Map(engine ? verdicts(suggestions, (id) => engine.hero(id).name, myPosition).map((v) => [v.heroId, v]) : []);
   // Shown after the list and never saved with it: the saved list is the list above.
   const outsider = provenOutsider(ranked, poolIds, picks);
 
@@ -548,6 +551,8 @@ export function DraftBoard({
                   suggestion={s}
                   move={moves.get(s.heroId)}
                   weakHere={weak.has(s.heroId)}
+                  verdict={verdictOf.get(s.heroId)}
+                  leader={suggestions[0]?.name}
                   playedGames={played.has(s.heroId) ? (player.personal[s.heroId]?.games ?? null) : null}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
@@ -1212,6 +1217,8 @@ function SuggestionCard({
   position,
   move,
   weakHere,
+  verdict,
+  leader,
   outside,
   playedGames = null,
   gain,
@@ -1227,6 +1234,10 @@ function SuggestionCard({
   move?: string;
   /** One of the player's heroes, but weak in this draft. */
   weakHere?: boolean;
+  /** Where the hero stands against the best pick on the list, and why; none for the outside hero. */
+  verdict?: Verdict;
+  /** The best pick's name, over the other rows. */
+  leader?: string;
   /** Not one of the player's heroes for the position. */
   outside?: boolean;
   /** Games the player has on a listed hero from outside their pool; null for a pool hero. */
@@ -1268,8 +1279,8 @@ function SuggestionCard({
           />
         )}
         <span className="flex items-center gap-2 text-sm text-accent">
-          {/* A pool hero that is weak here is the best the player has, not a strong pick. */}
-          {weakHere ? "Best of Your Heroes" : "Best Pick Right Now"} <MoveMark move={move} />
+          {/* A hero that is weak here is the best the player has, not a strong pick; "Clear" only when the data proves it. */}
+          {weakHere ? "Best of Your Heroes" : verdict?.kind === "clear" ? "Clear Best Pick" : "Best Pick Right Now"} <MoveMark move={move} />
           {weakHere && <WeakHere />}
           {playedLabel}
         </span>
@@ -1280,6 +1291,7 @@ function SuggestionCard({
           </span>
           {gainText}
         </span>
+        {verdict && <VerdictLines verdict={verdict} className="max-w-md" />}
         <PickWhy suggestion={s} className="max-w-md text-fg/85" />
         {counters}
         {onPicked && onBanned && (
@@ -1301,6 +1313,8 @@ function SuggestionCard({
   return (
     <SuggestionRow
       suggestion={s}
+      verdict={verdict}
+      leader={leader}
       portrait={<Portrait hero={hero} src={portrait} size="strip" />}
       rank={rank}
       scoreText={signed(s.score)}
