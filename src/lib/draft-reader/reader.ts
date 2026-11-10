@@ -1,5 +1,17 @@
-import { cellRect, GRID_COLUMNS, slotRects, type Attribute, type Side } from "./geometry";
-import { colourfulness, leftPart, portraitLeftPatch, portraitPatch, portraitRect, similarity, slotPatches, type Pixels } from "./match";
+import { cellRect, GRID_COLUMNS, slotRects, type Attribute, type Rect, type Side } from "./geometry";
+import type { Look } from "./looks";
+import {
+  brightnessSpread,
+  colourfulness,
+  leftPart,
+  patch,
+  portraitLeftPatch,
+  portraitPatch,
+  portraitRect,
+  similarity,
+  slotPatches,
+  type Pixels,
+} from "./match";
 
 /** A hero the reader knows: its id, name, primary attribute, and its store portrait's pixels. */
 export interface ReaderHero {
@@ -16,6 +28,8 @@ export interface SlotRead {
   unsure: boolean;
   /** The closest hero and how well it matched (1 is identical), for the watch log. */
   best?: { heroId: number; score: number };
+  /** True when the hero was read by a look learned from your screen rather than its store portrait. */
+  learned?: boolean;
 }
 
 export interface DraftRead {
@@ -42,31 +56,82 @@ const LOCKED_COLOUR = 0.5;
  * select screenshots at 720 to 1440 px high: banned cells score 0.92 or more, other cells 0.7 or less.
  */
 const SLASH_SHARE = 0.8;
+/**
+ * A slot the reader can learn a look from must show art, not an empty panel: colourful and with
+ * light and dark in it. Measured on real top bars: empty slots score 18 colour and 9 to 10 spread
+ * (39 with your level badge in it); the dullest hero art (Tusk, Sven) scores 20 colour, and every
+ * hero 25 spread or more. Art as dull as Tusk is never learned, but its store portrait reads anyway.
+ */
+const LOOK_MIN_COLOUR = 25;
+const LOOK_MIN_SPREAD = 20;
+
+interface Ref {
+  id: number;
+  patch: Float32Array;
+  left: Float32Array;
+  colour: number;
+  learned: boolean;
+}
 
 /** Compares screenshots with every hero's portrait. Build it once; reading is then fast. */
 export class DraftReader {
-  private refs: { id: number; patch: Float32Array; left: Float32Array; colour: number }[];
+  private refs: Ref[];
   private grid: Record<Attribute, number[]>;
 
-  constructor(heroes: ReaderHero[]) {
+  /** `looks` are heroes' looks learned from this player's screen, read alongside the store portraits. */
+  constructor(heroes: ReaderHero[], looks: Look[] = []) {
     this.refs = heroes.map((h) => ({
       id: h.id,
       patch: portraitPatch(h.portrait),
       left: portraitLeftPatch(h.portrait),
       colour: colourfulness(h.portrait, portraitRect(h.portrait)),
+      learned: false,
     }));
+    for (const look of looks) this.addLook(look);
     // The grid lists heroes by name within each attribute, by plain character order as Dota does.
     const byName = [...heroes].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     this.grid = { str: [], agi: [], int: [], all: [] };
     for (const h of byName) if (h.primaryAttr in GRID_COLUMNS) this.grid[h.primaryAttr as Attribute].push(h.id);
   }
 
-  read(px: Pixels): DraftRead {
-    const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => {
-      const whole = this.readSlot(slotPatches(px, r), "patch", colourfulness(px, r));
-      // Not sure on the whole portrait: your own slot's level badge may cover its right side.
-      return whole.heroId === null ? this.readSlot(slotPatches(px, r, leftPart), "left", colourfulness(px, r)) : whole;
+  /** Reads a hero by a learned look too. Looks of heroes the reader doesn't know are ignored. */
+  addLook(look: Look) {
+    if (!this.refs.some((r) => r.id === look.heroId)) return;
+    this.refs.push({ id: look.heroId, patch: look.patch, left: look.left, colour: look.colour, learned: true });
+  }
+
+  /** Stops reading a hero by its learned looks. */
+  forget(heroId: number) {
+    this.refs = this.refs.filter((r) => !(r.learned && r.id === heroId));
+  }
+
+  /**
+   * Learns how `heroId` looks on this screen, after the player added it by hand to the team on `side`.
+   * It learns from the one slot on that side that shows art the reader could not name (or named as a
+   * hero the player has since removed, listed in `removed`), and only when there is exactly one such
+   * slot, so it never guesses between two. Returns the look, or null when nothing was learned.
+   */
+  learn(px: Pixels, side: Side, heroId: number, removed: ReadonlySet<number> = new Set()): Look | null {
+    const portrait = this.refs.find((r) => r.id === heroId && !r.learned);
+    if (!portrait) return null;
+    const slots = slotRects(side, px.width, px.height).map((r) => ({ r, read: this.readRect(px, r) }));
+    // The hero already reads on its own: nothing to learn.
+    if (slots.some((s) => s.read.heroId === heroId)) return null;
+    const open = slots.filter(({ r, read }) => {
+      if (read.heroId !== null && !removed.has(read.heroId)) return false;
+      const colour = colourfulness(px, r);
+      // Art, not an empty panel, and locked in rather than a grey preview.
+      return colour >= LOOK_MIN_COLOUR && colour >= LOCKED_COLOUR * portrait.colour && brightnessSpread(px, r) >= LOOK_MIN_SPREAD;
     });
+    if (open.length !== 1) return null;
+    const { r } = open[0]!;
+    const look = { heroId, patch: patch(px, r), left: patch(px, leftPart(r)), colour: colourfulness(px, r) };
+    this.addLook(look);
+    return look;
+  }
+
+  read(px: Pixels): DraftRead {
+    const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => this.readRect(px, r));
     const picked = new Set<number>();
     const radiant = side("radiant");
     const dire = side("dire");
@@ -78,29 +143,39 @@ export class DraftReader {
     };
   }
 
+  /** One top bar slot. */
+  private readRect(px: Pixels, r: Rect): SlotRead {
+    const colour = colourfulness(px, r);
+    const whole = this.readSlot(slotPatches(px, r), "patch", colour);
+    // Not sure on the whole portrait: your own slot's level badge may cover its right side.
+    return whole.heroId === null ? this.readSlot(slotPatches(px, r, leftPart), "left", colour) : whole;
+  }
+
   private readSlot(slot: Float32Array[], part: "patch" | "left", colour: number): SlotRead {
-    let best = -1,
-      second = -1,
-      bestRef = this.refs[0];
-    // Shortlist the heroes closest to the slot's middle cut, then try every cut on those only: the same
-    // answer as trying every cut on every hero, several times faster.
-    const middle = slot[Math.floor(slot.length / 2)];
+    // Shortlist the portraits closest to the slot's middle cut, then try every cut on those only: the
+    // same answer as trying every cut on every portrait, several times faster.
+    const middle = slot[Math.floor(slot.length / 2)]!;
     const shortlist = this.refs
       .map((ref) => ({ ref, score: similarity(middle, ref[part]) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, SHORTLIST)
       .map((c) => c.ref);
+    // A hero can have its store portrait and looks learned from your screen: each hero counts once, by
+    // its closest one, so the runner-up is always another hero.
+    const byHero = new Map<number, { ref: Ref; score: number }>();
     for (const ref of shortlist) {
       let score = -1;
       for (const p of slot) score = Math.max(score, similarity(p, ref[part]));
-      if (score > best) [second, best, bestRef] = [best, score, ref];
-      else if (score > second) second = score;
+      const seen = byHero.get(ref.id);
+      if (!seen || score > seen.score) byHero.set(ref.id, { ref, score });
     }
-    const closest = { heroId: bestRef.id, score: best };
-    if (best >= SURE_MATCH && best - second >= SURE_MARGIN) {
+    const [first, second] = [...byHero.values()].sort((a, b) => b.score - a.score);
+    const { ref, score: best } = first!;
+    const closest = { heroId: ref.id, score: best };
+    if (best >= SURE_MATCH && best - (second?.score ?? -1) >= SURE_MARGIN) {
       // A grey preview of a hero the player is still choosing: not picked yet.
-      if (colour < LOCKED_COLOUR * bestRef.colour) return { heroId: null, unsure: false, best: closest };
-      return { heroId: bestRef.id, unsure: false, best: closest };
+      if (colour < LOCKED_COLOUR * ref.colour) return { heroId: null, unsure: false, best: closest };
+      return ref.learned ? { heroId: ref.id, unsure: false, best: closest, learned: true } : { heroId: ref.id, unsure: false, best: closest };
     }
     return { heroId: null, unsure: best >= EMPTY_BELOW, best: closest };
   }
