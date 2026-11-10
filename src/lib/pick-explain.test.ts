@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { outsiderText, poolOnly, provenOutsider, rankMoves, reactingTo, SAVED_SUGGESTIONS, toSaved } from "./pick-explain";
+import { outsiderText, ownHeroes, provenOutsider, rankMoves, reactingTo, SAVED_SUGGESTIONS, toSaved } from "./pick-explain";
 
 describe("reactingTo", () => {
   it("says the list is a blind pick before anyone picks", () => {
@@ -26,28 +26,28 @@ describe("rankMoves", () => {
   });
 });
 
-describe("poolOnly", () => {
+describe("ownHeroes", () => {
   const ranked = [10, 20, 30, 40, 50, 60].map((heroId) => ({ heroId }));
 
   it("lists only the pool heroes, best first", () => {
-    const { list, fromAll } = poolOnly(ranked, new Set([60, 30]));
+    const { list, fromAll } = ownHeroes(ranked, new Set([60, 30]));
     expect(list.map((s) => s.heroId)).toEqual([30, 60]);
     expect(fromAll).toBeNull();
   });
 
   it("takes a custom limit", () => {
-    const { list } = poolOnly(ranked, new Set([30, 50, 60]), { max: 2 });
+    const { list } = ownHeroes(ranked, new Set([30, 50, 60]), { max: 2 });
     expect(list.map((s) => s.heroId)).toEqual([30, 50]);
   });
 
   it("ranks every hero together when the pool is empty, and says so", () => {
-    const { list, fromAll } = poolOnly(ranked, new Set(), { max: 4 });
+    const { list, fromAll } = ownHeroes(ranked, new Set(), { max: 4 });
     expect(list.map((s) => s.heroId)).toEqual([10, 20, 30, 40]);
     expect(fromAll).toBe("none");
   });
 
   it("ranks every hero together when every pool hero is taken, and says so", () => {
-    const { list, fromAll } = poolOnly(ranked, new Set([99]), { max: 2 });
+    const { list, fromAll } = ownHeroes(ranked, new Set([99]), { max: 2 });
     expect(list.map((s) => s.heroId)).toEqual([10, 20]);
     expect(fromAll).toBe("used");
   });
@@ -69,7 +69,7 @@ describe("provenOutsider", () => {
   it("shows the best outside hero when it beats the best pool hero by more than the margin", () => {
     // Margin: 1.645 * hypot(2, 2) = 4.65.
     const ranked = [s(10, 15), s(20, 12), s(30, 10)];
-    const lists = poolOnly(ranked, new Set([30]));
+    const lists = ownHeroes(ranked, new Set([30]));
     const o = provenOutsider(ranked, new Set([30]), lists)!;
     expect(o.pick.heroId).toBe(10);
     expect(o.over.heroId).toBe(30);
@@ -81,16 +81,16 @@ describe("provenOutsider", () => {
 
   it("shows nothing when the gap is inside the margin", () => {
     const ranked = [s(10, 14), s(30, 10)];
-    expect(provenOutsider(ranked, new Set([30]), poolOnly(ranked, new Set([30])))).toBeNull();
+    expect(provenOutsider(ranked, new Set([30]), ownHeroes(ranked, new Set([30])))).toBeNull();
     // The same gap clears a smaller margin.
     const sure = [s(10, 14, 1), s(30, 10, 1)];
-    expect(provenOutsider(sure, new Set([30]), poolOnly(sure, new Set([30])))?.pick.heroId).toBe(10);
+    expect(provenOutsider(sure, new Set([30]), ownHeroes(sure, new Set([30])))?.pick.heroId).toBe(10);
   });
 
   it("shows nothing when the best hero is in the pool, or the list is from every hero", () => {
     const ranked = [s(10, 20), s(20, 5, 0), s(30, 1, 0)];
-    expect(provenOutsider(ranked, new Set([10, 30]), poolOnly(ranked, new Set([10, 30])))).toBeNull();
-    expect(provenOutsider(ranked, new Set(), poolOnly(ranked, new Set()))).toBeNull();
-    expect(provenOutsider(ranked, new Set([99]), poolOnly(ranked, new Set([99])))).toBeNull();
+    expect(provenOutsider(ranked, new Set([10, 30]), ownHeroes(ranked, new Set([10, 30])))).toBeNull();
+    expect(provenOutsider(ranked, new Set(), ownHeroes(ranked, new Set()))).toBeNull();
+    expect(provenOutsider(ranked, new Set([99]), ownHeroes(ranked, new Set([99])))).toBeNull();
   });
 });

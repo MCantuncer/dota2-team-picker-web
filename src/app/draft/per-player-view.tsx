@@ -132,6 +132,7 @@ function Column({
             <>
               <MoveMark move={moves.get(s.heroId)} />
               {c.weak.has(s.heroId) && <WeakHere />}
+              {c.played.has(s.heroId) && <OutsidePool title={`${name} has played it, but it is not in their heroes for this position`} />}
             </>,
           ),
         )}

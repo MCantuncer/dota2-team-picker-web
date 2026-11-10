@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Engine } from "@/lib/engine/score";
-import type { EnemyPositions, Position, RankBracket } from "@/lib/engine/types";
+import type { PositionFit } from "@/lib/engine/positions";
+import type { EnemyPositions, GamesWins, Position, RankBracket } from "@/lib/engine/types";
 
 /** "A", "A and B", "A, B and C". */
 const list = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : (items[0] ?? ""));
@@ -59,37 +60,84 @@ export function worstMatchup(
   return Math.min(0, ...edges.map((e) => e.edge));
 }
 
-/** A player's list: the heroes to show, and which of them are weak in this draft. */
-/** How a saved list was built: from the player's own heroes, or from every hero when none are left. */
-export type ListRule = "pool" | "any";
+/**
+ * How a saved list was built: only the player's own heroes ("pool"), their own heroes plus heroes they have
+ * played ("played"), or every hero when none of those are left ("any"). The database checks each rule.
+ */
+export type ListRule = "pool" | "played" | "any";
 
+/**
+ * Games on a hero (any position, six months of the player's matches) that make it one they have played: the
+ * Profile's bar for a hero, and the one save_draft_suggestions checks a "played" list against.
+ */
+export const PLAYED_MIN = 10;
+/**
+ * Share of a hero's games in the position before a played hero is listed there. The record counts every
+ * position, so this is stricter than the engine's bar for listing a pool hero.
+ */
+export const PLAYED_FIT = 0.3;
+
+/**
+ * Heroes outside the pool the player has played PLAYED_MIN games or more and that are at home in `pos`
+ * (Can, 2026-11-10: Top 5 is the player's best heroes, not their only ones). Their record is measured, so
+ * the score can weigh them; a hero they never played stays out.
+ */
+export function playedHeroes(
+  personal: Record<number, GamesWins> | undefined,
+  fit: (heroId: number) => PositionFit,
+  pos: Position,
+  pool: Set<number>,
+): Set<number> {
+  const played = new Set<number>();
+  for (const [key, record] of Object.entries(personal ?? {})) {
+    const heroId = Number(key);
+    if (pool.has(heroId) || !Number.isInteger(heroId) || !(record?.games >= PLAYED_MIN)) continue;
+    if (fit(heroId)[pos] >= PLAYED_FIT) played.add(heroId);
+  }
+  return played;
+}
+
+/** A player's list: the heroes to show, and which of them are weak in this draft. */
 export interface PickList<T> {
   list: T[];
-  /** Pool heroes in `list` that are weak in this draft, shown with a label. */
+  /** Heroes in `list` that are weak in this draft, shown with a label. */
   weak: Set<number>;
+  /** Heroes in `list` from outside the pool that the player has played, shown with a label. */
+  played: Set<number>;
   /**
-   * Why the list is the best of every hero instead of the pool: "none" when the player has no
-   * heroes for the position, "used" when every one of them is picked, banned or listed for
-   * another player. null for a pool list.
+   * Why the list is the best of every hero instead of the player's own: "none" when the player has
+   * no heroes for the position, "used" when every one of them is picked, banned or listed for
+   * another player. null for a list of their own heroes.
    */
   fromAll: "none" | "used" | null;
 }
 
 /**
- * The heroes a player sees, from `ranked` (every suggestion, best first). With heroes in the pool,
- * only those, in score order: the pool decides which heroes are listed and the engine decides their
- * order (Can, 2026-11-08). A weak pool hero keeps its place by score and gets a label, so a bad pool
- * hero is never listed above better ones (Can, 2026-11-03) and is never swapped for a hero from
- * outside the pool. Without a pool hero to list, the top `max` of all heroes, and `fromAll` says why.
+ * The heroes a player sees, from `ranked` (every suggestion, best first): the pool heroes and the heroes
+ * they have played (`played`, from playedHeroes), together in score order. The engine's score already
+ * boosts the pool, the Top 5 and the player's record, so Top 5 is a push, never a filter (Can,
+ * 2026-11-10), and a hero they never played stays out (Can, 2026-11-08). A weak hero keeps its place by
+ * score and gets a label (Can, 2026-11-03). With none of those to list, the top `max` of all heroes, and
+ * `fromAll` says why.
  */
-export function poolOnly<T extends { heroId: number }>(
+export function ownHeroes<T extends { heroId: number }>(
   ranked: T[],
   pool: Set<number>,
-  { max = LIST_MAX, weak = () => false }: { max?: number; weak?: (s: T) => boolean } = {},
+  { max = LIST_MAX, weak = () => false, played = new Set() }: { max?: number; weak?: (s: T) => boolean; played?: Set<number> } = {},
 ): PickList<T> {
-  const list = ranked.filter((s) => pool.has(s.heroId)).slice(0, max);
-  if (!list.length) return { list: ranked.slice(0, max), weak: new Set(), fromAll: pool.size ? "used" : "none" };
-  return { list, weak: new Set(list.filter(weak).map((s) => s.heroId)), fromAll: null };
+  const list = ranked.filter((s) => pool.has(s.heroId) || played.has(s.heroId)).slice(0, max);
+  if (!list.length) return { list: ranked.slice(0, max), weak: new Set(), played: new Set(), fromAll: pool.size ? "used" : "none" };
+  return {
+    list,
+    weak: new Set(list.filter(weak).map((s) => s.heroId)),
+    played: new Set(list.filter((s) => !pool.has(s.heroId)).map((s) => s.heroId)),
+    fromAll: null,
+  };
+}
+
+/** The rule a list was built by, as the database checks it. */
+export function listRule({ fromAll, played }: Pick<PickList<unknown>, "fromAll" | "played">): ListRule {
+  return fromAll ? "any" : played.size ? "played" : "pool";
 }
 
 /**
@@ -110,18 +158,19 @@ export interface Outsider<T> {
 }
 
 /**
- * The best hero outside the pool, when it beats the pool's best hero by more than the error in
- * both scores (Can, 2026-11-08: pool only, plus one proven outsider). Only for a pool list: a list
- * from every hero already shows the best of all. The pool heroes' scores include their favorite
- * and comfort boosts, so the outsider has to win without them.
+ * The best hero the player neither has in the pool nor has played, when it beats the best listed hero
+ * by more than the error in both scores (Can, 2026-11-08: one proven outsider). Only for a list of the
+ * player's own heroes: a list from every hero already shows the best of all. The listed heroes' scores
+ * include their favorite and comfort boosts, so the outsider has to win without them.
  */
 export function provenOutsider<T extends { heroId: number; score: number; error: number }>(
   ranked: T[],
   pool: Set<number>,
-  { list, fromAll }: PickList<T>,
+  { list, fromAll, played }: PickList<T>,
 ): Outsider<T> | null {
   const over = list[0];
-  const pick = ranked.find((s) => !pool.has(s.heroId));
+  const listed = new Set(list.map((s) => s.heroId));
+  const pick = ranked.find((s) => !pool.has(s.heroId) && !played.has(s.heroId) && !listed.has(s.heroId));
   if (fromAll || !over || !pick) return null;
   const gap = pick.score - over.score;
   const margin = OUTSIDER_Z * Math.hypot(pick.error, over.error);
