@@ -13,6 +13,9 @@ interface ScreenshotPasteProps {
   portraits: Record<number, string>;
   /** Heroes already in the draft (picks and bans). */
   inDraft: Set<number>;
+  /** Which side the player is on this game, or null until they choose. The board lays the teams out by it. */
+  side: Side | null;
+  onSideChange: (side: Side) => void;
   onRead: (read: DraftRead, mySide: Side) => void;
 }
 
@@ -23,9 +26,7 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
  * twice a second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
  * come from the top bar and the bans from the hero grid. Nothing leaves the browser.
  */
-export function ScreenshotPaste({ heroes, portraits, inDraft, onRead }: ScreenshotPasteProps) {
-  // Your side changes every game, so it is chosen each time rather than remembered.
-  const [side, setSide] = useState<Side | null>(null);
+export function ScreenshotPaste({ heroes, portraits, inDraft, side, onSideChange: setSide, onRead }: ScreenshotPasteProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const reader = useRef<Promise<DraftReader> | null>(null);
   const watch = useWatchDota(heroes, portraits, inDraft, (read) => {

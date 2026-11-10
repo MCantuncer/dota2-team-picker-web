@@ -35,6 +35,27 @@ test("the draft screen suggests heroes as both teams fill in", async ({ page }) 
   await expect(picks).toHaveCount(8);
 });
 
+test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dota", async ({ page }) => {
+  await page.goto("/draft");
+  await expect(page.getByLabel("My team pick, e.g. cm5")).toBeVisible();
+  const teams = page.locator('section[aria-label="My Team"], section[aria-label="Enemy"]');
+  await expect(teams.first()).toHaveAttribute("aria-label", "My Team");
+
+  const side = page.getByRole("region", { name: "Read the Dota screen" });
+  await side.getByRole("button", { name: "Dire", exact: true }).click();
+  await expect(teams.first()).toHaveAttribute("aria-label", "Enemy");
+  await expect(page.getByRole("heading", { name: /^Enemy .*Radiant$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^My Team .*Dire$/ })).toBeVisible();
+  // Tab follows the screen: from the Enemy box to the My Team box.
+  await page.getByLabel("Enemy pick, e.g. sf2").focus();
+  await page.keyboard.press("Tab");
+  await expect(page.getByLabel("My team pick, e.g. cm5")).toBeFocused();
+  await expectAccessible(page);
+
+  await side.getByRole("button", { name: "Radiant", exact: true }).click();
+  await expect(teams.first()).toHaveAttribute("aria-label", "My Team");
+});
+
 test("the draft screen takes several heroes at once and forgives a typo", async ({ page }) => {
   await page.goto("/draft");
   const enemy = page.getByLabel("Enemy pick");
