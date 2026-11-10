@@ -7,8 +7,16 @@ import { FindStacks } from "./find-stacks";
 const rpc = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc }) }));
 
-const owls: StackCard = { id: "s1", name: "Night Owls", ownerName: "Ana", members: 4, games: 6 };
-const duo: StackCard = { id: "s2", name: "Duo", ownerName: "Bo", members: 2, games: 0 };
+const owls: StackCard = {
+  id: "s1",
+  name: "Night Owls",
+  ownerName: "Ana",
+  ownerAvatarUrl: null,
+  members: 4,
+  games: 6,
+  averageRank: 54,
+};
+const duo: StackCard = { id: "s2", name: "Duo", ownerName: "Bo", ownerAvatarUrl: null, members: 2, games: 0, averageRank: null };
 const row = (name: string) => screen.getByText(name).closest("li")!;
 
 describe("FindStacks", () => {
@@ -18,10 +26,11 @@ describe("FindStacks", () => {
     render(<FindStacks hot={[owls]} all={[]} mine={[]} requests={{}} />);
     const hot = screen.getByRole("region", { name: "Hot Stacks" });
     const card = within(hot).getByRole("listitem");
-    expect(card).toHaveTextContent("Hot");
+    expect(card).toHaveTextContent("Hot#1");
     expect(card).toHaveTextContent("Ana");
-    expect(card).toHaveTextContent("4 Players");
-    expect(card).toHaveTextContent("6 Games in 2 Weeks");
+    expect(card).toHaveTextContent("Players4");
+    expect(card).toHaveTextContent("Games in 2 Weeks6");
+    expect(card).toHaveTextContent("Average RankLegend IV");
   });
 
   it("asks to join and can take the request back", async () => {
@@ -41,9 +50,15 @@ describe("FindStacks", () => {
     expect(await screen.findByText("Request not sent: This Stack is not taking requests.")).toBeInTheDocument();
   });
 
-  it("has no Ask to Join on your own Stacks", () => {
+  it("says when a Stack has no rank yet", () => {
+    render(<FindStacks hot={[]} all={[duo]} mine={[]} requests={{}} />);
+    expect(row("Duo")).toHaveTextContent("Average RankNo Rank");
+  });
+
+  it("has no Ask to Join on your own Stacks, and opens them instead", () => {
     render(<FindStacks hot={[]} all={[owls]} mine={["s1"]} requests={{}} />);
     expect(within(row("Night Owls")).getByText("Your Stack")).toBeInTheDocument();
+    expect(within(row("Night Owls")).getByRole("link", { name: "Stack Page" })).toHaveAttribute("href", "/stacks/s1");
     expect(screen.queryByRole("button", { name: "Ask to Join" })).not.toBeInTheDocument();
   });
 

@@ -48,7 +48,7 @@ export function StackLineup({
             Lineup
           </h2>
           <p className="text-sm text-subtle">
-            {shared ? "Each player's top hero for their main position." : "Everyone in this Stack."}
+            {shared ? "Each player's top hero for the position they play most." : "Everyone in this Stack."}
           </p>
           {action && <div className="ml-auto">{action}</div>}
         </div>
@@ -106,9 +106,27 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
       </div>
       <div className="flex min-w-0 flex-col gap-1 p-3">
         {s.position ? (
-          <span className="flex items-center gap-1.5 text-sm text-muted">
-            <PositionIcon position={s.position} size={18} className="text-accent" />
-            Pos {s.position} · {POSITION_NAMES[s.position]}
+          <span className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1.5 text-sm text-muted">
+              <PositionIcon position={s.position} size={18} className="text-accent" />
+              Pos {s.position} · {POSITION_NAMES[s.position]}
+            </span>
+            <span
+              className="micro pl-6 text-subtle"
+              title={
+                s.played
+                  ? `Played Pos ${s.position} in ${s.played.games} of their last ${s.played.of} games with a known position`
+                  : undefined
+              }
+            >
+              {s.played ? (
+                <>
+                  Played in <span className="num text-muted">{s.played.games}</span> of last {s.played.of} games
+                </>
+              ) : (
+                "No recent games yet"
+              )}
+            </span>
           </span>
         ) : (
           <span className="text-sm text-subtle">
