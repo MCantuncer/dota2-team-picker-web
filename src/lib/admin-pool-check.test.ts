@@ -2,16 +2,18 @@ import { describe, expect, it } from "vitest";
 import { listsText, readCheck, readSlips } from "@/lib/admin-pool-check";
 
 describe("readCheck", () => {
-  const row = { lists: 9, pool_lists: 7, slips: 1, any_lists: 2, unknown_lists: 0, players: 4 };
+  const row = { lists: 12, pool_lists: 7, played_lists: 3, slips: 1, any_lists: 2, unknown_lists: 0, players: 4 };
 
   it("reads the one row", () => {
-    expect(readCheck([row])).toEqual({ lists: 9, poolLists: 7, slips: 1, anyLists: 2, unknownLists: 0, players: 4 });
+    expect(readCheck([row])).toEqual({ lists: 12, poolLists: 7, playedLists: 3, slips: 1, anyLists: 2, unknownLists: 0, players: 4 });
   });
 
   it("returns null for anything else, so the page shows an error instead of wrong numbers", () => {
     expect(readCheck([])).toBeNull();
     expect(readCheck(null)).toBeNull();
     expect(readCheck([{ ...row, slips: null }])).toBeNull();
+    // A page newer than the database: the played count is missing.
+    expect(readCheck([{ ...row, played_lists: undefined }])).toBeNull();
     expect(readCheck([{ ...row, lists: -1 }])).toBeNull();
     expect(readCheck([{ ...row, players: 1.5 }])).toBeNull();
   });

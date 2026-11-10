@@ -34,7 +34,7 @@ export default async function PoolCheckPage() {
       <div className="flex flex-col gap-1.5">
         <h1 className="page-title">Pool Check</h1>
         <p className="text-sm text-muted">
-          Party suggestion lists from the last {CHECK_DAYS} days. A slip is a list from a player&apos;s own heroes that showed another hero.
+          Party suggestion lists from the last {CHECK_DAYS} days. A slip is a list from a player&apos;s own or played heroes that showed another hero.
         </p>
       </div>
 
