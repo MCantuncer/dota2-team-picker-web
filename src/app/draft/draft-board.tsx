@@ -20,7 +20,19 @@ import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { pickGain, teamWinChance } from "@/lib/win";
-import { type ListRule, outsiderText, poolOnly, provenOutsider, reactingTo, toSaved, useRankMoves, weakHere, worstMatchup } from "@/lib/pick-explain";
+import {
+  type ListRule,
+  listRule,
+  outsiderText,
+  ownHeroes,
+  playedHeroes,
+  provenOutsider,
+  reactingTo,
+  toSaved,
+  useRankMoves,
+  weakHere,
+  worstMatchup,
+} from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
@@ -63,6 +75,8 @@ export interface Player {
   positions: Position[];
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
+  /** The player's Steam name, as Dota writes it under their slot, to find their side on Watch Dota. */
+  steamName?: string | null;
 }
 
 /** The signed-in player's party, when they are in one: its draft is shared by everyone in it. */
@@ -250,7 +264,7 @@ export function DraftBoard({
     : screenAllies.findLast((id) => !notMine.has(id) && resolved.some((a) => a.heroId === id && a.isGuess));
 
   // Typing stays inside each search box, so this runs only when the draft or a setting changes.
-  // Only your heroes for the position, best first; a weak one keeps its place and gets a label.
+  // Your heroes for the position and the heroes you have played, best first; a weak one keeps its place and gets a label.
   const favorites = [...(player.heroes[myPosition] ?? []), ...(player.heroes[0] ?? [])];
   const ranked =
     engine && !mine
@@ -268,11 +282,12 @@ export function DraftBoard({
         })
       : [];
   const poolIds = new Set(favorites);
-  const picks = poolOnly(ranked, poolIds, {
+  const picks = ownHeroes(ranked, poolIds, {
+    played: engine ? playedHeroes(player.personal, (id) => engine.fit(id), myPosition, poolIds) : undefined,
     weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined, enemyPositions) : 0),
   });
-  const { list: suggestions, weak, fromAll } = picks;
-  // Shown after the list and never saved with it: the saved list is the pool list.
+  const { list: suggestions, weak, played, fromAll } = picks;
+  // Shown after the list and never saved with it: the saved list is the list above.
   const outsider = provenOutsider(ranked, poolIds, picks);
 
   const allyIds = allies.map((e) => e.heroId);
@@ -294,7 +309,7 @@ export function DraftBoard({
       ? JSON.stringify({
           ...toSaved(suggestions),
           chance: chance === null ? null : Math.round(chance * 1000) / 1000,
-          rule: fromAll ? "any" : "pool",
+          rule: listRule(picks),
         })
       : null;
   const { saveSuggestions } = shared;
@@ -544,6 +559,7 @@ export function DraftBoard({
                   suggestion={s}
                   move={moves.get(s.heroId)}
                   weakHere={weak.has(s.heroId)}
+                  playedGames={played.has(s.heroId) ? (player.personal[s.heroId]?.games ?? null) : null}
                   portrait={portraits[s.heroId]}
                   rank={i + 1}
                   position={myPosition}
@@ -841,6 +857,7 @@ export function DraftBoard({
           draft={draft}
           side={mySide}
           onSideChange={setMySide}
+          steamName={player.steamName ?? null}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);
@@ -1207,6 +1224,7 @@ function SuggestionCard({
   move,
   weakHere,
   outside,
+  playedGames = null,
   gain,
   onPicked,
   onBanned,
@@ -1222,6 +1240,8 @@ function SuggestionCard({
   weakHere?: boolean;
   /** Not one of the player's heroes for the position. */
   outside?: boolean;
+  /** Games the player has on a listed hero from outside their pool; null for a pool hero. */
+  playedGames?: number | null;
   /** Change in my team's win chance, in points, when it is known. */
   gain: number | null;
   /** Left out when the player can't change the draft. */
@@ -1229,6 +1249,8 @@ function SuggestionCard({
   onBanned?: () => void;
 }) {
   const hero = { id: s.heroId, name: s.name } as HeroInfo;
+  const playedLabel =
+    playedGames !== null ? <OutsidePool title={`You played it ${playedGames} times in six months (all positions), but it is not in My Heroes for this position`} /> : null;
   const counters = s.hardCounters.map((n) => (
     <p key={n.counterId} className={`notice ${NOTICE[n.status]} text-xs`}>
       {n.text}
@@ -1260,6 +1282,7 @@ function SuggestionCard({
           {/* A pool hero that is weak here is the best the player has, not a strong pick. */}
           {weakHere ? "Best of Your Heroes" : "Best Pick Right Now"} <MoveMark move={move} />
           {weakHere && <WeakHere />}
+          {playedLabel}
         </span>
         <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
         <span className="flex items-baseline gap-3">
@@ -1297,6 +1320,7 @@ function SuggestionCard({
           <MoveMark move={move} />
           {weakHere && <WeakHere />}
           {outside && <OutsidePool />}
+          {playedLabel}
         </>
       }
       gainText={gainText}
