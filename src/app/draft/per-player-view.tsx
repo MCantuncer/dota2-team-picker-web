@@ -2,7 +2,8 @@
 
 import { useId, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/icon";
-import { MoveMark, OutsidePool, WeakHere } from "@/components/pick-why";
+import { MoveMark, OutsidePool, VerdictLines, WeakHere } from "@/components/pick-why";
+import { type Verdict, verdicts } from "@/lib/engine/verdict";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, ScoreBreakdown, Suggestion } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
@@ -81,11 +82,16 @@ function Column({
     `${c.playerId}:${c.position}`,
   );
   const headingId = `per-player-${c.playerId}`;
+  // Each hero against the column's first, in this player's name.
+  const verdictOf = new Map(
+    verdicts(c.suggestions, (id) => heroes.find((h) => h.id === id)?.name ?? "", c.position, name).map((v) => [v.heroId, v]),
+  );
   const card = (s: Suggestion, top: boolean, badges: ReactNode) => (
     <HeroCard
       // A new top hero after a pick or ban starts open again.
       key={`${s.heroId}:${top}`}
       suggestion={s}
+      verdict={verdictOf.get(s.heroId)}
       top={top}
       playerName={name}
       portrait={portrait(s.heroId, s.name)}
@@ -155,6 +161,7 @@ function Column({
  */
 function HeroCard({
   suggestion: s,
+  verdict,
   top,
   playerName,
   portrait,
@@ -165,6 +172,8 @@ function HeroCard({
   onBanned,
 }: {
   suggestion: Suggestion;
+  /** Where the hero stands against the column's best, and why; none for the outside hero. */
+  verdict?: Verdict;
   top: boolean;
   playerName: string;
   portrait: ReactNode;
@@ -212,7 +221,9 @@ function HeroCard({
             {s.name}
             {badges}
           </span>
-          {!open && s.reasons[0] && <span className="truncate text-sm text-muted">{s.reasons[0]}</span>}
+          {!open && verdict && <span className="line-clamp-3 text-sm text-muted">{verdict.text}</span>}
+          {!open && !verdict && s.reasons[0] && <span className="truncate text-sm text-muted">{s.reasons[0]}</span>}
+          {!open && verdict?.note && <span className="line-clamp-2 text-sm text-accent">{verdict.note}</span>}
         </span>
         <span className="flex items-center gap-2">
           <span className="num w-12 text-right text-sm text-fg" title="Score in win-rate points">
@@ -239,6 +250,7 @@ function HeroCard({
           <>
             <div className="grid gap-x-6 gap-y-4 sm:pl-[4.75rem] @lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
               <div className="flex flex-col gap-2">
+                {verdict && <VerdictLines verdict={verdict} className="text-sm" />}
                 <h4 className="text-xs text-subtle">Why</h4>
                 <ul className="flex flex-col gap-1">
                   {s.reasons.map((r) => (

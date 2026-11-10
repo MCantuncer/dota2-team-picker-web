@@ -1,4 +1,5 @@
 import type { Suggestion } from "@/lib/engine/types";
+import type { Verdict } from "@/lib/engine/verdict";
 
 /** Why a hero is suggested: its lines with their points, its tags, and where the score comes from. */
 export function PickWhy({ suggestion, className = "" }: { suggestion: Pick<Suggestion, "reasons" | "tags" | "summary">; className?: string }) {
@@ -50,5 +51,15 @@ export function WeakHere() {
     <span className="chip text-xs text-warn" title="One of your heroes, but weak into this draft: a score below 0, a hard counter on the enemy team, or a matchup of -1.5 or worse">
       Weak Here
     </span>
+  );
+}
+
+/** A hero's verdict against the best pick: where it stands and why, then the player's record note when there is one. */
+export function VerdictLines({ verdict, className = "" }: { verdict: Verdict; className?: string }) {
+  return (
+    <div className={`flex flex-col gap-0.5 ${className}`}>
+      <p className="text-fg">{verdict.text}</p>
+      {verdict.note && <p className="text-accent">{verdict.note}</p>}
+    </div>
   );
 }
