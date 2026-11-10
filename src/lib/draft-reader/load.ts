@@ -1,4 +1,5 @@
 import type { HeroInfo } from "@/lib/engine/types";
+import type { Look } from "./looks";
 import { DraftReader, type ReaderHero } from "./reader";
 import type { Pixels } from "./match";
 
@@ -16,11 +17,12 @@ export async function pixelsOf(source: Blob): Promise<Pixels> {
 }
 
 /**
- * Builds the reader from every hero's portrait. Portraits come through the site's own image route,
- * because Steam's image server doesn't let other sites read its pixels.
+ * Builds the reader from every hero's portrait and the looks learned on this player's screen.
+ * Portraits come through the site's own image route, because Steam's image server doesn't let other
+ * sites read its pixels.
  */
-export async function loadReader(heroes: HeroInfo[], portraits: Record<number, string>): Promise<DraftReader> {
-  return new DraftReader(await loadReaderHeroes(heroes, portraits));
+export async function loadReader(heroes: HeroInfo[], portraits: Record<number, string>, looks: Look[] = []): Promise<DraftReader> {
+  return new DraftReader(await loadReaderHeroes(heroes, portraits), looks);
 }
 
 /** Every hero with art, with its portrait's pixels, for a reader here or in a worker. */
