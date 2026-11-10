@@ -1,5 +1,6 @@
 import { cellRect, GRID_COLUMNS, slotRects, type Attribute, type Rect, type Side } from "./geometry";
 import type { Look } from "./looks";
+import { findMe, type Ink, type SideRead } from "./name";
 import {
   brightnessSpread,
   colourfulness,
@@ -36,6 +37,8 @@ export interface DraftRead {
   radiant: SlotRead[];
   dire: SlotRead[];
   bans: number[];
+  /** Your own slot, found from your Steam name and the glow under it; null when the reader can't tell. */
+  me?: SideRead | null;
 }
 
 /** A slot is that hero when it matches this well and clearly better than the next best hero. */
@@ -130,7 +133,8 @@ export class DraftReader {
     return look;
   }
 
-  read(px: Pixels): DraftRead {
+  /** Reads a screenshot. `name` is your Steam name as nameToFind drew it, to find your side by. */
+  read(px: Pixels, name: Ink[] | null = null): DraftRead {
     const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => this.readRect(px, r));
     const picked = new Set<number>();
     const radiant = side("radiant");
@@ -140,6 +144,7 @@ export class DraftReader {
       radiant,
       dire,
       bans: this.readBans(px).filter((id) => !picked.has(id)),
+      me: findMe(px, name),
     };
   }
 

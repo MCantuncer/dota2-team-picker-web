@@ -1,6 +1,9 @@
 import type { DraftAction } from "@/lib/draft";
 import type { Side } from "./geometry";
+import type { SideRead } from "./name";
 import type { DraftRead } from "./reader";
+
+const meKey = (me: SideRead) => `${me.side}${me.slot}`;
 
 /**
  * The draft changes a screenshot read adds: your side's heroes to your team, the other side's to
@@ -23,10 +26,11 @@ export function readActions(read: DraftRead, mySide: Side, inDraft: Set<number>)
  * a row, so a portrait caught mid animation is skipped. It is offered on every read until it reaches
  * the draft, so a pick lost on the way (the page was busy, or two picks landed together) is added
  * half a second later. Once a hero has been in the draft it is not offered again, so a hero you
- * remove by hand (a wrong read) stays out.
+ * remove by hand (a wrong read) stays out. Your own side is passed on once two reads in a row agree.
  */
 export class LiveReads {
   private last = new Set<string>();
+  private lastMe = "";
   private landed = new Set<number>();
 
   /**
@@ -52,8 +56,11 @@ export class LiveReads {
       radiant: slots("radiant"),
       dire: slots("dire"),
       bans: read.bans.filter((id) => keep(`ban:${id}`, id)),
+      // Your side counts once two reads in a row agree on it, like a hero.
+      me: read.me && this.lastMe === meKey(read.me) ? read.me : null,
     };
     this.last = keys;
+    this.lastMe = read.me ? meKey(read.me) : "";
     return stable;
   }
 }
