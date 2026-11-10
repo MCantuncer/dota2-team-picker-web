@@ -16,6 +16,15 @@ describe("mainPosition", () => {
     expect(mainPosition([4, 5], { 5: [5, 26] })).toBe(5);
     expect(mainPosition([], {})).toBeNull();
   });
+
+  it("picks the position played most lately, before the hero count", () => {
+    // A long Pos 4 list does not beat the position they actually play.
+    expect(mainPosition([2, 4], { 2: [74], 4: [50, 5, 26, 30] }, { 2: 14, 4: 3 })).toBe(2);
+    // Games at a position they did not save don't count.
+    expect(mainPosition([3, 4], { 3: [2], 4: [50, 5] }, { 2: 18, 3: 1 })).toBe(3);
+    // Same games: the hero count decides.
+    expect(mainPosition([1, 2], { 1: [8], 2: [74, 13] }, { 1: 5, 2: 5 })).toBe(2);
+  });
 });
 
 describe("toSeats", () => {
@@ -42,6 +51,24 @@ describe("toSeats", () => {
     expect(seats[1].positions).toEqual([2, 3]);
     expect(seats[1].role).toBe("owner");
     expect(seats[3].shared).toBe(false);
+  });
+
+  it("uses games played for the Best Position and says how many", () => {
+    const [seat] = toSeats(
+      [person("can", "owner")],
+      [{ user_id: "can", positions: [2, 4], favorites: { "2": [74], "4": [50, 5, 26] }, played: { "2": 14, "4": 3, "1": 1, x: 9 } }],
+      () => null,
+    );
+    expect([seat.position, seat.heroes, seat.played]).toEqual([2, [74], { games: 14, of: 18 }]);
+  });
+
+  it("falls back to the hero count without games", () => {
+    const [seat] = toSeats(
+      [person("can", "owner")],
+      [{ user_id: "can", positions: [2, 4], favorites: { "2": [74], "4": [50, 5] }, played: {} }],
+      () => null,
+    );
+    expect([seat.position, seat.played]).toEqual([4, null]);
   });
 
   it("gives an owner who also has a member row one seat, as the owner", () => {

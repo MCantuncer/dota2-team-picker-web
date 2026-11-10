@@ -5,8 +5,13 @@ export interface Seat {
   avatarUrl: string | null;
   role: "owner" | "co_captain" | "player";
   rankTier: number | null;
-  /** Their main position: the one with the most heroes saved, the lower number on a tie. Null when unknown. */
+  /**
+   * Their Best Position: of the positions they saved, the one they played most in their last 20 games; the most
+   * heroes saved breaks a tie or stands in when they have no games there. Null when unknown.
+   */
   position: number | null;
+  /** Games at that position out of their recent games with a known position; null without games there. */
+  played: { games: number; of: number } | null;
   /** Every position they play, lowest first. Empty when they have none or their heroes aren't shared with you. */
   positions: number[];
   /** Heroes for the main position, in the order they were saved. The first is their top hero. */
@@ -30,6 +35,8 @@ export interface SharedPool {
   positions: number[] | null;
   /** Hero ids per position, keyed "1" to "5", in the order they were saved. */
   favorites: unknown;
+  /** Games per position over their last 20 games, keyed "1" to "5". Missing until the backend sends it. */
+  played?: unknown;
 }
 
 const isPosition = (p: number) => Number.isInteger(p) && p >= 1 && p <= 5;
@@ -44,11 +51,35 @@ function heroesByPosition(favorites: unknown): Record<number, number[]> {
   return out;
 }
 
-/** The position with the most heroes saved; the lower number on a tie; null without positions. */
-export function mainPosition(positions: number[], heroes: Record<number, number[]>): number | null {
+function gamesByPosition(played: unknown): Record<number, number> {
+  const out: Record<number, number> = {};
+  if (!played || typeof played !== "object") return out;
+  for (const [key, games] of Object.entries(played as Record<string, unknown>)) {
+    const p = Number(key);
+    if (isPosition(p) && Number.isInteger(games) && (games as number) > 0) out[p] = games as number;
+  }
+  return out;
+}
+
+/**
+ * Best Position: of the positions saved, the one played most lately; then the one with the most heroes saved;
+ * then the lower number. Null without positions.
+ */
+export function mainPosition(
+  positions: number[],
+  heroes: Record<number, number[]>,
+  games: Record<number, number> = {},
+): number | null {
+  const score = (p: number) => [games[p] ?? 0, heroes[p]?.length ?? 0];
   let best: number | null = null;
   for (const p of [...positions].sort((a, b) => a - b)) {
-    if (best === null || (heroes[p]?.length ?? 0) > (heroes[best]?.length ?? 0)) best = p;
+    if (best === null) {
+      best = p;
+      continue;
+    }
+    const [g, h] = score(p);
+    const [bg, bh] = score(best);
+    if (g > bg || (g === bg && h > bh)) best = p;
   }
   return best;
 }
@@ -69,7 +100,9 @@ export function toSeats(
     const pool = shared.get(m.user_id);
     const heroes = heroesByPosition(pool?.favorites);
     const positions = (pool?.positions ?? []).filter(isPosition).sort((a, b) => a - b);
-    const position = mainPosition(positions, heroes);
+    const games = gamesByPosition(pool?.played);
+    const position = mainPosition(positions, heroes, games);
+    const known = Object.values(games).reduce((a, b) => a + b, 0);
     const seat: Seat = {
       id: m.user_id,
       name: m.display_name ?? "Unnamed",
@@ -77,6 +110,7 @@ export function toSeats(
       role: m.role === "owner" || m.role === "co_captain" ? m.role : "player",
       rankTier: m.rank_tier,
       position,
+      played: position && games[position] ? { games: games[position], of: known } : null,
       positions,
       heroes: position ? (heroes[position] ?? []) : [],
       shared: !!pool,

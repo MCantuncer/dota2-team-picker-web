@@ -68,7 +68,7 @@ test("a player finds an open Stack, asks to join, and the owner accepts", async 
   const row = all.getByRole("listitem").filter({ hasText: name });
   await expect(row).toHaveCount(1);
   await row.getByRole("button", { name: "Ask to Join" }).click();
-  await expect(row.getByText("Asked")).toBeVisible();
+  await expect(row.getByText("Request Sent")).toBeVisible();
   await expectAccessible(stranger);
 
   // The request survives a reload, and the asker can take it back.
@@ -87,7 +87,8 @@ test("a player finds an open Stack, asks to join, and the owner accepts", async 
 
   // The owner sees the request on the Stacks page and accepts it on the Stack page.
   await page.reload();
-  await page.getByRole("link", { name: /Stack Page/ }).click();
+  // The banner's button: the Stack's own card under Find a Stack has a Stack Page button too.
+  await page.getByRole("region", { name, exact: true }).getByRole("link", { name: /Stack Page/ }).click();
   const waiting = page.getByRole("region", { name: /Players Who Want to Join/ });
   await expect(waiting).toBeVisible();
   await expectAccessible(page);

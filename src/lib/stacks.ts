@@ -110,14 +110,34 @@ export interface StackCard {
   id: string;
   name: string;
   ownerName: string;
+  /** The owner's Steam avatar, or null. */
+  ownerAvatarUrl: string | null;
   members: number;
   /** Games its players played together in the last 14 days. */
   games: number;
+  /** The players' average rank as a rank tier (54 = Legend 4); null when nobody has a rank. */
+  averageRank: number | null;
 }
 
-/** A browse_stacks or hot_stacks row as a StackCard. */
-export function toStackCard(s: { id: string; name: string; owner_name: string | null; members: number; games: number }): StackCard {
-  return { id: s.id, name: s.name, ownerName: s.owner_name ?? "Unnamed", members: s.members, games: s.games };
+/** A browse_stacks or hot_stacks row as a StackCard. Avatar and rank are null until the backend sends them. */
+export function toStackCard(s: {
+  id: string;
+  name: string;
+  owner_name: string | null;
+  members: number;
+  games: number;
+  owner_avatar_url?: string | null;
+  average_rank?: number | null;
+}): StackCard {
+  return {
+    id: s.id,
+    name: s.name,
+    ownerName: s.owner_name ?? "Unnamed",
+    ownerAvatarUrl: steamAvatarOnly(s.owner_avatar_url),
+    members: s.members,
+    games: s.games,
+    averageRank: s.average_rank ?? null,
+  };
 }
 
 /** How many players are waiting to join a Stack you run. Throws when the query fails. */
