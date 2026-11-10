@@ -53,3 +53,24 @@ export function cellRect(attr: Attribute, index: number, width: number, height: 
   const col = index % GRID_COLUMNS[attr];
   return at(GRID_LEFT[attr] + col * CELL.pitchX, CELL.top + row * CELL.pitchY, CELL.w, CELL.h);
 }
+
+/** The Steam name under each slot: centred on the slot, as wide as the gap to the next slot's name. */
+const NAME = { centre: 75, halfW: 90, y: 104, h: 36 };
+
+/** The 5 name label rectangles of one team, under the top bar, first player first. */
+export function nameRects(side: Side, width: number, height: number): Rect[] {
+  const at = scaler(width, height);
+  return SLOT_LEFT[side].map((left) => at(left + NAME.centre - NAME.halfW, NAME.y, 2 * NAME.halfW, NAME.h));
+}
+
+/** The strip just under a name, where Dota lights a glow for your own name, and a strip further down to compare. */
+const GLOW = { halfW: 60, y: 133, h: 9, belowY: 150, belowH: 15 };
+
+/** Under each of one team's 5 names: the glow strip and the plain strip below it. */
+export function glowRects(side: Side, width: number, height: number): { glow: Rect; below: Rect }[] {
+  const at = scaler(width, height);
+  return SLOT_LEFT[side].map((left) => {
+    const x = left + NAME.centre - GLOW.halfW;
+    return { glow: at(x, GLOW.y, 2 * GLOW.halfW, GLOW.h), below: at(x, GLOW.belowY, 2 * GLOW.halfW, GLOW.belowH) };
+  });
+}

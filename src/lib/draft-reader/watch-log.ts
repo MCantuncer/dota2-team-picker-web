@@ -14,7 +14,12 @@ export function logLine(read: DraftRead, name: (heroId: number) => string): stri
       : s.best && s.best.score >= 0.6
         ? `? ${name(s.best.heroId)} ${s.best.score.toFixed(2)}`
         : "-";
-  return `Radiant: ${read.radiant.map(slot).join(", ")}  |  Dire: ${read.dire.map(slot).join(", ")}`;
+  const teams = `Radiant: ${read.radiant.map(slot).join(", ")}  |  Dire: ${read.dire.map(slot).join(", ")}`;
+  if (read.me === undefined) return teams;
+  const me = read.me
+    ? `${read.me.side === "radiant" ? "Radiant" : "Dire"} ${read.me.slot + 1} (by ${read.me.by === "both" ? "name and glow" : read.me.by})`
+    : "not found";
+  return `${teams}  |  You: ${me}`;
 }
 
 /** Keeps a row only when the line changes, and only the latest LOG_ROWS rows. */

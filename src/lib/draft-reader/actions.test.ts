@@ -78,3 +78,22 @@ describe("LiveReads", () => {
     expect(picks(live.next(withPick(5), none))).toEqual([]);
   });
 });
+
+describe("LiveReads, your side", () => {
+  const at = (side: "radiant" | "dire", slot: number): DraftRead => ({ ...read, me: { side, slot, by: "name" } });
+
+  it("passes your side on once two reads in a row agree", () => {
+    const live = new LiveReads();
+    expect(live.next(at("dire", 2), new Set()).me).toBeNull();
+    expect(live.next(at("dire", 2), new Set()).me).toEqual({ side: "dire", slot: 2, by: "name" });
+  });
+
+  it("starts over when a read disagrees or finds nothing", () => {
+    const live = new LiveReads();
+    live.next(at("dire", 2), new Set());
+    expect(live.next(at("radiant", 0), new Set()).me).toBeNull();
+    expect(live.next({ ...read, me: null }, new Set()).me).toBeNull();
+    expect(live.next(at("radiant", 0), new Set()).me).toBeNull();
+    expect(live.next(at("radiant", 0), new Set()).me?.side).toBe("radiant");
+  });
+});

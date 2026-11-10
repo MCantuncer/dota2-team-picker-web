@@ -31,7 +31,7 @@ export function canWatch(): boolean {
 
 /**
  * Live read: the player shares the Dota window once, and a worker reads the picks and bans off it
- * twice a second. Only new, steady heroes are passed to onRead. A hero the player adds by hand while
+ * twice a second. Only new, steady heroes (and your side, once steady) are passed to onRead. A hero the player adds by hand while
  * watching teaches the reader how that hero looks on their screen (a persona or other cosmetic art),
  * so it reads that hero itself next time. Nothing leaves the browser.
  */
@@ -41,6 +41,8 @@ export function useWatchDota(
   draft: DraftEntry[],
   /** The player's side this game, to know which top bar team a hero added by hand is in. */
   side: Side | null,
+  /** Your Steam name, to find your side by; null without one. */
+  steamName: string | null,
   onRead: (read: DraftRead) => void,
 ) {
   const inDraft = new Set(draft.map((e) => e.heroId));
@@ -139,7 +141,7 @@ export function useWatchDota(
         setState("off");
       });
       const looks: Look[] = readLooks();
-      worker.postMessage({ heroes: await loadReaderHeroes(heroes, portraits), looks } satisfies WatchRequest);
+      worker.postMessage({ heroes: await loadReaderHeroes(heroes, portraits), looks, name: steamName } satisfies WatchRequest);
       const { readable } = new MediaStreamTrackProcessor({ track });
       worker.postMessage({ frames: readable } satisfies WatchRequest, [readable]);
     } catch (err) {

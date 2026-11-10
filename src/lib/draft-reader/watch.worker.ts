@@ -1,6 +1,8 @@
+import { nameToFind } from "./draw-name";
 import { slotRects, type Side } from "./geometry";
 import type { Look } from "./looks";
 import type { Pixels } from "./match";
+import type { Ink } from "./name";
 import { DraftReader, type DraftRead, type ReaderHero } from "./reader";
 import { logLine, WatchLog } from "./watch-log";
 
@@ -11,11 +13,12 @@ export interface LearnRequest {
   removed: number[];
 }
 /**
- * Sent to the watcher: first the heroes and the looks learned before, then the shared window's frames.
+ * Sent to the watcher: first the heroes, the looks learned before and your Steam name, then the shared
+ * window's frames.
  * Later, heroes to learn the look of, or to stop reading by learned looks.
  */
 export type WatchRequest =
-  | { heroes: ReaderHero[]; looks: Look[] }
+  | { heroes: ReaderHero[]; looks: Look[]; name: string | null }
   | { frames: ReadableStream<VideoFrame> }
   | { save: true }
   | { learn: LearnRequest }
@@ -38,6 +41,8 @@ const scope = self as unknown as {
 };
 let reader: DraftReader | null = null;
 let names = new Map<number, string>();
+/** Your Steam name, drawn once, to find your side by. */
+let myName: Ink[] | null = null;
 /** The last frame read, exactly as the reader saw it, kept so the player can save it for a bug report. */
 let canvas: OffscreenCanvas | null = null;
 /**
@@ -62,6 +67,7 @@ scope.onmessage = ({ origin, data }) => {
   if ("heroes" in data && Array.isArray(data.heroes)) {
     reader = new DraftReader(data.heroes, Array.isArray(data.looks) ? data.looks : []);
     names = new Map(data.heroes.map((h) => [h.id, h.name]));
+    myName = typeof data.name === "string" ? nameToFind(data.name) : null;
   }
   else if ("frames" in data && data.frames instanceof ReadableStream) void watch(data.frames);
   else if ("save" in data && data.save === true) void save();
@@ -129,7 +135,7 @@ async function watch(frames: ReadableStream<VideoFrame>) {
         if (isBlack(px)) scope.postMessage({ black: true } satisfies WatchReply);
         else {
           learnFrom(px);
-          const read = reader.read(px);
+          const read = reader.read(px, myName);
           scope.postMessage({ read } satisfies WatchReply);
           keep(read, canvas, now);
           lastPx = px;

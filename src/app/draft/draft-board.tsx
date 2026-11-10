@@ -75,6 +75,8 @@ export interface Player {
   positions: Position[];
   rank: RankBracket | null;
   personal: Record<number, GamesWins>;
+  /** The player's Steam name, as Dota writes it under their slot, to find their side on Watch Dota. */
+  steamName?: string | null;
 }
 
 /** The signed-in player's party, when they are in one: its draft is shared by everyone in it. */
@@ -836,6 +838,7 @@ export function DraftBoard({
           draft={draft}
           side={mySide}
           onSideChange={setMySide}
+          steamName={player.steamName ?? null}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);
