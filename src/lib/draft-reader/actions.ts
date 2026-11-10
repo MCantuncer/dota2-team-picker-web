@@ -1,4 +1,5 @@
 import type { DraftAction } from "@/lib/draft";
+import type { Position } from "@/lib/engine/types";
 import type { Side } from "./geometry";
 import type { SideRead } from "./name";
 import type { DraftRead } from "./reader";
@@ -8,13 +9,18 @@ const meKey = (me: SideRead) => `${me.side}${me.slot}`;
 /**
  * The draft changes a screenshot read adds: your side's heroes to your team, the other side's to
  * the enemy, then the bans. Heroes already in the draft are left alone, so typed positions stay.
+ * When the read found your own slot and you have no hero yet, pass your position: the hero in your
+ * slot goes there, so your picks stop.
  */
-export function readActions(read: DraftRead, mySide: Side, inDraft: Set<number>): DraftAction[] {
+export function readActions(read: DraftRead, mySide: Side, inDraft: Set<number>, myPosition: Position | null = null): DraftAction[] {
   const ids = (slots: DraftRead["radiant"]) => slots.flatMap((s) => (s.heroId === null ? [] : [s.heroId]));
   const mine = mySide === "radiant" ? read.radiant : read.dire;
   const theirs = mySide === "radiant" ? read.dire : read.radiant;
+  const own = myPosition !== null && read.me?.side === mySide ? (mine[read.me.slot]?.heroId ?? null) : null;
   const actions: DraftAction[] = [
-    ...ids(mine).map((heroId) => ({ kind: "ally" as const, heroId })),
+    ...ids(mine).map((heroId) =>
+      heroId === own ? { kind: "ally" as const, heroId, position: myPosition } : { kind: "ally" as const, heroId },
+    ),
     ...ids(theirs).map((heroId) => ({ kind: "enemy" as const, heroId })),
     ...read.bans.map((heroId) => ({ kind: "ban" as const, heroId })),
   ];

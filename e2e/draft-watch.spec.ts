@@ -108,6 +108,8 @@ test("Watch Dota learns a hero's look when you add it by hand, and reads it by i
   const mine = page.getByRole("region", { name: "My team" });
   await expect(mine.getByText("Omniknight")).toBeVisible({ timeout: 45_000 });
   await expect(mine.getByText("Invoker")).toHaveCount(0);
+  // The glow under our first slot marks it as the player's, so nobody is asked about their teammates' heroes.
+  await expect(page.getByRole("group", { name: /^Did you pick / })).toHaveCount(0);
 
   const ally = page.getByLabel("My team pick, e.g. cm5");
   await ally.fill("invoker");
@@ -119,4 +121,6 @@ test("Watch Dota learns a hero's look when you add it by hand, and reads it by i
   await page.getByRole("button", { name: "Stop" }).click();
   await page.getByRole("button", { name: "Watch Dota" }).click();
   await expect(mine.getByText("Invoker")).toBeVisible({ timeout: 45_000 });
+  // He is in the player's own slot, so he is their hero and their picks stop.
+  await expect(page.getByText("You're on Invoker. Good luck!")).toBeVisible();
 });
