@@ -8,7 +8,7 @@
 Type the heroes as they come. In under a second you get eight picks for your position,<br>
 each with the reason from this draft.
 
-[![Live Site](https://img.shields.io/website?url=https%3A%2F%2Fdota2-team-picker-web.vercel.app&style=flat-square&label=Live%20Site&up_message=online&up_color=e8a052&down_message=offline&labelColor=1a1815&logo=vercel&logoColor=ece6da)](https://dota2-team-picker-web.vercel.app)
+[![Live Site](https://img.shields.io/website?url=https%3A%2F%2Fwww.dota2teampicker.com&style=flat-square&label=Live%20Site&up_message=online&up_color=e8a052&down_message=offline&labelColor=1a1815&logo=vercel&logoColor=ece6da)](https://www.dota2teampicker.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/ci.yml?branch=main&style=flat-square&label=CI&labelColor=1a1815&logo=githubactions&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/ci.yml)
 [![Browser Tests](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/e2e.yml?branch=main&style=flat-square&label=Browser%20Tests&labelColor=1a1815&logo=playwright&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/e2e.yml)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/MCantuncer/dota2-team-picker-web/codeql.yml?branch=main&style=flat-square&label=CodeQL&labelColor=1a1815&logo=github&logoColor=ece6da)](https://github.com/MCantuncer/dota2-team-picker-web/actions/workflows/codeql.yml)
@@ -20,7 +20,7 @@ each with the reason from this draft.
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20and%20Postgres-3a352e?style=flat-square&labelColor=1a1815&logo=supabase&logoColor=ece6da)](https://supabase.com)
 [![Vercel](https://img.shields.io/badge/Hosted%20on-Vercel-3a352e?style=flat-square&labelColor=1a1815&logo=vercel&logoColor=ece6da)](https://vercel.com)
 
-<a href="https://dota2-team-picker-web.vercel.app"><img src="docs/readme/landing.jpg" width="860" alt="The home page: a big headline, Sign In with Steam, and an example draft where Earth Spirit is the top pick for mid against Pudge and Anti-Mage"></a>
+<a href="https://www.dota2teampicker.com"><img src="docs/readme/landing.jpg" width="860" alt="The home page: a big headline, Sign In with Steam, and an example draft where Earth Spirit is the top pick for mid against Pudge and Anti-Mage"></a>
 
 </div>
 
