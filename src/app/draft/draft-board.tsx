@@ -719,7 +719,7 @@ export function DraftBoard({
         <ScreenshotPaste
           heroes={engine.heroes}
           portraits={portraits}
-          inDraft={taken}
+          draft={draft}
           onRead={(read, side) => {
             const actions = readActions(read, side, taken);
             if (actions.length) act(...actions);

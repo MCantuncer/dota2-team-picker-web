@@ -127,3 +127,24 @@ export function slotPatches(px: Pixels, r: Rect, part: (r: Rect) => Rect = (x) =
       }
   return out;
 }
+
+/**
+ * How much the brightness varies across a rectangle: the standard deviation of each pixel's
+ * brightness. An empty top bar slot is a flat panel (about 10); hero art is 25 or more.
+ */
+export function brightnessSpread(px: Pixels, r: Rect): number {
+  let sum = 0,
+    squares = 0,
+    n = 0;
+  const x1 = Math.min(Math.round(r.x + r.w), px.width),
+    y1 = Math.min(Math.round(r.y + r.h), px.height);
+  for (let y = Math.max(Math.round(r.y), 0); y < y1; y += 2)
+    for (let x = Math.max(Math.round(r.x), 0); x < x1; x += 2) {
+      const i = (y * px.width + x) * 4;
+      const v = 0.3 * px.data[i] + 0.59 * px.data[i + 1] + 0.11 * px.data[i + 2];
+      sum += v;
+      squares += v * v;
+      n++;
+    }
+  return n ? Math.sqrt(Math.max(0, squares / n - (sum / n) ** 2)) : 0;
+}
