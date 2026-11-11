@@ -803,89 +803,96 @@ export function DraftBoard({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-b border-line pb-5">
-        <h1 className="text-2xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
-        {party && <span className="chip chip-accent micro">Party</span>}
-        <div className="flex items-center gap-2 max-md:order-4">
-          <span className="micro text-subtle" id="my-position">
-            Role
-          </span>
-          <div className="lane-seg lane-seg-sm" role="group" aria-labelledby="my-position">
-            {POSITIONS.map((p) => (
-              <button
-                key={p}
-                aria-pressed={myPosition === p}
-                title={POSITION_NAMES[p - 1]}
-                onClick={() => choosePosition(p)}
-              >
-                Pos {p}
-              </button>
-            ))}
+      <div className="flex flex-col gap-4 border-b border-line pb-5">
+        {/* Two rows that never interleave: the title with the page's actions, then the draft's settings. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
+            {party && <span className="chip chip-accent micro">Party</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {screen.watchControls}
+            {!party && !phone && solo.phoneFollowing && <PhoneFollowingChip />}
+            {!party && !phone && signedIn && !solo.phoneFollowing && <FollowOnPhone />}
+            <button
+              onClick={() => setShowKeys(!showKeys)}
+              aria-expanded={showKeys}
+              aria-controls="draft-keys"
+              aria-label="Keyboard Shortcuts"
+              title="Keyboard Shortcuts"
+              className="btn btn-secondary btn-sm btn-icon max-md:hidden"
+            >
+              <Icon name="keyboard" />
+            </button>
+            {!locked && (
+              <>
+                <button onClick={undo} disabled={!canUndo} className="btn btn-secondary btn-sm">
+                  <Icon name="undo" />
+                  Undo
+                </button>
+                <button
+                  onClick={() => {
+                    startOver();
+                    allyRef.current?.focus();
+                  }}
+                  disabled={!draft.length}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <Icon name="plus" />
+                  New Draft
+                </button>
+              </>
+            )}
           </div>
         </div>
-        <label className="flex items-center gap-2 max-md:order-4">
-          <span className="micro text-subtle">Rank</span>
-          <select
-            value={rank ?? ""}
-            onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
-            disabled={!isPlanner}
-            title={isPlanner ? undefined : `${plannerName} sets the party rank`}
-            className="field h-8 w-auto text-sm"
-          >
-            <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
-            {RANKS.map((r, i) => (
-              <option key={r} value={i + 1}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </label>
-        <span aria-hidden className="h-0 basis-full max-md:order-3 md:hidden" />
-        {!party && (
-          <div className="max-md:order-5">
-            <PlanForSwitch
-              mode={lineup.mode}
-              onJustMe={lineup.justMe}
-              onTeam={() => {
-                lineup.team();
-                // The teammates' picks are what Team adds, so show them straight away.
-                setView("players");
-              }}
-            />
+        {/* On a phone the settings stack, so their labels share one width and the controls line up. */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 max-sm:[&_.micro]:w-14 max-sm:[&_.micro]:shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="micro text-subtle" id="my-position">
+              Role
+            </span>
+            <div className="lane-seg lane-seg-sm" role="group" aria-labelledby="my-position">
+              {POSITIONS.map((p) => (
+                <button
+                  key={p}
+                  aria-pressed={myPosition === p}
+                  title={POSITION_NAMES[p - 1]}
+                  onClick={() => choosePosition(p)}
+                >
+                  Pos {p}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
-        <div className="ml-auto flex flex-wrap items-center gap-2 max-md:order-2">
-          {screen.watchControls}
-          {!party && !phone && solo.phoneFollowing && <PhoneFollowingChip />}
-          {!party && !phone && signedIn && !solo.phoneFollowing && <FollowOnPhone />}
-          <button
-            onClick={() => setShowKeys(!showKeys)}
-            aria-expanded={showKeys}
-            aria-controls="draft-keys"
-            aria-label="Keyboard Shortcuts"
-            title="Keyboard Shortcuts"
-            className="btn btn-secondary btn-sm btn-icon max-md:hidden"
-          >
-            <Icon name="keyboard" />
-          </button>
-          {!locked && (
-            <>
-              <button onClick={undo} disabled={!canUndo} className="btn btn-secondary btn-sm">
-                <Icon name="undo" />
-                Undo
-              </button>
-              <button
-                onClick={() => {
-                  startOver();
-                  allyRef.current?.focus();
+          <label className="flex items-center gap-2">
+            <span className="micro text-subtle">Rank</span>
+            <select
+              value={rank ?? ""}
+              onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
+              disabled={!isPlanner}
+              title={isPlanner ? undefined : `${plannerName} sets the party rank`}
+              className="field h-8 w-auto text-sm"
+            >
+              <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
+              {RANKS.map((r, i) => (
+                <option key={r} value={i + 1}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          {!party && (
+            <div>
+              <PlanForSwitch
+                mode={lineup.mode}
+                onJustMe={lineup.justMe}
+                onTeam={() => {
+                  lineup.team();
+                  // The teammates' picks are what Team adds, so show them straight away.
+                  setView("players");
                 }}
-                disabled={!draft.length}
-                className="btn btn-secondary btn-sm"
-              >
-                <Icon name="plus" />
-                New Draft
-              </button>
-            </>
+              />
+            </div>
           )}
         </div>
         {screen.status}
