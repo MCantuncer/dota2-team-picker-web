@@ -176,31 +176,40 @@ The Team Plan on /draft (`app/draft/team-plan.tsx`, `app/draft/super-team.tsx`) 
 
 ## My Picks
 
-My Picks on /draft (`app/draft/my-picks.tsx`) is the same mid lane at full width:
+My Picks on /draft is the Pick Strip (`app/draft/pick-strip.tsx`) on the same mid lane at full width. The answer to
+"what do I pick" sits straight under the board, so it needs no scrolling; Who Has the Better Chance comes after it.
 
-- The lane starts at the mark beside the view tabs. The **Best pick** is the copper stop across the lane (the node,
-  the label chip and the filled Picked; nothing else on the page is copper): the render, the label the data allows,
-  Pos and the green You pill, score and place, the verdict, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort with its Score Parts,
-  and the engine's Reacting To line at its foot.
-- **The Best label never contradicts the place line.** Best Pick Right Now (Clear Best Pick when the gap beats the
-  error) only when no hero for the position scores higher. When the list is the player's own heroes and another hero
-  scores higher, it is Best of Your Heroes (Clear Best of Your Heroes).
-- **A score has its unit**: the number, then Points, then the place ("+11.1 Points, 2nd of 49 Mids").
-- **The other picks** are equal cards two to a row from 1024px, one per row below: the render, the rank, name and
-  chips (Up 1 or New, Risk, Outside Pool), score and place, the verdict against the Best, every reason, Score
-  Parts, then Picked (secondary) and an icon Banned. Cards in a row share one height, spare space at the bottom.
+- **The strip** is every listed hero side by side: eight tiles in one row from 1280px, four to a row from 640px, one
+  row per hero on a phone. A tile is the render in a Lane Cut, the name, the score with its strength, the main
+  reason (number first, a face before each hero it names) and Picked. The rows of every tile line up (subgrid).
+  The first tile is the copper one: the ring, the label and the filled Picked.
+- **Win chance**: when a checked model gives one, the change a pick makes ("+1.2%") follows the score on its tile,
+  green or Dire red, and the card spells it out ("+1.2% win chance").
+- **Strength** is five rising bars beside the score: where the hero stands among every hero for the position in this
+  draft, in fifths (five bars for the top fifth). Red when the score is below 0. The legend sits in the lane's head.
+- **On the art**: only the Best label (top right; beside the name on a phone) and the risk mark (bottom left: the
+  warning icon and the enemy's face). Up 1, New and Outside Pool are a chip beside the name.
+- **The label** on the first tile is Best when no hero for the position scores higher, else Your Best. The open card
+  has the full label: Best Pick Right Now (Clear Best Pick when the gap beats the error), or Best of Your Heroes
+  (Clear Best of Your Heroes) when another hero scores higher. A label never contradicts the place line.
+- **One full card** under the strip (`BestCard` in `app/draft/my-picks.tsx`) is the open hero's: the Best pick at the
+  start, any other after a click on its tile (the tile is a pressed button, with a caret under it). The card has the
+  render, the label or the place in the list (2nd Pick), Pos and the green You pill, score and place, the verdict,
+  Picked and an icon Banned, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort
+  with its Score Parts, and the engine's Reacting To line at its foot. Only the Best pick's card is copper.
+- **A score has its unit** on the card: the number, then Points, then the place ("+11.1 Points, 2nd of 49 Mids").
 - **Reasons** read number first (`lib/pick-lines.ts` turns the engine's sentences into lines): one line per hero for
   counters and synergy, tags as sentences, hard counters as risks with the points they would cost, risks last on the
   amber band.
 - **Score Parts** are centred bars: a positive part grows right in green, a negative one left in Dire red.
-- **Risk** is the amber chip on a good pick with one bad matchup: the warning icon, the word, the enemy's face and
-  name. **Weak Here** is only for a hero whose whole score is below 0, so it shows only on the first card when even
-  the best of the player's heroes is below 0.
-- The hero from **outside the pool** takes the next free cell as a dashed card; the **Score Ladder** (every listed
-  score with the band the data could be off by) takes the next.
-- **Not This Game** closes the lane: the player's other heroes that score below 0 share one dashed box across the
-  lane (face, name, score in Dire red, and the score part that sinks each, with the enemy when it is the matchups)
-  instead of a full card each.
+- **Risk** is amber on a good pick with one bad matchup: the mark on the tile, and on the card the chip with the
+  warning icon, the word, the enemy's face and name. **Weak Here** is only for a hero whose whole score is below 0,
+  so it shows only on a card.
+- The hero from **outside the pool** is a dashed tile after the list; its card starts with the engine's line on it.
+- **Not This Game** takes the columns the tiles leave: the player's other heroes that score below 0 share one dashed
+  box (face, name, score in Dire red, and the score part that sinks each, with the enemy when it is the matchups)
+  instead of a tile each. Each still opens its card. The first hero always keeps its tile, even below 0.
+- The **Score Ladder** (every listed score with the band the data could be off by) closes the lane.
 
 ## Per Player
 
@@ -210,8 +219,11 @@ who still has to pick:
 - Each section starts at its **seat**, a stop on the lane with the position icon: Pos and role, the player's name or
   the green You pill, how many of their heroes are listed (Any Hero when the list is every hero), and the Team Plan's
   hero for the seat as a 20px face.
-- The player's heroes are the **My Picks cards**, two to a row from 1024px, one per row below, one lane stop per row
-  (filled for the player's first, open after). Reasons, tags and titles use the player's name.
+- The player's heroes are **pick cards** (`PickCard` in `app/draft/my-picks.tsx`), two to a row from 1024px, one per
+  row below, one lane stop per row (filled for the player's first, open after): the render, the rank, name and chips
+  (Up 1 or New, Risk, Weak Here, Outside Pool), score and place, the verdict against the first, every reason, Score
+  Parts, then Picked (secondary) and an icon Banned. Cards in a row share one height, spare space at the bottom.
+  Reasons, tags and titles use the player's name.
 - **In Team Plan** is a neutral chip with the lane mark on the hero the plan chose for the seat. The plan's **Pick
   First** is the only copper card: the ring, the node, the chip and the filled Picked.
 - The proven **outsider** takes the next free cell as the dashed card, under that player's section.

@@ -55,7 +55,7 @@ import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { DraftDone } from "./start-game";
-import { MyPicksLane } from "./my-picks";
+import { PickStrip } from "./pick-strip";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
 import { CheckInCard } from "./check-in-card";
@@ -735,7 +735,7 @@ export function DraftBoard({
         </p>
       </>
     ) : (
-      <MyPicksLane
+      <PickStrip
         head={myHead}
         notices={[
           askPick !== undefined && !locked && (
@@ -1005,13 +1005,6 @@ export function DraftBoard({
         </BanLine>
       </section>
 
-      <BetterChance
-        now={oddsOf(allyIds)}
-        plan={teamPlan ? oddsOf(teamPlan.slots.map((slot) => slot.heroId)) : null}
-        picked={allyIds.length + enemies.length}
-        side={mySide ?? "radiant"}
-      />
-
       {!party && (
         <TeamSeats
           mode={lineup.mode}
@@ -1082,6 +1075,13 @@ export function DraftBoard({
           }
         />
       </section>
+
+      <BetterChance
+        now={oddsOf(allyIds)}
+        plan={teamPlan ? oddsOf(teamPlan.slots.map((slot) => slot.heroId)) : null}
+        picked={allyIds.length + enemies.length}
+        side={mySide ?? "radiant"}
+      />
 
       {gamePlan && resolved.some((a) => a.isGuess) && (
         <p className="notice notice-warn text-sm">
