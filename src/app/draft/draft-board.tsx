@@ -70,6 +70,7 @@ import {
 } from "@/lib/game-check-in";
 import { isTeammate, SOLO_ME } from "@/lib/solo-queue";
 import { useSoloBoard } from "./use-solo-board";
+import { FollowOnPhone } from "./follow-on-phone";
 import { FollowPcPanel, PhoneFollowingChip } from "./follow-pc";
 import { isPhone } from "@/lib/solo-draft";
 
@@ -856,6 +857,7 @@ export function DraftBoard({
         <div className="ml-auto flex flex-wrap items-center gap-2 max-md:order-2">
           {screen.watchControls}
           {!party && !phone && solo.phoneFollowing && <PhoneFollowingChip />}
+          {!party && !phone && signedIn && !solo.phoneFollowing && <FollowOnPhone />}
           <button
             onClick={() => setShowKeys(!showKeys)}
             aria-expanded={showKeys}
