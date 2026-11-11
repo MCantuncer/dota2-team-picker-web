@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { BanSlot, EmptySlots, Rail, RailSlot } from "./draft-rails";
+import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { PositionPicker } from "./position-picker";
 
 describe("Rail", () => {
@@ -41,22 +41,48 @@ describe("Rail", () => {
   });
 });
 
-describe("BanSlot", () => {
+describe("BanLine", () => {
+  it("lists every ban on one line under its title and count, with the box", () => {
+    render(
+      <BanLine count={3} headingId="bans-title" input={<input aria-label="Bans" />}>
+        <BanFace name="Anti-Mage" portrait="/am.png" />
+        <BanFace name="Shadow Fiend" portrait="/sf.png" />
+        <BanFace name="Phantom Assassin" />
+      </BanLine>,
+    );
+    const line = screen.getByRole("region", { name: "Bans 3" });
+    expect(within(line).getByRole("textbox", { name: "Bans" })).toBeInTheDocument();
+    expect(within(line).getAllByRole("listitem")).toHaveLength(3);
+    // A hero with no art keeps its name in view.
+    expect(within(line).getAllByText("Phantom Assassin").length).toBeGreaterThan(0);
+  });
+
+  it("leaves the box out for a player who can't change the draft", () => {
+    render(
+      <BanLine count={0} headingId="bans-title">
+        {null}
+      </BanLine>,
+    );
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("BanFace", () => {
   it("takes the ban back in one click, and only shows it to a player who can't change the draft", async () => {
     const onUnban = vi.fn();
     const { rerender } = render(
       <ul>
-        <BanSlot name="Anti-Mage" portrait="/am.png" onUnban={onUnban} />
+        <BanFace name="Anti-Mage" portrait="/am.png" onUnban={onUnban} />
       </ul>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Unban Anti-Mage" }));
     expect(onUnban).toHaveBeenCalled();
     rerender(
       <ul>
-        <BanSlot name="Anti-Mage" />
+        <BanFace name="Anti-Mage" portrait="/am.png" />
       </ul>,
     );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Anti-Mage").length).toBeGreaterThan(0);
+    expect(screen.getByText("Anti-Mage")).toBeInTheDocument();
   });
 });
