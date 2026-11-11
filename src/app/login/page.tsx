@@ -7,6 +7,7 @@ export const metadata = { title: "Sign in · Dota 2 Team Picker" };
 const ERRORS: Record<string, string> = {
   steam: "Steam sign-in did not work. Please try again.",
   link: "That sign-in link is invalid or has expired.",
+  phone: "That QR code is used or has expired. Show a new one on your PC and scan again.",
 };
 
 /** Steam is the only way in. The first sign-in makes the account, so there is no separate sign up. */
