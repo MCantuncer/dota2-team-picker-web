@@ -44,7 +44,8 @@ import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { DraftCaptainBar } from "./draft-captain-bar";
 import { EmptyPoolNotice } from "./empty-pool-notice";
-import { PartyPlan } from "./party-plan";
+import { SuperTeamPanel } from "./super-team";
+import { TeamPlanLane } from "./team-plan";
 import { PerPlayerView } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
 import { useDotaScreen } from "./screenshot-paste";
@@ -753,6 +754,38 @@ export function DraftBoard({
       <EmptySlots filled={resolvedEnemies.length} />
     </Rail>
   );
+  // The head of the picks section: its title and the view tabs. On the Team Plan it heads the lane, where the
+  // selected tab names the view, so the title is only read out; players watching see it, having no tabs.
+  const hasTabs = Boolean(pool && isPlanner);
+  const viewHead = (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+      <h2
+        id={isPlanner ? "picks-title" : "plan-title"}
+        ref={isPlanner ? picksTitleRef : undefined}
+        tabIndex={-1}
+        className={teamPlan && hasTabs ? "sr-only" : "section-title"}
+      >
+        {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
+      </h2>
+      {hasTabs && (
+        <div className="lane-seg max-md:w-full max-md:[&>button]:flex-1" role="group" aria-label="Suggestions for">
+          {!notPlaying && (
+            <button aria-pressed={view === "mine"} onClick={() => setView("mine")}>
+              My Picks
+            </button>
+          )}
+          <button aria-pressed={view === "players"} onClick={() => setView("players")}>
+            Per Player
+          </button>
+          <button aria-pressed={view === "team"} onClick={() => setView("team")}>
+            Team Plan
+          </button>
+        </div>
+      )}
+    </div>
+  );
+  const planHero = (id: number) => ({ name: hero(id).name, portrait: portraits[id] });
+
   // Who Has the Better Chance: the draft now, and with the Team Plan's five when there is a plan.
   const oddsOf = (ours: number[]): DraftOdds => ({
     edge: draftEdge(engine, ours, enemies, bracket),
@@ -972,42 +1005,33 @@ export function DraftBoard({
         />
       )}
 
-      <section aria-labelledby={isPlanner ? "picks-title" : "plan-title"} className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h2
-            id={isPlanner ? "picks-title" : "plan-title"}
-            ref={isPlanner ? picksTitleRef : undefined}
-            tabIndex={-1}
-            className="section-title"
-          >
-            {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
-          </h2>
-          {pool && isPlanner && (
-            <div className="lane-seg max-md:w-full max-md:[&>button]:flex-1" role="group" aria-label="Suggestions for">
-              {!notPlaying && (
-                <button aria-pressed={view === "mine"} onClick={() => setView("mine")}>
-                  My Picks
-                </button>
-              )}
-              <button aria-pressed={view === "players"} onClick={() => setView("players")}>
-                Per Player
-              </button>
-              <button aria-pressed={view === "team"} onClick={() => setView("team")}>
-                Team Plan
-              </button>
-            </div>
-          )}
-        </div>
+      <section
+        aria-labelledby={isPlanner ? "picks-title" : "plan-title"}
+        className={teamPlan ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22.5rem]" : "flex flex-col gap-3"}
+      >
         {teamPlan ? (
-          <PartyPlan
-            plan={teamPlan}
-            pooled={pooled}
-            names={planNames}
-            portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
-            onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
-            onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
-          />
-        ) : playerColumns ? (
+          <>
+            <TeamPlanLane
+              plan={teamPlan}
+              head={viewHead}
+              hero={planHero}
+              names={planNames}
+              myId={party?.userId ?? SOLO_ME}
+              pooled={pooled}
+              enemies={enemies}
+              onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
+              onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
+              onUndo={isPlanner && !locked ? (heroId) => act({ kind: "remove", heroId }) : undefined}
+            />
+            {/* Beside the lane on a wide screen, level with the first card; under it on smaller ones. */}
+            <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-4 xl:pt-[3.375rem]">
+              <SuperTeamPanel plan={teamPlan} hero={planHero} enemies={enemies} />
+            </aside>
+          </>
+        ) : (
+          viewHead
+        )}
+        {!teamPlan && playerColumns ? (
           <PerPlayerView
             columns={playerColumns}
             names={planNames}
@@ -1017,7 +1041,7 @@ export function DraftBoard({
             onPicked={(heroId, position) => placeAlly(heroId, position)}
             onBanned={(heroId) => act({ kind: "ban", heroId })}
           />
-        ) : isPlanner ? (
+        ) : teamPlan ? null : isPlanner ? (
           myPart
         ) : (
           <p className="text-sm text-muted">Loading the Team Plan…</p>
