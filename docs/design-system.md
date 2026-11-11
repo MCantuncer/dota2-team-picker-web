@@ -197,6 +197,10 @@ My Picks on /draft is the Pick Strip (`app/draft/pick-strip.tsx`) on the same mi
   render, the label or the place in the list (2nd Pick), Pos and the green You pill, score and place, the verdict,
   Picked and an icon Banned, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort
   with its Score Parts, and the engine's Reacting To line at its foot. Only the Best pick's card is copper.
+- **Number keys** (`1` to `8`, `9` for the hero from outside the pool) open that pick's card, on the page or in an
+  empty hero box; `Enter` then marks it Picked. A tile shows its number as a `.kbd` badge on the art and the lane's
+  head says what the keys do (both from 768px, where a keyboard is likely). A digit in a box with letters is still
+  the hero's position (`cm5`), and the position picker keeps 1 to 5 for itself.
 - **A score has its unit** on the card: the number, then Points, then the place ("+11.1 Points, 2nd of 49 Mids").
 - **Reasons** read number first (`lib/pick-lines.ts` turns the engine's sentences into lines): one line per hero for
   counters and synergy, tags as sentences, hard counters as risks with the points they would cost, risks last on the
