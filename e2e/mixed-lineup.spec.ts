@@ -14,7 +14,7 @@ test("a Team mixes Stack mates and friends, and friends who don't share are plan
 
   await page.goto("/draft");
   const planFor = page.getByRole("region", { name: "Plan For" });
-  await planFor.getByRole("button", { name: "Team", exact: true }).click();
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
   await planFor.getByLabel("Fill From Stack").selectOption({ label: "Night Owls" });
   const seats = planFor.getByRole("list", { name: "Team Seats" });
   await expect(seats.getByRole("listitem").nth(2)).toContainText("Tusk");
@@ -32,14 +32,13 @@ test("a Team mixes Stack mates and friends, and friends who don't share are plan
   await page.keyboard.type("bris");
   await page.keyboard.press("Enter");
   await expect(seats.getByRole("listitem").nth(3)).toContainText("Bristle");
-  await expect(seats.getByRole("listitem").nth(3)).toContainText("Friend");
+  await expect(seats.getByRole("listitem").nth(3)).toHaveAttribute("title", /Friend/);
   await expect(planFor.getByRole("button", { name: "Remove Bristle from Pos 4" })).toBeFocused();
 
   // The friend who doesn't share takes Pos 5 and is planned as any hero.
   await page.locator('[data-seat-add="5"]:visible').click();
   await planFor.getByRole("listbox").getByRole("option", { name: /Shy/ }).click();
-  await expect(seats.getByRole("listitem").nth(4)).toContainText("Any Hero");
-  await expect(planFor).toContainText("5 of 5 seats filled");
+  await expect(seats.getByRole("listitem").nth(4)).toHaveAttribute("title", /Any Hero/);
 
   await page.getByRole("button", { name: "Per Player" }).click();
   await expect(page.getByRole("list", { name: "Suggested heroes for Bristle" })).toBeVisible();

@@ -31,14 +31,10 @@ function setup(seats: Seat[], more: Partial<Parameters<typeof TeamSeats>[0]> = {
       mode="team"
       seats={seats}
       people={people}
-      pool={{}}
-      myHeroes={{}}
       stacks={[{ id: "s1", name: "Night Shift" }]}
       signedIn
       notice={null}
-      hero={(id) => ({ name: `Hero ${id}` })}
-      onJustMe={vi.fn()}
-      onTeam={vi.fn()}
+      hero={(id) => ({ name: `Hero ${id}`, image: `/hero-${id}.png` })}
       onPlace={calls.place}
       onRemove={calls.remove}
       onFill={calls.fill}
@@ -56,11 +52,19 @@ describe("TeamSeats", () => {
     ]);
     const seats = within(screen.getByRole("list", { name: "Team Seats" })).getAllByRole("listitem");
     expect(seats).toHaveLength(5);
-    expect(seats[0]).toHaveTextContent("Ana");
-    expect(seats[0]).toHaveTextContent("Night Shift");
+    expect(seats[0]).toHaveTextContent("Pos 1Ana");
+    expect(seats[0]).toHaveAttribute("title", "Ana, Night Shift");
     expect(seats[1]).toHaveTextContent("You");
-    expect(seats[2]).toHaveTextContent("Open Seat");
-    expect(screen.getByRole("region", { name: "Plan For" })).toHaveTextContent("2 of 5 seats filled");
+    expect(seats[2]).toHaveAttribute("title", "Open Seat, Any Hero");
+    expect(within(seats[2]!).getByRole("button", { name: "Add Player to Pos 3" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Plan For" })).not.toHaveTextContent("seats filled");
+  });
+
+  it("shows the hero picked or planned for a seat as its face", () => {
+    setup([{ id: SOLO_ME, position: 2 }], { heroAt: (p) => (p === 2 ? 7 : null) });
+    const seats = within(screen.getByRole("list", { name: "Team Seats" })).getAllByRole("listitem");
+    expect(within(seats[1]!).getByRole("img", { name: "Hero 7" })).toBeInTheDocument();
+    expect(within(seats[0]!).queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("adds a friend to an open seat with the keyboard only", async () => {

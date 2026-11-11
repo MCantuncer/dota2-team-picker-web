@@ -41,13 +41,17 @@ test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dot
   const teams = page.locator('section[aria-label="My Team"], section[aria-label="Enemy"]');
   await expect(teams.first()).toHaveAttribute("aria-label", "My Team");
 
-  const side = page.getByRole("region", { name: "Read the Dota screen" });
+  const side = page.getByRole("group", { name: "My Side" });
   await side.getByRole("button", { name: "Dire", exact: true }).click();
   await expect(teams.first()).toHaveAttribute("aria-label", "Enemy");
   await expect(page.getByRole("heading", { name: /^Enemy .*Radiant$/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^My Team .*Dire$/ })).toBeVisible();
-  // Tab follows the screen: from the Enemy box to the My Team box.
+  // Tab follows the screen: from the Enemy box to the My Team rail, whose header holds the side switch, then its box.
   await page.getByLabel("Enemy pick, e.g. sf2").focus();
+  await page.keyboard.press("Tab");
+  await expect(side.getByRole("button", { name: "Radiant", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(side.getByRole("button", { name: "Dire", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeFocused();
   await expectAccessible(page);
@@ -83,7 +87,7 @@ test("the draft screen guesses ally positions and swaps them in one click", asyn
   // Lion has no position typed, so it shows a guess until someone sets it.
   const lion = page.getByRole("radiogroup", { name: "Lion position" });
   await expect(lion.getByRole("radio", { name: /guessed/ })).toBeVisible();
-  await expect(page.getByText("Dashed positions are guesses")).toBeVisible();
+  await expect(page.getByText("Dashed Is a Guess")).toBeVisible();
 
   // Giving Lion Crystal Maiden's position swaps them, so two heroes never share one.
   await lion.getByRole("radio", { name: /^Pos 5/ }).click();
@@ -102,7 +106,7 @@ test("the draft screen lets the player set enemy positions over the guess", asyn
   await expect(chosen(page, "Shadow Fiend")).toHaveAccessibleName(/^Pos 2/);
   const pa = page.getByRole("radiogroup", { name: "Phantom Assassin position" });
   await expect(pa.getByRole("radio", { name: /guessed/ })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Enemy" }).getByText("Dashed positions are guesses")).toBeVisible();
+  await expect(page.getByText("Dashed Is a Guess")).toBeVisible();
 
   // Moving Phantom Assassin to mid swaps Shadow Fiend back to a guess, so two enemies never share one.
   await pa.getByRole("radio", { name: /^Pos 2/ }).click();
@@ -121,11 +125,14 @@ test("the draft screen shows the win chance once a checked model exists", async 
   const ally = page.getByLabel("My team pick, e.g. cm5");
   await ally.fill("cm5");
   await ally.press("Enter");
-  await expect(page.getByRole("region", { name: "Win chance" })).toHaveCount(0);
+  // One side picked: no checked model for one pick, so the band shows the draft edge in points.
+  const band = page.getByRole("region", { name: "Who Has the Better Chance" });
+  await expect(band).toContainText("Draft Edge Now, 1 Pick In");
+  await expect(band).not.toContainText(/\d+\.\d%/);
 
   await page.getByLabel("Enemy pick").fill("pudge");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("region", { name: "Win chance" })).toContainText(/\d+\.\d%/);
+  await expect(band).toContainText(/\d+\.\d%/);
   await expect(page.getByTitle("Change in your team's win chance")).toHaveCount(8);
   await expectAccessible(page);
 });
