@@ -51,7 +51,7 @@ import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
 import { PlanForSwitch, TeamSeats } from "./team-seats";
-import { BanSlot, EmptySlots, Rail, RailSlot } from "./draft-rails";
+import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { DraftDone } from "./start-game";
@@ -976,19 +976,16 @@ export function DraftBoard({
       >
         {enemyFirst ? enemyPanel : myTeamPanel}
         {enemyFirst ? myTeamPanel : enemyPanel}
-        <Rail
-          title="Bans"
-          count={String(bans.length)}
+        <BanLine
+          count={bans.length}
           headingId="bans-title"
-          className="border-t border-line"
-          isWide
-          isSlotsLeft={enemyFirst}
           input={
             !locked && (
               <HeroInput
                 id="bans"
                 inputRef={bansRef}
-                placeholder="Bans, several at once: pa sf am"
+                placeholder="Bans: pa sf am"
+                label="Bans, several at once: pa sf am"
                 search={search}
                 exclude={taken}
                 onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "ban" as const, heroId })))}
@@ -998,14 +995,14 @@ export function DraftBoard({
           }
         >
           {bans.map((id) => (
-            <BanSlot
+            <BanFace
               key={id}
               name={hero(id).name}
               portrait={portraits[id]}
               onUnban={locked ? undefined : () => act({ kind: "remove", heroId: id })}
             />
           ))}
-        </Rail>
+        </BanLine>
       </section>
 
       <BetterChance
