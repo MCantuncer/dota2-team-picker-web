@@ -64,21 +64,11 @@ export function PartyPlan({
                 <>
                   <ul className="flex flex-col gap-0.5 text-sm">
                     {slot.reasons.slice(0, 2).map((r) => (
-                      <li key={r}>{r}</li>
+                      <li key={`${r.kind}${r.text}`}>
+                        <span className="num text-fg">{r.lead}</span> {r.text}
+                      </li>
                     ))}
                   </ul>
-                  {slot.alternatives.length > 0 && (
-                    <p className="text-xs text-muted">
-                      Backups:{" "}
-                      {slot.alternatives.map((a, i) => (
-                        <span key={a.heroId}>
-                          {i > 0 && ", "}
-                          <span className="text-fg">{a.name}</span> <span className="num">{a.scoreDelta.toFixed(1).replace("-", "−")}</span>
-                          {pooled.has(slot.position) && !a.inPool && <span className="text-subtle"> (Outside Pool)</span>}
-                        </span>
-                      ))}
-                    </p>
-                  )}
                   {onPicked && onBanned && (
                     <div className="mt-auto flex gap-2 pt-1">
                       <button onClick={() => onPicked(slot.heroId, slot.position)} className="btn btn-primary btn-sm">
