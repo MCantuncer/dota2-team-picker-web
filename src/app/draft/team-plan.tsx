@@ -75,9 +75,84 @@ export function Face({
 }
 
 /**
- * One reason as one line: an icon for its kind, the number (or word) first in bold, then the engine's own words, with
- * a 20px face before each hero it names.
+ * Words with a 20px face before each hero in `heroes` (in the order the text names them). Minus signs become real
+ * ones. Punctuation right after a name stays with it, so the face's room never opens a gap before a colon.
  */
+export function FacedText({
+  text,
+  heroes,
+  hero,
+  enemies,
+}: {
+  text: string;
+  heroes: readonly number[];
+  hero: PlanHeroOf;
+  enemies: ReadonlySet<number>;
+}) {
+  const parts: ReactNode[] = [];
+  let rest = text;
+  heroes.forEach((id, i) => {
+    const name = hero(id).name;
+    const at = name ? rest.indexOf(name) : -1;
+    if (at < 0) return;
+    parts.push(minus(rest.slice(0, at)));
+    const tail = /^[:,.)]/.exec(rest.slice(at + name.length))?.[0] ?? "";
+    parts.push(
+      <span key={`${id}-${i}`} className="mx-1 inline-flex items-center gap-2 align-[-5px] whitespace-nowrap">
+        <Face id={id} hero={hero} isEnemy={enemies.has(id)} />
+        <span>
+          <span className="font-medium text-fg">{name}</span>
+          {tail}
+        </span>
+      </span>,
+    );
+    rest = rest.slice(at + name.length + tail.length);
+  });
+  parts.push(minus(rest));
+  return <>{parts}</>;
+}
+
+/**
+ * One reason line: an icon, the number (or word) first in bold, then the words with a face before each hero they
+ * name. A risk sits on the amber band, its icon and number in amber.
+ */
+export function ReasonLine({
+  icon,
+  lead,
+  text,
+  heroes = [],
+  isWarn = false,
+  hero,
+  enemies,
+}: {
+  icon: IconName;
+  lead: string;
+  text: string;
+  heroes?: readonly number[];
+  isWarn?: boolean;
+  hero: PlanHeroOf;
+  enemies: ReadonlySet<number>;
+}) {
+  return (
+    <li
+      className={`grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2.5 text-sm leading-6 ${isWarn ? "-mx-2 rounded-md bg-warn-tint px-2 py-1" : ""}`}
+    >
+      <span className={`flex h-6 items-center ${isWarn ? "text-warn" : "text-subtle"}`}>
+        <Icon name={icon} />
+      </span>
+      <span className="min-w-0 text-muted">
+        {lead && (
+          <>
+            <span className={`font-semibold tabular-nums ${isWarn ? "text-warn" : "text-fg"}`}>{minus(lead)}</span>{" "}
+          </>
+        )}
+        <FacedText text={text} heroes={heroes} hero={hero} enemies={enemies} />
+      </span>
+    </li>
+  );
+}
+
+/** One Team Plan reason as one line, with the icon for its kind. */
 export function Reason({
   reason: r,
   hero,
@@ -90,38 +165,8 @@ export function Reason({
   /** In place of the kind's own icon. */
   icon?: IconName;
 }) {
-  const parts: ReactNode[] = [];
-  let rest = r.text;
-  for (const id of r.heroes ?? []) {
-    const name = hero(id).name;
-    const at = name ? rest.indexOf(name) : -1;
-    if (at < 0) continue;
-    parts.push(minus(rest.slice(0, at)));
-    // Punctuation right after a name stays with it, so the face's room never opens a gap before a colon.
-    const tail = /^[:,.)]/.exec(rest.slice(at + name.length))?.[0] ?? "";
-    parts.push(
-      <span key={id} className="mx-1 inline-flex items-center gap-2 align-[-5px] whitespace-nowrap">
-        <Face id={id} hero={hero} isEnemy={enemies.has(id)} />
-        <span>
-          <span className="font-medium text-fg">{name}</span>
-          {tail}
-        </span>
-      </span>,
-    );
-    rest = rest.slice(at + name.length + tail.length);
-  }
-  parts.push(minus(rest));
   const mark = icon ?? (r.kind === "need" && r.need ? NEED_ICONS[r.need] : REASON_ICONS[r.kind]);
-  return (
-    <li className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2.5 text-sm leading-6">
-      <span className="flex h-6 items-center text-subtle">
-        <Icon name={mark} />
-      </span>
-      <span className="min-w-0 text-muted">
-        <span className="font-semibold text-fg tabular-nums">{minus(r.lead)}</span> {parts}
-      </span>
-    </li>
-  );
+  return <ReasonLine icon={mark} lead={r.lead} text={r.text} heroes={r.heroes} hero={hero} enemies={enemies} />;
 }
 
 interface TeamPlanLaneProps {
@@ -205,7 +250,7 @@ export function TeamPlanLane({
 }
 
 /** One stop on the lane: the gutter with its stretch of the line and its node, then the card. */
-function Stop({
+export function Stop({
   isFirst,
   isLast,
   node,
@@ -232,7 +277,7 @@ function Stop({
 }
 
 /** The head of the lane: the logo frame and its lane, without the dot (the dot is for Pick First). */
-function HeadMark() {
+export function HeadMark() {
   return (
     <span className="flex size-6 items-center justify-center bg-bg">
       <svg viewBox="0 0 24 24" className="size-6">

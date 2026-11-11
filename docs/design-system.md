@@ -174,6 +174,25 @@ The Team Plan on /draft (`app/draft/team-plan.tsx`, `app/draft/super-team.tsx`) 
   the best pair, the edge against the enemy picks and the key combo, any other engine line, then Team Needs: a row per
   need with the faces covering it, amber with the triangle when missing.
 
+## My Picks
+
+My Picks on /draft (`app/draft/my-picks.tsx`) is the same mid lane at full width:
+
+- The lane starts at the mark beside the view tabs. The **Best pick** is the copper stop across the lane (the node,
+  the label chip and the filled Picked; nothing else on the page is copper): the render, the label the data allows
+  (Clear Best Pick, Best Pick Right Now, Best of Your Heroes), Pos and the green You pill, score and place, the
+  verdict, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort with its Score Parts,
+  and the engine's Reacting To line at its foot.
+- **The other picks** are equal cards two to a row from 1024px, one per row below: the render, the rank, name and
+  chips (Up 1 or New, Weak Here, Outside Pool), score and place, the verdict against the Best, every reason, Score
+  Parts, then Picked (secondary) and an icon Banned. Cards in a row share one height, spare space at the bottom.
+- **Reasons** read number first (`lib/pick-lines.ts` turns the engine's sentences into lines): one line per hero for
+  counters and synergy, tags as sentences, hard counters as risks with the points they would cost, risks last on the
+  amber band.
+- **Score Parts** are centred bars: a positive part grows right in green, a negative one left in Dire red.
+- The hero from **outside the pool** takes the next free cell as a dashed card; the **Score Ladder** (every listed
+  score with the band the data could be off by) takes the last.
+
 ## Hero Art Rules
 
 - **One face point.** Each hero's face centre on its render is measured once, in a 720 wide space, in
