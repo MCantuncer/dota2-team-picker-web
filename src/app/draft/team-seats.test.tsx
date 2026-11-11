@@ -52,7 +52,7 @@ describe("TeamSeats", () => {
     ]);
     const seats = within(screen.getByRole("list", { name: "Team Seats" })).getAllByRole("listitem");
     expect(seats).toHaveLength(5);
-    expect(seats[0]).toHaveTextContent("Pos 1Ana");
+    expect(seats[0]).toHaveTextContent(/^Pos 1Carry\s*Ana$/);
     expect(seats[0]).toHaveAttribute("title", "Ana, Night Shift");
     expect(seats[1]).toHaveTextContent("You");
     expect(seats[2]).toHaveAttribute("title", "Open Seat, Any Hero");

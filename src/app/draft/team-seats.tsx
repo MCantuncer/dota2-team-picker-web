@@ -1,6 +1,6 @@
 "use client";
 
-import { HeroFace } from "@/components/hero-frame";
+import { CutOutline, HeroFace } from "@/components/hero-frame";
 import { useState } from "react";
 import { Icon } from "@/components/icon";
 import { SteamButton } from "@/components/steam-button";
@@ -112,11 +112,18 @@ export function TeamSeats({
         </p>
       )}
       {mode === "team" && (
-        <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
+        <div className="flex flex-col gap-3">
+          {/* Fill From Stack sits in its own row, so it never fights the seats' height. */}
+          {fillFromStack && (
+            <div className="flex items-center justify-between gap-3">
+              <span className="micro text-subtle">Team Seats</span>
+              {fillFromStack}
+            </div>
+          )}
           {/* Five equal cells in one panel. On a phone the cells stack their parts, so all five seats stay in view. */}
           <ul
             aria-label="Team Seats"
-            className="grid min-w-0 flex-1 basis-full grid-cols-5 divide-x divide-line rounded-xl bg-surface ring-1 ring-line ring-inset lg:basis-auto"
+            className="grid min-w-0 grid-cols-5 divide-x divide-line rounded-xl bg-surface ring-1 ring-line ring-inset"
           >
             {POSITIONS.map((position) => {
               const seat = seats.find((s) => s.position === position);
@@ -135,10 +142,17 @@ export function TeamSeats({
                 <li
                   key={position}
                   title={[name, ...about].join(", ")}
-                  className={`group relative flex min-h-14 min-w-0 items-center gap-2.5 px-3 py-2 max-sm:flex-col max-sm:items-start max-sm:gap-1.5 max-sm:px-2 ${adding === position ? "bg-accent-tint" : ""}`}
+                  className={`group relative flex min-h-18 min-w-0 items-center gap-3 px-5 py-4 max-sm:flex-col max-sm:items-start max-sm:gap-2 max-sm:px-2.5 max-sm:py-3 ${adding === position ? "bg-accent-tint" : ""}`}
                 >
-                  {art?.image && <HeroFace portrait={art.image} name={art.name} size={32} />}
-                  <span className="flex min-w-0 flex-col gap-0.5">
+                  {/* The seat's hero slot: the hero picked or planned for it, or a quiet outline. */}
+                  {art?.image ? (
+                    <HeroFace portrait={art.image} name={art.name} size={40} />
+                  ) : (
+                    <span className="relative size-10 shrink-0" aria-hidden>
+                      <CutOutline width={40} height={40} />
+                    </span>
+                  )}
+                  <span className="flex min-w-0 flex-col gap-1.5">
                     {/* Muted, not subtle, on the open seat's copper wash so the label keeps 4.5:1 contrast. */}
                     <span
                       className={`micro flex items-center gap-1.5 ${adding === position ? "text-muted" : "text-subtle"}`}
@@ -146,6 +160,7 @@ export function TeamSeats({
                     >
                       <PositionIcon position={position} size={12} />
                       Pos {position}
+                      <span className="max-lg:hidden">{POSITION_NAMES[position]}</span>
                     </span>
                     {seat?.id === SOLO_ME ? (
                       <span className="micro w-fit rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
@@ -177,7 +192,6 @@ export function TeamSeats({
               );
             })}
           </ul>
-          {fillFromStack}
         </div>
       )}
       {mode === "team" && adding && people && (
