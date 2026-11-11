@@ -121,6 +121,7 @@ test("Watch Dota learns a hero's look when you add it by hand, and reads it by i
   await page.getByRole("button", { name: "Stop" }).click();
   await page.getByRole("button", { name: "Watch Dota" }).click();
   await expect(mine.getByText("Invoker")).toBeVisible({ timeout: 45_000 });
-  // He is in the player's own slot, so he is their hero and their picks stop.
-  await expect(page.getByText("You're on Invoker. Good luck!")).toBeVisible();
+  // He is in the player's own slot, so he is their hero: the full board shows him marked You.
+  const done = page.getByRole("region", { name: "All 10 Heroes Are In" });
+  await expect(done.getByRole("listitem").filter({ hasText: "Invoker" }).getByText("You", { exact: true })).toBeVisible();
 });
