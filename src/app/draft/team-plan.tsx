@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { HeroArt, HeroFace, HeroStage, type HeroArtPlacement } from "@/components/hero-frame";
 import { Icon, type IconName } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
-import type { AnotherTeam, PlanReason, PlannedSlot, TeamNeed, TeamPlan } from "@/lib/engine/plan";
+import type { AnotherTeam, PickFirst, PlanReason, PlannedSlot, TeamNeed, TeamPlan } from "@/lib/engine/plan";
 import type { Need } from "@/lib/engine/traits";
 import type { Position } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
@@ -157,13 +157,16 @@ export function Reason({
   reason: r,
   hero,
   enemies,
+  icon,
 }: {
   reason: PlanReason;
   hero: PlanHeroOf;
   enemies: ReadonlySet<number>;
+  /** In place of the kind's own icon. */
+  icon?: IconName;
 }) {
-  const icon = r.kind === "need" && r.need ? NEED_ICONS[r.need] : REASON_ICONS[r.kind];
-  return <ReasonLine icon={icon} lead={r.lead} text={r.text} heroes={r.heroes} hero={hero} enemies={enemies} />;
+  const mark = icon ?? (r.kind === "need" && r.need ? NEED_ICONS[r.need] : REASON_ICONS[r.kind]);
+  return <ReasonLine icon={mark} lead={r.lead} text={r.text} heroes={r.heroes} hero={hero} enemies={enemies} />;
 }
 
 interface TeamPlanLaneProps {
@@ -229,7 +232,7 @@ export function TeamPlanLane({
                   player={slot.playerId ? (names[slot.playerId] ?? "Left the Party") : null}
                   isMine={myId !== null && slot.playerId === myId}
                   isPooled={pooled.has(slot.position)}
-                  pickRate={isNow ? plan.pickFirst!.pickRate : null}
+                  pickFirst={isNow ? plan.pickFirst : null}
                   hero={hero}
                   enemies={enemySet}
                   onPicked={onPicked && (() => onPicked(slot.heroId, slot.position))}
@@ -297,8 +300,8 @@ interface PositionCardProps {
   player: string | null;
   isMine: boolean;
   isPooled: boolean;
-  /** The hero's pick rate when it is the one to pick first, else null. */
-  pickRate: number | null;
+  /** Why to pick this hero first, when it is the one; else null. */
+  pickFirst: PickFirst | null;
   hero: PlanHeroOf;
   enemies: ReadonlySet<number>;
   onPicked?: () => void;
@@ -315,14 +318,19 @@ export function PositionCard({
   player,
   isMine,
   isPooled,
-  pickRate,
+  pickFirst,
   hero,
   enemies,
   onPicked,
   onBanned,
   onUndo,
 }: PositionCardProps) {
-  const isNow = pickRate !== null;
+  const isNow = pickFirst !== null;
+  // The counter the enemy could answer with gets its face in the line.
+  const firstWhy = pickFirst && {
+    ...pickFirst.reason,
+    heroes: pickFirst.counter ? [pickFirst.counter.heroId] : undefined,
+  };
   const { portrait } = hero(slot.heroId);
   const nameId = `plan-hero-${slot.position}`;
   const whyId = `plan-why-${slot.position}`;
@@ -384,7 +392,7 @@ export function PositionCard({
   return (
     <article
       aria-labelledby={nameId}
-      aria-describedby={slot.reasons.length ? whyId : undefined}
+      aria-describedby={slot.reasons.length || firstWhy ? whyId : undefined}
       className={`grid h-full grid-cols-[6.5rem_minmax(0,1fr)] content-start gap-x-4 gap-y-5 rounded-xl bg-surface p-5 ring-1 ring-inset lg:grid-cols-[10.5rem_11.5rem_minmax(0,1fr)] lg:gap-x-6 lg:p-6 ${
         isNow ? "ring-accent/45" : "ring-line"
       }`}
@@ -400,12 +408,7 @@ export function PositionCard({
             {slot.name}
           </h3>
           {isNow && (
-            <span
-              className="chip chip-accent micro shrink-0"
-              title={`Picked in ${Math.round(pickRate * 100)}% of games, the most of the open heroes, so the enemy is most likely to take it`}
-            >
-              Pick First
-            </span>
+            <span className="chip chip-accent micro shrink-0">Pick First</span>
           )}
         </div>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -428,8 +431,9 @@ export function PositionCard({
       {/* Why This Hero: the engine's reasons, all of them. */}
       <div className="col-span-2 flex min-w-0 flex-col gap-2.5 border-t border-line pt-5 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0.5 lg:pl-6">
         <h4 className="micro text-subtle">Why This Hero</h4>
-        {slot.reasons.length ? (
+        {slot.reasons.length || firstWhy ? (
           <ul id={whyId} className="flex flex-col gap-2.5">
+            {firstWhy && <Reason reason={firstWhy} hero={hero} enemies={enemies} icon="zap" />}
             {slot.reasons.map((r) => (
               <Reason key={`${r.kind}:${r.text}`} reason={r} hero={hero} enemies={enemies} />
             ))}
