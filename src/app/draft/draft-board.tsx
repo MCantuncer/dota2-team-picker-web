@@ -813,13 +813,16 @@ export function DraftBoard({
   return (
     <>
       <div className={`flex flex-col gap-4 border-b border-line pb-5 ${picksFirst ? "-order-2" : ""}`}>
-        {/* Two rows that never interleave: the title with the page's actions, then the draft's settings. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <div className="flex items-center gap-3">
+        {/* The page's buttons get their own column on a wide screen, so nothing ever sits part way under
+            them: the title with Plan For, then Role and Rank, share the left side and wrap inside it. Below
+            that everything is one left-aligned stack, and the settings' labels share one width so the
+            controls line up. */}
+        <div className="grid gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-y-4">
+          <div className="flex items-center gap-3 lg:col-start-1 lg:row-start-1">
             <h1 className="text-2xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
             {party && <span className="chip chip-accent micro">Party</span>}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:justify-end lg:self-start">
             {screen.watchControls}
             {!party && !phone && solo.phoneFollowing && <PhoneFollowingChip />}
             {!party && !phone && signedIn && !solo.phoneFollowing && <FollowOnPhone />}
@@ -853,12 +856,7 @@ export function DraftBoard({
               </>
             )}
           </div>
-        </div>
-        {/* Both rows share the same left and right edges: Role and Rank sit under the title and Plan For
-            ends under New Draft, so nothing on the action row starts part way across a settings group. On a
-            phone the settings stack, so their labels share one width and the controls line up. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 max-sm:[&_.micro]:w-14 max-sm:[&_.micro]:shrink-0">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex flex-col items-start gap-3 max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6">
             <div className="flex items-center gap-2">
               <span className="micro text-subtle" id="my-position">
                 Role
@@ -895,7 +893,7 @@ export function DraftBoard({
             </label>
           </div>
           {!party && (
-            <div>
+            <div className="max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-start-2 lg:row-start-1">
               <PlanForSwitch
                 mode={lineup.mode}
                 onJustMe={lineup.justMe}
