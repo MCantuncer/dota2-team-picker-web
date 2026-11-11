@@ -276,6 +276,18 @@ const PATHS = {
   ),
   minus: <path d="M5 12h14" />,
   /** Your Games: a bar chart. */
+  monitor: (
+    <>
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
+  smartphone: (
+    <>
+      <rect width="14" height="20" x="5" y="2" rx="2" />
+      <path d="M12 18h.01" />
+    </>
+  ),
   chart: (
     <>
       <path d="M3 3v16a2 2 0 0 0 2 2h16" />
