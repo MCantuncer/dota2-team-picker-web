@@ -60,10 +60,10 @@ export function namedHeroes(text: string, heroes: readonly NamedHero[]): number[
 
 const KINDS: [RegExp, PickLineKind][] = [
   [/^adds what/i, "need"],
-  [/punish|^safer now/i, "safety"],
+  [/(?:^safer now)|punish/i, "safety"],
   [/^can also go/i, "flex"],
-  [/^wins (more|less) as|counter-pick/i, "phase"],
-  [/win rate|^rarely played/i, "winRate"],
+  [/(?:^wins (?:more|less) as)|counter-pick/i, "phase"],
+  [/(?:^rarely played)|win rate/i, "winRate"],
 ];
 
 /** One engine reason as lines: one per hero for a counter or synergy line, else one. */
