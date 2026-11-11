@@ -55,7 +55,7 @@ import { PlanForSwitch, TeamSeats } from "./team-seats";
 import { BanSlot, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
-import { StartGame } from "./start-game";
+import { DraftDone } from "./start-game";
 import { MyPicksLane } from "./my-picks";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
@@ -525,7 +525,7 @@ export function DraftBoard({
   };
 
   // The picks list itself, rather than Start Game or your hero: its title hides behind the view tabs.
-  const showsPicks = !(checkInBoard && !game.answered) && !mine;
+  const showsPicks = !isFullBoard(draft) && !mine;
   const picksHeading = (
     <>
       Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
@@ -682,25 +682,50 @@ export function DraftBoard({
       {picksHeading}
     </h2>
   );
+  // All 10 heroes in: both teams in position order as Dota's loading screen shows them, with Start Game when signed in.
+  const byPosition = <T extends { position: Position | null }>(list: T[]) =>
+    [...list].sort((a, b) => (a.position ?? 6) - (b.position ?? 6));
+  const draftDone = isFullBoard(draft) ? (
+    <DraftDone
+      ours={byPosition(resolved).map((a) => {
+        const isYou = a.position === myPosition;
+        const playerId = a.position ? teamPlan?.slots.find((slot) => slot.position === a.position)?.playerId : undefined;
+        return {
+          id: a.heroId,
+          name: hero(a.heroId).name,
+          portrait: portraits[a.heroId],
+          isYou,
+          player: !isYou && playerId ? (planNames[playerId] ?? null) : null,
+        };
+      })}
+      theirs={byPosition(resolvedEnemies).map((e) => ({ id: e.heroId, name: hero(e.heroId).name, portrait: portraits[e.heroId] }))}
+      isDire={mySide === null ? null : mySide === "dire"}
+      edge={draftEdge(engine, allyIds, enemies, bracket)}
+      game={
+        checkInBoard && !game.answered
+          ? {
+              ready: game.id !== null,
+              startedAt: game.startedAt,
+              busy: game.busy,
+              error: game.error,
+              onStart: () => void game.start(),
+              onStop: () => void game.stop(),
+              onOver: () => {
+                if (!game.id) return;
+                // In a party, ask the job to look for the result now.
+                if (party && !shared.result) void shared.findResult();
+                openCheckInNow(game.id);
+              },
+            }
+          : null
+      }
+    />
+  ) : null;
   const myPart =
-    checkInBoard && !game.answered ? (
+    draftDone ? (
       <>
         {myHead}
-        <StartGame
-          heroName={mine ? hero(mine.heroId).name : null}
-          ready={game.id !== null}
-          startedAt={game.startedAt}
-          busy={game.busy}
-          error={game.error}
-          onStart={() => void game.start()}
-          onStop={() => void game.stop()}
-          onOver={() => {
-            if (!game.id) return;
-            // In a party, ask the job to look for the result now.
-            if (party && !shared.result) void shared.findResult();
-            openCheckInNow(game.id);
-          }}
-        />
+        {draftDone}
       </>
     ) : mine ? (
       <>
