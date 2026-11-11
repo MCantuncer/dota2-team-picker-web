@@ -12,8 +12,8 @@ import type { Position } from "@/lib/engine/types";
 export function EmptyPoolNotice({ position, reason }: { position: Position; reason: "none" | "used" }) {
   const name = POSITION_NAMES[position - 1];
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-3 rounded-md bg-surface p-3 ring-1 ring-inset ring-line">
-      <PositionIcon position={position} size={36} className="shrink-0 text-accent" />
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-4 rounded-xl bg-surface p-5 ring-1 ring-inset ring-line">
+      <PositionIcon position={position} size={36} className="shrink-0 text-muted" />
       <p className="flex min-w-0 flex-1 basis-48 flex-col gap-0.5 leading-tight">
         <span className="font-semibold text-fg">{reason === "none" ? `No ${name} Heroes Yet` : `All Your ${name} Heroes Are Taken`}</span>
         <span className="text-sm text-muted">Picks come from every hero.</span>
