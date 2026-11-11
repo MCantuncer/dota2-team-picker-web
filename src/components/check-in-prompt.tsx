@@ -14,8 +14,8 @@ import { Icon } from "./icon";
 const DONE_MS = 4000;
 
 /**
- * "How did your last game go?" bottom right on any page but the Draft page (which has the full check-in)
- * and the sign in and join flows: the result, then one tap on Good, Okay or Bad for the picks. Without
+ * "How did your last game go?" bottom right on any page but the sign in and join flows (the Draft page shows
+ * it itself, only while the board is empty, since it has the full check-in for the game being drafted): the result, then one tap on Good, Okay or Bad for the picks. Without
  * a found result the player says Victory or Defeat first, or Didn't Play It. The close button and Escape
  * mean Not Now (hidden for 2 hours, at most twice). Waits while an urgent prompt is up.
  */
@@ -23,10 +23,16 @@ export function CheckInPrompt({
   game,
   heroName,
   heroImage,
+  isOnDraft = false,
+  onDone,
 }: {
   game: DueCheckIn;
   heroName: string | null;
   heroImage: string | null;
+  /** Rendered by the Draft page; the site-wide one stays off it. */
+  isOnDraft?: boolean;
+  /** Called once the card is gone: answered, snoozed or not played. */
+  onDone?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const pathname = usePathname();
@@ -42,7 +48,11 @@ export function CheckInPrompt({
     return () => clearTimeout(timer);
   }, [state]);
 
-  if (state === "gone" || pathname === "/draft" || isPoolCardHidden(pathname)) return null;
+  useEffect(() => {
+    if (state === "gone") onDone?.();
+  }, [state, onDone]);
+
+  if (state === "gone" || (!isOnDraft && isPoolCardHidden(pathname))) return null;
 
   const call = async (run: () => PromiseLike<{ error: { message: string } | null }>, after: "thanks" | "gone") => {
     setBusy(true);
