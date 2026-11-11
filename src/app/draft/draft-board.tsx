@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
-import { MoveMark, OutsidePool, PickWhy, VerdictLines, WeakHere } from "@/components/pick-why";
+import { HeroFace } from "@/components/hero-frame";
 import { HeroInput } from "@/components/hero-input";
 import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
@@ -13,14 +13,14 @@ import { SteamButton } from "@/components/steam-button";
 import { applyAction, heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
-import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket, type Suggestion } from "@/lib/engine/types";
+import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
 import { edgeParts, pickGain, teamWinChance } from "@/lib/win";
 import { draftEdge } from "@/lib/engine/win-chance";
-import { type Verdict, verdicts } from "@/lib/engine/verdict";
+import { verdicts } from "@/lib/engine/verdict";
 import {
   type ListRule,
   listRule,
@@ -56,7 +56,7 @@ import { BanSlot, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { StartGame } from "./start-game";
-import { SuggestionRow } from "./suggestion-row";
+import { MyPicksLane } from "./my-picks";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
 import { CheckInCard } from "./check-in-card";
@@ -102,10 +102,6 @@ const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", 
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
 const NO_STACKS: PlannableStack[] = [];
-const NOTICE = { enemy: "notice-error", open: "notice-warn", out: "notice-done" } as const;
-
-/** A signed score with one decimal and a real minus sign. */
-const signed = (n: number) => `${n < 0 ? "−" : "+"}${Math.abs(n).toFixed(1)}`;
 
 function readStorage<T>(key: string, valid: (v: unknown) => v is T): T | null {
   try {
@@ -528,117 +524,8 @@ export function DraftBoard({
     if (id != null) act({ kind: "remove", heroId: id });
   };
 
-  // Your own part of the draft: picks for your position, or your hero once it is in.
-  const myPart = checkInBoard && !game.answered ? (
-    <StartGame
-      heroName={mine ? hero(mine.heroId).name : null}
-      ready={game.id !== null}
-      startedAt={game.startedAt}
-      busy={game.busy}
-      error={game.error}
-      onStart={() => void game.start()}
-      onStop={() => void game.stop()}
-      onOver={() => {
-        if (!game.id) return;
-        // In a party, ask the job to look for the result now.
-        if (party && !shared.result) void shared.findResult();
-        openCheckInNow(game.id);
-      }}
-    />
-  ) : mine ? (
-            <p className="text-sm text-muted">
-              You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
-            </p>
-          ) : (
-            <>
-            {askPick !== undefined && !locked && (
-              <DidYouPick
-                hero={hero(askPick)}
-                portrait={portraits[askPick]}
-                position={myPosition}
-                onYes={() => placeAlly(askPick, myPosition)}
-                onNo={() => setNotMine((s) => new Set([...s, askPick]))}
-              />
-            )}
-            {suggestions.length > 0 && (
-              <p className="text-sm text-subtle">
-                {reactingTo({
-                  enemies: enemies.map(hero).map((h) => h.name),
-                  allies: allyIds.map(hero).map((h) => h.name),
-                  bans: bans.length,
-                })}
-              </p>
-            )}
-            {signedIn && fromAll && suggestions.length > 0 && <EmptyPoolNotice position={myPosition} reason={fromAll} />}
-            <ol aria-label="Suggested heroes" className="flex flex-col">
-              {suggestions.map((s, i) => (
-                <SuggestionCard
-                  key={s.heroId}
-                  suggestion={s}
-                  move={moves.get(s.heroId)}
-                  weakHere={weak.has(s.heroId)}
-                  verdict={verdictOf.get(s.heroId)}
-                  leader={suggestions[0]?.name}
-                  playedGames={played.has(s.heroId) ? (player.personal[s.heroId]?.games ?? null) : null}
-                  portrait={portraits[s.heroId]}
-                  rank={i + 1}
-                  position={myPosition}
-                  gain={pickGain(engine, s.heroId, allyIds, enemies, bracket)}
-                  onPicked={
-                    locked
-                      ? undefined
-                      : () => {
-                          placeAlly(s.heroId, myPosition);
-                          refocus("ally");
-                        }
-                  }
-                  onBanned={
-                    locked
-                      ? undefined
-                      : () => {
-                          act({ kind: "ban", heroId: s.heroId });
-                          refocus("bans");
-                        }
-                  }
-                />
-              ))}
-            </ol>
-            {outsider && (
-              <section aria-labelledby="outsider-heading" className="mt-6">
-                <h3 id="outsider-heading" className="px-2 pb-1 text-sm text-subtle">
-                  Worth a Look from Outside Your Pool
-                </h3>
-                <p className="px-2 pb-2 text-sm text-muted">{outsiderText(outsider)}</p>
-                <ol aria-label="Hero from outside your pool" className="flex flex-col">
-                  <SuggestionCard
-                    suggestion={outsider.pick}
-                    outside
-                    portrait={portraits[outsider.pick.heroId]}
-                    rank={null}
-                    position={myPosition}
-                    gain={pickGain(engine, outsider.pick.heroId, allyIds, enemies, bracket)}
-                    onPicked={
-                      locked
-                        ? undefined
-                        : () => {
-                            placeAlly(outsider.pick.heroId, myPosition);
-                            refocus("ally");
-                          }
-                    }
-                    onBanned={
-                      locked
-                        ? undefined
-                        : () => {
-                            act({ kind: "ban", heroId: outsider.pick.heroId });
-                            refocus("bans");
-                          }
-                    }
-                  />
-                </ol>
-              </section>
-            )}
-            </>
-          );
+  // The picks list itself, rather than Start Game or your hero: its title hides behind the view tabs.
+  const showsPicks = !(checkInBoard && !game.answered) && !mine;
   const picksHeading = (
     <>
       Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
@@ -754,8 +641,8 @@ export function DraftBoard({
       <EmptySlots filled={resolvedEnemies.length} />
     </Rail>
   );
-  // The head of the picks section: its title and the view tabs. On the Team Plan it heads the lane, where the
-  // selected tab names the view, so the title is only read out; players watching see it, having no tabs.
+  // The head of the picks section: its title and the view tabs. On the Team Plan and My Picks it heads the lane,
+  // where the selected tab names the view, so the title is only read out; players watching see it, having no tabs.
   const hasTabs = Boolean(pool && isPlanner);
   const viewHead = (
     <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
@@ -763,7 +650,7 @@ export function DraftBoard({
         id={isPlanner ? "picks-title" : "plan-title"}
         ref={isPlanner ? picksTitleRef : undefined}
         tabIndex={-1}
-        className={teamPlan && hasTabs ? "sr-only" : "section-title"}
+        className={hasTabs && (teamPlan || (!playerColumns && showsPicks)) ? "sr-only" : "section-title"}
       >
         {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
       </h2>
@@ -785,6 +672,102 @@ export function DraftBoard({
     </div>
   );
   const planHero = (id: number) => ({ name: hero(id).name, portrait: portraits[id] });
+
+  // Your own part of the draft: picks for your position, or your hero once it is in. Its head is the view tabs for
+  // the planner and the picks title for players watching: the picks start their lane beside it.
+  const myHead = isPlanner ? (
+    viewHead
+  ) : (
+    <h2 id="picks-title" ref={picksTitleRef} tabIndex={-1} className="section-title">
+      {picksHeading}
+    </h2>
+  );
+  const myPart =
+    checkInBoard && !game.answered ? (
+      <>
+        {myHead}
+        <StartGame
+          heroName={mine ? hero(mine.heroId).name : null}
+          ready={game.id !== null}
+          startedAt={game.startedAt}
+          busy={game.busy}
+          error={game.error}
+          onStart={() => void game.start()}
+          onStop={() => void game.stop()}
+          onOver={() => {
+            if (!game.id) return;
+            // In a party, ask the job to look for the result now.
+            if (party && !shared.result) void shared.findResult();
+            openCheckInNow(game.id);
+          }}
+        />
+      </>
+    ) : mine ? (
+      <>
+        {myHead}
+        <p className="text-sm text-muted">
+          You&apos;re on <span className="text-fg">{hero(mine.heroId).name}</span>. Good luck!
+        </p>
+      </>
+    ) : (
+      <MyPicksLane
+        head={myHead}
+        notices={[
+          askPick !== undefined && !locked && (
+            <DidYouPick
+              key="did-you-pick"
+              hero={hero(askPick)}
+              portrait={portraits[askPick]}
+              position={myPosition}
+              onYes={() => placeAlly(askPick, myPosition)}
+              onNo={() => setNotMine((s) => new Set([...s, askPick]))}
+            />
+          ),
+          signedIn && fromAll && suggestions.length > 0 && (
+            <EmptyPoolNotice key="empty-pool" position={myPosition} reason={fromAll} />
+          ),
+        ].filter((n): n is React.JSX.Element => Boolean(n))}
+        picks={suggestions.map((s) => ({
+          suggestion: s,
+          move: moves.get(s.heroId),
+          isWeak: weak.has(s.heroId),
+          verdict: verdictOf.get(s.heroId),
+          playedGames: played.has(s.heroId) ? (player.personal[s.heroId]?.games ?? null) : null,
+          gain: pickGain(engine, s.heroId, allyIds, enemies, bracket),
+        }))}
+        outsider={
+          outsider && {
+            entry: { suggestion: outsider.pick, gain: pickGain(engine, outsider.pick.heroId, allyIds, enemies, bracket) },
+            text: outsiderText(outsider),
+          }
+        }
+        reacting={reactingTo({
+          enemies: enemies.map(hero).map((h) => h.name),
+          allies: allyIds.map(hero).map((h) => h.name),
+          bans: bans.length,
+        })}
+        position={myPosition}
+        hero={planHero}
+        heroes={engine.heroes}
+        enemies={enemies}
+        onPicked={
+          locked
+            ? undefined
+            : (heroId) => {
+                placeAlly(heroId, myPosition);
+                refocus("ally");
+              }
+        }
+        onBanned={
+          locked
+            ? undefined
+            : (heroId) => {
+                act({ kind: "ban", heroId });
+                refocus("bans");
+              }
+        }
+      />
+    );
 
   // Who Has the Better Chance: the draft now, and with the Team Plan's five when there is a plan.
   const oddsOf = (ours: number[]): DraftOdds => ({
@@ -891,9 +874,6 @@ export function DraftBoard({
 
       {!isPlanner && (
         <section aria-labelledby="picks-title" className="flex flex-col gap-3">
-          <h2 id="picks-title" ref={picksTitleRef} tabIndex={-1} className="section-title">
-            {picksHeading}
-          </h2>
           {myPart}
         </section>
       )}
@@ -1028,23 +1008,25 @@ export function DraftBoard({
               <SuperTeamPanel plan={teamPlan} hero={planHero} enemies={enemies} />
             </aside>
           </>
+        ) : playerColumns || !isPlanner ? (
+          <>
+            {viewHead}
+            {playerColumns ? (
+              <PerPlayerView
+                columns={playerColumns}
+                names={planNames}
+                draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
+                heroes={engine.heroes}
+                portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
+                onPicked={(heroId, position) => placeAlly(heroId, position)}
+                onBanned={(heroId) => act({ kind: "ban", heroId })}
+              />
+            ) : (
+              <p className="text-sm text-muted">Loading the Team Plan…</p>
+            )}
+          </>
         ) : (
-          viewHead
-        )}
-        {!teamPlan && playerColumns ? (
-          <PerPlayerView
-            columns={playerColumns}
-            names={planNames}
-            draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
-            heroes={engine.heroes}
-            portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
-            onPicked={(heroId, position) => placeAlly(heroId, position)}
-            onBanned={(heroId) => act({ kind: "ban", heroId })}
-          />
-        ) : teamPlan ? null : isPlanner ? (
           myPart
-        ) : (
-          <p className="text-sm text-muted">Loading the Team Plan…</p>
         )}
         <Announcer
           text={
@@ -1126,11 +1108,11 @@ export function DidYouPick({
     <div
       role="group"
       aria-labelledby="did-you-pick"
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line"
+      className="flex flex-wrap items-center gap-x-4 gap-y-4 rounded-xl bg-surface p-5 ring-1 ring-inset ring-line"
     >
-      {/* Portrait and question stay side by side; the buttons go under them when the column is narrow. */}
-      <span className="flex min-w-0 flex-1 basis-80 items-center gap-3">
-        <Portrait hero={hero} src={portrait} size="slot" />
+      {/* Face and question stay side by side; the buttons go under them when the column is narrow. */}
+      <span className="flex min-w-0 flex-1 basis-80 items-center gap-4">
+        {portrait && <HeroFace portrait={portrait} name={hero.name} size={48} isDecorative />}
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span id="did-you-pick" className="font-medium leading-tight text-fg">
             Did you pick {hero.name}?
@@ -1140,8 +1122,9 @@ export function DidYouPick({
           </span>
         </span>
       </span>
-      <span className="flex shrink-0 gap-2 pb-1 pl-1 sm:p-0">
-        <button onClick={onYes} className="btn btn-primary btn-sm">
+      {/* Secondary, not copper: copper is only for the Best pick. */}
+      <span className="flex shrink-0 gap-2">
+        <button onClick={onYes} className="btn btn-secondary btn-sm">
           Yes, My Pick
         </button>
         <button onClick={onNo} className="btn btn-secondary btn-sm">
@@ -1165,143 +1148,4 @@ function Portrait({ hero, src, size }: { hero: HeroInfo; src?: string; size: key
   const look = `${s.className} shrink-0 rounded-xs object-cover`;
   if (!src) return <span className={`${look} micro flex items-center justify-center bg-raised p-1 text-center text-muted`}>{hero.name}</span>;
   return <Image src={src} alt="" width={s.w} height={s.h} className={look} />;
-}
-
-/** The hero's large transparent render on the Steam CDN, from its portrait URL. */
-const renderOf = (portrait?: string) =>
-  portrait?.replace("/images/dota_react/heroes/", "/videos/dota_react/heroes/renders/");
-
-/** The graded render behind the best pick: one per page, never a portrait wall. */
-const RENDER_STYLE: React.CSSProperties = {
-  filter: "grayscale(.55) sepia(.25) brightness(.6)",
-  maskImage: "radial-gradient(closest-side at 50% 45%, #000 45%, transparent 100%)",
-  WebkitMaskImage: "radial-gradient(closest-side at 50% 45%, #000 45%, transparent 100%)",
-};
-
-/**
- * One suggestion. Rank 1 is the answer: a large name over the hero's render, the score in copper and the main
- * Picked button. Ranks 2 to 8 are equal hairline rows with the same columns, so the eye reads down them.
- */
-function SuggestionCard({
-  suggestion: s,
-  portrait,
-  rank,
-  position,
-  move,
-  weakHere,
-  verdict,
-  leader,
-  outside,
-  playedGames = null,
-  gain,
-  onPicked,
-  onBanned,
-}: {
-  suggestion: Suggestion;
-  portrait?: string;
-  /** The place in the list; null for the outside hero shown after it. */
-  rank: number | null;
-  position: Position;
-  /** "New" or "Up 2" since the last pick or ban. */
-  move?: string;
-  /** One of the player's heroes, but weak in this draft. */
-  weakHere?: boolean;
-  /** Where the hero stands against the best pick on the list, and why; none for the outside hero. */
-  verdict?: Verdict;
-  /** The best pick's name, over the other rows. */
-  leader?: string;
-  /** Not one of the player's heroes for the position. */
-  outside?: boolean;
-  /** Games the player has on a listed hero from outside their pool; null for a pool hero. */
-  playedGames?: number | null;
-  /** Change in my team's win chance, in points, when it is known. */
-  gain: number | null;
-  /** Left out when the player can't change the draft. */
-  onPicked?: () => void;
-  onBanned?: () => void;
-}) {
-  const hero = { id: s.heroId, name: s.name } as HeroInfo;
-  const playedLabel =
-    playedGames !== null ? <OutsidePool title={`You played it ${playedGames} times in six months (all positions), but it is not in My Heroes for this position`} /> : null;
-  const counters = s.hardCounters.map((n) => (
-    <p key={n.counterId} className={`notice ${NOTICE[n.status]} text-xs`}>
-      {n.text}
-    </p>
-  ));
-  const gainText =
-    gain !== null ? (
-      <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`} title="Change in your team's win chance">
-        {signed(gain)}%
-      </span>
-    ) : null;
-
-  if (rank === 1) {
-    const render = renderOf(portrait);
-    return (
-      <li className="relative isolate mb-6 flex min-h-72 flex-col justify-center gap-3 py-6 sm:pl-[42%]">
-        {render && (
-          <Image
-            src={render}
-            alt=""
-            aria-hidden
-            width={640}
-            height={640}
-            style={RENDER_STYLE}
-            className="pointer-events-none absolute -left-8 top-1/2 -z-10 hidden w-[52%] max-w-md -translate-y-1/2 sm:block"
-          />
-        )}
-        <span className="flex items-center gap-2 text-sm text-accent">
-          {/* A hero that is weak here is the best the player has, not a strong pick; "Clear" only when the data proves it. */}
-          {weakHere ? "Best of Your Heroes" : verdict?.kind === "clear" ? "Clear Best Pick" : "Best Pick Right Now"} <MoveMark move={move} />
-          {weakHere && <WeakHere />}
-          {playedLabel}
-        </span>
-        <span className="text-5xl font-semibold leading-none tracking-[-0.035em] text-fg">{s.name}</span>
-        <span className="flex items-baseline gap-3">
-          <span className="text-3xl font-semibold tracking-[-0.02em] text-accent" title="Score in win-rate points">
-            {signed(s.score)}
-          </span>
-          {gainText}
-        </span>
-        {verdict && <VerdictLines verdict={verdict} className="max-w-md" />}
-        <PickWhy suggestion={s} className="max-w-md text-fg/85" />
-        {counters}
-        {onPicked && onBanned && (
-          <div className="mt-2 flex gap-2">
-            <button onClick={onPicked} className="btn btn-primary">
-              <Icon name="check" />
-              Picked
-            </button>
-            <button onClick={onBanned} className="btn btn-secondary">
-              <Icon name="ban" />
-              Banned
-            </button>
-          </div>
-        )}
-      </li>
-    );
-  }
-
-  return (
-    <SuggestionRow
-      suggestion={s}
-      verdict={verdict}
-      leader={leader}
-      portrait={<Portrait hero={hero} src={portrait} size="strip" />}
-      rank={rank}
-      scoreText={signed(s.score)}
-      badges={
-        <>
-          <MoveMark move={move} />
-          {weakHere && <WeakHere />}
-          {outside && <OutsidePool />}
-          {playedLabel}
-        </>
-      }
-      gainText={gainText}
-      counters={counters}
-      onPicked={onPicked}
-      onBanned={onBanned}
-    />
-  );
 }
