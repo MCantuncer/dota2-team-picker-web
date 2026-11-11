@@ -42,7 +42,8 @@ export function Rail({
   children,
   className = "",
 }: RailProps) {
-  // One row: the mark and title, the search box, then the side switch or hint. On a phone the box takes its own row.
+  // One row, in reading and Tab order: the mark and title, the side switch or hint, then the search box, which takes
+  // the rest of the row. On a phone the box takes its own row. With no box, the switch or hint goes to the far end.
   const head = (
     <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-4 gap-y-3">
       <div className="flex items-center gap-2.5">
@@ -52,15 +53,15 @@ export function Rail({
           {side && isSideKnown && <span className="sr-only"> {side === "radiant" ? "Radiant" : "Dire"}</span>}
         </h2>
       </div>
+      {aside && <span className={`flex items-center ${input ? "max-sm:ml-auto" : "ml-auto"}`}>{aside}</span>}
       {input && (
-        <div className="relative min-w-0 flex-1 basis-44 max-sm:order-last max-sm:basis-full">
+        <div className="relative min-w-0 flex-1 basis-44 max-sm:basis-full">
           {input}
           <span aria-hidden className="kbd pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 max-md:hidden">
             Enter
           </span>
         </div>
       )}
-      {aside && <span className="ml-auto flex items-center">{aside}</span>}
     </div>
   );
   return (
