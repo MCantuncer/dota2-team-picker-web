@@ -1,402 +1,281 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
-import { Icon, type IconName } from "@/components/icon";
-import { MoveMark, OutsidePool, VerdictLines, WeakHere } from "@/components/pick-why";
-import { type Verdict, verdicts } from "@/lib/engine/verdict";
-import { ordinal } from "@/lib/engine/reasons";
-import type { Position, ScoreBreakdown, Suggestion } from "@/lib/engine/types";
+import type { ReactNode } from "react";
+import { PositionIcon } from "@/components/position-icon";
+import type { PickFirst, PlannedSlot } from "@/lib/engine/plan";
+import type { Position } from "@/lib/engine/types";
+import { verdicts } from "@/lib/engine/verdict";
 import { POSITION_NAMES } from "@/lib/party";
 import type { PlayerColumn } from "@/lib/per-player";
 import { outsiderText, useRankMoves } from "@/lib/pick-explain";
-import { reasonRow, type ReasonKind } from "@/lib/reason-rows";
+import type { NamedHero } from "@/lib/pick-lines";
+import { ForkNode, LaneGutter, OUTSIDER_NODE, PICK_NODE, PickCard, type PickCtx } from "./my-picks";
+import { Face, HeadMark, minus, Stop, type PlanHeroOf } from "./team-plan";
 
-/**
- * Per Player: the planner's view of what each party member who still has to pick should take.
- * One column per player, as wide as the panel allows: a single player gets the whole width, and players sit side
- * by side only when each column still has room. Each hero is a card that opens to show why: every reason the
- * engine found and the score parts behind it. The top hero starts open.
+/*
+ * Per Player as the Lane Board's mid lane, full width: the lane starts at the mark beside the view tabs, then one
+ * section per player who still has to pick. Each section starts at its seat (a stop with the position icon) and the
+ * player's heroes follow as the same cards as My Picks, two to a row from 1024px, one stop per row. Copper only on
+ * the card that is the Team Plan's Pick First.
  */
-/** A hero's portrait: the 64x36 strip on a card, the 40x22 chip on a Why row. */
-type Portrait = (heroId: number, name: string, size?: "strip" | "chip") => ReactNode;
-type HeroName = { id: number; name: string };
 
-export function PerPlayerView({
+interface PerPlayerLaneProps {
+  /** The head of the lane, beside its mark: the view tabs. */
+  head: ReactNode;
+  columns: PlayerColumn[];
+  /** Display names by player id. */
+  names: Record<string, string>;
+  /** The reader's player id, whose seat shows the green You pill. */
+  myId: string | null;
+  /** The Team Plan's heroes per seat and its Pick First, when there is a plan. */
+  plan: { slots: PlannedSlot[]; pickFirst: PickFirst | null } | null;
+  /** Changes with every pick or ban, so each list can mark heroes that moved. */
+  draftKey: string;
+  hero: PlanHeroOf;
+  /** Every hero, to find the heroes a reason names. */
+  heroes: readonly NamedHero[];
+  /** Enemy picks, whose faces get the Dire edge. */
+  enemies: readonly number[];
+  /** Games a player has on a hero from outside their pool, for its Outside Pool chip. */
+  gamesOf?: (playerId: string, heroId: number) => number | null;
+  /** Change in the team's win chance in points for a pick, when a checked model gives one. */
+  gainOf?: (heroId: number) => number | null;
+  /** Left out when the player can't change the draft. */
+  onPicked?: (heroId: number, position: Position) => void;
+  onBanned?: (heroId: number) => void;
+}
+
+/** Per Player: the lane's head, then one section per player who still has to pick. */
+export function PerPlayerLane({
+  head,
   columns,
   names,
+  myId,
+  plan,
   draftKey,
+  hero,
   heroes,
-  portrait,
+  enemies,
+  gamesOf,
+  gainOf,
   onPicked,
   onBanned,
-}: {
-  columns: PlayerColumn[];
-  names: Record<string, string>;
-  /** Changes with every pick or ban, so each column can mark heroes that moved. */
-  draftKey: string;
-  /** Every hero, to put a face on the heroes a reason names. */
-  heroes: HeroName[];
-  portrait: Portrait;
-  onPicked: (heroId: number, position: Position) => void;
-  onBanned: (heroId: number) => void;
-}) {
-  if (!columns.length) return <p className="text-sm text-muted">Everyone in the party has a hero.</p>;
+}: PerPlayerLaneProps) {
+  const enemySet = new Set(enemies);
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] gap-x-8 gap-y-8">
-      {columns.map((c) => (
-        <Column
-          key={`${c.playerId}:${c.position}`}
-          column={c}
-          name={names[c.playerId] ?? "Unnamed"}
-          draftKey={draftKey}
-          heroes={heroes}
-          portrait={portrait}
-          onPicked={onPicked}
-          onBanned={onBanned}
-        />
-      ))}
+    <div className="flex min-w-0 flex-col gap-4">
+      <Stop isFirst node={<HeadMark />} nodeClass="top-[1.1875rem]">
+        <div className="flex min-h-[2.375rem] min-w-0 items-center">{head}</div>
+      </Stop>
+      {columns.length ? (
+        <div className="flex min-w-0 flex-col gap-6">
+          {columns.map((c, i) => (
+            <PlayerSection
+              key={`${c.playerId}:${c.position}`}
+              column={c}
+              name={names[c.playerId] ?? "Unnamed"}
+              isMine={myId !== null && c.playerId === myId}
+              isLast={i === columns.length - 1}
+              planned={plan?.slots.find((s) => s.position === c.position)}
+              pickFirst={plan?.pickFirst?.position === c.position ? plan.pickFirst : null}
+              draftKey={draftKey}
+              ctx={{ hero, heroes, enemies: enemySet, position: c.position }}
+              gamesOf={gamesOf}
+              gainOf={gainOf}
+              onPicked={onPicked}
+              onBanned={onBanned}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2 md:grid-cols-[1.75rem_minmax(0,1fr)] md:gap-x-3">
+          <span className="relative" aria-hidden>
+            <span className="lane-spine -top-4 h-10" />
+            <span className="absolute top-6 left-1/2 flex -translate-x-1/2 -translate-y-1/2">
+              <span className="lane-node lane-node-done" />
+            </span>
+          </span>
+          <p className="rounded-xl bg-surface px-5 py-3.5 text-sm text-muted ring-1 ring-line ring-inset">
+            Everyone in the party has a hero.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function Column({
+/** A seat's stop on the lane: the position icon in a small Lane frame. */
+function SeatNode({ position }: { position: Position }) {
+  return (
+    <span className="flex size-[1.375rem] items-center justify-center rounded-md bg-bg text-fg ring-2 ring-(--lane-line) ring-inset">
+      <PositionIcon position={position} size={14} />
+    </span>
+  );
+}
+
+/**
+ * One player's stretch of the lane: the seat as on the Team Plan (position icon, Pos and role, the name or the green
+ * You pill, the plan's hero for the seat), then their heroes as cards, and the hero from outside their pool in the
+ * next free cell when the data proves one.
+ */
+function PlayerSection({
   column: c,
   name,
+  isMine,
+  isLast,
+  planned,
+  pickFirst,
   draftKey,
-  heroes,
-  portrait,
+  ctx: base,
+  gamesOf,
+  gainOf,
   onPicked,
   onBanned,
 }: {
   column: PlayerColumn;
   name: string;
+  isMine: boolean;
+  /** The last section ends the lane. */
+  isLast: boolean;
+  /** The Team Plan's hero for this seat. */
+  planned?: PlannedSlot;
+  /** The plan's Pick First, when it is this seat's. */
+  pickFirst: PickFirst | null;
   draftKey: string;
-  heroes: HeroName[];
-  portrait: Portrait;
-  onPicked: (heroId: number, position: Position) => void;
-  onBanned: (heroId: number) => void;
+  ctx: Omit<PickCtx, "owner" | "onPicked" | "onBanned">;
+  gamesOf?: (playerId: string, heroId: number) => number | null;
+  gainOf?: (heroId: number) => number | null;
+  onPicked?: (heroId: number, position: Position) => void;
+  onBanned?: (heroId: number) => void;
 }) {
+  const list = c.suggestions;
   const moves = useRankMoves(
-    c.suggestions.map((s) => s.heroId),
+    list.map((s) => s.heroId),
     draftKey,
     `${c.playerId}:${c.position}`,
   );
+  const owner = isMine ? undefined : name;
+  const ctx: PickCtx = {
+    ...base,
+    owner,
+    onPicked: onPicked && ((heroId) => onPicked(heroId, c.position)),
+    onBanned,
+  };
+  const heroName = (id: number) => base.heroes.find((h) => h.id === id)?.name ?? "";
+  // Each hero against the list's first, in this player's name.
+  const verdictOf = new Map(verdicts(list, heroName, c.position, owner).map((v) => [v.heroId, v]));
+  const leader = list[0]?.name;
+  const isNow = (id: number) => pickFirst?.heroId === id;
+  const now = pickFirst && { title: minus(`${pickFirst.reason.lead} ${pickFirst.reason.text}`) };
+  // The cell that ends the lane: the last card (or the outsider) of the last section; the others run on.
+  const last = isLast ? list.length - (c.outsider ? 0 : 1) : Number.MAX_SAFE_INTEGER;
   const headingId = `per-player-${c.playerId}`;
-  // Each hero against the column's first, in this player's name.
-  const verdictOf = new Map(
-    verdicts(c.suggestions, (id) => heroes.find((h) => h.id === id)?.name ?? "", c.position, name).map((v) => [v.heroId, v]),
-  );
-  const card = (s: Suggestion, top: boolean, badges: ReactNode) => (
-    <HeroCard
-      // A new top hero after a pick or ban starts open again.
-      key={`${s.heroId}:${top}`}
-      suggestion={s}
-      verdict={verdictOf.get(s.heroId)}
-      top={top}
-      playerName={name}
-      portrait={portrait(s.heroId, s.name)}
-      face={(id) => {
-        const heroName = heroes.find((h) => h.id === id)?.name ?? "";
-        // The name on hover; screen readers get it from the row's line.
-        return (
-          <span title={heroName} className="block">
-            {portrait(id, heroName, "chip")}
-          </span>
-        );
-      }}
-      heroes={heroes}
-      badges={badges}
-      onPicked={() => onPicked(s.heroId, c.position)}
-      onBanned={() => onBanned(s.heroId)}
-    />
-  );
+  const role = POSITION_NAMES[c.position];
+  const own = list.length - c.played.size;
+
+  // A card's node: copper on Pick First, filled for the player's first, open after. From 1024px a row has one stop,
+  // so the first of a row turns copper there when its neighbour is Pick First.
+  const nodeOf = (i: number) => {
+    const id = list[i]!.heroId;
+    const kind = isNow(id) ? "now" : i === 0 ? "done" : "open";
+    const pairNow = i % 2 === 0 && list[i + 1] !== undefined && isNow(list[i + 1]!.heroId) && kind !== "now";
+    if (!pairNow) return <span className={`lane-node lane-node-${kind}`} />;
+    return (
+      <>
+        <span className={`lane-node lane-node-${kind} lg:hidden`} />
+        <span className="lane-node lane-node-now max-lg:hidden" />
+      </>
+    );
+  };
+
   return (
-    <section aria-labelledby={headingId} className="flex min-w-0 flex-col">
-      <h3 id={headingId} className="flex items-baseline gap-2 pb-2 font-semibold text-fg">
-        <span className="truncate">{name}</span>{" "}
-        <span className="num text-sm font-normal text-subtle">
-          Pos {c.position} {POSITION_NAMES[c.position]}
-        </span>
-        {c.fromAll && (
-          <span
-            className="chip ml-auto self-center text-xs font-normal"
-            title={
-              c.fromAll === "none"
-                ? `${name} has no heroes for this position, so these are the best of every hero`
-                : `All of ${name}'s heroes for this position are taken, so these are the best of every hero`
-            }
+    <section aria-labelledby={headingId} className="flex min-w-0 flex-col gap-4">
+      <Stop node={<SeatNode position={c.position} />} nodeClass="top-7">
+        <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-surface px-5 py-3 ring-1 ring-line ring-inset">
+          <h3
+            id={headingId}
+            aria-label={`${isMine ? "You" : name}, Pos ${c.position} ${role}`}
+            className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2"
           >
-            Any Hero
-          </span>
-        )}
-      </h3>
-      <ol aria-label={`Suggested heroes for ${name}`} className="flex flex-col">
-        {c.suggestions.map((s, i) =>
-          card(
-            s,
-            i === 0,
-            <>
-              <MoveMark move={moves.get(s.heroId)} />
-              {c.weak.has(s.heroId) && <WeakHere />}
-              {c.played.has(s.heroId) && <OutsidePool title={`${name} has played it, but it is not in their heroes for this position`} />}
-            </>,
-          ),
-        )}
-      </ol>
-      {c.outsider && (
-        <div className="mt-4 flex flex-col">
-          <p className="pb-2 text-xs text-muted">{outsiderText(c.outsider, name)}</p>
-          <ol aria-label={`Hero from outside ${name}'s pool`} className="flex flex-col">
-            {card(c.outsider.pick, false, <OutsidePool title={`Not one of ${name}'s heroes for this position`} />)}
-          </ol>
+            <span className="flex items-center gap-1.5 text-subtle">
+              <PositionIcon position={c.position} size={16} />
+              <span className="text-sm font-medium text-muted">
+                Pos {c.position} {role}
+              </span>
+            </span>
+            {isMine ? (
+              <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
+            ) : (
+              <span className="text-base font-semibold break-words text-fg">{name}</span>
+            )}
+          </h3>
+          {c.fromAll ? (
+            <span
+              className="chip micro h-auto min-h-6 shrink-0 px-2 py-1"
+              title={
+                c.fromAll === "none"
+                  ? `${isMine ? "You have" : `${name} has`} no heroes for this position, so these are the best of every hero`
+                  : `All of ${isMine ? "your" : `${name}'s`} heroes for this position are taken, so these are the best of every hero`
+              }
+            >
+              Any Hero
+            </span>
+          ) : (
+            list.length > 0 && (
+              <span className="micro text-subtle tabular-nums">
+                {own} of {isMine ? "Your" : `${name}'s`} Heroes{c.played.size > 0 && ` and ${c.played.size} Played`}
+              </span>
+            )
+          )}
+          {planned && (
+            <span className="micro flex shrink-0 items-center gap-2 text-subtle sm:ml-auto" title="The Team Plan's hero for this seat">
+              Team Plan{" "}
+              <span className="flex items-center gap-2">
+                <Face id={planned.heroId} hero={base.hero} size={20} isEnemy={false} />
+                <span className="font-medium text-fg">{planned.name}</span>
+              </span>
+            </span>
+          )}
         </div>
-      )}
+      </Stop>
+      <div className="grid gap-4 pl-7 md:pl-10 lg:grid-cols-2">
+        <ol aria-label={`Suggested heroes for ${name}`} className="contents">
+          {list.map((s, i) => (
+            <li key={s.heroId} className={`relative min-w-0 ${PICK_NODE}`}>
+              <LaneGutter cell={i} last={last} isWideFirst={false} node={nodeOf(i)} />
+              <PickCard
+                entry={{
+                  suggestion: s,
+                  move: moves.get(s.heroId),
+                  isWeak: c.weak.has(s.heroId),
+                  verdict: verdictOf.get(s.heroId),
+                  playedGames: c.played.has(s.heroId) ? (gamesOf?.(c.playerId, s.heroId) ?? null) : null,
+                  gain: gainOf?.(s.heroId) ?? null,
+                }}
+                rank={i + 1}
+                leader={leader}
+                ctx={ctx}
+                now={isNow(s.heroId) ? now : null}
+                isInPlan={planned?.heroId === s.heroId}
+              />
+            </li>
+          ))}
+        </ol>
+        {c.outsider && (
+          <ol aria-label={`Hero from outside ${isMine ? "your" : `${name}'s`} pool`} className="contents">
+            <li className={`relative min-w-0 ${OUTSIDER_NODE}`}>
+              <LaneGutter cell={list.length} last={last} isWideFirst={false} node={<ForkNode />} />
+              <PickCard
+                entry={{ suggestion: c.outsider.pick, gain: gainOf?.(c.outsider.pick.heroId) ?? null }}
+                rank={null}
+                ctx={ctx}
+                outsiderText={outsiderText(c.outsider, owner)}
+                isInPlan={planned?.heroId === c.outsider.pick.heroId}
+              />
+            </li>
+          </ol>
+        )}
+      </div>
     </section>
   );
 }
-
-/**
- * One suggested hero. Closed, it is a hairline row with the main reason; open, it shows every reason and a bar per
- * score part, so the planner sees why at a glance instead of reading a paragraph.
- */
-function HeroCard({
-  suggestion: s,
-  verdict,
-  top,
-  playerName,
-  portrait,
-  face,
-  heroes,
-  badges,
-  onPicked,
-  onBanned,
-}: {
-  suggestion: Suggestion;
-  /** Where the hero stands against the column's best, and why; none for the outside hero. */
-  verdict?: Verdict;
-  top: boolean;
-  playerName: string;
-  portrait: ReactNode;
-  face: (heroId: number) => ReactNode;
-  heroes: HeroName[];
-  badges: ReactNode;
-  onPicked: () => void;
-  onBanned: () => void;
-}) {
-  const [open, setOpen] = useState(top);
-  const panelId = useId();
-  const actions = (
-    <>
-      <button
-        onClick={onPicked}
-        aria-label={`Picked ${s.name} for ${playerName}`}
-        className={`btn btn-sm ${top ? "btn-primary" : "btn-secondary"}`}
-      >
-        <Icon name="check" />
-        Picked
-      </button>
-      <button
-        onClick={onBanned}
-        aria-label={`Banned ${s.name}`}
-        className="btn btn-secondary btn-sm"
-      >
-        <Icon name="ban" />
-        Banned
-      </button>
-    </>
-  );
-
-  return (
-    <li className={`border-t border-line ${open ? "bg-surface" : ""}`}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((o) => !o)}
-        className="grid w-full grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-x-3 px-2 py-3 text-left hover:bg-hover"
-      >
-        {portrait}
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={`flex flex-wrap items-center gap-2 font-semibold ${top ? "text-accent" : "text-fg"}`}>
-            {s.name}
-            {badges}
-          </span>
-          {!open && verdict && <span className="line-clamp-3 text-sm text-muted">{verdict.text}</span>}
-          {!open && !verdict && s.reasons[0] && <span className="truncate text-sm text-muted">{s.reasons[0]}</span>}
-          {!open && verdict?.note && <span className="line-clamp-2 text-sm text-accent">{verdict.note}</span>}
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="num w-12 text-right text-sm text-fg" title="Score in win-rate points">
-            {signed(s.score)}
-          </span>
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden
-            className={`size-4 shrink-0 text-subtle transition-transform ${open ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </span>
-      </button>
-
-      {/* The panel stays in the page for aria-controls; its content mounts only while open. */}
-      <div id={panelId} hidden={!open} className="@container px-2 pb-4">
-        {open && (
-          <>
-            <div className="grid gap-x-6 gap-y-4 sm:pl-[4.75rem] @lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-              <div className="flex flex-col gap-2">
-                {verdict && <VerdictLines verdict={verdict} className="text-sm" />}
-                <h4 className="text-xs text-subtle">Why</h4>
-                <ul className="flex flex-col gap-1">
-                  {s.reasons.map((r) => (
-                    <Reason key={r} row={reasonRow(r, heroes, s.breakdown)} face={face} />
-                  ))}
-                </ul>
-                {s.tags.length > 0 && (
-                  <span className="flex flex-wrap gap-1">
-                    {s.tags.map((t) => (
-                      <span key={t} className="chip text-xs">
-                        {t}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </div>
-              <ScoreParts breakdown={s.breakdown} place={s.place} />
-            </div>
-            <div className="mt-4 flex gap-1.5 sm:pl-[4.75rem]">{actions}</div>
-          </>
-        )}
-      </div>
-    </li>
-  );
-}
-
-/** Faces shown on a Why row; the line still names every hero. */
-const MAX_FACES = 3;
-
-const KIND_ICONS: Record<ReasonKind, IconName> = {
-  Counters: "swords",
-  Synergy: "users",
-  Meta: "trend",
-  "Team Needs": "plus",
-  Flex: "shuffle",
-  "Pick Safety": "shield",
-  "Pick Order": "clock",
-  "Watch Out": "alert",
-  Draft: "check",
-};
-
-/**
- * A reason as a row: the faces of the heroes it names (or the score part's icon when it names none), the part and
- * the line, and its points on the right. A warning row is amber.
- */
-function Reason({ row, face }: { row: ReturnType<typeof reasonRow>; face: (heroId: number) => ReactNode }) {
-  const faces = row.heroIds.slice(0, MAX_FACES);
-  const more = row.heroIds.length - faces.length;
-  return (
-    <li
-      className={`grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-3 rounded-sm py-1.5 pl-1.5 pr-3 ${
-        row.warn ? "bg-warn-tint" : "bg-raised"
-      }`}
-    >
-      {faces.length ? (
-        // Named heroes overlap like a stack, so every row's text starts at the same place; past three, a +N badge.
-        <span className="relative flex w-[5.5rem]">
-          {faces.map((id, n) => (
-            <span
-              key={id}
-              className={n ? `-ml-4 rounded-xs ring-2 ${row.warn ? "ring-warn-tint" : "ring-raised"}` : ""}
-            >
-              {face(id)}
-            </span>
-          ))}
-          {more > 0 && (
-            <span
-              className="micro absolute -bottom-1 -right-1 rounded-xs bg-hover-strong px-1 text-fg"
-              title={`${more} more`}
-            >
-              +{more}
-            </span>
-          )}
-        </span>
-      ) : (
-        <span
-          className={`flex h-5.5 w-10 items-center justify-center rounded-xs bg-hover ${row.warn ? "text-warn" : "text-radiant"}`}
-        >
-          <Icon name={KIND_ICONS[row.kind]} />
-        </span>
-      )}
-      <span className="flex min-w-0 flex-col">
-        <span className={`micro flex items-center gap-1 ${row.warn ? "text-warn" : "text-subtle"}`}>
-          {faces.length > 0 && <Icon name={KIND_ICONS[row.kind]} />}
-          {row.kind}
-        </span>
-        <span className={`text-sm ${row.warn ? "text-warn" : "text-fg/90"}`}>{row.text}</span>
-      </span>
-      {row.points !== null && (
-        <span className={`num ${row.points >= 0 && !row.warn ? "text-radiant" : "text-warn"}`}>
-          {signed(row.points)}
-        </span>
-      )}
-    </li>
-  );
-}
-
-const PART_NAMES: Record<keyof ScoreBreakdown, string> = {
-  counter: "Counters",
-  synergy: "Synergy",
-  meta: "Meta",
-  positionFit: "Role Fit",
-  teamNeeds: "Team Needs",
-  comfort: "Comfort",
-  flex: "Flex",
-  pickSafety: "Pick Safety",
-};
-
-/** One bar per score part that moves the score, biggest first, on a shared scale. */
-function ScoreParts({ breakdown, place }: { breakdown?: ScoreBreakdown; place?: { rank: number; of: number } }) {
-  if (!breakdown) return null;
-  const parts = (Object.keys(PART_NAMES) as (keyof ScoreBreakdown)[])
-    .map((k) => ({ k, v: breakdown[k] }))
-    .filter((p) => Math.abs(p.v) >= 0.05)
-    .sort((a, b) => Math.abs(b.v) - Math.abs(a.v));
-  if (!parts.length) return null;
-  const max = Math.max(...parts.map((p) => Math.abs(p.v)));
-  return (
-    <div className="flex flex-col gap-2">
-      <h4 className="text-xs text-subtle">
-        Score Parts
-        {place && place.rank > 0 && (
-          <span>
-            {" "}
-            · {ordinal(place.rank)} of {place.of} here
-          </span>
-        )}
-      </h4>
-      <ul className="flex flex-col gap-1.5">
-        {parts.map((p) => (
-          <li key={p.k} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 text-xs">
-            <span className="text-muted">{PART_NAMES[p.k]}</span>
-            <span className="h-1.5 rounded-full bg-raised">
-              <span
-                className={`block h-full rounded-full ${p.v >= 0 ? "bg-radiant" : "bg-dire"}`}
-                style={{
-                  width: `${Math.max(4, (Math.abs(p.v) / max) * 100)}%`,
-                }}
-              />
-            </span>
-            <span className={`num text-right ${p.v >= 0 ? "text-fg" : "text-dire"}`}>{signed(p.v)}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-const signed = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(1)}`;
