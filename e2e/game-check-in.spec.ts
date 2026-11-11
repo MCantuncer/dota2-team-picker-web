@@ -96,7 +96,7 @@ test("Game Over asks how it went, and the answers are saved", async ({ page }) =
   ]);
 });
 
-test("a new board offers the last game's check-in, and Skip closes it", async ({ page }) => {
+test("a new board asks about the last game in the corner, and the answer is saved", async ({ page }) => {
   const email = uniqueEmail("last");
   await newPlayer(page, email, "Later");
   await startAGame(page);
@@ -106,16 +106,17 @@ test("a new board offers the last game's check-in, and Skip closes it", async ({
   await page.reload();
   await expect(page.getByRole("region", { name: "Game Over" })).toBeVisible();
 
+  // A new board: the full check-in goes, and the corner card asks instead, out of the board's order.
   await page.getByRole("button", { name: "New Draft" }).click();
-  const line = page.getByText("Last game with Sniper: how did it go?");
-  await expect(line).toBeVisible();
-  await page.getByRole("button", { name: "Answer Now" }).click();
-  const card = page.getByRole("region", { name: "Game Over" });
+  await expect(page.getByRole("region", { name: "Game Over" })).toHaveCount(0);
+  const card = page.getByRole("region", { name: "How Did It Go?" });
   await expect(card).toBeVisible();
-  await card.getByRole("button", { name: "Skip" }).click();
-  await expect(card).toHaveCount(0);
-  await expect(line).toHaveCount(0);
-  expect(await savedCheckIns(email)).toEqual([expect.objectContaining({ answered_at: null, skipped_at: expect.any(String) })]);
+  await expect(card.getByText(/^Sniper, /)).toBeVisible();
+  await card.getByRole("button", { name: "Victory" }).click();
+  await card.getByRole("button", { name: "Good" }).click();
+  await expect(card.getByText("Thanks. Your answer tunes the picks.")).toBeVisible();
+  await expect(card).toHaveCount(0, { timeout: 10_000 });
+  expect(await savedCheckIns(email)).toEqual([expect.objectContaining({ played: true, player_won: true, picks_feel: "good" })]);
 });
 
 test("away from the Draft page, a player without Steam is asked an hour after the start", async ({ page }) => {
