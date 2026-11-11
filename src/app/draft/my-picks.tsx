@@ -310,7 +310,20 @@ export function RiskChip({ risk, hero }: { risk: PickRisk; hero: PlanHeroOf }) {
  * Picked and an icon Banned. Picked is copper only on the hero to lock now: the Best pick (full size) or the Team
  * Plan's Pick First. In another player's list the label says whose pick it is.
  */
-function PickActions({ s, isBest, isNow = false, ctx }: { s: Suggestion; isBest: boolean; isNow?: boolean; ctx: PickCtx }) {
+function PickActions({
+  s,
+  isBest,
+  isNow = false,
+  isLarge = isBest,
+  ctx,
+}: {
+  s: Suggestion;
+  isBest: boolean;
+  isNow?: boolean;
+  /** Full size buttons, as on the card across the lane. */
+  isLarge?: boolean;
+  ctx: PickCtx;
+}) {
   const { onPicked, onBanned, owner } = ctx;
   if (!onPicked || !onBanned) return null;
   const isCopper = isBest || isNow;
@@ -320,7 +333,7 @@ function PickActions({ s, isBest, isNow = false, ctx }: { s: Suggestion; isBest:
         type="button"
         onClick={() => onPicked(s.heroId)}
         aria-label={`Picked ${s.name}${owner ? ` for ${owner}` : ""}`}
-        className={`btn ${isBest ? "btn-primary" : `${isNow ? "btn-primary" : "btn-secondary"} btn-sm w-[6.25rem]`}`}
+        className={`btn ${isCopper ? "btn-primary" : "btn-secondary"} ${isLarge ? "" : "btn-sm w-[6.25rem]"}`}
       >
         <span className={`flex ${isCopper ? "" : "text-radiant"}`}>
           <Icon name="check" />
@@ -332,7 +345,7 @@ function PickActions({ s, isBest, isNow = false, ctx }: { s: Suggestion; isBest:
         onClick={() => onBanned(s.heroId)}
         aria-label={`Banned ${s.name}`}
         title="Banned"
-        className={`btn btn-secondary btn-icon ${isBest ? "" : "btn-sm"}`}
+        className={`btn btn-secondary btn-icon ${isLarge ? "" : "btn-sm"}`}
       >
         <Icon name="ban" />
       </button>
@@ -582,32 +595,77 @@ export function bestLabel(entry: PickEntry): string {
 }
 
 /**
- * The Best pick across the lane: the render in a large frame; the label the data allows (see bestLabel), name, seat,
- * score and place, the verdict and the copper Picked; every reason; the score and its parts. The engine's "Reacting
- * to" line at the foot.
+ * A pick across the lane, with everything the engine says about it: the render in a large frame; for the Best pick
+ * the label the data allows (see bestLabel), for any other its place in the list; name, seat, score and place, the
+ * verdict and Picked (copper only on the Best); every reason; the score and its parts. The engine's "Reacting to"
+ * line at the foot. The hero from outside the pool is dashed, with the engine's line at its head.
  */
-function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string; ctx: PickCtx }) {
+export function BestCard({
+  entry,
+  reacting,
+  ctx,
+  rank = 1,
+  leader,
+  outsiderText,
+  id,
+}: {
+  entry: PickEntry;
+  reacting: string;
+  ctx: PickCtx;
+  /** The place in the list; null for the hero from outside the pool. */
+  rank?: number | null;
+  /** The list's first, for the verdict of any other pick. */
+  leader?: string;
+  outsiderText?: string;
+  id?: string;
+}) {
   const s = entry.suggestion;
   const { verdict } = entry;
-  const label = bestLabel(entry);
+  const isBest = rank === 1;
+  const isOutsider = outsiderText !== undefined;
   const split = scoreSplit(s.breakdown);
   const { portrait } = ctx.hero(s.heroId);
-  const played = playedChip(entry.playedGames);
+  const played = isOutsider ? { title: "Not one of your heroes for this position" } : playedChip(entry.playedGames);
+  const nameId = isBest ? "best-pick" : `pick-detail-${s.heroId}`;
   return (
-    <article aria-labelledby="best-pick" className="flex h-full flex-col rounded-xl bg-surface ring-1 ring-accent/45 ring-inset">
+    <article
+      id={id}
+      aria-labelledby={nameId}
+      className={`flex h-full flex-col rounded-xl ${
+        isOutsider ? "border border-dashed border-line-control bg-surface/50" : `bg-surface ring-1 ring-inset ${isBest ? "ring-accent/45" : "ring-line"}`
+      }`}
+    >
+      {isOutsider && (
+        <div className="flex flex-col gap-1 border-b border-line px-5 py-4 md:px-6">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
+            <LaneMark />
+            Worth a Look from Outside Your Pool
+          </h3>
+          <p className="text-sm leading-6 text-muted">
+            <FacedText text={outsiderText} heroes={namedHeroes(outsiderText, ctx.heroes)} hero={ctx.hero} enemies={ctx.enemies} />
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 md:grid-cols-[16rem_minmax(0,1fr)] md:p-6 xl:grid-cols-[16rem_13.5rem_minmax(0,1fr)_16rem]">
         <HeroStage key={s.heroId} size={200} className="h-44 w-full md:h-52">
           {portrait && <HeroArt heroId={s.heroId} portrait={portrait} placement={BEST_ART} />}
         </HeroStage>
 
         <div className="flex min-w-0 flex-col gap-3">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className={BEST_CHIP} title={verdict?.text}>
-              {label}
-            </span>
+          <span className="flex flex-wrap items-center gap-2 empty:hidden">
+            {isBest && (
+              <span className={BEST_CHIP} title={verdict?.text}>
+                {bestLabel(entry)}
+              </span>
+            )}
+            {!isBest && rank !== null && (
+              <span className={`${CHIP} text-fg`} title="Its place among the heroes listed for you">
+                {ordinal(rank)} Pick
+              </span>
+            )}
             <PickChips move={entry.move} isWeak={entry.isWeak} risk={entry.risk} hero={ctx.hero} outside={played} />
           </span>
-          <h3 id="best-pick" data-hero-name className="text-[1.75rem] leading-8 font-semibold tracking-tight break-words text-fg">
+          <h3 id={nameId} data-hero-name className="text-[1.75rem] leading-8 font-semibold tracking-tight break-words text-fg">
             {s.name}
           </h3>
           <span className="flex items-center gap-2.5">
@@ -622,10 +680,10 @@ function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string
           <span className="pt-1">
             <Score s={s} gain={entry.gain} position={ctx.position} isLarge />
           </span>
-          {verdict && <VerdictBlock verdict={verdict} ctx={ctx} isQuiet />}
+          {verdict && <VerdictBlock verdict={verdict} leader={isBest ? undefined : leader} ctx={ctx} isQuiet />}
           {ctx.onPicked && ctx.onBanned && (
             <span className="mt-auto flex pt-2">
-              <PickActions s={s} isBest ctx={ctx} />
+              <PickActions s={s} isBest={isBest} isLarge ctx={ctx} />
             </span>
           )}
         </div>
@@ -722,7 +780,7 @@ export function NotThisGame({ entries, ctx }: { entries: PickEntry[]; ctx: PickC
  * Every listed hero on one axis: a bar from zero to its score, and the band the data could be off by (VERDICT_Z
  * times the score's error, the margin the verdicts use).
  */
-function ScoreLadder({ list, hero }: { list: Suggestion[]; hero: PlanHeroOf }) {
+export function ScoreLadder({ list, hero }: { list: Suggestion[]; hero: PlanHeroOf }) {
   const band = (s: Suggestion) => VERDICT_Z * s.error;
   const lo = Math.floor(Math.min(0, ...list.map((s) => s.score - band(s))) / 5) * 5;
   const hi = Math.ceil(Math.max(0, ...list.map((s) => s.score + band(s))) / 5) * 5;

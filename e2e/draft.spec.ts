@@ -133,7 +133,10 @@ test("the draft screen shows the win chance once a checked model exists", async 
   await page.getByLabel("Enemy pick").fill("pudge");
   await page.keyboard.press("Enter");
   await expect(band).toContainText(/\d+\.\d%/);
-  await expect(page.getByTitle("Change in your team's win chance")).toHaveCount(8);
+  // Every tile says how much its hero moves the win chance, and so does the open card.
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  await expect(picks.getByTitle("Change in your team's win chance")).toHaveCount(8);
+  await expect(page.locator("#pick-detail").getByTitle("Change in your team's win chance")).toHaveCount(1);
   await expectAccessible(page);
 });
 
@@ -242,15 +245,18 @@ test("a hero in the player's Top 5 gets its small boost in the draft", async ({ 
   await seedMidHeroes(email, [74, 76], [76]);
   await page.goto("/draft");
   const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
-  // Every card shows its reasons, the tags among them as lines, number first.
+  // The Best pick's full card is open under the strip: every reason, the tags among them as lines, number first.
+  const card = page.locator("#pick-detail");
   await expect(picks.first()).toContainText("Outworld Devourer");
-  await expect(picks.first()).toContainText("+0.5 in your Top 5 for this position");
-  // The card by its own name, since verdict lines name other heroes too.
-  const invoker = picks.filter({ has: page.getByRole("heading", { name: "Invoker", exact: true }) });
-  await expect(invoker).toContainText("+1.5 one of your heroes for this position");
-  await expect(invoker).not.toContainText("in your Top 5");
+  await expect(card.getByRole("heading", { name: "Outworld Devourer", exact: true })).toBeVisible();
+  await expect(card).toContainText("+0.5 in your Top 5 for this position");
+  // Invoker's tile opens its card in the same place.
+  await picks.getByRole("button", { name: /^Invoker,/ }).click();
+  await expect(card.getByRole("heading", { name: "Invoker", exact: true })).toBeVisible();
+  await expect(card).toContainText("+1.5 one of your heroes for this position");
+  await expect(card).not.toContainText("in your Top 5");
   // Every card after the first says how far behind the first it is and why.
-  await expect(invoker).toContainText(/\d+\.\d points behind .+: /);
+  await expect(card).toContainText(/\d+\.\d points behind .+: /);
 });
 
 test("a hero from outside the pool shows under the list only when it clearly beats the pool", async ({ page }) => {
@@ -266,6 +272,8 @@ test("a hero from outside the pool shows under the list only when it clearly bea
   const outside = page.getByRole("list", { name: "Hero from outside your pool" }).locator(":scope > li");
   await expect(outside).toHaveCount(1);
   await expect(outside.getByText("Outside Pool")).toBeVisible();
+  // Its tile opens its card, which starts with the engine's line on it.
+  await outside.getByRole("button", { name: /Show why/ }).click();
   await expect(page.getByText(/^Scores \d+\.\d above Nature's Prophet, your best, more than the \d+\.\d the data could be off by\.$/)).toBeVisible();
   await expectAccessible(page);
 });
@@ -278,14 +286,16 @@ test("heroes the player has played join their own heroes in one list, marked Out
   await seedHeroStats(email);
   await page.goto("/draft");
   const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
-  // Each card by its own name, since verdict lines name the best pick too.
-  const played = picks.filter({ has: page.getByRole("heading", { name: "Outworld Devourer", exact: true }) });
+  // Each tile by its own name, since reason lines name other heroes too.
+  const tileOf = (name: string) => picks.filter({ has: page.locator("[data-hero-name]", { hasText: new RegExp(`^${name}$`) }) });
+  const played = tileOf("Outworld Devourer");
   await expect(played).toHaveCount(1);
   await expect(played.getByText("Outside Pool")).toBeVisible();
-  // The first is the best pick: no hero for the position scores higher than it.
-  await expect(picks.first()).toContainText(/(Clear Best Pick|Best Pick Right Now)/);
-  // Nature's Prophet scores below 0 before any hero is picked, so it is in Not This Game instead of on a card.
-  await expect(picks.filter({ has: page.getByRole("heading", { name: "Nature's Prophet", exact: true }) })).toHaveCount(0);
+  // The first is the best pick: no hero for the position scores higher than it. Its full card is open.
+  await expect(picks.first()).toContainText("Outworld Devourer");
+  await expect(page.locator("#pick-detail")).toContainText(/(Clear Best Pick|Best Pick Right Now)/);
+  // Nature's Prophet scores below 0 before any hero is picked, so it is in Not This Game instead of on a tile.
+  await expect(tileOf("Nature's Prophet")).toHaveCount(0);
   const out = page.getByRole("region", { name: "Not This Game" });
   await expect(out.getByRole("listitem").filter({ hasText: "Nature's Prophet" })).toHaveCount(1);
   await expect(out.getByText("Outside Pool")).toHaveCount(0);
