@@ -850,42 +850,46 @@ export function DraftBoard({
             )}
           </div>
         </div>
-        {/* On a phone the settings stack, so their labels share one width and the controls line up. */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 max-sm:[&_.micro]:w-14 max-sm:[&_.micro]:shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="micro text-subtle" id="my-position">
-              Role
-            </span>
-            <div className="lane-seg lane-seg-sm" role="group" aria-labelledby="my-position">
-              {POSITIONS.map((p) => (
-                <button
-                  key={p}
-                  aria-pressed={myPosition === p}
-                  title={POSITION_NAMES[p - 1]}
-                  onClick={() => choosePosition(p)}
-                >
-                  Pos {p}
-                </button>
-              ))}
+        {/* Both rows share the same left and right edges: Role and Rank sit under the title and Plan For
+            ends under New Draft, so nothing on the action row starts part way across a settings group. On a
+            phone the settings stack, so their labels share one width and the controls line up. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 max-sm:[&_.micro]:w-14 max-sm:[&_.micro]:shrink-0">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex items-center gap-2">
+              <span className="micro text-subtle" id="my-position">
+                Role
+              </span>
+              <div className="lane-seg lane-seg-sm max-sm:[&>button]:px-2.5" role="group" aria-labelledby="my-position">
+                {POSITIONS.map((p) => (
+                  <button
+                    key={p}
+                    aria-pressed={myPosition === p}
+                    title={POSITION_NAMES[p - 1]}
+                    onClick={() => choosePosition(p)}
+                  >
+                    Pos {p}
+                  </button>
+                ))}
+              </div>
             </div>
+            <label className="flex items-center gap-2">
+              <span className="micro text-subtle">Rank</span>
+              <select
+                value={rank ?? ""}
+                onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
+                disabled={!isPlanner}
+                title={isPlanner ? undefined : `${plannerName} sets the party rank`}
+                className="field h-8 w-auto text-sm"
+              >
+                <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
+                {RANKS.map((r, i) => (
+                  <option key={r} value={i + 1}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <label className="flex items-center gap-2">
-            <span className="micro text-subtle">Rank</span>
-            <select
-              value={rank ?? ""}
-              onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
-              disabled={!isPlanner}
-              title={isPlanner ? undefined : `${plannerName} sets the party rank`}
-              className="field h-8 w-auto text-sm"
-            >
-              <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
-              {RANKS.map((r, i) => (
-                <option key={r} value={i + 1}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </label>
           {!party && (
             <div>
               <PlanForSwitch
