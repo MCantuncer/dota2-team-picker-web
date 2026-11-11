@@ -127,7 +127,7 @@ export function useDotaScreen({
   return {
     watchControls:
       enabled && watchable ? (
-        watch.state === "off" || watch.state === "failed" ? (
+        watch.state === "off" || watch.state === "failed" || watch.state === "ended" ? (
           <button onClick={watch.start} className="btn btn-secondary btn-sm" aria-label="Watch Dota" title="Watch Dota">
             <span className="flex text-muted">
               <Icon name="play" />
@@ -190,6 +190,11 @@ export function useDotaScreen({
             The Dota window looks black. Switch Dota to Borderless Window in its video settings.
           </span>
         )}
+        {watch.state === "ended" && (
+          <span className="notice text-xs">
+            Watch Dota stopped sharing your screen after 4 minutes. Press Watch Dota for the next draft.
+          </span>
+        )}
         {watch.state === "failed" && (
           <span className="notice notice-error text-xs">
             Couldn&apos;t keep reading the Dota window. Try Watch Dota again.
@@ -210,7 +215,7 @@ export function useDotaScreen({
   };
 }
 
-const WATCH_LABEL: Record<Exclude<WatchState, "off" | "failed">, string> = {
+const WATCH_LABEL: Record<Exclude<WatchState, "off" | "failed" | "ended">, string> = {
   starting: "Starting…",
   on: "Watching Dota",
   black: "Watching Dota",

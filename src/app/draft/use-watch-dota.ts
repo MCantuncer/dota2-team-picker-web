@@ -16,7 +16,14 @@ declare const MediaStreamTrackProcessor: new (init: { track: MediaStreamTrack })
   readable: ReadableStream<VideoFrame>;
 };
 
-export type WatchState = "off" | "starting" | "on" | "black" | "failed";
+/** "ended": Watch Dota stopped sharing by itself after WATCH_LIMIT_MS. */
+export type WatchState = "off" | "starting" | "on" | "black" | "failed" | "ended";
+
+/**
+ * Sharing stops by itself this long after it starts: a draft is over by then, and the player's screen isn't
+ * shared through the game.
+ */
+export const WATCH_LIMIT_MS = 4 * 60_000;
 
 /** Window sharing plus reading frames in a worker: Chrome and Edge on a computer. */
 export function canWatch(): boolean {
@@ -49,7 +56,7 @@ export function useWatchDota(
   const [state, setState] = useState<WatchState>("off");
   /** The hero whose look was learned last, to tell the player. */
   const [learned, setLearned] = useState<number | null>(null);
-  const session = useRef<{ stream: MediaStream; worker: Worker } | null>(null);
+  const session = useRef<{ stream: MediaStream; worker: Worker; limit: number } | null>(null);
   // Replies arrive long after the render that started watching; they must reach the latest draft.
   const latestOnRead = useRef(onRead);
   const latestInDraft = useRef(inDraft);
@@ -85,6 +92,7 @@ export function useWatchDota(
   });
 
   const stop = () => {
+    if (session.current) clearTimeout(session.current.limit);
     session.current?.stream.getTracks().forEach((t) => t.stop());
     session.current?.worker.terminate();
     session.current = null;
@@ -125,7 +133,11 @@ export function useWatchDota(
     }
     try {
       const worker = new Worker(new URL("../../lib/draft-reader/watch.worker.ts", import.meta.url), { type: "module" });
-      session.current = { stream, worker };
+      const limit = window.setTimeout(() => {
+        stop();
+        setState("ended");
+      }, WATCH_LIMIT_MS);
+      session.current = { stream, worker, limit };
       const reads = new LiveReads();
       reads.saw(latestInDraft.current);
       offered.current = new Set();
