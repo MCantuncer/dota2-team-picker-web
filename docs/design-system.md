@@ -249,6 +249,10 @@ who still has to pick:
   side switch or hint, then the box, which is also the Tab order); on a phone the box takes its own row. **Bans** are one line under the two teams
   (`BanLine`, `BanFace`): title and count, the box, then every ban as a 26px greyed `HeroFace` with the `ban` slash.
   A game has 15 or more bans, so they never get full slots: the line wraps instead of pushing the picks down.
+- **Draft order on a phone that follows a PC**: while the PC reads Dota, or after another device put a hero on the
+  board, the phone shows the header, the Live from Your PC note, then My Picks, then the board (CSS `order`, the
+  markup keeps its order). The PC fills the board, so the phone leads with the answer. A phone the heroes are typed
+  on keeps the board on top, and so does every wider screen.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
 - **Finding icons** (`FindingIcon`, Your Games): one icon per kind of strength or problem, the same everywhere: skull

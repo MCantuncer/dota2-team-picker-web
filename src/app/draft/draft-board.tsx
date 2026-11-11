@@ -806,9 +806,13 @@ export function DraftBoard({
     chance: teamWinChance(engine, ours, enemies, bracket),
   });
 
+  // A phone that follows a PC (the PC reads Dota, or put heroes on this board) shows the picks before the board: the
+  // PC fills the board, the phone is for the answer. A phone the heroes are typed on keeps the boxes on top.
+  const picksFirst = !party && phone && (solo.pcWatching || solo.elsewhere.size > 0);
+
   return (
     <>
-      <div className="flex flex-col gap-4 border-b border-line pb-5">
+      <div className={`flex flex-col gap-4 border-b border-line pb-5 ${picksFirst ? "-order-2" : ""}`}>
         {/* Two rows that never interleave: the title with the page's actions, then the draft's settings. */}
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex items-center gap-3">
@@ -915,6 +919,7 @@ export function DraftBoard({
           side={mySide}
           justRead={solo.freshHero !== null ? (hero(solo.freshHero)?.name ?? null) : null}
           onAddByHand={() => allyRef.current?.focus()}
+          className={picksFirst ? "-order-2" : ""}
         />
       )}
 
@@ -1023,7 +1028,7 @@ export function DraftBoard({
 
       <section
         aria-labelledby={isPlanner ? "picks-title" : "plan-title"}
-        className={teamPlan ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22.5rem]" : "flex flex-col gap-3"}
+        className={`${picksFirst ? "-order-1" : ""} ${teamPlan ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22.5rem]" : "flex flex-col gap-3"}`}
       >
         {teamPlan ? (
           <>

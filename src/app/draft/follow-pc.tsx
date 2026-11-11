@@ -16,6 +16,7 @@ export function FollowPcPanel({
   side,
   justRead,
   onAddByHand,
+  className = "",
 }: {
   /** The PC is reading the Dota window now. */
   live: boolean;
@@ -27,10 +28,15 @@ export function FollowPcPanel({
   /** The name of the hero the PC read last, for a few seconds. */
   justRead: string | null;
   onAddByHand: () => void;
+  /** For the live and stopped states, which the page may move above the picks. */
+  className?: string;
 }) {
   if (live)
     return (
-      <div role="status" className="sticky top-2 z-20 flex items-center gap-4 rounded-xl border border-radiant-strong bg-radiant-tint px-5 py-4">
+      <div
+        role="status"
+        className={`sticky top-2 z-20 flex items-center gap-4 rounded-xl border border-radiant-strong bg-radiant-tint px-5 py-4 ${className}`}
+      >
         <span aria-hidden className="live-dot text-radiant" />
         <span className="flex flex-col gap-1">
           <span className="font-semibold">Live from Your PC</span>
@@ -43,7 +49,7 @@ export function FollowPcPanel({
 
   if (stopped && !empty)
     return (
-      <div role="alert" className="flex flex-col gap-4 rounded-xl border border-accent-deep bg-warn-tint px-5 py-5">
+      <div role="alert" className={`flex flex-col gap-4 rounded-xl border border-accent-deep bg-warn-tint px-5 py-5 ${className}`}>
         <span className="flex items-center gap-3 font-semibold">
           <span className="flex text-warn">
             <Icon name="alert" large />

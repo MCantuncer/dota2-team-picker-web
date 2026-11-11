@@ -42,6 +42,15 @@ test("a phone follows the draft entered on the PC, and the PC sees the phone's c
   }).toPass();
   await expect(phone.getByRole("button", { name: "Unban Anti-Mage" })).toBeVisible();
   await expect(phone.getByRole("heading", { name: "Fill Picks from Your PC" })).toHaveCount(0);
+  // The PC filled the board, so the phone shows the picks before it. The PC keeps the board on top.
+  const tops = async (on: Page) => ({
+    picks: (await on.locator("#picks-title").boundingBox())!.y,
+    board: (await on.getByRole("region", { name: "Picks and Bans" }).boundingBox())!.y,
+  });
+  const onPhone = await tops(phone);
+  expect(onPhone.picks).toBeLessThan(onPhone.board);
+  const onPc = await tops(page);
+  expect(onPc.board).toBeLessThan(onPc.picks);
 
   // The phone takes the ban back; the PC sees it.
   await phone.getByRole("button", { name: "Unban Anti-Mage" }).click();
