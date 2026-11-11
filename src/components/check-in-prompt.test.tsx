@@ -68,9 +68,16 @@ describe("CheckInPrompt", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Your answer wasn't saved. Try again.");
   });
 
-  it("stays off the Draft page, which has the full check-in", () => {
+  it("the site-wide card stays off the Draft page, which shows its own and hears when it is done", async () => {
     pathname = "/draft";
-    show();
+    const { unmount } = show();
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
+    unmount();
+    const onDone = vi.fn();
+    render(<CheckInPrompt game={game} heroName="Invoker" heroImage={null} isOnDraft onDone={onDone} />);
+    expect(screen.getByRole("region", { name: "How Did It Go?" })).toBeInTheDocument();
+    expect(onDone).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Not now" }));
+    expect(onDone).toHaveBeenCalledOnce();
   });
 });

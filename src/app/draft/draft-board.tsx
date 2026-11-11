@@ -60,7 +60,7 @@ import { MyPicksLane } from "./my-picks";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
 import { CheckInCard } from "./check-in-card";
-import { LastGameLine } from "./last-game-line";
+import { CheckInPrompt } from "@/components/check-in-prompt";
 import {
   type DueCheckIn,
   forgetSoloBoardKey,
@@ -854,14 +854,6 @@ export function DraftBoard({
             />
           </div>
         )}
-        {lastGame && (
-          <LastGameLine
-            game={lastGame}
-            heroOf={hero}
-            portraits={portraits}
-            onAnswer={() => openCheckInNow(lastGame.id)}
-          />
-        )}
         <div className="ml-auto flex flex-wrap items-center gap-2 max-md:order-2">
           {screen.watchControls}
           <button
@@ -1107,6 +1099,17 @@ export function DraftBoard({
         <p role="status" className="notice notice-done text-sm">
           Thanks. Your answers tune the picks and the Game Story.
         </p>
+      )}
+      {/* The last game still waiting for its answer: the corner card the other pages show, out of the board's order. */}
+      {lastGame && (
+        <CheckInPrompt
+          key={lastGame.id}
+          game={lastGame}
+          heroName={lastGame.myHero !== null ? hero(lastGame.myHero).name : null}
+          heroImage={lastGame.myHero !== null ? (portraits[lastGame.myHero] ?? null) : null}
+          isOnDraft
+          onDone={dueCheckIn.clear}
+        />
       )}
     </>
   );
