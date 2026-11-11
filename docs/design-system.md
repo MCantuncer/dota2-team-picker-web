@@ -245,6 +245,10 @@ who still has to pick:
   fit. Missing art is a slate tile with the full name in `.micro`, never a coloured placeholder.
 - **Picked** by your team: 3px `radiant` top bar. By the enemy: 3px `dire` top bar. **Banned**: greyscale, darkened,
   with a `ban` slash.
+- **Draft board rails** (`app/draft/draft-rails.tsx`): each rail's search box sits in its heading row (title, the
+  side switch or hint, then the box, which is also the Tab order); on a phone the box takes its own row. **Bans** are one line under the two teams
+  (`BanLine`, `BanFace`): title and count, the box, then every ban as a 26px greyed `HeroFace` with the `ban` slash.
+  A game has 15 or more bans, so they never get full slots: the line wraps instead of pushing the picks down.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
 - **Finding icons** (`FindingIcon`, Your Games): one icon per kind of strength or problem, the same everywhere: skull
