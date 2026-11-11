@@ -18,7 +18,8 @@ import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
-import { pickGain, teamWinChance } from "@/lib/win";
+import { edgeParts, pickGain, teamWinChance } from "@/lib/win";
+import { draftEdge } from "@/lib/engine/win-chance";
 import { type Verdict, verdicts } from "@/lib/engine/verdict";
 import {
   type ListRule,
@@ -46,10 +47,12 @@ import { EmptyPoolNotice } from "./empty-pool-notice";
 import { PartyPlan } from "./party-plan";
 import { PerPlayerView } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
-import { ScreenshotPaste } from "./screenshot-paste";
+import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
-import { TeamSeats } from "./team-seats";
+import { PlanForSwitch, TeamSeats } from "./team-seats";
+import { BanSlot, EmptySlots, Rail, RailSlot } from "./draft-rails";
+import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { StartGame } from "./start-game";
 import { SuggestionRow } from "./suggestion-row";
@@ -98,9 +101,6 @@ const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", 
 const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
 const NO_STACKS: PlannableStack[] = [];
-// Where a team panel sits on wide screens: left of the picks, or right of them.
-const LEFT = "xl:col-start-1 xl:row-start-1";
-const RIGHT = "xl:col-start-3 xl:row-start-1";
 const NOTICE = { enemy: "notice-error", open: "notice-warn", out: "notice-done" } as const;
 
 /** A signed score with one decimal and a real minus sign. */
@@ -444,6 +444,29 @@ export function DraftBoard({
     writeStorage(POSITION_KEY, p);
   };
 
+  const taken = new Set(draft.map((e) => e.heroId));
+  const [showKeys, setShowKeys] = useState(false);
+  const screen = useDotaScreen({
+    enabled: !locked && Object.keys(portraits).length > 0,
+    heroes: engine?.heroes ?? [],
+    portraits,
+    draft,
+    side: mySide,
+    onSideChange: setMySide,
+    steamName: player.steamName ?? null,
+    onRead: (read, side) => {
+      // With your own slot found, the hero in it goes to your position; without it, ask which hero is yours.
+      const actions = readActions(read, side, taken, mine ? null : myPosition);
+      if (actions.length) act(...actions);
+      if (read.me) {
+        if (!ownSlotFound) setOwnSlotFound(true);
+        return;
+      }
+      const allies = actions.flatMap((a) => (a.kind === "ally" ? [a.heroId] : []));
+      if (allies.length) setScreenAllies((ids) => [...ids, ...allies]);
+    },
+  });
+
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
 
@@ -492,7 +515,6 @@ export function DraftBoard({
     );
   }
 
-  const taken = new Set(draft.map((e) => e.heroId));
   const hero = (id: number) => engine.hero(id);
   // Players watching the captain's draft hear each hero as it goes in.
   const last = locked ? draft.at(-1) : undefined;
@@ -625,122 +647,149 @@ export function DraftBoard({
   // On Dire the Enemy (Radiant) comes first, as in the top bar in Dota. The DOM follows the screen, so Tab goes
   // from box to box left to right.
   const enemyFirst = mySide === "dire";
+  const anyGuess = resolved.some((a) => a.isGuess) || resolvedEnemies.some((e) => e.isGuess);
+  const secondRail = "border-line max-lg:border-t lg:border-l";
   const myTeamPanel = (
-    <TeamPanel title="My Team" side={mySide ?? "radiant"} known={mySide !== null} count={allies.length} className={enemyFirst ? RIGHT : LEFT}>
-      {!locked && allies.length < TEAM_SIZE && (
-        <HeroInput
-          id="ally"
-          inputRef={allyRef}
-          placeholder="My team pick, e.g. cm5"
-          search={search}
-          exclude={taken}
-          withPosition
-          onPick={(picked) =>
-            // One act for the whole line: each act starts from the draft as this render saw it.
-            act(
-              ...picked.flatMap((p) =>
-                p.position === null
-                  ? [{ kind: "ally" as const, heroId: p.heroId, position: null }]
-                  : positionActions(resolved, p.heroId, p.position),
-              ),
-            )
-          }
-          onUndo={() => undoLast("ally")}
-        />
-      )}
-      <Slots>
-        {resolved.map((a) => (
-          <Slot
-            key={a.heroId}
-            hero={hero(a.heroId)}
-            portrait={portraits[a.heroId]}
-            by={captainId ? undefined : enteredBy(a.heroId)}
-            onRemove={locked ? undefined : () => act({ kind: "remove", heroId: a.heroId })}
-          >
-            <PositionPicker
-              heroName={hero(a.heroId).name}
-              position={a.position}
-              isGuess={a.isGuess}
-              onChange={locked ? undefined : (p) => placeAlly(a.heroId, p)}
-            />
-          </Slot>
-        ))}
-      </Slots>
-      {resolved.some((a) => a.isGuess) && (
-        <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
-      )}
-    </TeamPanel>
+    <Rail
+      title="My Team"
+      count={`${allies.length}/5`}
+      side={mySide ?? "radiant"}
+      isSideKnown={mySide !== null}
+      className={enemyFirst ? secondRail : ""}
+      aside={screen.sideSwitch}
+      input={
+        !locked &&
+        allies.length < TEAM_SIZE && (
+          <HeroInput
+            id="ally"
+            inputRef={allyRef}
+            placeholder="My team pick, e.g. cm5"
+            search={search}
+            exclude={taken}
+            withPosition
+            onPick={(picked) =>
+              // One act for the whole line: each act starts from the draft as this render saw it.
+              act(
+                ...picked.flatMap((p) =>
+                  p.position === null
+                    ? [{ kind: "ally" as const, heroId: p.heroId, position: null }]
+                    : positionActions(resolved, p.heroId, p.position),
+                ),
+              )
+            }
+            onUndo={() => undoLast("ally")}
+          />
+        )
+      }
+    >
+      {resolved.map((a) => (
+        <RailSlot
+          key={a.heroId}
+          name={hero(a.heroId).name}
+          portrait={portraits[a.heroId]}
+          side={mySide ?? "radiant"}
+          by={captainId ? undefined : enteredBy(a.heroId)}
+          onRemove={locked ? undefined : () => act({ kind: "remove", heroId: a.heroId })}
+        >
+          <PositionPicker
+            heroName={hero(a.heroId).name}
+            position={a.position}
+            isGuess={a.isGuess}
+            onChange={locked ? undefined : (p) => placeAlly(a.heroId, p)}
+          />
+        </RailSlot>
+      ))}
+      <EmptySlots filled={resolved.length} />
+    </Rail>
   );
   const enemyPanel = (
-    <TeamPanel title="Enemy" side={mySide === "dire" ? "radiant" : "dire"} known={mySide !== null} count={enemies.length} className={enemyFirst ? LEFT : RIGHT}>
-      {!locked && enemies.length < TEAM_SIZE && (
-        <HeroInput
-          id="enemy"
-          placeholder="Enemy pick, e.g. sf2"
-          search={search}
-          exclude={taken}
-          withPosition
-          onPick={(picked) =>
-            act(
-              ...picked.flatMap((p) =>
-                p.position === null
-                  ? [{ kind: "enemy" as const, heroId: p.heroId, position: null }]
-                  : positionActions(resolvedEnemies, p.heroId, p.position, "enemy"),
-              ),
-            )
-          }
-          onUndo={() => undoLast("enemy")}
-        />
-      )}
-      <Slots>
-        {resolvedEnemies.map((e) => (
-          <Slot
-            key={e.heroId}
-            hero={hero(e.heroId)}
-            portrait={portraits[e.heroId]}
-            by={captainId ? undefined : enteredBy(e.heroId)}
-            onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
-          >
-            <PositionPicker
-              heroName={hero(e.heroId).name}
-              position={e.position}
-              isGuess={e.isGuess}
-              onChange={locked ? undefined : (p) => placeEnemy(e.heroId, p)}
-            />
-          </Slot>
-        ))}
-      </Slots>
-      {resolvedEnemies.some((e) => e.isGuess) && (
-        <p className="text-xs text-subtle">Dashed positions are guesses. Click a number to set the real one.</p>
-      )}
-    </TeamPanel>
+    <Rail
+      title="Enemy"
+      count={`${enemies.length}/5`}
+      side={mySide === "dire" ? "radiant" : "dire"}
+      isSideKnown={mySide !== null}
+      className={enemyFirst ? "" : secondRail}
+      aside={anyGuess && <span className="micro text-subtle">Dashed Is a Guess</span>}
+      input={
+        !locked &&
+        enemies.length < TEAM_SIZE && (
+          <HeroInput
+            id="enemy"
+            placeholder="Enemy pick, e.g. sf2"
+            search={search}
+            exclude={taken}
+            withPosition
+            onPick={(picked) =>
+              act(
+                ...picked.flatMap((p) =>
+                  p.position === null
+                    ? [{ kind: "enemy" as const, heroId: p.heroId, position: null }]
+                    : positionActions(resolvedEnemies, p.heroId, p.position, "enemy"),
+                ),
+              )
+            }
+            onUndo={() => undoLast("enemy")}
+          />
+        )
+      }
+    >
+      {resolvedEnemies.map((e) => (
+        <RailSlot
+          key={e.heroId}
+          name={hero(e.heroId).name}
+          portrait={portraits[e.heroId]}
+          side={mySide === "dire" ? "radiant" : "dire"}
+          by={captainId ? undefined : enteredBy(e.heroId)}
+          onRemove={locked ? undefined : () => act({ kind: "remove", heroId: e.heroId })}
+        >
+          <PositionPicker
+            heroName={hero(e.heroId).name}
+            position={e.position}
+            isGuess={e.isGuess}
+            onChange={locked ? undefined : (p) => placeEnemy(e.heroId, p)}
+          />
+        </RailSlot>
+      ))}
+      <EmptySlots filled={resolvedEnemies.length} />
+    </Rail>
   );
+  // Who Has the Better Chance: the draft now, and with the Team Plan's five when there is a plan.
+  const oddsOf = (ours: number[]): DraftOdds => ({
+    edge: draftEdge(engine, ours, enemies, bracket),
+    parts: edgeParts(engine, ours, enemies, bracket),
+    chance: teamWinChance(engine, ours, enemies, bracket),
+  });
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-line pb-4">
-        <h1 className="page-title">Draft</h1>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-b border-line pb-5">
+        <h1 className="text-2xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
         {party && <span className="chip chip-accent micro">Party</span>}
-        <div className="flex items-center gap-2">
-          <span className="label-caps" id="my-position">
+        <div className="flex items-center gap-2 max-md:order-4">
+          <span className="micro text-subtle" id="my-position">
             Role
           </span>
-          <div className="seg" role="group" aria-labelledby="my-position">
+          <div className="lane-seg lane-seg-sm" role="group" aria-labelledby="my-position">
             {POSITIONS.map((p) => (
-              <button key={p} aria-pressed={myPosition === p} title={POSITION_NAMES[p - 1]} onClick={() => choosePosition(p)} className="seg-item">
+              <button
+                key={p}
+                aria-pressed={myPosition === p}
+                title={POSITION_NAMES[p - 1]}
+                onClick={() => choosePosition(p)}
+              >
                 Pos {p}
               </button>
             ))}
           </div>
         </div>
-        <label className="flex items-center gap-2">
-          <span className="label-caps">Rank</span>
+        <label className="flex items-center gap-2 max-md:order-4">
+          <span className="micro text-subtle">Rank</span>
           <select
             value={rank ?? ""}
             onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
             disabled={!isPlanner}
             title={isPlanner ? undefined : `${plannerName} sets the party rank`}
-            className="field btn-sm"
+            className="field h-8 w-auto text-sm"
           >
             <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
             {RANKS.map((r, i) => (
@@ -750,50 +799,62 @@ export function DraftBoard({
             ))}
           </select>
         </label>
-        {lastGame && <LastGameLine game={lastGame} heroOf={hero} portraits={portraits} onAnswer={() => openCheckInNow(lastGame.id)} />}
-        {!locked && (
-          <div className="ml-auto flex gap-2">
-            <button onClick={undo} disabled={!canUndo} className="btn btn-ghost btn-sm">
-              <Icon name="undo" />
-              Undo
-            </button>
-            <button
-              onClick={() => {
-                startOver();
-                allyRef.current?.focus();
+        <span aria-hidden className="h-0 basis-full max-md:order-3 md:hidden" />
+        {!party && (
+          <div className="max-md:order-5">
+            <PlanForSwitch
+              mode={lineup.mode}
+              onJustMe={lineup.justMe}
+              onTeam={() => {
+                lineup.team();
+                // The teammates' picks are what Team adds, so show them straight away.
+                setView("players");
               }}
-              disabled={!draft.length}
-              className="btn btn-secondary btn-sm"
-            >
-              <Icon name="plus" />
-              New Draft
-            </button>
+            />
           </div>
         )}
+        {lastGame && (
+          <LastGameLine
+            game={lastGame}
+            heroOf={hero}
+            portraits={portraits}
+            onAnswer={() => openCheckInNow(lastGame.id)}
+          />
+        )}
+        <div className="ml-auto flex flex-wrap items-center gap-2 max-md:order-2">
+          {screen.watchControls}
+          <button
+            onClick={() => setShowKeys(!showKeys)}
+            aria-expanded={showKeys}
+            aria-controls="draft-keys"
+            aria-label="Keyboard Shortcuts"
+            title="Keyboard Shortcuts"
+            className="btn btn-secondary btn-sm btn-icon max-md:hidden"
+          >
+            <Icon name="keyboard" />
+          </button>
+          {!locked && (
+            <>
+              <button onClick={undo} disabled={!canUndo} className="btn btn-secondary btn-sm">
+                <Icon name="undo" />
+                Undo
+              </button>
+              <button
+                onClick={() => {
+                  startOver();
+                  allyRef.current?.focus();
+                }}
+                disabled={!draft.length}
+                className="btn btn-secondary btn-sm"
+              >
+                <Icon name="plus" />
+                New Draft
+              </button>
+            </>
+          )}
+        </div>
+        {screen.status}
       </div>
-
-      {!party && (
-        <TeamSeats
-          mode={lineup.mode}
-          seats={lineup.seats}
-          people={lineup.people}
-          pool={lineup.pool}
-          myHeroes={player.heroes}
-          stacks={stacks}
-          signedIn={signedIn}
-          notice={lineup.notice}
-          hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
-          onJustMe={lineup.justMe}
-          onTeam={() => {
-            lineup.team();
-            // The teammates' picks are what Team adds, so show them straight away.
-            setView("players");
-          }}
-          onPlace={lineup.place}
-          onRemove={lineup.remove}
-          onFill={lineup.fill}
-        />
-      )}
 
       {!isPlanner && (
         <section aria-labelledby="picks-title" className="flex flex-col gap-3">
@@ -824,15 +885,18 @@ export function DraftBoard({
           {captainName} enters every hero. Tell them which of your picks you want.
         </p>
       ) : (
-        <p className="text-xs text-subtle">
-          Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
-          (<span className="text-muted">pa sf</span>). Add a digit for a hero&apos;s position (<span className="text-muted">cm5</span>, <span className="text-muted">sf2</span>).
-          <Kbd>Backspace</Kbd> in an empty box takes the last hero back out.
-          {party &&
-            (captainId
-              ? " Your party sees each hero as you enter it."
-              : " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you.")}
-        </p>
+        showKeys && (
+          <p id="draft-keys" className="text-xs text-subtle">
+            Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
+            (<span className="text-muted">pa sf</span>). Add a digit for a hero&apos;s position (<span className="text-muted">cm5</span>, <span className="text-muted">sf2</span>).
+            <Kbd>Backspace</Kbd> in an empty box takes the last hero back out. Press <Kbd>PrtScn</Kbd> in Dota, then{" "}
+            <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
+            {party &&
+              (captainId
+                ? " Your party sees each hero as you enter it."
+                : " Everyone in your party sees this draft and can add to it; New draft starts a fresh one for all of you.")}
+          </p>
+        )
       )}
       {!signedIn && (
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -847,128 +911,124 @@ export function DraftBoard({
         </p>
       )}
 
-      {!locked && Object.keys(portraits).length > 0 && (
-        <ScreenshotPaste
-          heroes={engine.heroes}
-          portraits={portraits}
-          draft={draft}
-          side={mySide}
-          onSideChange={setMySide}
-          steamName={player.steamName ?? null}
-          onRead={(read, side) => {
-            // With your own slot found, the hero in it goes to your position; without it, ask which hero is yours.
-            const actions = readActions(read, side, taken, mine ? null : myPosition);
-            if (actions.length) act(...actions);
-            if (read.me) {
-              if (!ownSlotFound) setOwnSlotFound(true);
-              return;
-            }
-            const allies = actions.flatMap((a) => (a.kind === "ally" ? [a.heroId] : []));
-            if (allies.length) setScreenAllies((ids) => [...ids, ...allies]);
-          }}
+      <section
+        aria-label="Picks and Bans"
+        className="grid rounded-xl bg-surface ring-1 ring-line ring-inset lg:grid-cols-2"
+      >
+        {enemyFirst ? enemyPanel : myTeamPanel}
+        {enemyFirst ? myTeamPanel : enemyPanel}
+        <Rail
+          title="Bans"
+          count={String(bans.length)}
+          headingId="bans-title"
+          className="border-t border-line"
+          isWide
+          isSlotsLeft={enemyFirst}
+          input={
+            !locked && (
+              <HeroInput
+                id="bans"
+                inputRef={bansRef}
+                placeholder="Bans, several at once: pa sf am"
+                search={search}
+                exclude={taken}
+                onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "ban" as const, heroId })))}
+                onUndo={() => undoLast("ban")}
+              />
+            )
+          }
+        >
+          {bans.map((id) => (
+            <BanSlot
+              key={id}
+              name={hero(id).name}
+              portrait={portraits[id]}
+              onUnban={locked ? undefined : () => act({ kind: "remove", heroId: id })}
+            />
+          ))}
+        </Rail>
+      </section>
+
+      <BetterChance
+        now={oddsOf(allyIds)}
+        plan={teamPlan ? oddsOf(teamPlan.slots.map((slot) => slot.heroId)) : null}
+        picked={allyIds.length + enemies.length}
+        side={mySide ?? "radiant"}
+      />
+
+      {!party && (
+        <TeamSeats
+          mode={lineup.mode}
+          seats={lineup.seats}
+          people={lineup.people}
+          stacks={stacks}
+          signedIn={signedIn}
+          notice={lineup.notice}
+          hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
+          heroAt={(p) => picksByPosition[p - 1] ?? teamPlan?.slots.find((slot) => slot.position === p)?.heroId ?? null}
+          onPlace={lineup.place}
+          onRemove={lineup.remove}
+          onFill={lineup.fill}
         />
       )}
 
-      {chance !== null && <WinBar chance={chance} />}
-
-      {/* Wide screens put the picks between the teams, like a draft overlay, with the bans under the left team. The
-          DOM keeps the two teams, Bans, picks so Tab still goes from box to box. */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)] xl:grid-rows-[auto_1fr]">
-        {enemyFirst ? enemyPanel : myTeamPanel}
-        {enemyFirst ? myTeamPanel : enemyPanel}
-
-        <section aria-labelledby="bans-title" className="flex flex-col gap-3 self-start border-t border-line pt-4 md:col-span-2 xl:col-span-1 xl:col-start-1 xl:row-start-2">
-          <h2 id="bans-title" className="section-title">
-            Bans <span className="num text-subtle">{bans.length}</span>
+      <section aria-labelledby={isPlanner ? "picks-title" : "plan-title"} className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h2
+            id={isPlanner ? "picks-title" : "plan-title"}
+            ref={isPlanner ? picksTitleRef : undefined}
+            tabIndex={-1}
+            className="section-title"
+          >
+            {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
           </h2>
-          {!locked && (
-            <HeroInput
-              id="bans"
-              inputRef={bansRef}
-              placeholder="Bans, several at once: pa sf am"
-              search={search}
-              exclude={taken}
-              onPick={(picked) => act(...picked.map(({ heroId }) => ({ kind: "ban" as const, heroId })))}
-              onUndo={() => undoLast("ban")}
-            />
-          )}
-          {bans.length > 0 && (
-            <ul className="flex flex-wrap gap-1">
-              {bans.map((id) => (
-                <li key={id} title={hero(id).name}>
-                  {locked ? (
-                    <Portrait hero={hero(id)} src={portraits[id]} size="strip" banned label />
-                  ) : (
-                    <button onClick={() => act({ kind: "remove", heroId: id })} aria-label={`Unban ${hero(id).name}`}>
-                      <Portrait hero={hero(id)} src={portraits[id]} size="strip" banned />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section
-          aria-labelledby={isPlanner ? "picks-title" : "plan-title"}
-          className="flex flex-col gap-3 md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <h2
-              id={isPlanner ? "picks-title" : "plan-title"}
-              ref={isPlanner ? picksTitleRef : undefined}
-              tabIndex={-1}
-              className="section-title"
-            >
-              {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
-            </h2>
-            {pool && isPlanner && (
-              <div className="seg" role="group" aria-label="Suggestions for">
-                {!notPlaying && (
-                  <button aria-pressed={view === "mine"} onClick={() => setView("mine")} className="seg-item">
-                    My Picks
-                  </button>
-                )}
-                <button aria-pressed={view === "players"} onClick={() => setView("players")} className="seg-item">
-                  Per Player
+          {pool && isPlanner && (
+            <div className="lane-seg max-md:w-full max-md:[&>button]:flex-1" role="group" aria-label="Suggestions for">
+              {!notPlaying && (
+                <button aria-pressed={view === "mine"} onClick={() => setView("mine")}>
+                  My Picks
                 </button>
-                <button aria-pressed={view === "team"} onClick={() => setView("team")} className="seg-item">
-                  Team Plan
-                </button>
-              </div>
-            )}
-          </div>
-          {teamPlan ? (
-            <PartyPlan
-              plan={teamPlan}
-              pooled={pooled}
-              names={planNames}
-              portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
-              onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
-              onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
-            />
-          ) : playerColumns ? (
-            <PerPlayerView
-              columns={playerColumns}
-              names={planNames}
-              draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
-              heroes={engine.heroes}
-              portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
-              onPicked={(heroId, position) => placeAlly(heroId, position)}
-              onBanned={(heroId) => act({ kind: "ban", heroId })}
-            />
-          ) : isPlanner ? (
-            myPart
-          ) : (
-            <p className="text-sm text-muted">Loading the Team Plan…</p>
+              )}
+              <button aria-pressed={view === "players"} onClick={() => setView("players")}>
+                Per Player
+              </button>
+              <button aria-pressed={view === "team"} onClick={() => setView("team")}>
+                Team Plan
+              </button>
+            </div>
           )}
-          <Announcer
-            text={
-              entered +
-              ((teamPlan || playerColumns) && isPlanner ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
-            }
+        </div>
+        {teamPlan ? (
+          <PartyPlan
+            plan={teamPlan}
+            pooled={pooled}
+            names={planNames}
+            portrait={(id, name) => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size="card" />}
+            onPicked={isPlanner ? (heroId, position) => placeAlly(heroId, position) : undefined}
+            onBanned={isPlanner ? (heroId) => act({ kind: "ban", heroId }) : undefined}
           />
-        </section>
-      </div>
+        ) : playerColumns ? (
+          <PerPlayerView
+            columns={playerColumns}
+            names={planNames}
+            draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
+            heroes={engine.heroes}
+            portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
+            onPicked={(heroId, position) => placeAlly(heroId, position)}
+            onBanned={(heroId) => act({ kind: "ban", heroId })}
+          />
+        ) : isPlanner ? (
+          myPart
+        ) : (
+          <p className="text-sm text-muted">Loading the Team Plan…</p>
+        )}
+        <Announcer
+          text={
+            entered +
+            ((teamPlan || playerColumns) && isPlanner ? "" : mine ? `You're on ${hero(mine.heroId).name}.` : picksSentence(suggestions.map((s) => s.name)))
+          }
+        />
+      </section>
 
       {gamePlan && resolved.some((a) => a.isGuess) && (
         <p className="notice notice-warn text-sm">
@@ -1021,78 +1081,6 @@ export function DraftBoard({
   );
 }
 
-/** My team's win chance against the enemy's as one split bar. Shown only with a checked model. */
-function WinBar({ chance }: { chance: number }) {
-  const pct = (chance * 100).toFixed(1);
-  return (
-    <section aria-label="Win Chance" className="flex flex-col gap-2 border-y border-line py-3">
-      <div className="flex items-baseline justify-between">
-        <span className="text-sm text-subtle">
-          Win Chance <span className="num text-lg text-radiant">{pct}%</span>
-        </span>
-        <span className="text-sm text-subtle">
-          Enemy <span className="num text-lg text-dire">{(100 - chance * 100).toFixed(1)}%</span>
-        </span>
-      </div>
-      <div aria-hidden className="flex h-1 overflow-hidden rounded-xs bg-dire-strong">
-        <div className="bg-radiant-strong" style={{ width: `${pct}%` }} />
-      </div>
-    </section>
-  );
-}
-
-function TeamPanel({
-  title,
-  side,
-  known,
-  count,
-  className = "",
-  children,
-}: {
-  title: string;
-  side: Side;
-  /** The player chose their side, so the panel names it. */
-  known: boolean;
-  count: number;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      aria-label={title}
-      className={`flex flex-col gap-3 self-start border-t pt-4 ${side === "radiant" ? "border-t-radiant-strong" : "border-t-dire-strong"} ${className}`}
-    >
-      <h2 className="section-title flex items-baseline gap-2">
-        <span aria-hidden className={`h-2 w-2 self-center rounded-full ${side === "radiant" ? "bg-radiant" : "bg-dire"}`} />
-        {title} <span className="num text-subtle">{count}/5</span>
-        {known && (
-          <span className={`micro ml-auto ${side === "radiant" ? "text-radiant" : "text-dire"}`}>
-            {side === "radiant" ? "Radiant" : "Dire"}
-          </span>
-        )}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
-/** The team's five slots: picks in order, then empty ones, all the same size. */
-function Slots({ children }: { children: React.ReactNode[] }) {
-  return (
-    <ul className="flex flex-col gap-1">
-      {children}
-      {Array.from({ length: TEAM_SIZE - children.length }, (_, i) => (
-        <li key={`empty-${i}`} aria-hidden className={`${SLOT} items-center`}>
-          <span className={`${SIZES.slot.className} shrink-0 rounded-xs bg-raised`} />
-          <span className="text-sm text-subtle">Open</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-const SLOT = "flex h-16 gap-3 rounded-sm bg-surface p-1 pr-2 ring-1 ring-inset ring-line";
-
 /**
  * Asks whether a hero the screen reader put in My team is your own pick. Dota's top bar shows heroes, not who
  * plays them, so without an answer the hero takes a guessed position and your picks go on.
@@ -1140,41 +1128,6 @@ export function DidYouPick({
   );
 }
 
-/** One pick: portrait, name and Remove on top, and its controls (an ally's position) under the name. */
-function Slot({
-  hero,
-  portrait,
-  by,
-  onRemove,
-  children,
-}: {
-  hero: HeroInfo;
-  portrait?: string;
-  /** Who entered the hero, in a party draft. */
-  by?: string;
-  /** Left out when the player can't change the draft. */
-  onRemove?: () => void;
-  children?: React.ReactNode;
-}) {
-  return (
-    <li className={`${SLOT} items-center`}>
-      <Portrait hero={hero} src={portrait} size="slot" />
-      <span className={`flex min-w-0 flex-1 flex-col gap-0.5 ${children ? "self-stretch justify-between" : ""}`}>
-        <span className="flex min-w-0 items-baseline gap-2">
-          <span className="truncate font-medium leading-tight text-fg">{hero.name}</span>
-          {by && <span className="micro truncate text-subtle">Entered by {by}</span>}
-        </span>
-        {children}
-      </span>
-      {onRemove && (
-        <button onClick={onRemove} aria-label={`Remove ${hero.name}`} className={`btn btn-icon btn-sm shrink-0 text-muted ${children ? "self-start" : ""}`}>
-          ×
-        </button>
-      )}
-    </li>
-  );
-}
-
 const SIZES = {
   chip: { w: 40, h: 22, className: "h-5.5 w-10" },
   strip: { w: 64, h: 36, className: "h-9 w-16" },
@@ -1183,24 +1136,11 @@ const SIZES = {
 };
 
 /** A hero's 16:9 portrait, or a slate tile with the name when the art is missing. */
-function Portrait({
-  hero,
-  src,
-  size,
-  banned,
-  label,
-}: {
-  hero: HeroInfo;
-  src?: string;
-  size: keyof typeof SIZES;
-  banned?: boolean;
-  /** Names the hero for screen readers when nothing around the portrait does. */
-  label?: boolean;
-}) {
+function Portrait({ hero, src, size }: { hero: HeroInfo; src?: string; size: keyof typeof SIZES }) {
   const s = SIZES[size];
-  const look = `${s.className} shrink-0 rounded-xs object-cover ${banned ? "opacity-50 grayscale" : ""}`;
+  const look = `${s.className} shrink-0 rounded-xs object-cover`;
   if (!src) return <span className={`${look} micro flex items-center justify-center bg-raised p-1 text-center text-muted`}>{hero.name}</span>;
-  return <Image src={src} alt={label ? hero.name : ""} width={s.w} height={s.h} className={look} />;
+  return <Image src={src} alt="" width={s.w} height={s.h} className={look} />;
 }
 
 /** The hero's large transparent render on the Steam CDN, from its portrait URL. */

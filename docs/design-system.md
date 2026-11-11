@@ -118,6 +118,8 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.row-link` | Makes a whole row or card one click target: on the row's main link (the name); the row is `relative`, buttons inside it add `relative z-10`. See Links below |
 | `.stack-banner` + `.stack-render` | A Stack's head: surface with faint Radiant and Dire corners and a hairline split, and one hero render on the right with a round fade (so spell effects in a render's corners drop away). One per page |
 | `.lane-cut`, `.lane-cut-enemy`, `.hero-stage` | The Lane Cut hero frame, its Dire edge, and the stage behind a render. Use them through the components in Lane Cut Frame below |
+| `.lane-seg` + `.lane-seg-sm` | The Lane Board segmented control (view tabs, Plan For, the side switch): the chosen button (`aria-pressed`) takes the Lane Cut. `.is-radiant` and `.is-dire` colour a side switch |
+| `.lane-digits` + `.lane-digit` | Position digits under a hero on a rail: the chosen one (`aria-checked`) is a small Lane Cut tile, a guess (`data-guess`) is dashed |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { Engine } from "@/lib/engine/score";
 import type { Snapshot } from "@/lib/engine/types";
-import { pickGain, teamWinChance } from "@/lib/win";
+import { draftEdge } from "@/lib/engine/win-chance";
+import { edgeParts, edgeRange, favoredSide, pickGain, teamWinChance } from "@/lib/win";
 
 const hero = (id: number) => ({ id, name: `Hero ${id}`, roles: [], attackType: "Melee" as const, primaryAttr: "str" });
 /** Hero 1 wins 60% of its games, heroes 2 and 3 win half. */
@@ -39,5 +40,41 @@ describe("pickGain", () => {
     const engine = new Engine(snapshot(model));
     expect(pickGain(engine, 1, [3], [2])).toBeGreaterThan(0);
     expect(pickGain(engine, 1, [], [2])).toBeNull();
+  });
+});
+
+describe("edgeParts", () => {
+  it("splits the draft edge into win rates, matchups and synergy that add up to it", () => {
+    const engine = new Engine(snapshot());
+    const parts = edgeParts(engine, [1, 3], [2]);
+    expect(parts.rates).toBeCloseTo((engine.winRate(1) + engine.winRate(3) - engine.winRate(2) - 0.5) * 100);
+    expect(parts.rates).toBeGreaterThan(0);
+    expect(parts.rates + parts.matchups + parts.synergy).toBeCloseTo(draftEdge(engine, [1, 3], [2]));
+  });
+
+  it("is all zero with nothing picked", () => {
+    expect(edgeParts(new Engine(snapshot()), [], [])).toEqual({ rates: 0, matchups: 0, synergy: 0 });
+  });
+});
+
+describe("favoredSide", () => {
+  it("names the side ahead by half a point of edge, else an even draft", () => {
+    expect(favoredSide(2.1, null)).toBe("ours");
+    expect(favoredSide(-0.6, null)).toBe("theirs");
+    expect(favoredSide(0.4, null)).toBe("even");
+  });
+
+  it("follows the win chance once there is one", () => {
+    expect(favoredSide(5, 0.48)).toBe("theirs");
+    expect(favoredSide(-5, 0.52)).toBe("ours");
+    expect(favoredSide(3, 0.5)).toBe("even");
+  });
+});
+
+describe("edgeRange", () => {
+  it("rounds the largest value up to 5, never under the least", () => {
+    expect(edgeRange([14.2, -23.8])).toBe(25);
+    expect(edgeRange([3])).toBe(10);
+    expect(edgeRange([1.2], 5)).toBe(5);
   });
 });

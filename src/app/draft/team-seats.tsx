@@ -1,15 +1,14 @@
 "use client";
 
-import Image from "next/image";
+import { HeroFace } from "@/components/hero-frame";
 import { useState } from "react";
 import { Icon } from "@/components/icon";
 import { SteamButton } from "@/components/steam-button";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITIONS, type Position } from "@/lib/engine/types";
-import type { HeroPool } from "@/lib/party-plan";
 import { POSITION_NAMES } from "@/lib/party";
 import { SOLO_ME } from "@/lib/solo-queue";
-import { LINEUP_MAX, type Seat, type TeamPerson } from "@/lib/team-lineup";
+import { type Seat, type TeamPerson } from "@/lib/team-lineup";
 import { AddPlayer } from "./add-player";
 import type { PlannableStack } from "./use-team-lineup";
 
@@ -19,12 +18,6 @@ interface HeroArt {
   image?: string;
 }
 
-/** Their first hero for the seat's position, else for any position they saved. */
-function topHero(pool: Record<number, number[]> | undefined, position: Position): number | null {
-  if (!pool) return null;
-  return pool[position]?.[0] ?? pool[0]?.[0] ?? Object.values(pool).find((ids) => ids.length)?.[0] ?? null;
-}
-
 /** Focuses the shown one of the elements matching the selector, after the next render. */
 const focusSoon = (selector: string) =>
   requestAnimationFrame(() => {
@@ -32,22 +25,36 @@ const focusSoon = (selector: string) =>
     shown?.focus();
   });
 
+/** Plan For, in the toolbar: Just Me, or Team. */
+export function PlanForSwitch({ mode, onJustMe, onTeam }: { mode: "me" | "team"; onJustMe: () => void; onTeam: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="micro text-subtle">Plan For</span>
+      <div className="lane-seg lane-seg-sm" role="group" aria-label="Plan For">
+        <button type="button" aria-pressed={mode === "me"} onClick={onJustMe}>
+          Just Me
+        </button>
+        <button type="button" aria-pressed={mode === "team"} onClick={onTeam}>
+          Team
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Plan For: Just Me, or Team. Team is five equal seats by position, each filled with the player, a
+ * The Team Seats for Plan For Team: five equal seats by position, each filled with the player, a
  * Stack mate or a friend (mixed, online or not), or left open for a teammate who can play any hero.
  */
 export function TeamSeats({
   mode,
   seats,
   people,
-  pool,
-  myHeroes,
   stacks,
   signedIn,
   notice,
   hero,
-  onJustMe,
-  onTeam,
+  heroAt,
   onPlace,
   onRemove,
   onFill,
@@ -56,19 +63,18 @@ export function TeamSeats({
   seats: Seat[];
   /** Who can be seated; null before the first load or signed out. */
   people: TeamPerson[] | null;
-  pool: HeroPool;
-  myHeroes: Record<number, number[]>;
   stacks: PlannableStack[];
   signedIn: boolean;
   notice: string | null;
   hero: (id: number) => HeroArt;
-  onJustMe: () => void;
-  onTeam: () => void;
+  /** The hero picked or planned for a position, shown as a face in its seat; none when there is no such hero. */
+  heroAt?: (position: Position) => number | null;
   onPlace: (id: string, position: Position) => void;
   onRemove: (id: string) => void;
   onFill: (stackId: string) => void;
 }) {
   const [adding, setAdding] = useState<Position | null>(null);
+  if (mode === "me" && !notice) return null;
   const meSeated = seats.some((s) => s.id === SOLO_ME);
   const nameOf = (id: string) => (id === SOLO_ME ? "You" : (people?.find((p) => p.id === id)?.name ?? "Loading…"));
 
@@ -82,127 +88,97 @@ export function TeamSeats({
     focusSoon(`[data-seat-add="${seat.position}"]`);
   };
 
+  const fillFromStack = stacks.length > 0 && people && (
+    <select
+      aria-label="Fill From Stack"
+      value=""
+      onChange={(e) => e.target.value && onFill(e.target.value)}
+      className="field btn-sm w-auto shrink-0"
+    >
+      <option value="">Fill From Stack</option>
+      {stacks.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.name}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
-    <section aria-label="Plan For" className="flex flex-col gap-3 border-b border-line pb-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="label-caps">Plan For</span>
-        <div className="seg" role="group" aria-label="Plan For">
-          <button type="button" aria-pressed={mode === "me"} onClick={onJustMe} className="seg-item">
-            Just Me
-          </button>
-          <button type="button" aria-pressed={mode === "team"} onClick={onTeam} className="seg-item">
-            Team
-          </button>
-        </div>
-        {mode === "team" && stacks.length > 0 && people && (
-          <select
-            aria-label="Fill From Stack"
-            value=""
-            onChange={(e) => e.target.value && onFill(e.target.value)}
-            className="field btn-sm w-auto"
-          >
-            <option value="">Fill From Stack</option>
-            {stacks.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {mode === "team" && (
-          <span className="text-sm text-muted">
-            <span className="num">{seats.length}</span> of {LINEUP_MAX} seats filled. Open seats get picks for any hero.
-          </span>
-        )}
-      </div>
+    <section aria-label="Plan For" className="flex flex-col gap-3">
       {notice && (
         <p role="status" className="text-sm text-muted">
           {notice}
         </p>
       )}
       {mode === "team" && (
-        <ul aria-label="Team Seats" className="grid grid-cols-1 gap-2 sm:grid-cols-5 sm:gap-2.5">
-          {POSITIONS.map((position) => {
-            const seat = seats.find((s) => s.position === position);
-            const heroes = seat ? (seat.id === SOLO_ME ? myHeroes : pool[seat.id]) : undefined;
-            const top = seat ? topHero(heroes, position) : null;
-            const art = top ? hero(top) : null;
-            const person = seat && seat.id !== SOLO_ME ? people?.find((p) => p.id === seat.id) : undefined;
-            const name = seat ? nameOf(seat.id) : "Open Seat";
-            const canAdd = signedIn || !meSeated;
-            return (
-              <li
-                key={position}
-                className={`grid min-w-0 grid-cols-[7rem_1fr] overflow-hidden rounded-md bg-surface ring-1 ring-inset sm:grid-cols-1 ${adding === position ? "ring-accent" : "ring-line-strong"}`}
-              >
-                <div className="flex items-center gap-1.5 border-line px-2.5 text-xs text-subtle max-sm:col-start-2 max-sm:row-start-1 max-sm:pt-2 sm:h-8 sm:border-b">
-                  <PositionIcon position={position} size={14} className="text-muted" />
-                  <span className="font-semibold text-fg">Pos {position}</span> {POSITION_NAMES[position]}
-                </div>
-                <div className="relative aspect-video overflow-hidden bg-raised max-sm:row-span-2 max-sm:row-start-1 max-sm:h-full max-sm:aspect-auto">
-                  {art?.image ? (
-                    <Image src={art.image} alt="" fill sizes="(min-width: 640px) 20vw, 7rem" unoptimized className="object-cover" />
-                  ) : (
-                    !seat && (
-                      <span aria-hidden className="absolute inset-0 bg-[repeating-linear-gradient(135deg,var(--raised)_0_10px,var(--surface)_10px_20px)]" />
-                    )
-                  )}
-                  {seat?.id === SOLO_ME && (
-                    <span className="absolute left-0 top-0 rounded-br-xs bg-radiant px-1.5 text-xs font-semibold leading-5 text-bg">You</span>
-                  )}
-                  {seat && (
-                    <button
-                      id={`seat-remove-${position}`}
-                      type="button"
-                      onClick={() => remove(seat)}
-                      aria-label={seat.id === SOLO_ME ? `Remove yourself from Pos ${position}` : `Remove ${name} from Pos ${position}`}
-                      className="btn btn-icon btn-sm absolute right-1.5 top-1.5 size-6 bg-bg/75"
+        <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
+          {/* Five equal cells in one panel. On a phone the cells stack their parts, so all five seats stay in view. */}
+          <ul
+            aria-label="Team Seats"
+            className="grid min-w-0 flex-1 basis-full grid-cols-5 divide-x divide-line rounded-xl bg-surface ring-1 ring-line ring-inset lg:basis-auto"
+          >
+            {POSITIONS.map((position) => {
+              const seat = seats.find((s) => s.position === position);
+              const person = seat && seat.id !== SOLO_ME ? people?.find((p) => p.id === seat.id) : undefined;
+              const name = seat ? nameOf(seat.id) : "Open Seat";
+              const heroId = heroAt?.(position) ?? null;
+              const art = heroId ? hero(heroId) : null;
+              const canAdd = signedIn || !meSeated;
+              // Stacks they play in, Friend, and Any Hero when they don't share their heroes: the cell's tooltip.
+              const about = [
+                ...(person?.stacks.filter((s) => s.role !== "owner").map((s) => s.name) ?? []),
+                ...(person?.isFriend ? ["Friend"] : []),
+                ...(!seat || (person && !person.shared) ? ["Any Hero"] : []),
+              ];
+              return (
+                <li
+                  key={position}
+                  title={[name, ...about].join(", ")}
+                  className={`group relative flex min-h-14 min-w-0 items-center gap-2.5 px-3 py-2 max-sm:flex-col max-sm:items-start max-sm:gap-1.5 max-sm:px-2 ${adding === position ? "bg-accent-tint" : ""}`}
+                >
+                  {art?.image && <HeroFace portrait={art.image} name={art.name} size={32} />}
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    {/* Muted, not subtle, on the open seat's copper wash so the label keeps 4.5:1 contrast. */}
+                    <span
+                      className={`micro flex items-center gap-1.5 ${adding === position ? "text-muted" : "text-subtle"}`}
+                      title={POSITION_NAMES[position]}
                     >
-                      <Icon name="x" />
-                    </button>
-                  )}
-                  {!seat && canAdd && (
-                    <span className="absolute inset-0 flex items-center justify-center max-sm:hidden">
+                      <PositionIcon position={position} size={12} />
+                      Pos {position}
+                    </span>
+                    {seat?.id === SOLO_ME ? (
+                      <span className="micro w-fit rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
+                    ) : seat ? (
+                      <span className="text-sm font-semibold break-words text-fg">{name}</span>
+                    ) : canAdd ? (
                       <AddButton
                         position={position}
                         open={adding === position}
                         label={signedIn ? "Add Player" : "Add Me"}
                         onClick={() => (signedIn ? setAdding(adding === position ? null : position) : pick(SOLO_ME, position))}
                       />
-                    </span>
-                  )}
-                </div>
-                <div className="flex min-w-0 items-center gap-2 px-2.5 pb-2.5 pt-1.5 max-sm:col-start-2 max-sm:pb-2">
-                  <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className={`truncate font-semibold ${seat ? "text-fg" : "font-medium text-muted"}`}>{name}</span>
-                    <span className="flex flex-wrap gap-1">
-                      {!seat && <span className="chip text-xs">Any Hero</span>}
-                      {person?.stacks
-                        .filter((s) => s.role !== "owner")
-                        .map((s) => (
-                          <span key={s.id} className="chip text-xs text-fg">
-                            {s.name}
-                          </span>
-                        ))}
-                      {person?.isFriend && <span className="chip text-xs">Friend</span>}
-                      {person && !person.shared && <span className="chip text-xs">Any Hero</span>}
-                    </span>
+                    ) : (
+                      <span className="text-sm text-subtle">Open</span>
+                    )}
                   </span>
-                  {!seat && canAdd && (
-                    <span className="sm:hidden">
-                      <AddButton
-                        position={position}
-                        open={adding === position}
-                        label={signedIn ? "Add" : "Add Me"}
-                        onClick={() => (signedIn ? setAdding(adding === position ? null : position) : pick(SOLO_ME, position))}
-                      />
-                    </span>
+                  {seat && (
+                    <button
+                      id={`seat-remove-${position}`}
+                      type="button"
+                      onClick={() => remove(seat)}
+                      aria-label={seat.id === SOLO_ME ? `Remove yourself from Pos ${position}` : `Remove ${name} from Pos ${position}`}
+                      className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-md text-muted opacity-0 group-hover:opacity-100 hover:bg-hover hover:text-fg focus-visible:opacity-100 pointer-coarse:opacity-100 [&_svg]:size-3"
+                    >
+                      <Icon name="x" />
+                    </button>
                   )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+          {fillFromStack}
+        </div>
       )}
       {mode === "team" && adding && people && (
         <div className={`flex ${adding > 2 ? "sm:justify-end" : ""}`}>
@@ -231,7 +207,7 @@ export function TeamSeats({
   );
 }
 
-/** The Add button of an open seat. Two copies render (desktop over the art, phone at the row end); only one shows. */
+/** The quiet Add Player control of an open seat; its label hides on a phone, where the cell is narrow. */
 function AddButton({ position, open, label, onClick }: { position: Position; open: boolean; label: string; onClick: () => void }) {
   return (
     <button
@@ -240,10 +216,10 @@ function AddButton({ position, open, label, onClick }: { position: Position; ope
       aria-expanded={label === "Add Me" ? undefined : open}
       aria-label={`${label} to Pos ${position}`}
       onClick={onClick}
-      className={`btn btn-sm ${open ? "btn-primary" : "btn-secondary"}`}
+      className={`btn -ml-1.5 h-6 w-fit gap-1.5 px-1.5 text-sm ${open ? "btn-secondary" : "btn-ghost"}`}
     >
       <Icon name="plus" />
-      {label}
+      <span className="max-sm:hidden">{label}</span>
     </button>
   );
 }

@@ -4,7 +4,7 @@ import { expectAccessible, test } from "./helpers";
 test("a Team with open seats suggests heroes for every teammate, as if they can play any hero", async ({ page }) => {
   await page.goto("/draft");
   const planFor = page.getByRole("region", { name: "Plan For" });
-  await planFor.getByRole("button", { name: "Team", exact: true }).click();
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
   // Signed out, only the player can take a seat.
   await expect(planFor).toContainText("Sign in to add Stack mates and friends.");
 
@@ -35,7 +35,7 @@ test("a Team with open seats suggests heroes for every teammate, as if they can 
   await page.getByRole("button", { name: "My Picks" }).click();
   await expect(page.getByRole("list", { name: "Suggested heroes" })).toBeVisible();
   await page.reload();
-  await expect(planFor.getByRole("button", { name: "Team", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await planFor.getByRole("button", { name: "Just Me" }).click();
+  await expect(page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Just Me" }).click();
   await expect(page.getByRole("button", { name: "Per Player" })).toHaveCount(0);
 });

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
-import { Kbd } from "@/components/kbd";
+import { type ReactNode, useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
+import { Icon } from "@/components/icon";
 import type { DraftEntry } from "@/lib/draft";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { nameToFind } from "@/lib/draft-reader/draw-name";
@@ -12,7 +12,9 @@ import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
 import type { HeroInfo } from "@/lib/engine/types";
 import { canWatch, useWatchDota, type WatchState } from "./use-watch-dota";
 
-interface ScreenshotPasteProps {
+interface DotaScreenProps {
+  /** Off while the player can't change the draft (a captain enters it) or the portraits haven't loaded. */
+  enabled: boolean;
   heroes: HeroInfo[];
   portraits: Record<number, string>;
   /** The draft so far, to leave heroes in it alone, and to tell heroes added by hand (which Watch Dota learns the look of) from heroes it read. */
@@ -25,6 +27,16 @@ interface ScreenshotPasteProps {
   onRead: (read: DraftRead, mySide: Side) => void;
 }
 
+/** The parts of reading the Dota screen, each shown where it belongs on the board. */
+export interface DotaScreen {
+  /** Watch Dota, or its state with Stop and Save Frame, for the toolbar. */
+  watchControls: ReactNode;
+  /** The Radiant or Dire switch, for the My Team rail. */
+  sideSwitch: ReactNode;
+  /** What the reader found or needs, a live region under the toolbar. */
+  status: ReactNode;
+}
+
 type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" | "error"; text: string };
 
 /**
@@ -32,9 +44,18 @@ type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" |
  * twice a second, or press PrtScn in Dota, come back and press Ctrl+V anywhere on the page. Both teams
  * come from the top bar and the bans from the hero grid. Your side comes from your Steam name under
  * the top bar (and the glow Dota puts under it); you can always set it by hand. Nothing leaves the
- * browser.
+ * browser. Returns the parts to place on the board.
  */
-export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, steamName, onRead }: ScreenshotPasteProps) {
+export function useDotaScreen({
+  enabled,
+  heroes,
+  portraits,
+  draft,
+  side,
+  onSideChange,
+  steamName,
+  onRead,
+}: DotaScreenProps): DotaScreen {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   // Who set the side: the player by hand, or the reader from the screen. A side set by hand stands
   // until the draft is cleared for the next game.
@@ -65,6 +86,7 @@ export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, 
   const watchable = useSyncExternalStore(noSubscribe, canWatch, () => false);
 
   const onPaste = useEffectEvent(async (e: ClipboardEvent) => {
+    if (!enabled) return;
     const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
     if (!file) return;
     e.preventDefault();
@@ -102,15 +124,15 @@ export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, 
     setSideBy("hand");
   };
 
-  return (
-    <section
-      aria-label="Read the Dota screen"
-      className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle"
-    >
-      {watchable &&
-        (watch.state === "off" || watch.state === "failed" ? (
-          <button onClick={watch.start} className="btn btn-secondary btn-sm">
-            Watch Dota
+  return {
+    watchControls:
+      enabled && watchable ? (
+        watch.state === "off" || watch.state === "failed" ? (
+          <button onClick={watch.start} className="btn btn-secondary btn-sm" aria-label="Watch Dota" title="Watch Dota">
+            <span className="flex text-muted">
+              <Icon name="play" />
+            </span>
+            <span className="max-md:hidden">Watch Dota</span>
           </button>
         ) : (
           <span className="flex items-center gap-2">
@@ -130,29 +152,29 @@ export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, 
               </button>
             )}
           </span>
+        )
+      ) : null,
+    sideSwitch: enabled ? (
+      <span className="lane-seg lane-seg-sm" role="group" aria-label="My Side">
+        {(["radiant", "dire"] as const).map((s) => (
+          <button key={s} aria-pressed={side === s} onClick={() => choose(s)} className={`is-${s}`}>
+            {s === "radiant" ? "Radiant" : "Dire"}
+          </button>
         ))}
-      <span>
-        Press <Kbd>PrtScn</Kbd> in Dota, then <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
       </span>
-      <span className="flex items-center gap-2">
-        <span className="label-caps" id="my-side">
-          My Team
-        </span>
-        <span className="seg" role="group" aria-labelledby="my-side">
-          {(["radiant", "dire"] as const).map((s) => (
-            <button key={s} aria-pressed={side === s} onClick={() => choose(s)} className="seg-item">
-              {s === "radiant" ? "Radiant" : "Dire"}
-            </button>
-          ))}
-        </span>
-      </span>
-      {side && sideBy === "screen" && (
-        <span className="text-muted">
-          Found {steamName ? <bdi>{steamName}</bdi> : "you"} on {side === "radiant" ? "Radiant" : "Dire"}
-        </span>
-      )}
-      <span role="status" className="basis-full empty:hidden">
-        {watch.state === "on" && !side && (
+    ) : null,
+    status: (
+      <div
+        role="status"
+        aria-label="Read the Dota screen"
+        className="flex basis-full flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle empty:sr-only"
+      >
+        {enabled && side && sideBy === "screen" && (
+          <span className="text-muted">
+            Found {steamName ? <bdi>{steamName}</bdi> : "you"} on {side === "radiant" ? "Radiant" : "Dire"}
+          </span>
+        )}
+        {enabled && watch.state === "on" && !side && (
           <span className="text-muted">
             {steamName ? (
               <>
@@ -175,17 +197,17 @@ export function ScreenshotPaste({ heroes, portraits, draft, side, onSideChange, 
         )}
         {watch.learned !== null && (
           <span className="notice notice-done text-xs">
-            Learned how {heroes.find((h) => h.id === watch.learned)?.name ?? "that hero"} looks on your screen. Watch Dota
-            reads it by itself from now on.
+            Learned how {heroes.find((h) => h.id === watch.learned)?.name ?? "that hero"} looks on your screen. Watch
+            Dota reads it by itself from now on.
           </span>
         )}
         {status.kind === "reading" && <span className="text-muted">Reading the screenshot…</span>}
         {(status.kind === "done" || status.kind === "warn" || status.kind === "error") && (
           <span className={`notice notice-${status.kind} text-xs`}>{status.text}</span>
         )}
-      </span>
-    </section>
-  );
+      </div>
+    ),
+  };
 }
 
 const WATCH_LABEL: Record<Exclude<WatchState, "off" | "failed">, string> = {
