@@ -249,6 +249,8 @@ test("a hero in the player's Top 5 gets its small boost in the draft", async ({ 
   const invoker = picks.filter({ has: page.getByRole("heading", { name: "Invoker", exact: true }) });
   await expect(invoker).toContainText("+1.5 one of your heroes for this position");
   await expect(invoker).not.toContainText("in your Top 5");
+  // Every card after the first says how far behind the first it is and why.
+  await expect(invoker).toContainText(/\d+\.\d points behind .+: /);
 });
 
 test("a hero from outside the pool shows under the list only when it clearly beats the pool", async ({ page }) => {
@@ -280,11 +282,12 @@ test("heroes the player has played join their own heroes in one list, marked Out
   const played = picks.filter({ has: page.getByRole("heading", { name: "Outworld Devourer", exact: true }) });
   await expect(played).toHaveCount(1);
   await expect(played.getByText("Outside Pool")).toBeVisible();
-  const own = picks.filter({ has: page.getByRole("heading", { name: "Nature's Prophet", exact: true }) });
-  await expect(own).toHaveCount(1);
-  await expect(own.getByText("Outside Pool")).toHaveCount(0);
-  // The first is the best pick; every other card says how far behind it is and why.
+  // The first is the best pick: no hero for the position scores higher than it.
   await expect(picks.first()).toContainText(/(Clear Best Pick|Best Pick Right Now)/);
-  await expect(picks.nth(1)).toContainText(/\d+\.\d points behind .+: /);
+  // Nature's Prophet scores below 0 before any hero is picked, so it is in Not This Game instead of on a card.
+  await expect(picks.filter({ has: page.getByRole("heading", { name: "Nature's Prophet", exact: true }) })).toHaveCount(0);
+  const out = page.getByRole("region", { name: "Not This Game" });
+  await expect(out.getByRole("listitem").filter({ hasText: "Nature's Prophet" })).toHaveCount(1);
+  await expect(out.getByText("Outside Pool")).toHaveCount(0);
   await expectAccessible(page);
 });

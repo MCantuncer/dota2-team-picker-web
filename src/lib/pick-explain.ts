@@ -34,30 +34,47 @@ export function toSaved(shown: { heroId: number; score: number }[]): { heroes: n
 /** Heroes listed at most. */
 const LIST_MAX = 8;
 
-/** A single matchup this bad (in win-rate points) makes a pool hero weak in this draft. */
-export const WEAK_MATCHUP = -1.5;
+/** A single matchup this bad (in win-rate points) is a risk worth naming on the hero's card. */
+export const RISK_MATCHUP = -1.5;
 
 /**
- * True when a hero is weak in this draft: a score below 0, a hard counter on the enemy team, or
- * one matchup at WEAK_MATCHUP or worse (`worstMatchup`, from Engine.counterEdges). A label only: the
- * hero keeps its place by score.
+ * True when a hero is weak in this draft: its whole score is below 0. One bad matchup alone never makes a hero
+ * weak (a hero can lose to one enemy and still be the second best pick); that is a named risk, see `riskHere`.
  */
-export function weakHere(s: { score: number; hardCounters: { status: string }[] }, worstMatchup: number): boolean {
-  return s.score < 0 || s.hardCounters.some((n) => n.status === "enemy") || worstMatchup <= WEAK_MATCHUP;
+export function weakHere(s: { score: number }): boolean {
+  return s.score < 0;
 }
 
-/** The worst counter points the hero has against the enemies picked so far, 0 with none. `known`: enemy positions set by hand. */
-export function worstMatchup(
+/** The enemy a listed hero does worst against, and the points it costs. */
+export interface PickRisk {
+  heroId: number;
+  /** Counter points against that enemy, below 0. */
+  points: number;
+  /** The enemy is one of the hero's listed hard counters. */
+  isHardCounter: boolean;
+}
+
+/**
+ * The one enemy worth a warning on a hero's card: a hard counter on the enemy team, else the worst matchup when it
+ * is RISK_MATCHUP or worse (from Engine.counterEdges, which already holds a hard counter at its listed gap). Null
+ * when no enemy is that bad.
+ */
+export function riskHere(
   engine: Engine,
-  heroId: number,
+  s: { heroId: number; hardCounters: { counterId: number; status: string }[] },
   enemies: number[],
   pos: Position,
   bracket?: RankBracket,
   known?: EnemyPositions,
-): number {
-  if (!enemies.length) return 0;
-  const edges = engine.counterEdges(heroId, enemies, engine.laneChances(enemies, pos, known), bracket);
-  return Math.min(0, ...edges.map((e) => e.edge));
+): PickRisk | null {
+  if (!enemies.length) return null;
+  const edges = engine.counterEdges(s.heroId, enemies, engine.laneChances(enemies, pos, known), bracket);
+  const hard = new Set(s.hardCounters.filter((n) => n.status === "enemy").map((n) => n.counterId));
+  const worstOf = (xs: typeof edges) => xs.reduce<(typeof edges)[number] | null>((a, b) => (!a || b.edge < a.edge ? b : a), null);
+  const counter = worstOf(edges.filter((e) => hard.has(e.enemy)));
+  if (counter) return { heroId: counter.enemy, points: counter.edge, isHardCounter: true };
+  const worst = worstOf(edges);
+  return worst && worst.edge <= RISK_MATCHUP ? { heroId: worst.enemy, points: worst.edge, isHardCounter: false } : null;
 }
 
 /**
@@ -100,7 +117,7 @@ export function playedHeroes(
 /** A player's list: the heroes to show, and which of them are weak in this draft. */
 export interface PickList<T> {
   list: T[];
-  /** Heroes in `list` that are weak in this draft, shown with a label. */
+  /** Heroes in `list` that score below 0 in this draft: Weak Here on a card, or together in Not This Game on My Picks. */
   weak: Set<number>;
   /** Heroes in `list` from outside the pool that the player has played, shown with a label. */
   played: Set<number>;
