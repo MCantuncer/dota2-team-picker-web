@@ -25,6 +25,8 @@ interface DotaScreenProps {
   /** The player's Steam name, which Dota writes under their slot: the reader finds their side by it. */
   steamName: string | null;
   onRead: (read: DraftRead, mySide: Side) => void;
+  /** Phone Follows Your PC: heroes the phone entered (not to learn from), and a call on every frame read. */
+  following?: { skipLearn?: ReadonlySet<number>; onAlive?: () => void };
 }
 
 /** The parts of reading the Dota screen, each shown where it belongs on the board. */
@@ -35,6 +37,8 @@ export interface DotaScreen {
   sideSwitch: ReactNode;
   /** What the reader found or needs, a live region under the toolbar. */
   status: ReactNode;
+  /** True while Watch Dota reads the Dota window. */
+  watching: boolean;
 }
 
 type Status = { kind: "idle" } | { kind: "reading" } | { kind: "done" | "warn" | "error"; text: string };
@@ -55,6 +59,7 @@ export function useDotaScreen({
   onSideChange,
   steamName,
   onRead,
+  following,
 }: DotaScreenProps): DotaScreen {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   // Who set the side: the player by hand, or the reader from the screen. A side set by hand stands
@@ -81,7 +86,7 @@ export function useDotaScreen({
   const watch = useWatchDota(heroes, portraits, draft, side, steamName, (read) => {
     const mine = sideFor(read);
     if (mine) onRead(read, mine);
-  });
+  }, following);
   // Known only in the browser; the server renders without the button.
   const watchable = useSyncExternalStore(noSubscribe, canWatch, () => false);
 
@@ -125,6 +130,7 @@ export function useDotaScreen({
   };
 
   return {
+    watching: watch.state === "on" || watch.state === "black",
     watchControls:
       enabled && watchable ? (
         watch.state === "off" || watch.state === "failed" ? (
