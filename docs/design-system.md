@@ -183,6 +183,8 @@ My Picks on /draft is the Pick Strip (`app/draft/pick-strip.tsx`) on the same mi
   row per hero on a phone. A tile is the render in a Lane Cut, the name, the score with its strength, the main
   reason (number first, a face before each hero it names) and Picked. The rows of every tile line up (subgrid).
   The first tile is the copper one: the ring, the label and the filled Picked.
+- **Win chance**: when a checked model gives one, the change a pick makes ("+1.2%") follows the score on its tile,
+  green or Dire red, and the card spells it out ("+1.2% win chance").
 - **Strength** is five rising bars beside the score: where the hero stands among every hero for the position in this
   draft, in fifths (five bars for the top fifth). Red when the score is below 0. The legend sits in the lane's head.
 - **On the art**: only the Best label (top right; beside the name on a phone) and the risk mark (bottom left: the

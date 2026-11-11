@@ -125,6 +125,14 @@ describe("PickStrip", () => {
     expect(within(tile("Ember Spirit")).getByRole("img", { name: "Strength 4 of 5" })).toBeInTheDocument();
   });
 
+  it("shows how much a pick moves the win chance on its tile, only when a checked model gives one", () => {
+    strip();
+    const ember = tile("Ember Spirit");
+    expect(within(ember).getByTitle("Change in your team's win chance")).toHaveTextContent("+1.2%");
+    expect(within(ember).getByRole("button", { name: "Ember Spirit, +3.9 points, +1.2% win chance. Show why." })).toBeInTheDocument();
+    expect(within(tile("Invoker")).queryByTitle("Change in your team's win chance")).toBeNull();
+  });
+
   it("opens the Best pick's full card at the start, with its label, seat, score, reasons and the Reacting To line", () => {
     strip();
     expect(within(tile("Invoker")).getByRole("button", { name: "Invoker, +9.7 points. Show why." })).toHaveAttribute("aria-pressed", "true");

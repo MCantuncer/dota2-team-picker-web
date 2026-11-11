@@ -133,7 +133,10 @@ test("the draft screen shows the win chance once a checked model exists", async 
   await page.getByLabel("Enemy pick").fill("pudge");
   await page.keyboard.press("Enter");
   await expect(band).toContainText(/\d+\.\d%/);
-  await expect(page.getByTitle("Change in your team's win chance")).toHaveCount(8);
+  // Every tile says how much its hero moves the win chance, and so does the open card.
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  await expect(picks.getByTitle("Change in your team's win chance")).toHaveCount(8);
+  await expect(page.locator("#pick-detail").getByTitle("Change in your team's win chance")).toHaveCount(1);
   await expectAccessible(page);
 });
 

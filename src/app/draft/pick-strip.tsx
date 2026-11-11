@@ -250,7 +250,9 @@ function Tile({
         onClick={onOpen}
         aria-pressed={isOpen}
         aria-controls="pick-detail"
-        aria-label={`${s.name}, ${signed(s.score)} points${risk ? `, risk ${ctx.hero(risk.heroId).name}` : ""}. Show why.`}
+        aria-label={`${s.name}, ${signed(s.score)} points${entry.gain !== null ? `, ${signed(entry.gain)}% win chance` : ""}${
+          risk ? `, risk ${ctx.hero(risk.heroId).name}` : ""
+        }. Show why.`}
         className="col-span-2 grid min-w-0 grid-cols-subgrid items-center gap-y-2 rounded-md text-left sm:col-span-1 sm:row-span-4 sm:grid-cols-1 sm:grid-rows-subgrid sm:items-stretch"
       >
         <span className="relative block">
@@ -280,8 +282,19 @@ function Tile({
             {mark && <span className="chip micro">{mark}</span>}
           </span>
           <span className="flex items-center justify-between gap-2">
-            <span className={`text-lg leading-6 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
-              {signed(s.score)}
+            <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+              <span className={`text-lg leading-6 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
+                {signed(s.score)}
+              </span>
+              {/* Only when a checked model gives a win chance: how much this pick moves it. */}
+              {entry.gain !== null && (
+                <span
+                  className={`micro font-semibold tabular-nums ${entry.gain < 0 ? "text-dire" : "text-radiant"}`}
+                  title="Change in your team's win chance"
+                >
+                  {signed(entry.gain)}%
+                </span>
+              )}
             </span>
             <Strength place={s.place} isWeak={s.score < 0} />
           </span>
