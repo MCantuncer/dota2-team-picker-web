@@ -41,6 +41,9 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `raised` | Fields, nested blocks, chips, hovered rows |
 | `hover`, `hover-strong` | Hover fills; `hover-strong` only for secondary button hover |
 | `line`, `line-strong`, `line-hover` | Card borders, control borders, hovered control borders |
+| `line-control` | The outline of an empty slot (`CutOutline`) |
+| `frame-edge` | The lit 1px edge of a Lane Cut frame |
+| `stage` | The stage light behind a hero render (`.hero-stage`). A gradient, so `var(--stage)` only |
 | `fg` | Main text |
 | `muted` | Secondary text, labels |
 | `subtle` | Placeholders, meta lines. Not on `hover` (fails contrast) |
@@ -81,12 +84,15 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 
 ## Spacing, radius, elevation
 
-- **Spacing** on a 4px base: 4 between portraits, 8 between controls and chips, 12 dense card padding, 16 default card
-  padding and phone gutter, 24 between page sections and the gutter from 640px, 32 page top padding, 48 page bottom.
-  Rows are `px-4 py-3`. Use `gap` on flex and grid, not margins between siblings.
-- **Radius**: `rounded-xs` (2) portraits and pips, `rounded-sm` (4) chips, badges, notices, `rounded-md` (6) buttons
-  and fields, `rounded-lg` (8) cards and menus, `rounded-full` avatars and status dots only. Bare `rounded` is not
-  used. Chips are never pills.
+- **Spacing** on a 4px base. Panels and cards: 20 padding (`p-5`), 24 on big cards (`p-6`), 20 between blocks in a
+  card (`gap-5`). 16 between cards (`gap-4`), 24 between page sections (`gap-6`), 10 between reason lines
+  (`gap-2.5`), 8 between side by side buttons and chips (`gap-2`), 4 between portraits. A face inline in a sentence
+  gets room around it (`ml-1`, `gap-2`). 16 phone gutter, 24 from 640px, 32 page top padding, 48 page bottom. Rows
+  are `px-4 py-3`. Use `gap` on flex and grid, not margins between siblings.
+- **Corners**: `rounded-xl` (12) panels, cards and menus, `rounded-lg` (8) buttons, fields and tiles, `rounded-md` (6)
+  icons, chips and badges, `rounded-xs` (2) 16:9 portraits and pips. `.card`, `.btn`, `.field`, `.seg` and `.chip`
+  already have them. `rounded-full` only for avatars, status dots and the green You pill. Hero frames use the Lane
+  Cut instead. Bare `rounded` is not used. Chips are never pills.
 - **Elevation**: page, then `.card` (one level, never a card inside a card), then `raised` blocks inside a card, then
   menus and toasts on `surface` with a `line-strong` border and a shadow. A selected item gets a copper underline or
   edge, not a shadow. Prefer hairline rows (`border-t border-line`) over cards.
@@ -111,6 +117,7 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.notice` + `.notice-error`, `-warn`, `-done` | Page or panel message; edge colour and icon carry the meaning |
 | `.row-link` | Makes a whole row or card one click target: on the row's main link (the name); the row is `relative`, buttons inside it add `relative z-10`. See Links below |
 | `.stack-banner` + `.stack-render` | A Stack's head: surface with faint Radiant and Dire corners and a hairline split, and one hero render on the right with a round fade (so spell effects in a render's corners drop away). One per page |
+| `.lane-cut`, `.lane-cut-enemy`, `.hero-stage` | The Lane Cut hero frame, its Dire edge, and the stage behind a render. Use them through the components in Lane Cut Frame below |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
@@ -130,6 +137,31 @@ No underlined or plain text links anywhere. Every link is a designed control, pi
 | Paging ("Newer Games", "Older Games") | `.btn-secondary .btn-sm` with the chevron pointing the way it goes |
 
 `src/app/no-text-links.test.ts` fails on `.link`, `underline` or `hover:underline` in a class list.
+
+## Lane Cut Frame
+
+Every hero on the Lane Board sits in the Lane Cut: the logo frame, a rounded square with the top right and bottom
+left corners (where the mid lane leaves and enters) cut at 45 degrees, and a 1px lit edge that follows the cuts. The
+cut and the corner grow with the frame, from 4px on a 20px face to 16px on the largest art (`laneCutStyle(size)`).
+An enemy's edge is Dire red. The components are in `components/hero-frame.tsx`:
+
+- **`HeroFace`**: a square crop of the 256x144 portrait, 20 to 64px, for rails, reason lines and chips. `isEnemy`,
+  `isDim` (banned or out of play), and `isDecorative` when the name is written next to it.
+- **`HeroStage` with `HeroArt`**: every large hero card shows the full-body render on our stage, never the 16:9
+  portrait. `HeroArt` loads the render from the Steam CDN through `next/image`, at most 720px wide so it is never
+  shown past its own pixels.
+- **`CutOutline`**: an empty slot. Solid corners, dashed straight edges, in `line-control`.
+- **`LaneMark`**: the 16px section mark, in the text colour.
+
+## Hero Art Rules
+
+- **One face point.** Each hero's face centre on its render is measured once, in a 720 wide space, in
+  `src/lib/hero-faces.ts` (some renders are not square, such as Broodmother at 720x360). `HeroArt` puts that point on
+  the frame's anchor. A hero not measured yet falls back to the middle of a square render.
+- **One size and one anchor per frame kind.** A frame kind (a Team Plan seat, the Best pick, a Pair Frame) defines
+  one `HeroArtPlacement` (render width and anchor) and every hero in it uses that constant, so the faces line up
+  across the row. No per-hero zoom or offsets.
+- **Render or portrait.** Frames over 64px hold the render in a `HeroStage`; 64px and under use `HeroFace`.
 
 ## Heroes, icons, states
 
