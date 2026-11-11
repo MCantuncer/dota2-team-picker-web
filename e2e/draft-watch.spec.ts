@@ -125,3 +125,19 @@ test("Watch Dota learns a hero's look when you add it by hand, and reads it by i
   const done = page.getByRole("region", { name: "All 10 Heroes Are In" });
   await expect(done.getByRole("listitem").filter({ hasText: "Invoker" }).getByText("You", { exact: true })).toBeVisible();
 });
+
+test("Watch Dota stops sharing the screen by itself after 4 minutes", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  await page.clock.install();
+  await fakeDotaWindow(page);
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await expect(page.getByText("Watching Dota")).toBeVisible({ timeout: 45_000 });
+  await page.clock.fastForward("03:50");
+  await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await page.clock.fastForward("00:15");
+  await expect(page.getByText("Watch Dota stopped sharing your screen after 4 minutes.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch Dota" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Stop" })).toHaveCount(0);
+});
