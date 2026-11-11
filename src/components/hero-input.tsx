@@ -77,6 +77,8 @@ export function HeroInput({ id, placeholder, label, search, exclude, withPositio
       <input
         id={id}
         ref={inputRef}
+        // The Pick Strip's number keys work from an empty hero box, and only from these boxes.
+        data-hero-box=""
         value={value}
         onChange={(e) => {
           setValue(e.target.value);

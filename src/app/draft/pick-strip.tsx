@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useEffectEvent, useState } from "react";
 import { HeroArt, HeroStage, type HeroArtPlacement } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { ordinal } from "@/lib/engine/reasons";
@@ -12,8 +12,8 @@ import { Face, FacedText, HeadMark, minus, Stop, type PlanHeroOf } from "./team-
 /*
  * The Pick Strip: every suggested hero side by side, straight under the entry boxes, so the answer to "what do I
  * pick" needs no scrolling. Each tile is the face, the name, the score with its strength, the main reason and Picked.
- * A tile opens that hero's full card under the strip; the Best pick is open at the start. The player's heroes below 0
- * share one Not This Game box in the columns the tiles leave.
+ * A tile (or its number key) opens that hero's full card under the strip; the Best pick is open at the start. The
+ * player's heroes below 0 share one Not This Game box in the columns the tiles leave.
  */
 
 /** Every tile puts the render's face on the same spot at the same scale. */
@@ -22,6 +22,14 @@ const TILE_ART: HeroArtPlacement = { width: 232, at: [0.5, 0.44] };
 const STRIP_COLUMNS = 8;
 
 const signed = (n: number) => `${n < 0 ? "−" : "+"}${Math.abs(n).toFixed(1)}`;
+
+/** A key press the strip may take: from the page itself, a button or link, or an empty hero box. Never from typing. */
+function keyTarget(e: KeyboardEvent): "page" | "box" | null {
+  const el = e.target instanceof HTMLElement ? e.target : null;
+  if (el instanceof HTMLInputElement) return el.dataset.heroBox !== undefined && el.value === "" ? "box" : null;
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el?.isContentEditable) return null;
+  return "page";
+}
 
 /**
  * Where a hero stands among every hero for the position in this draft, in fifths: 5 for the top fifth, 1 for the
@@ -103,9 +111,47 @@ export function PickStrip({
   const out = picks.filter((p, i) => i > 0 && p.isWeak);
   const all = [...picks, ...(outsider ? [outsider.entry] : [])];
   const [chosen, setChosen] = useState<number | null>(null);
+  // The hero a number key opened: Enter marks it Picked. A click or any other key lets go of it.
+  const [keyed, setKeyed] = useState<number | null>(null);
   const open = all.find((p) => p.suggestion.heroId === chosen) ?? picks[0];
   const openId = open?.suggestion.heroId ?? null;
   const cells = tiles.length + (outsider ? 1 : 0);
+  // The tiles in order, as the keys 1 to 9 count them.
+  const numbered = [...tiles, ...(outsider ? [outsider.entry] : [])].slice(0, 9);
+  const armed = onPicked && keyed !== null && keyed === openId ? (numbered.find((p) => p.suggestion.heroId === keyed) ?? null) : null;
+  const openTile = (heroId: number) => {
+    setChosen(heroId);
+    setKeyed(null);
+  };
+
+  const onKey = useEffectEvent((e: KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.isComposing) return;
+    const from = keyTarget(e);
+    if (!from) return;
+    // A key another control already took (a digit on a position picker) is not the strip's. The hero box always
+    // takes Enter itself, so that one still counts.
+    if (e.defaultPrevented && !(from === "box" && e.key === "Enter")) return;
+    const entry = /^[1-9]$/.test(e.key) ? numbered[Number(e.key) - 1] : undefined;
+    if (entry) {
+      // In an empty hero box the digit would be typed; it opens the pick instead.
+      e.preventDefault();
+      setChosen(entry.suggestion.heroId);
+      setKeyed(entry.suggestion.heroId);
+      return;
+    }
+    // Enter on a button or link is that control's own; only the page or an empty box marks the keyed pick.
+    const el = e.target instanceof HTMLElement ? e.target : null;
+    if (e.key === "Enter" && armed && (from === "box" || el === document.body)) {
+      e.preventDefault();
+      onPicked?.(armed.suggestion.heroId);
+    }
+    if (!["Shift", "Control", "Alt", "Meta"].includes(e.key)) setKeyed(null);
+  });
+  useEffect(() => {
+    const listen = (e: KeyboardEvent) => onKey(e);
+    document.addEventListener("keydown", listen);
+    return () => document.removeEventListener("keydown", listen);
+  }, []);
   // Not This Game takes the columns the tiles leave, at least one.
   const columns = Math.max(STRIP_COLUMNS, cells + (out.length ? 1 : 0));
   const leader = picks[0]?.suggestion.name;
@@ -116,9 +162,23 @@ export function PickStrip({
         <div className="flex min-h-[2.375rem] min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
           {head}
           {picks.length > 0 && (
-            <span className="micro flex items-center gap-2 text-subtle">
-              <Strength place={{ rank: 1, of: 5 }} isLegend />
-              Strength Among All {picks[0]!.suggestion.place.of} Heroes for This Role
+            <span className="micro flex flex-wrap items-center gap-x-4 gap-y-1 text-subtle">
+              <span className="flex items-center gap-2">
+                <Strength place={{ rank: 1, of: 5 }} isLegend />
+                Strength Among All {picks[0]!.suggestion.place.of} Heroes for This Role
+              </span>
+              {/* Keys are for a keyboard: off on a phone. After a number key, the hint says what Enter does. */}
+              <span className="flex items-center gap-1.5 max-md:hidden" aria-live="polite">
+                {armed ? (
+                  <>
+                    <kbd className="kbd">Enter</kbd>Picks {armed.suggestion.name}
+                  </>
+                ) : (
+                  <>
+                    <kbd className="kbd">1</kbd>to<kbd className="kbd">{numbered.length}</kbd>Opens a Pick
+                  </>
+                )}
+              </span>
             </span>
           )}
         </div>
@@ -141,9 +201,10 @@ export function PickStrip({
               <Tile
                 key={entry.suggestion.heroId}
                 entry={entry}
+                number={i < 9 ? i + 1 : null}
                 label={i === 0 ? (entry.isWeak || entry.suggestion.place.rank > 1 ? "Your Best" : "Best") : null}
                 isOpen={openId === entry.suggestion.heroId}
-                onOpen={() => setChosen(entry.suggestion.heroId)}
+                onOpen={() => openTile(entry.suggestion.heroId)}
                 ctx={ctx}
               />
             ))}
@@ -152,15 +213,16 @@ export function PickStrip({
             <ol aria-label="Hero from outside your pool" className="contents">
               <Tile
                 entry={outsider.entry}
+                number={tiles.length < 9 ? tiles.length + 1 : null}
                 label={null}
                 isOutsider
                 isOpen={openId === outsider.entry.suggestion.heroId}
-                onOpen={() => setChosen(outsider.entry.suggestion.heroId)}
+                onOpen={() => openTile(outsider.entry.suggestion.heroId)}
                 ctx={ctx}
               />
             </ol>
           )}
-          {out.length > 0 && <NotThisGame entries={out} span={columns - cells} openId={openId} onOpen={setChosen} ctx={ctx} />}
+          {out.length > 0 && <NotThisGame entries={out} span={columns - cells} openId={openId} onOpen={openTile} ctx={ctx} />}
         </div>
       </Stop>
       {open && (
@@ -217,6 +279,7 @@ function TileReason({ entry, ctx }: { entry: PickEntry; ctx: PickCtx }) {
  */
 function Tile({
   entry,
+  number,
   label,
   isOutsider = false,
   isOpen,
@@ -224,6 +287,8 @@ function Tile({
   ctx,
 }: {
   entry: PickEntry;
+  /** The tile's number key; null past the ninth. */
+  number: number | null;
   /** The Best pick's label; null for any other tile. */
   label: string | null;
   isOutsider?: boolean;
@@ -259,6 +324,11 @@ function Tile({
           <HeroStage key={s.heroId} size={72} className="h-16 w-full sm:h-[4.5rem]">
             {portrait && <HeroArt heroId={s.heroId} portrait={portrait} placement={TILE_ART} />}
           </HeroStage>
+          {number !== null && (
+            <kbd aria-hidden className={`kbd absolute top-1.5 left-1.5 z-2 max-md:hidden ${isBest ? "text-accent" : ""}`}>
+              {number}
+            </kbd>
+          )}
           {label && <span className="chip chip-accent micro absolute top-1.5 right-1.5 z-2 max-sm:hidden">{label}</span>}
           {risk && (
             <span

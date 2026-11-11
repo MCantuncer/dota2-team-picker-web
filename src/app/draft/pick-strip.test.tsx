@@ -273,6 +273,84 @@ describe("PickStrip", () => {
     expect(screen.getByRole("article", { name: "Invoker" })).toBeInTheDocument();
   });
 
+  it("opens a pick with its number key and marks it Picked with Enter", async () => {
+    const onPicked = vi.fn();
+    strip({ onPicked, onBanned: vi.fn() });
+    expect(screen.getByText(/Opens a Pick/)).toBeInTheDocument();
+    await userEvent.keyboard("2");
+    expect(screen.getByRole("article", { name: "Ember Spirit" })).toBeInTheDocument();
+    expect(screen.getByText(/Picks Ember Spirit/)).toBeInTheDocument();
+    await userEvent.keyboard("{Enter}");
+    expect(onPicked).toHaveBeenCalledExactlyOnceWith(106);
+    // Enter again does nothing: the key let go of the pick.
+    await userEvent.keyboard("{Enter}");
+    expect(onPicked).toHaveBeenCalledTimes(1);
+  });
+
+  it("needs a number key before Enter, and any other key or a click lets go", async () => {
+    const onPicked = vi.fn();
+    strip({ onPicked, onBanned: vi.fn() });
+    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard("3{Escape}{Enter}");
+    // A click opens the card but does not arm Enter.
+    await userEvent.keyboard("2");
+    await userEvent.click(within(tile("Puck")).getByRole("button", { name: /^Puck,/ }));
+    (document.activeElement as HTMLElement).blur();
+    await userEvent.keyboard("{Enter}");
+    // A key with no tile behind it.
+    await userEvent.keyboard("9{Enter}");
+    expect(onPicked).not.toHaveBeenCalled();
+    expect(screen.getByRole("article", { name: "Puck" })).toBeInTheDocument();
+  });
+
+  it("takes the keys from an empty hero box, never from typing", async () => {
+    const onPicked = vi.fn();
+    render(
+      <>
+        <input aria-label="Hero box" data-hero-box="" />
+        <input aria-label="Match ID" />
+      </>,
+    );
+    strip({ onPicked, onBanned: vi.fn() });
+    const box = screen.getByRole("textbox", { name: "Hero box" });
+    // An empty hero box: the digit opens the pick and is not typed; Enter marks it.
+    await userEvent.type(box, "2");
+    expect(box).toHaveValue("");
+    expect(screen.getByRole("article", { name: "Ember Spirit" })).toBeInTheDocument();
+    // Typing a hero with its position leaves the strip alone.
+    await userEvent.type(box, "cm3");
+    expect(box).toHaveValue("cm3");
+    expect(screen.getByRole("article", { name: "Ember Spirit" })).toBeInTheDocument();
+    await userEvent.clear(box);
+    await userEvent.type(box, "3{Enter}");
+    expect(onPicked).toHaveBeenCalledExactlyOnceWith(13);
+    // Any other box keeps its digits.
+    const other = screen.getByRole("textbox", { name: "Match ID" });
+    await userEvent.type(other, "1{Enter}");
+    expect(other).toHaveValue("1");
+    expect(screen.getByRole("article", { name: "Puck" })).toBeInTheDocument();
+    expect(onPicked).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a digit alone when another control took it", async () => {
+    render(
+      <button onKeyDown={(e) => e.preventDefault()} aria-label="Position picker">
+        1 2 3 4 5
+      </button>,
+    );
+    strip();
+    screen.getByRole("button", { name: "Position picker" }).focus();
+    await userEvent.keyboard("2");
+    expect(screen.getByRole("article", { name: "Invoker" })).toBeInTheDocument();
+  });
+
+  it("opens a pick by key for a player who can't change the draft, without Enter", async () => {
+    strip();
+    await userEvent.keyboard("3");
+    expect(screen.getByRole("article", { name: "Puck" })).toBeInTheDocument();
+    expect(screen.queryByText(/Picks Puck/)).toBeNull();
+  });
+
   it("puts every listed hero on the Score Ladder", () => {
     strip();
     const ladder = screen.getByRole("region", { name: "Score Ladder" });
