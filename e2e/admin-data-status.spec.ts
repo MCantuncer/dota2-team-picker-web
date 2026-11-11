@@ -21,6 +21,7 @@ test("an admin opens Data Status from the account menu", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Data Status", level: 1 })).toBeVisible();
   // The server reads the hero data from Storage, which the local database has no copy of, so the page may
   // show its error notice here; the counts themselves are covered by src/lib/admin-data-status.test.ts.
-  await expect(page.getByRole("progressbar", { name: "Two-Path Builds" }).or(page.getByRole("alert"))).toBeVisible();
+  // By text, not role: Next's route announcer is an alert too.
+  await expect(page.getByRole("progressbar", { name: "Two-Path Builds" }).or(page.getByText("Couldn't load the data status"))).toBeVisible();
   await expectAccessible(page);
 });
