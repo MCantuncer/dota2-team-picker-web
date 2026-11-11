@@ -179,19 +179,28 @@ The Team Plan on /draft (`app/draft/team-plan.tsx`, `app/draft/super-team.tsx`) 
 My Picks on /draft (`app/draft/my-picks.tsx`) is the same mid lane at full width:
 
 - The lane starts at the mark beside the view tabs. The **Best pick** is the copper stop across the lane (the node,
-  the label chip and the filled Picked; nothing else on the page is copper): the render, the label the data allows
-  (Clear Best Pick, Best Pick Right Now, Best of Your Heroes), Pos and the green You pill, score and place, the
-  verdict, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort with its Score Parts,
+  the label chip and the filled Picked; nothing else on the page is copper): the render, the label the data allows,
+  Pos and the green You pill, score and place, the verdict, Why This Hero, the score split into From This Draft and From Meta, Role and Comfort with its Score Parts,
   and the engine's Reacting To line at its foot.
+- **The Best label never contradicts the place line.** Best Pick Right Now (Clear Best Pick when the gap beats the
+  error) only when no hero for the position scores higher. When the list is the player's own heroes and another hero
+  scores higher, it is Best of Your Heroes (Clear Best of Your Heroes).
+- **A score has its unit**: the number, then Points, then the place ("+11.1 Points, 2nd of 49 Mids").
 - **The other picks** are equal cards two to a row from 1024px, one per row below: the render, the rank, name and
-  chips (Up 1 or New, Weak Here, Outside Pool), score and place, the verdict against the Best, every reason, Score
+  chips (Up 1 or New, Risk, Outside Pool), score and place, the verdict against the Best, every reason, Score
   Parts, then Picked (secondary) and an icon Banned. Cards in a row share one height, spare space at the bottom.
 - **Reasons** read number first (`lib/pick-lines.ts` turns the engine's sentences into lines): one line per hero for
   counters and synergy, tags as sentences, hard counters as risks with the points they would cost, risks last on the
   amber band.
 - **Score Parts** are centred bars: a positive part grows right in green, a negative one left in Dire red.
+- **Risk** is the amber chip on a good pick with one bad matchup: the warning icon, the word, the enemy's face and
+  name. **Weak Here** is only for a hero whose whole score is below 0, so it shows only on the first card when even
+  the best of the player's heroes is below 0.
 - The hero from **outside the pool** takes the next free cell as a dashed card; the **Score Ladder** (every listed
-  score with the band the data could be off by) takes the last.
+  score with the band the data could be off by) takes the next.
+- **Not This Game** closes the lane: the player's other heroes that score below 0 share one dashed box across the
+  lane (face, name, score in Dire red, and the score part that sinks each, with the enemy when it is the matchups)
+  instead of a full card each.
 
 ## Per Player
 

@@ -41,6 +41,7 @@ function suggestion(heroId: number, score: number, extra: Partial<Suggestion> = 
 
 const column = (over: Partial<PlayerColumn> & Pick<PlayerColumn, "playerId" | "position" | "suggestions">): PlayerColumn => ({
   weak: new Set(),
+  risks: new Map(),
   played: new Set(),
   fromAll: null,
   outsider: null,

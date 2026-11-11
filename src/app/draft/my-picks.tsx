@@ -8,6 +8,7 @@ import { POSITION_NAMES } from "@/lib/draft";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, Suggestion } from "@/lib/engine/types";
 import { VERDICT_Z, type Verdict } from "@/lib/engine/verdict";
+import type { PickRisk } from "@/lib/pick-explain";
 import {
   namedHeroes,
   reasonLines,
@@ -22,7 +23,8 @@ import { Face, FacedText, HeadMark, ReasonLine, Stop, type PlanHeroOf } from "./
 /*
  * My Picks as the Lane Board's mid lane, full width: the lane starts at the mark beside the view tabs, the Best pick
  * is the copper stop across the lane, the other picks follow as equal cards two to a row (one on a phone), with the
- * hero from outside the pool and the Score Ladder in the next free cells.
+ * hero from outside the pool and the Score Ladder in the next free cells. The player's heroes that score below 0 share
+ * one Not This Game box at the end instead of a card each.
  */
 
 /** A suggested hero with what the board knows about it. */
@@ -30,8 +32,10 @@ export interface PickEntry {
   suggestion: Suggestion;
   /** "New" or "Up 2" since the last pick or ban. */
   move?: string;
-  /** One of the player's heroes, but weak in this draft. */
+  /** One of the player's heroes, but weak in this draft: its score is below 0. */
   isWeak?: boolean;
+  /** The enemy the hero does worst against, when one is bad enough to name. */
+  risk?: PickRisk | null;
   /** Where the hero stands against the list's first, and why; none for the hero from outside the pool. */
   verdict?: Verdict;
   /** Games the player has on a listed hero from outside their pool; null or left out for a pool hero. */
@@ -125,8 +129,11 @@ export function MyPicksLane({
 }: MyPicksLaneProps) {
   const ctx: PickCtx = { hero, heroes, enemies: new Set(enemies), position, onPicked, onBanned };
   const leader = picks[0]?.suggestion.name;
+  // The first always gets a card, even below 0; any other hero below 0 goes to Not This Game.
+  const cards = picks.filter((p, i) => i === 0 || !p.isWeak);
+  const out = picks.filter((p, i) => i > 0 && p.isWeak);
   // Cells after the Best card, as the grid fills them: the picks, then the outsider. The last one ends the lane.
-  const last = picks.length - (outsider ? 0 : 1);
+  const last = cards.length - (outsider ? 0 : 1);
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <Stop isFirst node={<HeadMark />} nodeClass="top-[1.1875rem]">
@@ -142,7 +149,7 @@ export function MyPicksLane({
       )}
       <div className="grid gap-4 pl-7 md:pl-10 lg:grid-cols-2">
         <ol aria-label="Suggested heroes" className="contents">
-          {picks.map((entry, i) => (
+          {cards.map((entry, i) => (
             <li
               key={entry.suggestion.heroId}
               className={`relative min-w-0 ${i === 0 ? `lg:col-span-2 ${BEST_NODE}` : PICK_NODE}`}
@@ -159,12 +166,13 @@ export function MyPicksLane({
         {outsider && (
           <ol aria-label="Hero from outside your pool" className="contents">
             <li className={`relative min-w-0 ${OUTSIDER_NODE}`}>
-              <LaneGutter cell={picks.length} last={last} node={<ForkNode />} />
+              <LaneGutter cell={cards.length} last={last} node={<ForkNode />} />
               <PickCard entry={outsider.entry} rank={null} ctx={ctx} outsiderText={outsider.text} />
             </li>
           </ol>
         )}
         {picks.length > 1 && <ScoreLadder list={picks.map((p) => p.suggestion)} hero={hero} />}
+        {out.length > 0 && <NotThisGame entries={out} ctx={ctx} />}
       </div>
     </div>
   );
@@ -211,16 +219,24 @@ export function ForkNode() {
   );
 }
 
-/** In Team Plan, Up 1, New, Weak Here, Outside Pool: neutral chips with an icon; amber only for a risk. Never copper. */
+/**
+ * In Team Plan, Up 1, New, Weak Here, Risk, Outside Pool: neutral chips with an icon; amber only for a risk. Never
+ * copper. Weak Here is for a score below 0; one bad matchup on a good pick is a Risk that names the enemy.
+ */
 export function PickChips({
   move,
   isWeak,
+  risk,
   outside,
   isInPlan,
   owner,
+  hero,
 }: {
   move?: string;
   isWeak?: boolean;
+  risk?: PickRisk | null;
+  /** To name and show the enemy of a risk. */
+  hero?: PlanHeroOf;
   outside?: { title: string } | null;
   /** The hero the Team Plan chose for this seat. */
   isInPlan?: boolean;
@@ -254,18 +270,39 @@ export function PickChips({
       {isWeak && (
         <span
           className={`${CHIP} text-warn`}
-          title={`One of ${owner ? `${owner}'s` : "your"} heroes, but weak into this draft: a score below 0, a hard counter on the enemy team, or a matchup of −1.5 or worse`}
+          title={`One of ${owner ? `${owner}'s` : "your"} heroes, but its score in this draft is below 0`}
         >
           <Icon name="alert" />
           Weak Here
         </span>
       )}
+      {risk && !isWeak && hero && <RiskChip risk={risk} hero={hero} />}
       {outside && (
         <span className={CHIP} title={outside.title}>
           Outside Pool
         </span>
       )}
     </>
+  );
+}
+
+/** The one enemy a good pick does badly against: amber, with the enemy's face and name. */
+export function RiskChip({ risk, hero }: { risk: PickRisk; hero: PlanHeroOf }) {
+  const { name } = hero(risk.heroId);
+  return (
+    <span
+      className={`${CHIP} text-warn`}
+      title={
+        risk.isHardCounter
+          ? `${name} is a hard counter: ${signed(risk.points)} points against it`
+          : `The worst matchup in this draft: ${signed(risk.points)} points against ${name}`
+      }
+    >
+      <Icon name="alert" />
+      Risk
+      <Face id={risk.heroId} hero={hero} size={20} isEnemy />
+      <span className="font-medium">{name}</span>
+    </span>
   );
 }
 
@@ -309,10 +346,11 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
       <span
         className={`font-semibold tracking-tight text-fg tabular-nums ${isLarge ? "text-[2rem] leading-9" : "text-[1.625rem] leading-8"}`}
-        title="Score in win-rate points"
+        title="How much the hero helps in this draft, in points of win rate from the match data"
       >
         {signed(s.score)}
       </span>
+      <span className="micro text-muted">Points</span>
       {s.place.rank > 0 && (
         <span className="micro text-subtle">
           {ordinal(s.place.rank)} of {s.place.of} {ROLES[position]}
@@ -489,6 +527,8 @@ export function PickCard({
             <PickChips
               move={entry.move}
               isWeak={entry.isWeak}
+              risk={entry.risk}
+              hero={ctx.hero}
               isInPlan={isInPlan}
               owner={ctx.owner}
               outside={
@@ -530,14 +570,26 @@ export function PickCard({
 }
 
 /**
- * The Best pick across the lane: the render in a large frame; the label the data allows ("Clear Best Pick" only when
- * the gap beats the error, "Best of Your Heroes" when it is weak here), name, seat, score and place, the verdict and
- * the copper Picked; every reason; the score and its parts. The engine's "Reacting to" line at the foot.
+ * The label the data allows on the first pick. "Best Pick" is said only when no hero for the position scores higher
+ * (the list holds the player's own heroes, so its first can be 2nd or 3rd of them all); else "Best of Your Heroes".
+ * "Clear" only when the gap to every other listed hero beats the error.
+ */
+export function bestLabel(entry: PickEntry): string {
+  const isClear = entry.verdict?.kind === "clear";
+  if (entry.isWeak) return "Best of Your Heroes";
+  if (entry.suggestion.place.rank > 1) return isClear ? "Clear Best of Your Heroes" : "Best of Your Heroes";
+  return isClear ? "Clear Best Pick" : "Best Pick Right Now";
+}
+
+/**
+ * The Best pick across the lane: the render in a large frame; the label the data allows (see bestLabel), name, seat,
+ * score and place, the verdict and the copper Picked; every reason; the score and its parts. The engine's "Reacting
+ * to" line at the foot.
  */
 function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string; ctx: PickCtx }) {
   const s = entry.suggestion;
   const { verdict } = entry;
-  const label = entry.isWeak ? "Best of Your Heroes" : verdict?.kind === "clear" ? "Clear Best Pick" : "Best Pick Right Now";
+  const label = bestLabel(entry);
   const split = scoreSplit(s.breakdown);
   const { portrait } = ctx.hero(s.heroId);
   const played = playedChip(entry.playedGames);
@@ -553,7 +605,7 @@ function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string
             <span className={BEST_CHIP} title={verdict?.text}>
               {label}
             </span>
-            <PickChips move={entry.move} isWeak={entry.isWeak} outside={played} />
+            <PickChips move={entry.move} isWeak={entry.isWeak} risk={entry.risk} hero={ctx.hero} outside={played} />
           </span>
           <h3 id="best-pick" data-hero-name className="text-[1.75rem] leading-8 font-semibold tracking-tight break-words text-fg">
             {s.name}
@@ -603,6 +655,66 @@ function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string
       </div>
       <p className="micro border-t border-line px-5 py-4 text-subtle md:px-6">{reacting}</p>
     </article>
+  );
+}
+
+/**
+ * The player's heroes that score below 0 in this draft, in one quiet dashed box across the lane, so a hero that does
+ * not fit never takes a full card. Each keeps its face, name and score, and the score part that sinks it (with the
+ * enemy, when that part is the matchups).
+ */
+export function NotThisGame({ entries, ctx }: { entries: PickEntry[]; ctx: PickCtx }) {
+  const whose = ctx.owner ? `${ctx.owner}'s` : "Your";
+  return (
+    <section
+      aria-labelledby="not-this-game"
+      className="flex min-w-0 flex-col gap-4 rounded-xl border border-dashed border-line-control p-5 sm:p-6 lg:col-span-2"
+    >
+      <div className="flex flex-col gap-1">
+        <h3 id="not-this-game" className="flex items-center gap-2 text-base font-semibold text-fg">
+          <span className="flex text-warn">
+            <Icon name="alert" />
+          </span>
+          Not This Game
+        </h3>
+        <p className="micro text-subtle">{whose} heroes that score below 0 in this draft.</p>
+      </div>
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-x-6 gap-y-4">
+        {entries.map((entry) => {
+          const s = entry.suggestion;
+          const worst = scoreParts(s.breakdown)
+            .filter((p) => p.value < 0)
+            .sort((a, b) => a.value - b.value)[0];
+          const { risk } = entry;
+          return (
+            <li key={s.heroId} className="flex min-w-0 items-start gap-3">
+              <Face id={s.heroId} hero={ctx.hero} size={40} />
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="flex flex-wrap items-baseline gap-x-2">
+                  <span data-hero-name className="text-sm leading-5 font-semibold break-words text-fg">
+                    {s.name}
+                  </span>
+                  <span className="num text-dire">{signed(s.score)}</span>
+                </span>
+                {worst && (
+                  <span className="micro flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
+                    <span>
+                      {worst.name} <span className="font-semibold text-dire tabular-nums">{signed(worst.value)}</span>
+                    </span>
+                    {worst.key === "counter" && risk && (
+                      <span className="flex items-center gap-2">
+                        <Face id={risk.heroId} hero={ctx.hero} isEnemy />
+                        <span className="font-medium text-fg">{ctx.hero(risk.heroId).name}</span>
+                      </span>
+                    )}
+                  </span>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

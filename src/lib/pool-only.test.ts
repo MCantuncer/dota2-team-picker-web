@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Engine } from "@/lib/engine/score";
 import { POSITIONS, type GamesWins, type Position, type RankBracket, type Snapshot } from "@/lib/engine/types";
 import { perPlayerColumns } from "@/lib/per-player";
-import { OUTSIDER_Z, ownHeroes, provenOutsider, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { OUTSIDER_Z, ownHeroes, provenOutsider, weakHere } from "@/lib/pick-explain";
 
 /**
  * The pool rule on many random drafts: a list built from a player's pool holds only pool heroes, in
@@ -80,9 +80,7 @@ describe("pool-only lists on random drafts", { timeout: 30_000 }, () => {
       const myPosition = pick(draft.open) as Position;
       const pool = randomPool();
       const ranked = engine.suggest({ ...draft, myPosition, favorites: pool, count: engine.heroes.length });
-      const picks = ownHeroes(ranked, new Set(pool), {
-        weak: (s) => weakHere(s, worstMatchup(engine, s.heroId, draft.enemies, myPosition, draft.rankBracket)),
-      });
+      const picks = ownHeroes(ranked, new Set(pool), { weak: weakHere });
       const { list, weak, fromAll } = picks;
       const outsider = provenOutsider(ranked, new Set(pool), picks);
       if (outsider) {
