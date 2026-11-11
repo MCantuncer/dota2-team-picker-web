@@ -44,6 +44,12 @@ export function useWatchDota(
   /** Your Steam name, to find your side by; null without one. */
   steamName: string | null,
   onRead: (read: DraftRead) => void,
+  following: {
+    /** Heroes the player's phone entered: the reader didn't miss them, so it must not learn a look from them. */
+    skipLearn?: ReadonlySet<number>;
+    /** Called on every frame the worker reads (or finds black), so the phone knows the PC is still reading. */
+    onAlive?: () => void;
+  } = {},
 ) {
   const inDraft = new Set(draft.map((e) => e.heroId));
   const [state, setState] = useState<WatchState>("off");
@@ -52,6 +58,7 @@ export function useWatchDota(
   const session = useRef<{ stream: MediaStream; worker: Worker } | null>(null);
   // Replies arrive long after the render that started watching; they must reach the latest draft.
   const latestOnRead = useRef(onRead);
+  const latestFollowing = useRef(following);
   const latestInDraft = useRef(inDraft);
   const live = useRef<LiveReads | null>(null);
   // Heroes the reader passed on this session, and those of them it read by a learned look.
@@ -61,6 +68,7 @@ export function useWatchDota(
   const teams = useRef(new Map<number, "ally" | "enemy">());
   useEffect(() => {
     latestOnRead.current = onRead;
+    latestFollowing.current = following;
     latestInDraft.current = inDraft;
     live.current?.saw(inDraft);
     const worker = session.current?.worker;
@@ -68,7 +76,7 @@ export function useWatchDota(
     if (worker && side) {
       const removed = [...teams.current.keys()].filter((id) => !now.has(id));
       for (const [heroId, kind] of now) {
-        if (teams.current.has(heroId) || offered.current.has(heroId)) continue;
+        if (teams.current.has(heroId) || offered.current.has(heroId) || following.skipLearn?.has(heroId)) continue;
         // Added by hand: the reader missed it, so it learns how it looks on this screen.
         const team = kind === "ally" ? side : side === "radiant" ? "dire" : "radiant";
         worker.postMessage({ learn: { heroId, side: team, removed } } satisfies WatchRequest);
@@ -95,13 +103,17 @@ export function useWatchDota(
       console.error("Watching Dota failed", reply.error);
       stop();
       setState("failed");
-    } else if ("black" in reply) setState("black");
+    } else if ("black" in reply) {
+      setState("black");
+      latestFollowing.current.onAlive?.();
+    }
     else if ("frame" in reply) download(reply.frame);
     else if ("learned" in reply) {
       saveLooks(addLook(readLooks(), reply.learned));
       setLearned(reply.learned.heroId);
     } else {
       setState("on");
+      latestFollowing.current.onAlive?.();
       const read = live.next(reply.read, latestInDraft.current);
       for (const slot of [...read.radiant, ...read.dire]) {
         if (slot.heroId === null) continue;

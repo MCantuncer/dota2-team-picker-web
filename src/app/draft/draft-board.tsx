@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Icon } from "@/components/icon";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import {
   MoveMark,
@@ -17,7 +17,6 @@ import type { Side } from "@/lib/draft-reader/geometry";
 import { Kbd } from "@/components/kbd";
 import { SteamButton } from "@/components/steam-button";
 import {
-  applyAction,
   heroesOf,
   POSITION_NAMES,
   TEAM_SIZE,
@@ -91,6 +90,11 @@ import {
   toCheckInBoard,
 } from "@/lib/game-check-in";
 import { isTeammate, SOLO_ME } from "@/lib/solo-queue";
+import { useSoloBoard } from "./use-solo-board";
+import { FollowPcPanel, PhoneFollowingChip } from "./follow-pc";
+import { isPhone } from "@/lib/solo-draft";
+
+const noSubscribe = () => () => {};
 
 /** What the signed-in player brings to their suggestions. Empty when signed out. */
 export interface Player {
@@ -129,7 +133,6 @@ const RANKS = [
   "Divine",
   "Immortal",
 ];
-const DRAFT_KEY = "solo-draft";
 const POSITION_KEY = "solo-draft-position";
 const NO_STACKS: PlannableStack[] = [];
 const NOTICE = {
@@ -160,14 +163,6 @@ function writeStorage(key: string, value: unknown) {
 
 const isPosition = (v: unknown): v is Position =>
   POSITIONS.includes(v as Position);
-const isDraft = (v: unknown): v is DraftEntry[] =>
-  Array.isArray(v) &&
-  v.every(
-    (e) =>
-      Number.isInteger(e?.heroId) &&
-      ["ally", "enemy", "ban"].includes(e?.kind) &&
-      (e?.position === null || isPosition(e?.position)),
-  );
 
 /**
  * One player's draft: both teams and bans typed in as they happen, and 8 heroes for your position.
@@ -193,14 +188,14 @@ export function DraftBoard({
 }) {
   const [engine, setEngine] = useState<Engine | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [soloDraft, setSoloDraft] = useState<DraftEntry[]>([]);
-  const [history, setHistory] = useState<DraftEntry[][]>([]);
-  // The draft as of the last change, ahead of the next render: Watch Dota can add picks twice in a row
-  // before the page renders (it is in the background while Dota is in front), and the second must build
-  // on the first.
-  const latestSolo = useRef<DraftEntry[]>([]);
+  // Out of a party: your own draft, on the server while signed in so a phone can follow it.
+  const solo = useSoloBoard(signedIn && !party ? userId : null);
+  // Known only in the browser; the server renders the PC layout.
+  const phone = useSyncExternalStore(noSubscribe, isPhone, () => false);
   // Your side changes every game, so it is chosen each time rather than remembered.
-  const [mySide, setMySide] = useState<Side | null>(null);
+  const [partySide, setPartySide] = useState<Side | null>(null);
+  const mySide = party ? partySide : solo.side;
+  const setMySide = party ? setPartySide : solo.setSide;
   const [soloPosition, setMyPosition] = useState<Position>(
     party?.myPosition ?? player.positions[0] ?? 1,
   );
@@ -242,7 +237,7 @@ export function DraftBoard({
   // Planning for a Stack without playing yourself: there are no picks of your own to show.
   const notPlaying = lineupPlan !== null && lineupPlan.myPosition === null;
   const view = notPlaying && chosenView === "mine" ? "players" : chosenView;
-  const draft = party ? shared.draft : soloDraft;
+  const draft = party ? shared.draft : solo.draft;
   const [soloRank, setSoloRank] = useState<RankBracket | null>(player.rank);
   const [rankError, setRankError] = useState<string | null>(null);
   // In a party every screen uses the party rank: the one the planner set, else the planner's own.
@@ -279,9 +274,6 @@ export function DraftBoard({
   useEffect(() => {
     loadSnapshot()
       .then((s) => {
-        const savedDraft = readStorage(DRAFT_KEY, isDraft) ?? [];
-        latestSolo.current = savedDraft;
-        setSoloDraft(savedDraft);
         const saved = readStorage(POSITION_KEY, isPosition);
         if (saved && !party?.myPosition) setMyPosition(saved);
         setEngine(new Engine(s));
@@ -472,7 +464,7 @@ export function DraftBoard({
     (!party || shared.draftId)
       ? toCheckInBoard({
           draft,
-          key: party ? null : soloBoardKey(),
+          key: party ? null : (solo.boardKey ?? soloBoardKey()),
           partyDraftId: party ? shared.draftId : null,
           myPosition,
           myHero: mine?.heroId ?? null,
@@ -527,33 +519,20 @@ export function DraftBoard({
     setCheckInDone(answered);
   };
 
-  const change = (next: DraftEntry[]) => {
-    const current = latestSolo.current;
-    if (next === current) return;
-    setHistory((h) => [...h.slice(-49), current]);
-    latestSolo.current = next;
-    setSoloDraft(next);
-    writeStorage(DRAFT_KEY, next);
-  };
   const act = (...actions: DraftAction[]) => {
     if (locked) return;
     if (party) void shared.act(actions);
-    else change(actions.reduce(applyAction, latestSolo.current));
+    else solo.act(actions);
   };
   // In a party, Undo takes back your own latest entry; the rest of the party keeps theirs.
-  const canUndo = party ? shared.lastMine !== null : history.length > 0;
+  const canUndo = party ? shared.lastMine !== null : solo.canUndo;
   const undo = () => {
     if (party) {
       if (shared.lastMine !== null)
         act({ kind: "remove", heroId: shared.lastMine });
       return;
     }
-    const prev = history.at(-1);
-    if (!prev) return;
-    setHistory((h) => h.slice(0, -1));
-    latestSolo.current = prev;
-    setSoloDraft(prev);
-    writeStorage(DRAFT_KEY, prev);
+    solo.undo();
   };
   const startOver = () => {
     setCheckInDone(false);
@@ -562,7 +541,7 @@ export function DraftBoard({
     setOwnSlotFound(false);
     if (party) void shared.newDraft();
     else {
-      change([]);
+      void solo.startOver();
       forgetSoloBoardKey();
     }
   };
@@ -597,6 +576,7 @@ export function DraftBoard({
     side: mySide,
     onSideChange: setMySide,
     steamName: player.steamName ?? null,
+    following: party ? undefined : { skipLearn: solo.elsewhere, onAlive: () => solo.beat(true) },
     onRead: (read, side) => {
       // With your own slot found, the hero in it goes to your position; without it, ask which hero is yours.
       const actions = readActions(read, side, taken, mine ? null : myPosition);
@@ -611,6 +591,21 @@ export function DraftBoard({
       if (allies.length) setScreenAllies((ids) => [...ids, ...allies]);
     },
   });
+  // When Watch Dota stops, the phone hears it at once instead of after the beats run out.
+  const watching = screen.watching;
+  const soloBeat = solo.beat;
+  useEffect(() => {
+    if (!watching) soloBeat(false);
+  }, [watching, soloBeat]);
+  // Start Over on the other device: this tab's notes about the old board go too.
+  const [boardKey, setBoardKey] = useState(solo.boardKey);
+  if (solo.boardKey !== boardKey) {
+    setBoardKey(solo.boardKey);
+    setScreenAllies([]);
+    setNotMine(new Set());
+    setOwnSlotFound(false);
+    setCheckInDone(false);
+  }
 
   if (loadError)
     return (
@@ -1124,6 +1119,7 @@ export function DraftBoard({
         )}
         <div className="ml-auto flex flex-wrap items-center gap-2 max-md:order-2">
           {screen.watchControls}
+          {!party && !phone && solo.phoneFollowing && <PhoneFollowingChip />}
           <button
             onClick={() => setShowKeys(!showKeys)}
             aria-expanded={showKeys}
@@ -1160,6 +1156,17 @@ export function DraftBoard({
         </div>
         {screen.status}
       </div>
+
+      {!party && phone && solo.synced && solo.ready && (
+        <FollowPcPanel
+          live={solo.pcWatching}
+          stopped={solo.pcStopped}
+          empty={!draft.length}
+          side={mySide}
+          justRead={solo.freshHero !== null ? (hero(solo.freshHero)?.name ?? null) : null}
+          onAddByHand={() => allyRef.current?.focus()}
+        />
+      )}
 
       {!isPlanner && (
         <section aria-labelledby="picks-title" className="flex flex-col gap-3">
