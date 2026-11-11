@@ -28,7 +28,9 @@ test("a Stack owner plans a draft for Stack mates who aren't online", async ({ p
   await page.getByRole("button", { name: "Per Player" }).click();
   await expect(page.getByRole("list", { name: "Suggested heroes for Tusk" })).toBeVisible();
   await page.getByRole("button", { name: "Team Plan" }).click();
-  await expect(page.getByRole("heading", { name: "Team Plan" })).toBeVisible();
+  // The selected tab names the view, so the lane's title is only read out; the five cards and the Why panel show.
+  await expect(page.getByRole("list", { name: "Team Plan" }).locator(":scope > li")).toHaveCount(5);
+  await expect(page.getByRole("region", { name: "Why This Is a Super Team" })).toBeVisible();
   await expectAccessible(page);
 
   // Seats are kept on reload; Just Me brings back the plain solo screen, and Team brings the seats back.

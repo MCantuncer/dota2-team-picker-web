@@ -44,6 +44,7 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `line-control` | The outline of an empty slot (`CutOutline`) |
 | `frame-edge` | The lit 1px edge of a Lane Cut frame |
 | `stage` | The stage light behind a hero render (`.hero-stage`). A gradient, so `var(--stage)` only |
+| `lane-line` | The Team Plan's mid lane and the ring of an open node (`.lane-spine`, `.lane-node-open`) |
 | `fg` | Main text |
 | `muted` | Secondary text, labels |
 | `subtle` | Placeholders, meta lines. Not on `hover` (fails contrast) |
@@ -120,6 +121,7 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.lane-cut`, `.lane-cut-enemy`, `.hero-stage` | The Lane Cut hero frame, its Dire edge, and the stage behind a render. Use them through the components in Lane Cut Frame below |
 | `.lane-seg` + `.lane-seg-sm` | The Lane Board segmented control (view tabs, Plan For, the side switch): the chosen button (`aria-pressed`) takes the Lane Cut. `.is-radiant` and `.is-dire` colour a side switch |
 | `.lane-digits` + `.lane-digit` | Position digits under a hero on a rail: the chosen one (`aria-checked`) is a small Lane Cut tile, a guess (`data-guess`) is dashed |
+| `.lane-spine` + `.lane-node` | The Team Plan's mid lane: one bright line through the position cards, a node per card. `.lane-node-open` is a ring, `.lane-node-done` filled (picked), `.lane-node-now` the copper dot, only for Pick First |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
@@ -154,6 +156,23 @@ An enemy's edge is Dire red. The components are in `components/hero-frame.tsx`:
   shown past its own pixels.
 - **`CutOutline`**: an empty slot. Solid corners, dashed straight edges, in `line-control`.
 - **`LaneMark`**: the 16px section mark, in the text colour.
+
+## Team Plan
+
+The Team Plan on /draft (`app/draft/team-plan.tsx`, `app/draft/super-team.tsx`) is the Lane Board's mid lane:
+
+- **Position cards** on the lane, one per position: the render on the stage, the hero's name, Pos and the player (or
+  the green You pill), its state, then the actions straight after (Picked and Banned, or Picked and Undo once picked).
+  The right column, Why This Hero, is every reason the engine gives, one line each: an icon for its kind, the number
+  bold first, the words, a 20px face before each hero it names. From 1024px one row; below that the reasons go under
+  the hero. Cards in the lane share one height, spare space at the bottom.
+- **Pick First** is the only copper: the node, the chip and the filled Picked button of that one card.
+- **Another Super Team** forks off the lane at the bottom (dashed, 45 degrees): points behind, why, the heroes that
+  differ as small render tiles, and Show Why for its own reasons and the team needs that differ.
+- **Why This Is a Super Team** beside the lane from 1280px, under it below that: the style chip and plan line, Pair
+  Frames (two heroes in one Lane Cut split by the lane, a neutral centre node with the relation icon, never copper) for
+  the best pair, the edge against the enemy picks and the key combo, any other engine line, then Team Needs: a row per
+  need with the faces covering it, amber with the triangle when missing.
 
 ## Hero Art Rules
 
