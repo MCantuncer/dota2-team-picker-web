@@ -444,6 +444,10 @@ body {
   .lane-cut-enemy {
     --cut-edge: var(--dire);
   }
+  /* The player's own hero in a line-up (the finished draft): ringed in their green. */
+  .lane-cut-you {
+    --cut-edge: var(--radiant);
+  }
   /* The stage light behind a hero render (HeroStage). */
   .hero-stage {
     background: var(--stage);
