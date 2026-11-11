@@ -56,6 +56,8 @@ import { BetterChance, type DraftOdds } from "./better-chance";
 import { useTeamLineup, type PlannableStack } from "./use-team-lineup";
 import { DraftDone } from "./start-game";
 import { PickStrip } from "./pick-strip";
+import { ThreatCard } from "./threat-card";
+import { draftThreats } from "@/lib/engine/threat-plan";
 import { useGameCheckIn } from "./use-game-check-in";
 import { useCheckInActions, useDueCheckIn } from "./use-check-in";
 import { CheckInCard } from "./check-in-card";
@@ -316,6 +318,18 @@ export function DraftBoard({
     const timer = setTimeout(() => void saveSuggestions(myPosition, heroes, scores, chance, rule), 1500);
     return () => clearTimeout(timer);
   }, [shown, myPosition, saveSuggestions]);
+
+  // A dangerous enemy core and his answers, while the draft is still open (the Game Story takes over after).
+  const threats =
+    engine && allyIds.length + enemies.length < 2 * TEAM_SIZE
+      ? draftThreats(engine, {
+          allies: resolved.map((a) => ({ heroId: a.heroId, position: a.position })),
+          enemies,
+          enemyPositions,
+          bans,
+          rankBracket: bracket,
+        })
+      : null;
 
   // Once both teams are in with every ally's position, the game plan for our side.
   const gamePlan = engine ? finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups, enemyPositions) : null;
@@ -1079,6 +1093,16 @@ export function DraftBoard({
           }
         />
       </section>
+
+      {threats?.main && threats.main.step < 2 && (
+        <ThreatCard
+          threat={threats.main}
+          others={threats.others}
+          hero={planHero}
+          myPosition={myPosition}
+          games={engine.data.threatPlans?.games ?? 0}
+        />
+      )}
 
       <BetterChance
         now={oddsOf(allyIds)}
