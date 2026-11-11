@@ -38,7 +38,7 @@ export function PositionPicker({ heroName, position, isGuess, onChange }: Positi
   };
 
   return (
-    <div className="seg seg-sm" role="radiogroup" aria-label={`${heroName} position`} aria-disabled={!onChange || undefined} onKeyDown={onChange ? onKeyDown : undefined}>
+    <div className="lane-digits" role="radiogroup" aria-label={`${heroName} position`} aria-disabled={!onChange || undefined} onKeyDown={onChange ? onKeyDown : undefined}>
       {POSITIONS.map((p) => (
         <button
           key={p}
@@ -54,7 +54,7 @@ export function PositionPicker({ heroName, position, isGuess, onChange }: Positi
           data-guess={isGuess && p === position ? "" : undefined}
           disabled={!onChange}
           onClick={() => choose(!isGuess && p === position ? null : p)}
-          className="seg-item num"
+          className="lane-digit"
         >
           {p}
         </button>

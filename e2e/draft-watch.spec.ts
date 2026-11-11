@@ -10,7 +10,7 @@ test("Watch Dota reads both teams and the bans off the shared window", async ({ 
   await expect(page.getByText("Watching Dota")).toBeVisible({ timeout: 45_000 });
   // This frame has the names blanked out, so the side is chosen by hand.
   await expect(page.getByText("Choose your team so picks go to the right side.")).toBeVisible();
-  await page.getByRole("region", { name: "Read the Dota screen" }).getByRole("button", { name: "Radiant", exact: true }).click();
+  await page.getByRole("group", { name: "My Side" }).getByRole("button", { name: "Radiant", exact: true }).click();
   const mine = page.getByRole("region", { name: "My team" });
   const enemy = page.getByRole("region", { name: "Enemy" });
   for (const name of ["Crystal Maiden", "Warlock", "Juggernaut", "Omniknight"])
@@ -66,7 +66,7 @@ test("Watch Dota finds your side from your Steam name, and a side set by hand wi
   await page.goto("/draft");
   await page.getByRole("button", { name: "Watch Dota" }).click();
   await expect(page.getByText("Found ct'x on Dire")).toBeVisible({ timeout: 45_000 });
-  const side = page.getByRole("region", { name: "Read the Dota screen" });
+  const side = page.getByRole("group", { name: "My Side" });
   await expect(side.getByRole("button", { name: "Dire", exact: true })).toHaveAttribute("aria-pressed", "true");
   const mine = page.getByRole("region", { name: "My team" });
   for (const name of ["Lion", "Death Prophet", "Bloodseeker", "Tiny", "Lich"]) await expect(mine.getByText(name)).toBeVisible({ timeout: 15_000 });
@@ -85,7 +85,7 @@ test("Watch Dota asks whether a hero it put in My team is your pick", async ({ p
   await page.goto("/draft");
   await page.getByRole("button", { name: "Watch Dota" }).click();
   // This frame has the names blanked out, so the side is chosen by hand.
-  await page.getByRole("region", { name: "Read the Dota screen" }).getByRole("button", { name: "Radiant", exact: true }).click();
+  await page.getByRole("group", { name: "My Side" }).getByRole("button", { name: "Radiant", exact: true }).click();
   // The newest hero read into My team comes first.
   const ask = page.getByRole("group", { name: "Did you pick Omniknight?" });
   await expect(ask).toBeVisible({ timeout: 45_000 });

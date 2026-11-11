@@ -649,6 +649,108 @@ body {
   }
 
   /*
+   * Lane Board segmented control (view tabs, Plan For, the side switch): the chosen segment takes the Lane Cut.
+   * Mark it aria-pressed. `.lane-seg-sm` is the compact one; `.is-radiant` and `.is-dire` colour a side switch.
+   */
+  .lane-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.1875rem;
+    border-radius: 0.5rem;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    isolation: isolate;
+  }
+  .lane-seg > button {
+    position: relative;
+    isolation: isolate;
+    height: 2rem;
+    padding-inline: 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: color var(--dur-fast);
+  }
+  .lane-seg > button:hover,
+  .lane-seg > button[aria-pressed="true"] {
+    color: var(--fg);
+  }
+  .lane-seg > button[aria-pressed="true"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 0.375rem;
+    background: var(--hover);
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  }
+  .lane-seg-sm > button {
+    height: 1.625rem;
+    padding-inline: 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .lane-seg > button.is-radiant[aria-pressed="true"] {
+    color: var(--radiant);
+  }
+  .lane-seg > button.is-radiant[aria-pressed="true"]::before {
+    background: var(--radiant-tint);
+  }
+  .lane-seg > button.is-dire[aria-pressed="true"] {
+    color: var(--dire);
+  }
+  .lane-seg > button.is-dire[aria-pressed="true"]::before {
+    background: var(--dire-tint);
+  }
+
+  /* Position digits under a hero on a rail: the chosen one is a small Lane Cut tile, a guess is dashed. */
+  .lane-digits {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1px;
+  }
+  .lane-digit {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    height: 1.125rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--subtle);
+  }
+  .lane-digit:not(:disabled):hover {
+    color: var(--fg);
+  }
+  .lane-digit[aria-checked="true"] {
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .lane-digit[aria-checked="true"]::before,
+  .lane-digit[data-guess]::before {
+    content: "";
+    position: absolute;
+    inset: 0 1px;
+    z-index: -1;
+    border-radius: 0.125rem;
+  }
+  .lane-digit[aria-checked="true"]::before {
+    background: var(--fg);
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+  }
+  .lane-digit[data-guess] {
+    color: var(--fg);
+  }
+  .lane-digit[data-guess]::before {
+    border: 1px dashed var(--line-control);
+  }
+
+  /*
    * A page or panel message. The coloured left edge and the icon carry the meaning;
    * the text stays --fg. Pick one of the four variants.
    */
