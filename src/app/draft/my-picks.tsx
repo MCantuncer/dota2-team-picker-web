@@ -46,10 +46,10 @@ const PICK_ART: HeroArtPlacement = { width: 350, at: [0.5, 0.4] };
 const BEST_ART: HeroArtPlacement = { width: 360, at: [0.5, 0.36] };
 
 /** Where a card's lane node sits: level with the centre of its art (the padding plus half the frame). */
-const PICK_NODE = "[--node:6.25rem] sm:[--node:5.25rem]";
+export const PICK_NODE = "[--node:6.25rem] sm:[--node:5.25rem]";
 const BEST_NODE = "[--node:6.75rem] md:[--node:8rem]";
 /** The outside hero's node sits level with its fork head. */
-const OUTSIDER_NODE = "[--node:2.125rem] sm:[--node:2.375rem]";
+export const OUTSIDER_NODE = "[--node:2.125rem] sm:[--node:2.375rem]";
 
 const ROLES: Record<Position, string> = { 1: "Carries", 2: "Mids", 3: "Offlaners", 4: "Soft Supports", 5: "Hard Supports" };
 
@@ -72,14 +72,17 @@ const signed = (n: number) => `${n < 0 ? "−" : "+"}${Math.abs(n).toFixed(1)}`;
 
 /** Chips get 4px of air above and below their text. */
 const CHIP = "chip micro h-auto min-h-6 shrink-0 gap-1.5 px-2 py-1";
-/** The copper chip: only on the Best pick. */
+/** The copper chip: only on the hero to lock now (the Best pick, or the Team Plan's Pick First). */
 const BEST_CHIP = "chip chip-accent micro h-auto min-h-6 shrink-0 gap-1.5 px-2 py-1";
 
-interface Ctx {
+/** What every card on a lane shares. */
+export interface PickCtx {
   hero: PlanHeroOf;
   heroes: readonly NamedHero[];
   enemies: ReadonlySet<number>;
   position: Position;
+  /** Whose list it is, when it is not the reader's: their name goes in the reasons, titles and button labels. */
+  owner?: string;
   onPicked?: (heroId: number) => void;
   onBanned?: (heroId: number) => void;
 }
@@ -120,7 +123,7 @@ export function MyPicksLane({
   onPicked,
   onBanned,
 }: MyPicksLaneProps) {
-  const ctx: Ctx = { hero, heroes, enemies: new Set(enemies), position, onPicked, onBanned };
+  const ctx: PickCtx = { hero, heroes, enemies: new Set(enemies), position, onPicked, onBanned };
   const leader = picks[0]?.suggestion.name;
   // Cells after the Best card, as the grid fills them: the picks, then the outsider. The last one ends the lane.
   const last = picks.length - (outsider ? 0 : 1);
@@ -171,9 +174,22 @@ export function MyPicksLane({
  * The lane beside one card: its stretch of the line and its node, in the gutter left of the grid. On a phone every
  * card is a stop; from 1024px the cards go two to a row and only the first of each row is.
  */
-function LaneGutter({ cell, last, node }: { cell: number; last: number; node: ReactNode }) {
-  const startsRow = cell === 0 || (cell - 1) % 2 === 0;
-  const lastRowStart = last === 0 || (last - 1) % 2 === 0 ? last : last - 1;
+export function LaneGutter({
+  cell,
+  last,
+  node,
+  isWideFirst = true,
+}: {
+  cell: number;
+  /** The cell that ends the lane; past the last cell when the lane runs on. */
+  last: number;
+  node: ReactNode;
+  /** The first cell spans the row (the Best card), so the pairs start at cell 1. */
+  isWideFirst?: boolean;
+}) {
+  const rowStart = (c: number) => (isWideFirst ? (c === 0 || (c - 1) % 2 === 0 ? c : c - 1) : c - (c % 2));
+  const startsRow = rowStart(cell) === cell;
+  const lastRowStart = rowStart(last);
   const isLast = cell === last;
   const isLastWide = startsRow && cell === lastRowStart && !isLast;
   return (
@@ -187,7 +203,7 @@ function LaneGutter({ cell, last, node }: { cell: number; last: number; node: Re
 }
 
 /** The outside hero's node: an open ring, dashed, since the hero is not in the pool. */
-function ForkNode() {
+export function ForkNode() {
   return (
     <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
       <circle cx="7" cy="7" r="6" fill="var(--bg)" stroke="var(--lane-line)" strokeWidth="2" strokeDasharray="2.5 2" />
@@ -195,10 +211,29 @@ function ForkNode() {
   );
 }
 
-/** Up 1, New, Weak Here, Outside Pool: neutral chips with an icon; amber only for a risk. Never copper. */
-export function PickChips({ move, isWeak, outside }: { move?: string; isWeak?: boolean; outside?: { title: string } | null }) {
+/** In Team Plan, Up 1, New, Weak Here, Outside Pool: neutral chips with an icon; amber only for a risk. Never copper. */
+export function PickChips({
+  move,
+  isWeak,
+  outside,
+  isInPlan,
+  owner,
+}: {
+  move?: string;
+  isWeak?: boolean;
+  outside?: { title: string } | null;
+  /** The hero the Team Plan chose for this seat. */
+  isInPlan?: boolean;
+  owner?: string;
+}) {
   return (
     <>
+      {isInPlan && (
+        <span className={`${CHIP} text-fg`} title="The hero the Team Plan chose for this seat">
+          <LaneMark className="text-fg" />
+          In Team Plan
+        </span>
+      )}
       {move && (
         <span className={`${CHIP} text-fg`} title="Since the last pick or ban">
           {move.startsWith("Up") && (
@@ -219,7 +254,7 @@ export function PickChips({ move, isWeak, outside }: { move?: string; isWeak?: b
       {isWeak && (
         <span
           className={`${CHIP} text-warn`}
-          title="One of your heroes, but weak into this draft: a score below 0, a hard counter on the enemy team, or a matchup of −1.5 or worse"
+          title={`One of ${owner ? `${owner}'s` : "your"} heroes, but weak into this draft: a score below 0, a hard counter on the enemy team, or a matchup of −1.5 or worse`}
         >
           <Icon name="alert" />
           Weak Here
@@ -234,19 +269,23 @@ export function PickChips({ move, isWeak, outside }: { move?: string; isWeak?: b
   );
 }
 
-/** Picked and an icon Banned. Picked is copper only on the Best pick. */
-function PickActions({ s, isBest, ctx }: { s: Suggestion; isBest: boolean; ctx: Ctx }) {
-  const { onPicked, onBanned } = ctx;
+/**
+ * Picked and an icon Banned. Picked is copper only on the hero to lock now: the Best pick (full size) or the Team
+ * Plan's Pick First. In another player's list the label says whose pick it is.
+ */
+function PickActions({ s, isBest, isNow = false, ctx }: { s: Suggestion; isBest: boolean; isNow?: boolean; ctx: PickCtx }) {
+  const { onPicked, onBanned, owner } = ctx;
   if (!onPicked || !onBanned) return null;
+  const isCopper = isBest || isNow;
   return (
     <span className="flex items-center gap-2">
       <button
         type="button"
         onClick={() => onPicked(s.heroId)}
-        aria-label={`Picked ${s.name}`}
-        className={`btn ${isBest ? "btn-primary" : "btn-secondary btn-sm w-[6.25rem]"}`}
+        aria-label={`Picked ${s.name}${owner ? ` for ${owner}` : ""}`}
+        className={`btn ${isBest ? "btn-primary" : `${isNow ? "btn-primary" : "btn-secondary"} btn-sm w-[6.25rem]`}`}
       >
-        <span className={`flex ${isBest ? "" : "text-radiant"}`}>
+        <span className={`flex ${isCopper ? "" : "text-radiant"}`}>
           <Icon name="check" />
         </span>
         Picked
@@ -289,7 +328,7 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
 }
 
 /** The verdict against the list's first, number first, then the player's record note when there is one. */
-function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; leader?: string; ctx: Ctx; isQuiet?: boolean }) {
+function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; leader?: string; ctx: PickCtx; isQuiet?: boolean }) {
   const line = verdictLine(verdict, leader, ctx.heroes);
   return (
     <div className="flex flex-col gap-1">
@@ -303,8 +342,8 @@ function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; lea
 }
 
 /** Why This Hero: every reason, tag and hard counter, one line each, risks last. */
-function WhyLines({ s, ctx }: { s: Suggestion; ctx: Ctx }) {
-  const lines = reasonLines(s, ctx.heroes);
+function WhyLines({ s, ctx }: { s: Suggestion; ctx: PickCtx }) {
+  const lines = reasonLines(s, ctx.heroes, ctx.owner);
   if (!lines.length) return null;
   return (
     <div className="flex min-w-0 flex-col gap-2.5">
@@ -353,7 +392,7 @@ export function ScoreParts({ s, className = "grid gap-y-2" }: { s: Suggestion; c
 }
 
 /** The art frame of a pick card: across the card on a phone, 13rem wide beside the name from 640px. */
-function PickFrame({ id, ctx }: { id: number; ctx: Ctx }) {
+function PickFrame({ id, ctx }: { id: number; ctx: PickCtx }) {
   const { portrait } = ctx.hero(id);
   return (
     <HeroStage key={id} size={120} className="h-40 w-full shrink-0 sm:h-30 sm:w-52">
@@ -362,45 +401,61 @@ function PickFrame({ id, ctx }: { id: number; ctx: Ctx }) {
   );
 }
 
+/** The Outside Pool chip on a hero the player has played but not saved for this position. */
+function playedChip(games: number | null | undefined, owner?: string): { title: string } | null {
+  if (games == null) return null;
+  return {
+    title: owner
+      ? `${owner} played it ${games} times in six months (all positions), but it is not in their heroes for this position`
+      : `You played it ${games} times in six months (all positions), but it is not in My Heroes for this position`,
+  };
+}
+
 /**
  * A pick as an equal card: the art, the rank and name, chips, score and place; the verdict against the list's first;
  * Why This Hero; Score Parts; the actions. Content runs top down and spare space stays at the bottom. The hero from
- * outside the pool is a quieter dashed card with the engine's line at its head.
+ * outside the pool is a quieter dashed card with the engine's line at its head. The Team Plan's Pick First (`now`)
+ * is the only copper card: the ring, the chip and the filled Picked.
  */
-function PickCard({
+export function PickCard({
   entry,
   rank,
   leader,
   ctx,
   outsiderText,
+  now = null,
+  isInPlan = false,
 }: {
   entry: PickEntry;
   /** The place in the list; null for the hero from outside the pool. */
   rank: number | null;
   leader?: string;
-  ctx: Ctx;
+  ctx: PickCtx;
   outsiderText?: string;
+  /** The hero to lock now, with why for the chip's title; null for any other. */
+  now?: { title: string } | null;
+  /** The hero the Team Plan chose for this seat. */
+  isInPlan?: boolean;
 }) {
   const s = entry.suggestion;
   const nameId = rank === null ? `outsider-${s.heroId}` : `pick-${s.heroId}`;
   const split = scoreSplit(s.breakdown);
   const isOutsider = outsiderText !== undefined;
-  const played =
-    entry.playedGames != null
-      ? { title: `You played it ${entry.playedGames} times in six months (all positions), but it is not in My Heroes for this position` }
-      : null;
+  const whose = ctx.owner ? `${ctx.owner}'s` : "Your";
   return (
     <article
       aria-labelledby={nameId}
       className={`flex h-full min-w-0 flex-col gap-5 rounded-xl p-5 sm:p-6 ${
-        isOutsider ? "border border-dashed border-line-control bg-surface/50" : "bg-surface ring-1 ring-line ring-inset"
+        isOutsider
+          ? "border border-dashed border-line-control bg-surface/50"
+          : `bg-surface ring-1 ring-inset ${now ? "ring-accent/45" : "ring-line"}`
       }`}
     >
       {isOutsider && (
         <div className="flex flex-col gap-1 border-b border-line pb-5">
-          <h3 id="outsider-heading" className="flex items-center gap-2 text-sm font-semibold text-fg">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
             <LaneMark />
-            Worth a Look from Outside Your Pool
+            Worth a Look from Outside {whose} Pool
           </h3>
           <p className="text-sm leading-6 text-muted">
             <FacedText text={outsiderText} heroes={namedHeroes(outsiderText, ctx.heroes)} hero={ctx.hero} enemies={ctx.enemies} />
@@ -414,7 +469,9 @@ function PickCard({
             {rank !== null && (
               <span
                 aria-hidden
-                className="micro flex size-6 shrink-0 items-center justify-center rounded-full bg-bg font-semibold text-muted tabular-nums ring-2 ring-(--lane-line) ring-inset"
+                className={`micro flex size-6 shrink-0 items-center justify-center rounded-full font-semibold tabular-nums ${
+                  rank === 1 ? "bg-fg text-bg" : "bg-bg text-muted ring-2 ring-(--lane-line) ring-inset"
+                }`}
               >
                 {rank}
               </span>
@@ -424,10 +481,21 @@ function PickCard({
             </h3>
           </div>
           <span className="flex flex-wrap items-center gap-2 empty:hidden">
+            {now && (
+              <span className={BEST_CHIP} title={now.title}>
+                Pick First
+              </span>
+            )}
             <PickChips
               move={entry.move}
               isWeak={entry.isWeak}
-              outside={isOutsider ? { title: "Not one of your heroes for this position" } : played}
+              isInPlan={isInPlan}
+              owner={ctx.owner}
+              outside={
+                isOutsider
+                  ? { title: `Not one of ${ctx.owner ? `${ctx.owner}'s` : "your"} heroes for this position` }
+                  : playedChip(entry.playedGames, ctx.owner)
+              }
             />
           </span>
           <Score s={s} gain={entry.gain} position={ctx.position} />
@@ -454,7 +522,7 @@ function PickCard({
 
       {ctx.onPicked && ctx.onBanned && (
         <span className="flex border-t border-line pt-3">
-          <PickActions s={s} isBest={false} ctx={ctx} />
+          <PickActions s={s} isBest={false} isNow={Boolean(now)} ctx={ctx} />
         </span>
       )}
     </article>
@@ -466,16 +534,13 @@ function PickCard({
  * the gap beats the error, "Best of Your Heroes" when it is weak here), name, seat, score and place, the verdict and
  * the copper Picked; every reason; the score and its parts. The engine's "Reacting to" line at the foot.
  */
-function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string; ctx: Ctx }) {
+function BestCard({ entry, reacting, ctx }: { entry: PickEntry; reacting: string; ctx: PickCtx }) {
   const s = entry.suggestion;
   const { verdict } = entry;
   const label = entry.isWeak ? "Best of Your Heroes" : verdict?.kind === "clear" ? "Clear Best Pick" : "Best Pick Right Now";
   const split = scoreSplit(s.breakdown);
   const { portrait } = ctx.hero(s.heroId);
-  const played =
-    entry.playedGames != null
-      ? { title: `You played it ${entry.playedGames} times in six months (all positions), but it is not in My Heroes for this position` }
-      : null;
+  const played = playedChip(entry.playedGames);
   return (
     <article aria-labelledby="best-pick" className="flex h-full flex-col rounded-xl bg-surface ring-1 ring-accent/45 ring-inset">
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 p-5 md:grid-cols-[16rem_minmax(0,1fr)] md:p-6 xl:grid-cols-[16rem_13.5rem_minmax(0,1fr)_16rem]">

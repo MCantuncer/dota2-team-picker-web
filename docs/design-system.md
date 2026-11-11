@@ -193,6 +193,20 @@ My Picks on /draft (`app/draft/my-picks.tsx`) is the same mid lane at full width
 - The hero from **outside the pool** takes the next free cell as a dashed card; the **Score Ladder** (every listed
   score with the band the data could be off by) takes the last.
 
+## Per Player
+
+Per Player on /draft (`app/draft/per-player-view.tsx`) is the same mid lane at full width, one section per player
+who still has to pick:
+
+- Each section starts at its **seat**, a stop on the lane with the position icon: Pos and role, the player's name or
+  the green You pill, how many of their heroes are listed (Any Hero when the list is every hero), and the Team Plan's
+  hero for the seat as a 20px face.
+- The player's heroes are the **My Picks cards**, two to a row from 1024px, one per row below, one lane stop per row
+  (filled for the player's first, open after). Reasons, tags and titles use the player's name.
+- **In Team Plan** is a neutral chip with the lane mark on the hero the plan chose for the seat. The plan's **Pick
+  First** is the only copper card: the ring, the node, the chip and the filled Picked.
+- The proven **outsider** takes the next free cell as the dashed card, under that player's section.
+
 ## Hero Art Rules
 
 - **One face point.** Each hero's face centre on its render is measured once, in a 720 wide space, in
@@ -212,9 +226,6 @@ My Picks on /draft (`app/draft/my-picks.tsx`) is the same mid lane at full width
   with a `ban` slash.
 - **Icons**: Lucide, outline, 16px in controls, 20px in large buttons and empty states, `currentColor`. An icon takes
   a signal colour only with its meaning (warning triangle in `warn`). No emoji.
-- **Why rows** (Per Player cards): one raised row per reason. It leads with the 40x22 portraits of the heroes it names
-  (up to three, overlapping, then a +N badge), or a 40x22 `hover` tile with the score part's icon in `radiant` (`warn` for Watch Out), then the part
-  in `.micro`, the line, and its points in `.num` on the right.
 - **Finding icons** (`FindingIcon`, Your Games): one icon per kind of strength or problem, the same everywhere: skull
   for deaths, coins for farm, swords for laning, flame for damage, heart for healing, castle for towers. On cards a
   40px `radiant-tint` or `dire-tint` tile with the 20px icon in `radiant` or `dire`; on list rows the bare 16px icon in

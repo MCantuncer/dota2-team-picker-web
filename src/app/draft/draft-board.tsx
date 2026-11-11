@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Icon } from "@/components/icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
@@ -46,7 +45,7 @@ import { DraftCaptainBar } from "./draft-captain-bar";
 import { EmptyPoolNotice } from "./empty-pool-notice";
 import { SuperTeamPanel } from "./super-team";
 import { TeamPlanLane } from "./team-plan";
-import { PerPlayerView } from "./per-player-view";
+import { PerPlayerLane } from "./per-player-view";
 import { PositionPicker } from "./position-picker";
 import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
@@ -480,10 +479,11 @@ export function DraftBoard({
   const planSlots = pool ? toPlanSlots(planMembers, pool, planAllies, planPlayers) : null;
   // Positions whose player has heroes saved for it, so Team Plan labels only real outsiders.
   const pooled = new Set((planSlots ?? []).flatMap((s) => (s.favorites?.length ? [s.position] : [])));
-  // The team plan (WCST) for the whole party, planned only while it is on screen.
-  // Watchers always see the planner's Team Plan; the planner switches between it and their own picks.
-  const teamPlan =
-    planSlots && (view === "team" || !isPlanner)
+  // The team plan (WCST) for the whole party, planned only while it or Per Player is on screen (Per Player marks
+  // the plan's hero per seat and its Pick First). Watchers always see the planner's Team Plan; the planner switches
+  // between it, Per Player and their own picks.
+  const plan =
+    planSlots && (view === "team" || view === "players" || !isPlanner)
       ? planTeam(engine, {
           slots: planSlots,
           enemies,
@@ -492,6 +492,7 @@ export function DraftBoard({
           rankBracket: bracket,
         })
       : null;
+  const teamPlan = view === "team" || !isPlanner ? plan : null;
   // Per Player: what each member who still has to pick should take, one hero per player.
   const playerColumns =
     planSlots && isPlanner && view === "players"
@@ -650,7 +651,7 @@ export function DraftBoard({
         id={isPlanner ? "picks-title" : "plan-title"}
         ref={isPlanner ? picksTitleRef : undefined}
         tabIndex={-1}
-        className={hasTabs && (teamPlan || (!playerColumns && showsPicks)) ? "sr-only" : "section-title"}
+        className={hasTabs && (teamPlan || playerColumns || showsPicks) ? "sr-only" : "section-title"}
       >
         {teamPlan ? "Team Plan" : playerColumns ? "Per Player" : picksHeading}
       </h2>
@@ -1025,22 +1026,26 @@ export function DraftBoard({
               <SuperTeamPanel plan={teamPlan} hero={planHero} enemies={enemies} />
             </aside>
           </>
-        ) : playerColumns || !isPlanner ? (
+        ) : playerColumns ? (
+          <PerPlayerLane
+            head={viewHead}
+            columns={playerColumns}
+            names={planNames}
+            myId={party?.userId ?? SOLO_ME}
+            plan={plan}
+            draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
+            hero={planHero}
+            heroes={engine.heroes}
+            enemies={enemies}
+            gamesOf={(playerId, heroId) => planPlayers[playerId]?.personal[heroId]?.games ?? null}
+            gainOf={(heroId) => pickGain(engine, heroId, allyIds, enemies, bracket)}
+            onPicked={(heroId, position) => placeAlly(heroId, position)}
+            onBanned={(heroId) => act({ kind: "ban", heroId })}
+          />
+        ) : !isPlanner ? (
           <>
             {viewHead}
-            {playerColumns ? (
-              <PerPlayerView
-                columns={playerColumns}
-                names={planNames}
-                draftKey={JSON.stringify([allyIds, enemies, enemyPositions, bans])}
-                heroes={engine.heroes}
-                portrait={(id, name, size = "strip") => <Portrait hero={{ id, name } as HeroInfo} src={portraits[id]} size={size} />}
-                onPicked={(heroId, position) => placeAlly(heroId, position)}
-                onBanned={(heroId) => act({ kind: "ban", heroId })}
-              />
-            ) : (
-              <p className="text-sm text-muted">Loading the Team Plan…</p>
-            )}
+            <p className="text-sm text-muted">Loading the Team Plan…</p>
           </>
         ) : (
           myPart
@@ -1161,19 +1166,4 @@ export function DidYouPick({
       </span>
     </div>
   );
-}
-
-const SIZES = {
-  chip: { w: 40, h: 22, className: "h-5.5 w-10" },
-  strip: { w: 64, h: 36, className: "h-9 w-16" },
-  slot: { w: 96, h: 54, className: "h-13.5 w-24" },
-  card: { w: 112, h: 63, className: "h-15.75 w-28" },
-};
-
-/** A hero's 16:9 portrait, or a slate tile with the name when the art is missing. */
-function Portrait({ hero, src, size }: { hero: HeroInfo; src?: string; size: keyof typeof SIZES }) {
-  const s = SIZES[size];
-  const look = `${s.className} shrink-0 rounded-xs object-cover`;
-  if (!src) return <span className={`${look} micro flex items-center justify-center bg-raised p-1 text-center text-muted`}>{hero.name}</span>;
-  return <Image src={src} alt="" width={s.w} height={s.h} className={look} />;
 }
