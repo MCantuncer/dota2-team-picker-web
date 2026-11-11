@@ -953,7 +953,8 @@ export function DraftBoard({
           <p id="draft-keys" className="text-xs text-subtle">
             Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
             (<span className="text-muted">pa sf</span>). Add a digit for a hero&apos;s position (<span className="text-muted">cm5</span>, <span className="text-muted">sf2</span>).
-            <Kbd>Backspace</Kbd> in an empty box takes the last hero back out. Press <Kbd>PrtScn</Kbd> in Dota, then{" "}
+            <Kbd>Backspace</Kbd> in an empty box takes the last hero back out. In an empty box, <Kbd>1</Kbd> to <Kbd>8</Kbd> open a
+            pick and <Kbd>Enter</Kbd> then marks it picked. Press <Kbd>PrtScn</Kbd> in Dota, then{" "}
             <Kbd>Ctrl</Kbd>+<Kbd>V</Kbd> here to fill both teams and the bans.
             {party &&
               (captainId
