@@ -35,6 +35,23 @@ test("the draft screen suggests heroes as both teams fill in", async ({ page }) 
   await expect(picks).toHaveCount(8);
 });
 
+test("a number key opens a pick and Enter then marks it picked", async ({ page }) => {
+  await page.goto("/draft");
+  const enemy = page.getByLabel("Enemy pick");
+  await enemy.fill("pudge");
+  await enemy.press("Enter");
+  const picks = page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li");
+  await expect(picks).toHaveCount(8);
+  const second = await picks.nth(1).locator("[data-hero-name]").innerText();
+
+  // The Enemy box is empty again, so a digit is a pick's number and not part of a hero's name.
+  await enemy.press("2");
+  await expect(enemy).toHaveValue("");
+  await expect(page.locator("#pick-detail")).toHaveAccessibleName(second);
+  await enemy.press("Enter");
+  await expect(page.getByRole("region", { name: "My team" }).getByText(second)).toBeVisible();
+});
+
 test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dota", async ({ page }) => {
   await page.goto("/draft");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeVisible();
