@@ -178,7 +178,20 @@ const plan: TeamPlan = {
     { kind: "need", lead: "6 of 7", text: "team needs covered, lacks a save" },
   ],
   needs,
-  pickFirst: { position: 2, heroId: 74, pickRate: 0.18 },
+  pickFirst: {
+    position: 2,
+    heroId: 74,
+    pickRate: 0.18,
+    takenChance: 0.06,
+    gap: 8.2,
+    exposed: 3.4,
+    counter: { heroId: 129, edge: -3.4 },
+    reason: {
+      kind: "meta",
+      lead: "6%",
+      text: "chance the enemy takes it; losing it costs the plan 8.2, showing it now lets Mars answer it for 3.4",
+    },
+  },
   another,
 };
 
@@ -209,7 +222,8 @@ describe("TeamPlanLane", () => {
     expect(card("Invoker").queryByText("Me")).toBeNull();
     // Every reason, the number bold first, a real minus sign, and a face for the hero it names.
     const why = within(screen.getByRole("article", { name: "Invoker" }).querySelector("ul")!);
-    expect(why.getAllByRole("listitem")).toHaveLength(3);
+    // The Pick First line, then the three reasons.
+    expect(why.getAllByRole("listitem")).toHaveLength(4);
     expect(why.getByText("−1.5")).toHaveClass("font-semibold");
     expect(why.getByText("Dazzle")).toBeVisible();
     expect(why.getByTitle("Shadow Fiend")).toHaveClass("lane-cut-enemy");
@@ -224,6 +238,16 @@ describe("TeamPlanLane", () => {
     expect(container.querySelectorAll(".lane-node-now")).toHaveLength(1);
     expect(container.querySelectorAll(".lane-node-done")).toHaveLength(2);
     expect(container.querySelectorAll(".lane-node-open")).toHaveLength(2);
+  });
+
+  it("says why to pick first on that card, with the counter's face", () => {
+    renderLane();
+    const why = screen.getByRole("article", { name: "Invoker" }).querySelector("ul")!;
+    const first = within(within(why).getAllByRole("listitem")[0]!);
+    expect(first.getByText("6%")).toBeVisible();
+    expect(first.getByText(/chance the enemy takes it; losing it costs the plan 8\.2, showing it now lets/)).toBeVisible();
+    expect(first.getByTitle("Mars")).toBeVisible();
+    expect(card("Mars").queryByText(/chance the enemy takes it/)).toBeNull();
   });
 
   it("labels a hero outside a player's pool, any hero for a seat without one, and an open seat", () => {
