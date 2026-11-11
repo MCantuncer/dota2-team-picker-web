@@ -18,13 +18,13 @@ import {
   type NamedHero,
   type PickLineKind,
 } from "@/lib/pick-lines";
-import { Face, FacedText, HeadMark, ReasonLine, Stop, type PlanHeroOf } from "./team-plan";
+import { Face, FacedText, ReasonLine, type PlanHeroOf } from "./team-plan";
 
 /*
- * My Picks as the Lane Board's mid lane, full width: the lane starts at the mark beside the view tabs, the Best pick
- * is the copper stop across the lane, the other picks follow as equal cards two to a row (one on a phone), with the
- * hero from outside the pool and the Score Ladder in the next free cells. The player's heroes that score below 0 share
- * one Not This Game box at the end instead of a card each.
+ * The cards a suggested hero is shown on. `BestCard` is the one open card under the Pick Strip (`pick-strip.tsx`):
+ * the Best pick at the start, any other listed hero or the hero from outside the pool after a click on its tile.
+ * `PickCard` is the smaller card of the Per Player lists (`per-player-view.tsx`), on the lane with `LaneGutter`.
+ * `ScoreLadder` puts every listed hero on one axis under the strip.
  */
 
 /** A suggested hero with what the board knows about it. */
@@ -51,7 +51,6 @@ const BEST_ART: HeroArtPlacement = { width: 360, at: [0.5, 0.36] };
 
 /** Where a card's lane node sits: level with the centre of its art (the padding plus half the frame). */
 export const PICK_NODE = "[--node:6.25rem] sm:[--node:5.25rem]";
-const BEST_NODE = "[--node:6.75rem] md:[--node:8rem]";
 /** The outside hero's node sits level with its fork head. */
 export const OUTSIDER_NODE = "[--node:2.125rem] sm:[--node:2.375rem]";
 
@@ -89,93 +88,6 @@ export interface PickCtx {
   owner?: string;
   onPicked?: (heroId: number) => void;
   onBanned?: (heroId: number) => void;
-}
-
-interface MyPicksLaneProps {
-  /** The head of the lane, beside its mark: the view tabs, or the picks title. */
-  head: ReactNode;
-  /** Shown under the head, before the picks: Did You Pick, the empty pool notice. */
-  notices?: ReactNode[];
-  /** The list, best first. */
-  picks: PickEntry[];
-  /** The hero from outside the pool that beats the list, with the engine's line on it. */
-  outsider?: { entry: PickEntry; text: string } | null;
-  /** The engine's "Reacting to ..." line, the Best card's footer. */
-  reacting: string;
-  position: Position;
-  hero: PlanHeroOf;
-  /** Every hero, to find the heroes a reason names. */
-  heroes: readonly NamedHero[];
-  /** Enemy picks, whose faces get the Dire edge. */
-  enemies: readonly number[];
-  /** Left out when the player can't change the draft. */
-  onPicked?: (heroId: number) => void;
-  onBanned?: (heroId: number) => void;
-}
-
-/** My Picks: the lane's head, any notices, then the picks as cards on the lane. */
-export function MyPicksLane({
-  head,
-  notices = [],
-  picks,
-  outsider = null,
-  reacting,
-  position,
-  hero,
-  heroes,
-  enemies,
-  onPicked,
-  onBanned,
-}: MyPicksLaneProps) {
-  const ctx: PickCtx = { hero, heroes, enemies: new Set(enemies), position, onPicked, onBanned };
-  const leader = picks[0]?.suggestion.name;
-  // The first always gets a card, even below 0; any other hero below 0 goes to Not This Game.
-  const cards = picks.filter((p, i) => i === 0 || !p.isWeak);
-  const out = picks.filter((p, i) => i > 0 && p.isWeak);
-  // Cells after the Best card, as the grid fills them: the picks, then the outsider. The last one ends the lane.
-  const last = cards.length - (outsider ? 0 : 1);
-  return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <Stop isFirst node={<HeadMark />} nodeClass="top-[1.1875rem]">
-        <div className="flex min-h-[2.375rem] min-w-0 items-center">{head}</div>
-      </Stop>
-      {notices.length > 0 && (
-        <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2 md:grid-cols-[1.75rem_minmax(0,1fr)] md:gap-x-3">
-          <span className="relative" aria-hidden>
-            <span className="lane-spine -top-4 -bottom-4" />
-          </span>
-          <div className="flex min-w-0 flex-col gap-4">{notices}</div>
-        </div>
-      )}
-      <div className="grid gap-4 pl-7 md:pl-10 lg:grid-cols-2">
-        <ol aria-label="Suggested heroes" className="contents">
-          {cards.map((entry, i) => (
-            <li
-              key={entry.suggestion.heroId}
-              className={`relative min-w-0 ${i === 0 ? `lg:col-span-2 ${BEST_NODE}` : PICK_NODE}`}
-            >
-              <LaneGutter cell={i} last={last} node={<span className={`lane-node ${i === 0 ? "lane-node-now" : "lane-node-open"}`} />} />
-              {i === 0 ? (
-                <BestCard entry={entry} reacting={reacting} ctx={ctx} />
-              ) : (
-                <PickCard entry={entry} rank={i + 1} leader={leader} ctx={ctx} />
-              )}
-            </li>
-          ))}
-        </ol>
-        {outsider && (
-          <ol aria-label="Hero from outside your pool" className="contents">
-            <li className={`relative min-w-0 ${OUTSIDER_NODE}`}>
-              <LaneGutter cell={cards.length} last={last} node={<ForkNode />} />
-              <PickCard entry={outsider.entry} rank={null} ctx={ctx} outsiderText={outsider.text} />
-            </li>
-          </ol>
-        )}
-        {picks.length > 1 && <ScoreLadder list={picks.map((p) => p.suggestion)} hero={hero} />}
-        {out.length > 0 && <NotThisGame entries={out} ctx={ctx} />}
-      </div>
-    </div>
-  );
 }
 
 /**
@@ -713,66 +625,6 @@ export function BestCard({
       </div>
       <p className="micro border-t border-line px-5 py-4 text-subtle md:px-6">{reacting}</p>
     </article>
-  );
-}
-
-/**
- * The player's heroes that score below 0 in this draft, in one quiet dashed box across the lane, so a hero that does
- * not fit never takes a full card. Each keeps its face, name and score, and the score part that sinks it (with the
- * enemy, when that part is the matchups).
- */
-export function NotThisGame({ entries, ctx }: { entries: PickEntry[]; ctx: PickCtx }) {
-  const whose = ctx.owner ? `${ctx.owner}'s` : "Your";
-  return (
-    <section
-      aria-labelledby="not-this-game"
-      className="flex min-w-0 flex-col gap-4 rounded-xl border border-dashed border-line-control p-5 sm:p-6 lg:col-span-2"
-    >
-      <div className="flex flex-col gap-1">
-        <h3 id="not-this-game" className="flex items-center gap-2 text-base font-semibold text-fg">
-          <span className="flex text-warn">
-            <Icon name="alert" />
-          </span>
-          Not This Game
-        </h3>
-        <p className="micro text-subtle">{whose} heroes that score below 0 in this draft.</p>
-      </div>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-x-6 gap-y-4">
-        {entries.map((entry) => {
-          const s = entry.suggestion;
-          const worst = scoreParts(s.breakdown)
-            .filter((p) => p.value < 0)
-            .sort((a, b) => a.value - b.value)[0];
-          const { risk } = entry;
-          return (
-            <li key={s.heroId} className="flex min-w-0 items-start gap-3">
-              <Face id={s.heroId} hero={ctx.hero} size={40} />
-              <span className="flex min-w-0 flex-col gap-1">
-                <span className="flex flex-wrap items-baseline gap-x-2">
-                  <span data-hero-name className="text-sm leading-5 font-semibold break-words text-fg">
-                    {s.name}
-                  </span>
-                  <span className="num text-dire">{signed(s.score)}</span>
-                </span>
-                {worst && (
-                  <span className="micro flex flex-wrap items-center gap-x-2 gap-y-1 text-muted">
-                    <span>
-                      {worst.name} <span className="font-semibold text-dire tabular-nums">{signed(worst.value)}</span>
-                    </span>
-                    {worst.key === "counter" && risk && (
-                      <span className="flex items-center gap-2">
-                        <Face id={risk.heroId} hero={ctx.hero} isEnemy />
-                        <span className="font-medium text-fg">{ctx.hero(risk.heroId).name}</span>
-                      </span>
-                    )}
-                  </span>
-                )}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }
 

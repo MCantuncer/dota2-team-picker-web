@@ -175,6 +175,30 @@ describe("PickStrip", () => {
     expect(screen.getByRole("article", { name: "Invoker" })).toHaveTextContent("Clear Best of Your Heroes");
   });
 
+  it("drops Clear from the open card's label when the gap is within the error", () => {
+    const close: Verdict = { heroId: 74, kind: "best", text: "0.4 points ahead of Ember Spirit, the next best.", note: null };
+    const { unmount } = strip({ picks: [{ ...picks[0]!, verdict: close }, picks[1]!] });
+    expect(screen.getByRole("article", { name: "Invoker" })).toHaveTextContent("Best Pick Right Now");
+    unmount();
+    const third = { ...picks[0]!, verdict: close, suggestion: suggestion(74, 9.7, { place: { rank: 3, of: 49 } }) };
+    strip({ picks: [third, picks[1]!] });
+    expect(screen.getByRole("article", { name: "Invoker" })).toHaveTextContent("Best of Your Heroes");
+    expect(screen.getByRole("article", { name: "Invoker" })).not.toHaveTextContent("Clear");
+  });
+
+  it("names the risk on the open card: the worst matchup, or a hard counter on the enemy team", async () => {
+    const { unmount } = strip();
+    await userEvent.click(within(tile("Puck")).getByRole("button", { name: /^Puck,/ }));
+    const puck = screen.getByRole("article", { name: "Puck" });
+    expect(within(puck).queryByText("Weak Here")).toBeNull();
+    expect(within(puck).getByTitle("The worst matchup in this draft: −2.1 points against Shadow Fiend")).toHaveTextContent("RiskShadow Fiend");
+    unmount();
+    strip({ picks: [picks[0]!, { ...picks[1]!, risk: { heroId: 14, points: -6.7, isHardCounter: true } }] });
+    await userEvent.click(within(tile("Ember Spirit")).getByRole("button", { name: /^Ember Spirit,/ }));
+    const ember = screen.getByRole("article", { name: "Ember Spirit" });
+    expect(within(ember).getByTitle("Pudge is a hard counter: −6.7 points against it")).toHaveTextContent("RiskPudge");
+  });
+
   it("marks one bad matchup on a good pick as a risk with the enemy, and a played hero as Outside Pool", () => {
     strip();
     const puck = tile("Puck");
