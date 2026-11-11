@@ -172,8 +172,8 @@ test("the party leader can plan the whole team", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
 
   await page.goto("/draft");
-  await page.getByRole("button", { name: "Team plan" }).click();
-  const plan = page.getByRole("list", { name: "Team plan" }).locator(":scope > li");
+  await page.getByRole("button", { name: "Team Plan" }).click();
+  const plan = page.getByRole("list", { name: "Team Plan" }).locator(":scope > li");
   await expect(plan).toHaveCount(5);
   await expectAccessible(page);
 
@@ -183,6 +183,9 @@ test("the party leader can plan the whole team", async ({ page }) => {
   await first.getByRole("button", { name: "Picked" }).click();
   await expect(page.getByRole("region", { name: "My team" }).getByText(hero)).toBeVisible();
   await expect(plan.first().getByText("Picked", { exact: true })).toBeVisible();
+  // Undo on the card takes the hero back out of the draft.
+  await plan.first().getByRole("button", { name: `Undo ${hero}` }).click();
+  await expect(plan.first().getByRole("button", { name: "Picked" })).toBeVisible();
 });
 
 test("a party draft saves what each player was shown and ends with the after-game card", async ({ page }) => {

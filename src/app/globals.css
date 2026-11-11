@@ -47,6 +47,8 @@
 
   /* Lane Cut frames: the lit edge of a hero frame, and the stage light behind a hero render. */
   --frame-edge: rgb(255 255 255 / 0.09);
+  /* The Team Plan's mid lane and its open nodes. */
+  --lane-line: color-mix(in srgb, var(--fg) 55%, var(--bg));
   --stage: radial-gradient(85% 90% at 55% 25%, var(--hover-strong) 0%, var(--raised) 50%, var(--surface) 100%);
 
   /* Solid fill for the commit step of an action that can't be undone. */
@@ -748,6 +750,40 @@ body {
   }
   .lane-digit[data-guess]::before {
     border: 1px dashed var(--line-control);
+  }
+
+  /*
+   * The Team Plan's mid lane: one bright line (.lane-spine) through the five position cards, with a node per card.
+   * Open is a ring, picked is filled, and the copper dot (the logo's) marks only the hero to pick first.
+   */
+  .lane-spine {
+    position: absolute;
+    left: 50%;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--lane-line);
+  }
+  .lane-node {
+    position: relative;
+    z-index: 1;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+  }
+  .lane-node-open {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 2px var(--lane-line);
+  }
+  .lane-node-done {
+    background: var(--fg);
+  }
+  .lane-node-now {
+    width: 1rem;
+    height: 1rem;
+    background: var(--accent);
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--accent) 20%, transparent),
+      0 0 0 3px var(--surface);
   }
 
   /*

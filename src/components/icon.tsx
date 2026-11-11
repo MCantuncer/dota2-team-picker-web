@@ -6,6 +6,10 @@
  */
 const PATHS = {
   check: <path d="M20 6 9 17l-5-5" />,
+  /** A known spell combo between two heroes. */
+  zap: (
+    <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+  ),
   /** A filled play mark, like the game's own Play button: "start a draft". */
   play: <path d="M7 4.5v15l12-7.5z" fill="currentColor" />,
   ban: (
