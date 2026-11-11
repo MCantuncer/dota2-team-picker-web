@@ -30,8 +30,8 @@ import {
   reactingTo,
   toSaved,
   useRankMoves,
+  riskHere,
   weakHere,
-  worstMatchup,
 } from "@/lib/pick-explain";
 import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
@@ -279,7 +279,7 @@ export function DraftBoard({
   const poolIds = new Set(favorites);
   const picks = ownHeroes(ranked, poolIds, {
     played: engine ? playedHeroes(player.personal, (id) => engine.fit(id), myPosition, poolIds) : undefined,
-    weak: (s) => weakHere(s, engine ? worstMatchup(engine, s.heroId, enemies, myPosition, rank ?? undefined, enemyPositions) : 0),
+    weak: weakHere,
   });
   const { list: suggestions, weak, played, fromAll } = picks;
   // Each listed hero against the first: is it a clear best pick, and why is every other one behind it.
@@ -756,13 +756,18 @@ export function DraftBoard({
           suggestion: s,
           move: moves.get(s.heroId),
           isWeak: weak.has(s.heroId),
+          risk: riskHere(engine, s, enemies, myPosition, bracket, enemyPositions),
           verdict: verdictOf.get(s.heroId),
           playedGames: played.has(s.heroId) ? (player.personal[s.heroId]?.games ?? null) : null,
           gain: pickGain(engine, s.heroId, allyIds, enemies, bracket),
         }))}
         outsider={
           outsider && {
-            entry: { suggestion: outsider.pick, gain: pickGain(engine, outsider.pick.heroId, allyIds, enemies, bracket) },
+            entry: {
+              suggestion: outsider.pick,
+              risk: riskHere(engine, outsider.pick, enemies, myPosition, bracket, enemyPositions),
+              gain: pickGain(engine, outsider.pick.heroId, allyIds, enemies, bracket),
+            },
             text: outsiderText(outsider),
           }
         }

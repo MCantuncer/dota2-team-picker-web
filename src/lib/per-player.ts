@@ -1,7 +1,7 @@
 import type { PlanSlot } from "@/lib/engine/plan";
 import type { Engine } from "@/lib/engine/score";
 import type { EnemyPositions, GamesWins, Position, RankBracket, Suggestion } from "@/lib/engine/types";
-import { type Outsider, ownHeroes, playedHeroes, provenOutsider, weakHere, worstMatchup } from "@/lib/pick-explain";
+import { type Outsider, ownHeroes, type PickRisk, playedHeroes, provenOutsider, riskHere, weakHere } from "@/lib/pick-explain";
 
 /** Heroes shown per player: their own heroes for the position and the ones they have played, or the best of every hero without any. */
 const COLUMN_MAX = 6;
@@ -13,6 +13,8 @@ export interface PlayerColumn {
   suggestions: Suggestion[];
   /** A listed hero that is weak in this draft. */
   weak: Set<number>;
+  /** The enemy each listed hero does worst against, when one is bad enough to name. */
+  risks: Map<number, PickRisk>;
   /** Listed heroes from outside the player's pool that they have played. */
   played: Set<number>;
   /**
@@ -88,10 +90,15 @@ export function perPlayerColumns(
     const picks = ownHeroes(own, pool, {
       max: COLUMN_MAX,
       played: playeds[col],
-      weak: (x) => weakHere(x, worstMatchup(engine, x.heroId, enemies, s.position, rankBracket, enemyPositions)),
+      weak: weakHere,
     });
+    const risks = new Map<number, PickRisk>();
+    for (const x of picks.list) {
+      const risk = riskHere(engine, x, enemies, s.position, rankBracket, enemyPositions);
+      if (risk) risks.set(x.heroId, risk);
+    }
     // From this column's own heroes, so no other column lists it or shows it as its outsider.
     const outsider = provenOutsider(own, pool, picks);
-    return { playerId: s.playerId, position: s.position, suggestions: picks.list, weak: picks.weak, played: picks.played, fromAll: picks.fromAll, outsider };
+    return { playerId: s.playerId, position: s.position, suggestions: picks.list, weak: picks.weak, risks, played: picks.played, fromAll: picks.fromAll, outsider };
   });
 }

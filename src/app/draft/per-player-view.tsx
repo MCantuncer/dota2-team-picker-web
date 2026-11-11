@@ -248,6 +248,7 @@ function PlayerSection({
                   suggestion: s,
                   move: moves.get(s.heroId),
                   isWeak: c.weak.has(s.heroId),
+                  risk: c.risks.get(s.heroId) ?? null,
                   verdict: verdictOf.get(s.heroId),
                   playedGames: c.played.has(s.heroId) ? (gamesOf?.(c.playerId, s.heroId) ?? null) : null,
                   gain: gainOf?.(s.heroId) ?? null,
