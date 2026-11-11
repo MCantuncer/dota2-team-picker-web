@@ -4,12 +4,21 @@ const HERO_ART = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_
 
 /**
  * Layout for the Sign In page: our own abstract lane map on the left (above the form on phones and tablets), the
- * form on the right. No card around the form; the page itself is the surface.
+ * form on the right. No card around the form; the page itself is the surface. `formFirst` leaves the map out on
+ * phones and tablets, for a page whose one button must show without scrolling.
  */
-export function AuthCard({ title, children }: { title: string; children: React.ReactNode }) {
+export function AuthCard({
+  title,
+  formFirst = false,
+  children,
+}: {
+  title: string;
+  formFirst?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <main className="page grid flex-1 content-center items-center gap-16 py-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-24 lg:py-12">
-      <LaneMap />
+      <LaneMap className={formFirst ? "max-lg:hidden" : ""} />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 lg:mx-0">
         <h1 className="page-title">{title}</h1>
         {children}
@@ -19,9 +28,9 @@ export function AuthCard({ title, children }: { title: string; children: React.R
 }
 
 /** Puck against Pudge in mid on a plain map: two bases, three lanes, the river. Decoration only. */
-function LaneMap() {
+function LaneMap({ className }: { className: string }) {
   return (
-    <figure aria-hidden className="relative mx-auto aspect-square w-full max-w-md lg:max-w-[35rem]">
+    <figure aria-hidden className={`relative mx-auto aspect-square w-full max-w-md lg:max-w-[35rem] ${className}`}>
       <svg viewBox="0 0 560 560" className="h-full w-full">
         <rect x="0.5" y="0.5" width="559" height="559" rx="2" className="fill-surface stroke-line" />
         <path d="M0 240 C120 250 200 300 280 280 C360 260 440 310 560 320" fill="none" className="stroke-raised" strokeWidth="26" />
