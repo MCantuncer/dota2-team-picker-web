@@ -139,7 +139,11 @@ export function TeamSeats({
                 >
                   {art?.image && <HeroFace portrait={art.image} name={art.name} size={32} />}
                   <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="micro flex items-center gap-1.5 text-subtle" title={POSITION_NAMES[position]}>
+                    {/* Muted, not subtle, on the open seat's copper wash so the label keeps 4.5:1 contrast. */}
+                    <span
+                      className={`micro flex items-center gap-1.5 ${adding === position ? "text-muted" : "text-subtle"}`}
+                      title={POSITION_NAMES[position]}
+                    >
                       <PositionIcon position={position} size={12} />
                       Pos {position}
                     </span>

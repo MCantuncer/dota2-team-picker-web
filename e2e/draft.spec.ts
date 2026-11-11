@@ -46,8 +46,12 @@ test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dot
   await expect(teams.first()).toHaveAttribute("aria-label", "Enemy");
   await expect(page.getByRole("heading", { name: /^Enemy .*Radiant$/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^My Team .*Dire$/ })).toBeVisible();
-  // Tab follows the screen: from the Enemy box to the My Team box.
+  // Tab follows the screen: from the Enemy box to the My Team rail, whose header holds the side switch, then its box.
   await page.getByLabel("Enemy pick, e.g. sf2").focus();
+  await page.keyboard.press("Tab");
+  await expect(side.getByRole("button", { name: "Radiant", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(side.getByRole("button", { name: "Dire", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeFocused();
   await expectAccessible(page);
