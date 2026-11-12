@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { HeroArt, HeroStage, LaneMark, type HeroArtPlacement } from "@/components/hero-frame";
 import { Icon, type IconName } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
@@ -18,7 +18,9 @@ import {
   type NamedHero,
   type PickLineKind,
 } from "@/lib/pick-lines";
-import { Face, FacedText, ReasonLine, type PlanHeroOf } from "./team-plan";
+import { itemOfLine, partOfLine } from "@/lib/why-details";
+import { Face, FacedText, minus, ReasonLine, type PlanHeroOf } from "./team-plan";
+import { WhyOpen, type WhyTarget } from "./why-details";
 
 /*
  * The cards a suggested hero is shown on. `BestCard` is the one open card under the Pick Strip (`pick-strip.tsx`):
@@ -304,52 +306,201 @@ function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; lea
   );
 }
 
-/** Why This Hero: every reason, tag and hard counter, one line each, risks last. */
-function WhyLines({ s, ctx }: { s: Suggestion; ctx: PickCtx }) {
+/** The line or Score Parts row open on a card, and what it explains. */
+export interface OpenWhy {
+  from: string;
+  target: WhyTarget;
+}
+
+/** Opens one line or row at a time: the same one again closes it. */
+interface WhyControl {
+  open: OpenWhy | null;
+  onOpen: (next: OpenWhy | null) => void;
+}
+
+/**
+ * A line or Score Parts row that opens its why right under itself. Closed, it is a row button with a chevron; open,
+ * the row and its numbers share one raised box, so the answer is plainly the row's own.
+ */
+function OpenRow({
+  id,
+  isOpen,
+  isWarn = false,
+  onToggle,
+  label,
+  row,
+  rowClass,
+  className = "",
+  children,
+}: {
+  id: string;
+  isOpen: boolean;
+  isWarn?: boolean;
+  onToggle: () => void;
+  label?: string;
+  row: ReactNode;
+  rowClass: string;
+  /** For the row's box, such as a bleed past the column so its padding lines the text up. */
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className={`flex min-w-0 flex-col rounded-lg transition-colors ${className} ${isOpen ? "bg-raised ring-1 ring-line-control ring-inset" : ""}`}>
+      <button
+        id={id}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? `${id}-why` : undefined}
+        aria-label={label}
+        onClick={onToggle}
+        className={`grid w-full items-start gap-2.5 rounded-lg text-left transition-colors ${rowClass} ${
+          isOpen ? "" : isWarn ? "bg-warn-tint hover:bg-hover" : "hover:bg-hover"
+        }`}
+      >
+        {row}
+        <span className={`flex h-6 items-center transition-transform ${isOpen ? "rotate-180 text-fg" : "text-subtle"}`} aria-hidden>
+          <Icon name="chevronDown" />
+        </span>
+      </button>
+      {isOpen && (
+        <div id={`${id}-why`} className="mx-2.5 mb-3 border-t border-line-strong px-0 pt-4 pb-1">
+          {children}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/**
+ * Why This Hero: every reason, tag and hard counter, one line each, risks last. With `control`, a line about one
+ * score part opens the numbers behind it right under itself.
+ */
+function WhyLines({ s, ctx, control, idBase }: { s: Suggestion; ctx: PickCtx; control?: WhyControl; idBase?: string }) {
   const lines = reasonLines(s, ctx.heroes, ctx.owner);
   if (!lines.length) return null;
+  const why = s.why;
   return (
     <div className="flex min-w-0 flex-col gap-2.5">
       <h4 className="micro text-subtle">Why This Hero</h4>
-      <ul className="flex flex-col gap-2.5">
-        {lines.map((l, i) => (
-          <ReasonLine
-            key={i}
-            icon={LINE_ICONS[l.kind]}
-            lead={l.lead}
-            text={l.text}
-            heroes={l.heroes}
-            isWarn={l.isWarn}
-            hero={ctx.hero}
-            enemies={ctx.enemies}
-          />
-        ))}
+      <ul className={`flex flex-col ${control && why ? "gap-1" : "gap-2.5"}`}>
+        {lines.map((l, i) => {
+          const part = why && control ? partOfLine(l, ctx.enemies) : null;
+          const content = (
+            <>
+              <span className={`flex h-6 items-center ${l.isWarn ? "text-warn" : "text-subtle"}`}>
+                <Icon name={LINE_ICONS[l.kind]} />
+              </span>
+              <span className="min-w-0 text-sm leading-6 text-muted">
+                {l.lead && (
+                  <>
+                    <span className={`font-semibold tabular-nums ${l.isWarn ? "text-warn" : "text-fg"}`}>{minus(l.lead)}</span>{" "}
+                  </>
+                )}
+                <FacedText text={l.text} heroes={l.heroes} hero={ctx.hero} enemies={ctx.enemies} />
+              </span>
+            </>
+          );
+          if (!part || !control || !why) {
+            return (
+              <ReasonLine
+                key={i}
+                icon={LINE_ICONS[l.kind]}
+                lead={l.lead}
+                text={l.text}
+                heroes={l.heroes}
+                isWarn={l.isWarn}
+                hero={ctx.hero}
+                enemies={ctx.enemies}
+              />
+            );
+          }
+          const from = `line-${i}`;
+          const isOpen = control.open?.from === from;
+          const target: WhyTarget = { part, focus: l.heroes[0] ?? null, item: itemOfLine(l, part), isWholePart: false };
+          return (
+            <OpenRow
+              key={i}
+              id={`${idBase}-${from}`}
+              isOpen={isOpen}
+              isWarn={l.isWarn}
+              onToggle={() => control.onOpen(isOpen ? null : { from, target })}
+              row={content}
+              rowClass="grid-cols-[1rem_minmax(0,1fr)_1rem] px-2.5 py-1.5"
+            >
+              <WhyOpen target={target} why={why} breakdown={s.breakdown} score={s.score} heroName={s.name} hero={ctx.hero} owner={ctx.owner} />
+            </OpenRow>
+          );
+        })}
       </ul>
     </div>
   );
 }
 
-/** The score's parts as centred bars: a positive part grows right in green, a negative one left in Dire red. */
-export function ScoreParts({ s, className = "grid gap-y-2" }: { s: Suggestion; className?: string }) {
+/**
+ * The score's parts as centred bars: a positive part grows right in green, a negative one left in Dire red. With
+ * `control`, every row opens what its part adds up from right under itself.
+ */
+export function ScoreParts({
+  s,
+  className = "grid gap-y-2",
+  control,
+  idBase,
+  hero,
+  owner,
+}: {
+  s: Suggestion;
+  className?: string;
+  control?: WhyControl;
+  idBase?: string;
+  hero?: PlanHeroOf;
+  owner?: string;
+}) {
   const parts = scoreParts(s.breakdown);
   const max = Math.max(...parts.map((p) => Math.abs(p.value)), 0.1);
+  const why = s.why;
   return (
     <ul className={className}>
-      {parts.map((p) => (
-        <li key={p.key} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-2.5">
-          <span className="micro text-muted">{p.name}</span>
-          <span className="relative h-1.5 rounded-xs bg-raised" aria-hidden>
-            <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-line-control" />
-            <span
-              className={`absolute inset-y-0 rounded-xs ${p.value >= 0 ? "left-1/2 bg-radiant" : "right-1/2 bg-dire"}`}
-              style={{ width: `${(Math.abs(p.value) / max) * 50}%` }}
-            />
-          </span>
-          <span className={`micro text-right font-semibold tabular-nums ${p.value >= 0 ? "text-fg" : "text-dire"}`}>
-            {signed(p.value)}
-          </span>
-        </li>
-      ))}
+      {parts.map((p) => {
+        const row = (
+          <>
+            <span className="micro text-muted">{p.name}</span>
+            <span className="relative h-1.5 rounded-xs bg-raised" aria-hidden>
+              <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-line-control" />
+              <span
+                className={`absolute inset-y-0 rounded-xs ${p.value >= 0 ? "left-1/2 bg-radiant" : "right-1/2 bg-dire"}`}
+                style={{ width: `${(Math.abs(p.value) / max) * 50}%` }}
+              />
+            </span>
+            <span className={`micro text-right font-semibold tabular-nums ${p.value >= 0 ? "text-fg" : "text-dire"}`}>
+              {signed(p.value)}
+            </span>
+          </>
+        );
+        if (!control || !why || !hero) {
+          return (
+            <li key={p.key} className="grid grid-cols-[5.5rem_minmax(0,1fr)_2.5rem] items-center gap-2.5">
+              {row}
+            </li>
+          );
+        }
+        const from = `part-${p.key}`;
+        const isOpen = control.open?.from === from;
+        const target: WhyTarget = { part: p.key, focus: null, item: null, isWholePart: true };
+        return (
+          <OpenRow
+            key={p.key}
+            id={`${idBase}-${from}`}
+            isOpen={isOpen}
+            label={`${p.name} ${signed(p.value)}: Show Why`}
+            onToggle={() => control.onOpen(isOpen ? null : { from, target })}
+            row={row}
+            className="-mx-2"
+            rowClass="grid-cols-[5.5rem_minmax(0,1fr)_2.5rem_1rem] items-center px-2 py-1"
+          >
+            <WhyOpen target={target} why={why} breakdown={s.breakdown} score={s.score} heroName={s.name} hero={hero} owner={owner} />
+          </OpenRow>
+        );
+      })}
     </ul>
   );
 }
@@ -405,6 +556,8 @@ export function PickCard({
   const split = scoreSplit(s.breakdown);
   const isOutsider = outsiderText !== undefined;
   const whose = ctx.owner ? `${ctx.owner}'s` : "Your";
+  const [open, setOpen] = useState<OpenWhy | null>(null);
+  const control: WhyControl = { open, onOpen: setOpen };
   return (
     <article
       aria-labelledby={nameId}
@@ -470,7 +623,7 @@ export function PickCard({
       {entry.verdict && <VerdictBlock verdict={entry.verdict} leader={leader} ctx={ctx} />}
 
       <div className="border-t border-line pt-5 empty:hidden">
-        <WhyLines s={s} ctx={ctx} />
+        <WhyLines s={s} ctx={ctx} control={control} idBase={nameId} />
       </div>
 
       <div className="flex flex-col gap-3 border-t border-line pt-5">
@@ -482,7 +635,14 @@ export function PickCard({
           </span>
         </h4>
         {/* Two columns while a card has the room: across the lane below 1024px, half of it from 1280px. */}
-        <ScoreParts s={s} className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
+        <ScoreParts
+          s={s}
+          className="grid items-start gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+          control={control}
+          idBase={nameId}
+          hero={ctx.hero}
+          owner={ctx.owner}
+        />
       </div>
 
       {ctx.onPicked && ctx.onBanned && (
@@ -539,6 +699,8 @@ export function BestCard({
   const { portrait } = ctx.hero(s.heroId);
   const played = isOutsider ? { title: "Not one of your heroes for this position" } : playedChip(entry.playedGames);
   const nameId = isBest ? "best-pick" : `pick-detail-${s.heroId}`;
+  const [open, setOpen] = useState<OpenWhy | null>(null);
+  const control: WhyControl = { open, onOpen: setOpen };
   return (
     <article
       id={id}
@@ -599,7 +761,7 @@ export function BestCard({
         </div>
 
         <div className="min-w-0 border-t border-line pt-5 empty:hidden md:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0.5 xl:pl-6">
-          <WhyLines s={s} ctx={ctx} />
+          <WhyLines s={s} ctx={ctx} control={control} idBase={nameId} />
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 border-t border-line pt-5 md:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0.5 xl:pl-6">
@@ -618,7 +780,14 @@ export function BestCard({
             ))}
           </div>
           {/* Across the card below 1280px, so two columns; in its own column from there. */}
-          <ScoreParts s={s} className="grid gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-1" />
+          <ScoreParts
+            s={s}
+            className="grid items-start gap-x-8 gap-y-1 md:grid-cols-2 xl:grid-cols-1"
+            control={control}
+            idBase={nameId}
+            hero={ctx.hero}
+            owner={ctx.owner}
+          />
         </div>
       </div>
       <p className="micro border-t border-line px-5 py-4 text-subtle md:px-6">{reacting}</p>
