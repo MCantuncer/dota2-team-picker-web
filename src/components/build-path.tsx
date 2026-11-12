@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
+import type { ItemFork } from "@/lib/item-forks";
 import { HeroFace } from "./hero-frame";
+import { ForkBlock } from "./item-forks";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -11,6 +13,16 @@ interface Art {
   heroName: (id: number) => string;
   /** Wide hero portraits (16:9) by hero id, cropped to faces here. */
   icons: Record<number, string>;
+}
+
+/** An enemy's key item on the path's line, below it, at its usual minute (from the Story's chapters). */
+export interface EnemyItem {
+  hero: string;
+  heroIcon?: string;
+  item: string;
+  img?: string;
+  minute: number;
+  around?: boolean;
 }
 
 type Where = "start" | "lane" | "path";
@@ -51,9 +63,23 @@ export function sentence(text: string): string {
  * this draft carry the enemy's face. A tile opens its detail right under itself: the numbers as stat blocks and at
  * most two sentences on why. The draft's first answer item is open to start, else the first core item.
  */
-export function BuildPath({ build, heroName, icons, note }: Art & { build: ItemBuild; note?: string }) {
+export function BuildPath({
+  build,
+  heroName,
+  icons,
+  note,
+  forks = [],
+  enemyItems = [],
+}: Art & { build: ItemBuild; note?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[] }) {
   const rough = build.timings === "around";
   const path = pathItems(build);
+  // Our items and the enemy's on one line in minute order, ours first on a tie; rough minutes can't be set beside theirs.
+  type Column = { ours?: BuildItem; theirs?: EnemyItem; minute: number };
+  const columns = [
+    ...path.map((ours): Column => ({ ours, minute: ours.minute })),
+    ...(rough ? [] : enemyItems.map((theirs): Column => ({ theirs, minute: theirs.minute }))),
+  ].sort((a, b) => a.minute - b.minute || Number(Boolean(a.theirs)) - Number(Boolean(b.theirs)));
+  const forkOf = (item: BuildItem) => forks.find((f) => f.itemId === item.itemId);
   const stops: Stop[] = [
     ...build.start.map((item) => ({ key: `start-${item.itemId}`, where: "start" as const, item })),
     ...usualLane(build).map((item) => ({ key: `lane-${item.itemId}`, where: "lane" as const, item })),
@@ -64,7 +90,7 @@ export function BuildPath({ build, heroName, icons, note }: Art & { build: ItemB
     stops.find((s) => s.key === picked) ?? stops.find((s) => s.where === "path" && s.item.reason) ?? stops.find((s) => s.where === "path") ?? stops[0];
   // The other boots go once, under the core boots (the first core item bought in the lane phase).
   const boots = build.core.find((i) => i.phase === "lane");
-  const detail = open && <Detail stop={open} rough={rough} heroName={heroName} icons={icons} />;
+  const detail = open && <Detail stop={open} rough={rough} heroName={heroName} icons={icons} fork={open.where === "path" ? forkOf(open.item) : undefined} />;
   const tile = (stop: Stop) => ({
     pressed: open?.key === stop.key,
     onClick: () => setPicked(stop.key),
@@ -87,16 +113,31 @@ export function BuildPath({ build, heroName, icons, note }: Art & { build: ItemB
       {path.length > 0 && (
         <div role="region" aria-label="Core items" tabIndex={0} className="-mx-2 overflow-x-auto px-2 pb-1 pt-2 focus-visible:outline-2 focus-visible:outline-accent">
           <ol
-            aria-label="Core items, in buy order"
-            style={{ "--n": path.length } as CSSProperties}
+            aria-label={columns.some((c) => c.theirs) ? "Core items in buy order, with the enemy's key items" : "Core items, in buy order"}
+            style={{ "--n": columns.length } as CSSProperties}
             className="relative flex flex-col gap-3.5 before:absolute before:inset-y-4 before:left-8 before:w-0.5 before:rounded-xs before:bg-line-hover sm:grid sm:min-w-[calc(var(--n)*6.75rem)] sm:grid-cols-[repeat(var(--n),minmax(6.75rem,1fr))] sm:gap-0 sm:before:hidden"
           >
-            {path.flatMap((item) => {
+            {columns.flatMap((column, index) => {
+              const at = { gridColumnStart: index + 1 } as CSSProperties;
+              if (!column.ours) {
+                const e = column.theirs!; // A column holds ours or theirs.
+                return [
+                  <li key={`line-${index}`} aria-hidden style={at} className="relative hidden items-end justify-center sm:row-start-1 sm:flex sm:after:absolute sm:after:inset-x-0 sm:after:bottom-[0.3125rem] sm:after:h-0.5 sm:after:bg-line-hover">
+                    <span className="relative z-10 size-3 rounded-full bg-dire shadow-[0_0_0_3px_var(--bg)]" />
+                  </li>,
+                  <EnemyStop key={`theirs-${index}`} enemy={e} style={at} />,
+                ];
+              }
+              const item = column.ours;
+              const fork = forkOf(item);
+              // The fork's late minute is the one its win counts split at, so the path says the same minute.
+              const late = fork?.late ?? item.lateMinute;
               const stop = stops.find((s) => s.where === "path" && s.item === item)!; // Every path item is a stop.
               const { pressed, onClick, label } = tile(stop);
               const step = (
                 <li
                   key={stop.key}
+                  style={at}
                   className="relative grid grid-cols-[4rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 sm:row-start-1 sm:flex sm:flex-col sm:items-center sm:gap-1.5 sm:px-1 sm:text-center sm:after:absolute sm:after:inset-x-0 sm:after:bottom-[0.3125rem] sm:after:h-0.5 sm:after:bg-line-hover"
                 >
                   <span className="num col-start-2 row-span-2 row-start-1 text-xl font-semibold leading-none tracking-[-0.02em] text-fg sm:order-1 sm:text-[1.375rem]">
@@ -105,22 +146,30 @@ export function BuildPath({ build, heroName, icons, note }: Art & { build: ItemB
                   </span>
                   <ItemTile item={item} pressed={pressed} onClick={onClick} label={label} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 sm:order-2" />
                   <span className="col-start-3 row-start-1 self-end text-[0.8125rem] font-medium leading-tight text-fg sm:order-3 sm:min-h-[2.125rem] sm:self-auto">{item.name}</span>
-                  <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight sm:order-4 sm:min-h-[1.125rem] sm:items-center sm:self-auto">
-                    {!rough && item.lateMinute !== undefined && <span className="text-warn">Late After {item.lateMinute}</span>}
+                  <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight sm:order-4 sm:mb-2 sm:min-h-[1.125rem] sm:items-center sm:self-auto">
+                    {!rough && late !== undefined && <span className="text-warn">Late After {late}</span>}
+                    {fork && (
+                      <span className="text-subtle">
+                        <span className="num">
+                          {fork.onTime} of {fork.running}
+                        </span>{" "}
+                        On Time
+                      </span>
+                    )}
                     {item === boots && build.bootsOr && (
                       <span className="text-subtle">
                         Or {build.bootsOr.name} at <span className="num">{build.bootsOr.minute}</span>
                       </span>
                     )}
                   </span>
-                  <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 rounded-full bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] sm:block" />
+                  <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 shrink-0 rounded-full sm:mt-auto bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] sm:block" />
                 </li>
               );
               // The detail opens right under its item: under the line on wide screens, under the row on phones.
               return pressed
                 ? [
                     step,
-                    <li key="detail" role="none" className="relative sm:sticky sm:left-0 sm:col-span-full sm:row-start-2 sm:mt-6 sm:max-w-3xl">
+                    <li key="detail" role="none" className="relative sm:sticky sm:left-0 sm:col-span-full sm:row-start-3 sm:mt-6 sm:max-w-3xl">
                       {detail}
                     </li>,
                   ]
@@ -214,13 +263,14 @@ function ItemArt({ item, className }: { item: BuildItem; className: string }) {
 }
 
 /** The open item: art, name, the enemies it is for, its numbers as stat blocks, and why it is in this game. */
-function Detail({ stop, rough, heroName, icons }: Art & { stop: Stop; rough: boolean }) {
+function Detail({ stop, rough, heroName, icons, fork }: Art & { stop: Stop; rough: boolean; fork?: ItemFork }) {
   const { item } = stop;
   const foes = foesOf(item);
   const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
+  const late = fork?.late ?? item.lateMinute;
   const facts = [
     ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual", tone: "text-fg" }] : []),
-    ...(stop.where === "path" && !rough && item.lateMinute !== undefined ? [{ value: `${item.lateMinute} min`, label: "Late After", tone: "text-warn" }] : []),
+    ...(stop.where === "path" && !rough && late !== undefined ? [{ value: `${late} min`, label: "Late After", tone: "text-warn" }] : []),
     ...(item.count ? [{ value: `x${item.count}`, label: "Copies", tone: "text-fg" }] : []),
   ];
   return (
@@ -247,7 +297,39 @@ function Detail({ stop, rough, heroName, icons }: Art & { stop: Stop; rough: boo
           </dl>
         )}
         {why && <p className="max-w-[70ch] text-sm text-muted">{why}</p>}
+        {fork && <ForkBlock fork={fork} />}
       </div>
     </div>
+  );
+}
+
+/** An enemy's key item under the line: the item with the hero's face on it, the minute in Dire red and the item. */
+function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties }) {
+  return (
+    <li
+      style={style}
+      className="relative ml-4 grid grid-cols-[3rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 sm:row-start-2 sm:ml-0 sm:flex sm:flex-col sm:items-center sm:gap-1 sm:px-1 sm:pt-3 sm:text-center"
+    >
+      <span className="relative col-start-1 sm:order-1">
+        {enemy.img ? (
+          <Image src={ITEM_CDN + enemy.img} alt="" width={44} height={32} className="block h-8 w-11 rounded-md object-cover" />
+        ) : (
+          <span className="block h-8 w-11 rounded-md bg-raised" />
+        )}
+        {enemy.heroIcon && (
+          <span className="absolute -left-2 -top-2 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">
+            <HeroFace portrait={enemy.heroIcon} name={enemy.hero} size={20} isEnemy isDecorative />
+          </span>
+        )}
+      </span>
+      <span className="num col-start-2 text-base font-semibold text-dire sm:order-2">
+        {enemy.around ? "~" : ""}
+        {enemy.minute}
+      </span>
+      <span className="col-start-3 text-xs leading-tight text-muted sm:order-3">
+        <span className="sr-only">Enemy </span>
+        {enemy.hero}: {enemy.item}
+      </span>
+    </li>
   );
 }
