@@ -237,7 +237,8 @@ describe("GameStoryPanel", () => {
     const user = userEvent.setup();
     renderPanel(1);
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
-    expect(screen.getByText("Hard lane")).toBeInTheDocument();
+    expect(screen.getByText("Lane: Hard")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Lane map: Safe Lane hard (yours), Mid even." })).toBeInTheDocument();
     expect(screen.getByText("Farm and carry the late game.")).toBeInTheDocument();
     expect(screen.getByText(/Lane lost\?/)).toBeInTheDocument();
   });
