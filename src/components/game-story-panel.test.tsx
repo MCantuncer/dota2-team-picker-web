@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import { GameStoryPanel } from "./game-story-panel";
-import { sentence } from "./player-items";
+import { sentence } from "./build-path";
 
 const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number; count?: number } = {}) => ({
   itemId,
@@ -136,16 +136,20 @@ describe("GameStoryPanel", () => {
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(within(screen.getByRole("tablist", { name: "Hero 2 view" })).getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
     // The viewer's hero comes before the team's Story.
-    const order = screen.getByText("Item Journey").compareDocumentPosition(screen.getByText("The Team"));
+    const order = screen.getByText("Build Path").compareDocumentPosition(screen.getByText("The Team"));
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("shows each step's minute, the minute it is late after, and why it is in this game", () => {
     renderPanel(1);
-    expect(screen.getByText("17 min, late after 20")).toBeInTheDocument();
+    const path = screen.getByRole("list", { name: "Core items, in buy order" });
+    expect(within(path).getByText("17")).toBeInTheDocument();
+    expect(within(path).getByText("Late After 20")).toBeInTheDocument();
+    // The draft's answer item is open to start, with why it is in this game and its numbers.
+    expect(within(path).getByRole("button", { name: "Black King Bar, for Hero 8" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
-    // The usual lane items are icons after the start, with no minute; the other boots sit under the boots.
-    expect(within(screen.getByRole("list", { name: "Lane items, in buy order" })).getByAltText("Wraith Band")).toBeInTheDocument();
+    // The usual lane items are tiles after the start, with no minute; the other boots sit under the boots.
+    expect(within(screen.getByRole("list", { name: "Lane items, in buy order" })).getByRole("button", { name: "Wraith Band" })).toBeInTheDocument();
     expect(screen.getByText(/Or Power Treads at/)).toBeInTheDocument();
   });
 
@@ -161,12 +165,12 @@ describe("GameStoryPanel", () => {
     expect(screen.getByText("Instead of Black King Bar.")).toBeInTheDocument();
   });
 
-  it("shows start items as icons only, names on hover", () => {
+  it("shows start items as tiles with their names and copies", () => {
     renderPanel(1);
     const start = screen.getByRole("list", { name: "Start items" });
-    expect(within(start).getByAltText("2 Iron Branch")).toBeInTheDocument();
-    expect(within(start).getByTitle("Tango")).toBeInTheDocument();
-    expect(within(start).queryByText("Tango")).toBeNull();
+    expect(within(start).getByRole("button", { name: "2 Iron Branch" })).toBeInTheDocument();
+    expect(within(start).getByText("x2")).toBeInTheDocument();
+    expect(within(start).getByText("Tango")).toBeInTheDocument();
   });
 
   it("lists each enemy by their worst spell, with the item that answers it, or what to do", () => {

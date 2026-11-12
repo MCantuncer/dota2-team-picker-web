@@ -242,6 +242,21 @@ who still has to pick:
   across the row. No per-hero zoom or offsets.
 - **Render or portrait.** Frames over 64px hold the render in a `HeroStage`; 64px and under use `HeroFace`.
 
+## Build Path
+
+The Item Build tab's Build Path (`components/build-path.tsx`):
+
+- **Kits**: Start and Lane as 64x47 item tiles (`rounded-md`) with the full name under each, a copy count badge, and a
+  20px enemy face (Lane Cut, Dire ring) on items bought for this draft. The enemy is in the tile's name ("Healing
+  Salve, for Shadow Fiend"). Lane items carry no minute.
+- **Path**: the core items (and lane items this draft asks for) in buy order on one line: the minute big
+  (`.num`, 22px), the tile, the full name, then Late After N in warn. One dot per item on the line.
+- Every tile is a toggle (`aria-pressed`); the open one has a copper ring. Its **detail** opens right under it: art,
+  name, a Dire tint chip "For <Enemy>" with the faces, the numbers as stat blocks (Usual, Late After, Copies) and at
+  most two sentences. The draft's first answer item is open to start.
+- Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, the detail
+  under the open row. The path scrolls sideways on narrow desktops (a labelled, focusable region).
+
 ## Heroes, icons, states
 
 - **Hero portraits** are 16:9 from the Steam CDN, `object-cover`, `rounded-xs`. Sizes: 40x22 search rows and chips,
