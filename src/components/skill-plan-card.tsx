@@ -5,9 +5,10 @@ import { useId, useState } from "react";
 import type { SkillLive, SkillPlan, TalentTier } from "@/lib/engine/skill-plan";
 import type { HeroAbilities } from "@/lib/engine/types";
 import { HeroRender } from "./hero-render";
+import { ABILITY_CDN, AgreementMeter, MaxOrder, maxOrder, SkillTrack, TALENT_ICON } from "./skill-track";
 
-const TALENT_ICON = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/icons/talents.svg";
-const ABILITY_CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/";
+/** Below this gap between the two shares (in points), players are split on a tier rather than agreeing. */
+const SPLIT_POINTS = 15;
 
 const STATE_LINES: Record<Exclude<SkillLive, "ready">, string> = {
   loading: "Loading games against these enemies…",
@@ -70,6 +71,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
   const rows = skillRows(plan, abilities);
   const tiers = [...plan.talents].reverse();
   const [open, setOpen] = useState(() => firstTier(plan.talents));
+  const [view, setView] = useState<"track" | "grid">("track");
   const shown = tiers.find((t) => t.tier === open) ?? tiers[0];
   const pickName = (tier: TalentTier) => tier.options.find((o) => o.id === tier.pick)?.name;
   const id = useId();
@@ -80,13 +82,25 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
         className="absolute -left-10 top-0 -z-10 hidden w-[min(26vw,22rem)] opacity-90 lg:block"
       />
       <section aria-labelledby={`${id}-order`} className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h3 id={`${id}-order`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
-            Skill Order
-          </h3>
-          <p className="text-sm text-muted">{plan.buildReason}</p>
+        <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+          <div className="flex flex-col gap-1">
+            <h3 id={`${id}-order`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
+              Skill Order
+            </h3>
+            {plan.agreement ? <AgreementMeter agreement={plan.agreement} /> : <p className="text-sm text-muted">{plan.buildReason}</p>}
+          </div>
+          {plan.levels && (
+            <div role="group" aria-label="Skill order view" className="seg">
+              {(["track", "grid"] as const).map((v) => (
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className="seg-item">
+                  {v === "track" ? "Track" : "Grid"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        {plan.levels && <SkillGrid rows={rows} levels={plan.levels.length} />}
+        {plan.levels && <MaxOrder steps={maxOrder(rows, abilities)} />}
+        {plan.levels && (view === "track" ? <SkillTrack plan={plan} rows={rows} /> : <SkillGrid rows={rows} levels={plan.levels.length} />)}
       </section>
 
       <section aria-labelledby={`${id}-talents`} className="flex flex-col gap-4 max-w-[46rem]">
@@ -94,7 +108,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
           <h3 id={`${id}-talents`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
             Talents
           </h3>
-          <p className="text-sm text-muted">Our pick is underlined. Choose a level to see why.</p>
+          <p className="text-sm text-muted">The lit side is the pick. Bars show the share of recent high-rank games that took each talent. Choose a level to see why.</p>
         </div>
         <ol aria-label="Talent tree" className="flex flex-col border-t border-line">
           {tiers.map((tier) => {
@@ -122,6 +136,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
                     {tier.level}
                   </span>
                   {right && <Option option={right} tier={tier} align="left" />}
+                  {split(tier) && <span className="chip col-span-full justify-self-center px-2 text-xs">Players Split</span>}
                 </button>
               </li>
             );
@@ -157,21 +172,41 @@ function subLine(option: { id: number }, tier: TalentTier): string | undefined {
   return undefined;
 }
 
+/** The share (0 to 1) of games that took this talent: the usual one's share, the other one the rest. */
+export function optionShare(option: { id: number }, tier: TalentTier): number | undefined {
+  if (tier.usualShare === undefined || tier.usual === null) return undefined;
+  return option.id === tier.usual ? tier.usualShare : 1 - tier.usualShare;
+}
+
+/** Whether players split on a tier: the two shares are under SPLIT_POINTS apart. */
+export function split(tier: TalentTier): boolean {
+  return tier.usualShare !== undefined && Math.abs(tier.usualShare * 200 - 100) < SPLIT_POINTS;
+}
+
 function Option({ option, tier, align }: { option: { id: number; name: string }; tier: TalentTier; align: "left" | "right" }) {
   const picked = option.id === tier.pick;
   const line = subLine(option, tier);
+  const share = optionShare(option, tier);
   return (
-    <span className={`flex min-w-0 flex-col gap-0.5 ${align === "right" ? "items-end text-right" : "items-start"}`}>
+    <span className={`flex min-w-0 flex-col gap-1 ${align === "right" ? "items-end text-right" : "items-start"}`}>
       <span
         className={
           picked
-            ? "text-[0.9375rem] text-fg underline decoration-accent decoration-1 underline-offset-[5px]"
+            ? "text-[0.9375rem] font-semibold text-fg"
             : "text-[0.9375rem] text-muted"
         }
       >
         {option.name}
         {picked && <span className="sr-only"> (take this)</span>}
       </span>
+      {share !== undefined && (
+        <span className={`flex w-full items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+          <span aria-hidden className={`flex h-1.5 w-full max-w-40 overflow-hidden rounded-xs bg-raised ${align === "right" ? "justify-end" : ""}`}>
+            <i className={`block h-full ${picked ? "bg-accent" : "bg-line-control"}`} style={{ width: `${Math.round(share * 100)}%` }} />
+          </span>
+          <span className={`num text-xs ${picked ? "text-fg" : "text-subtle"}`}>{Math.round(share * 100)}%</span>
+        </span>
+      )}
       {line && <span className={`num text-xs ${picked ? "text-accent" : "text-subtle"}`}>{line}</span>}
     </span>
   );
