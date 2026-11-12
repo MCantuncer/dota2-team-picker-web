@@ -250,9 +250,13 @@ test("the draft screen shows the game plan once both teams are in", async ({ pag
     await enemy.press("Enter");
   }
 
-  const plan = page.getByRole("region", { name: "Game Story" });
-  await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
+  const plan = page.getByRole("region", { name: "Your Game" });
   await expect(plan.getByRole("tab", { name: /Carry|Mid|Offlane|Soft Support|Hard Support/ })).toHaveCount(5);
+  // The team's story is on the Game Story tab alone; G opens it while focus is inside Your Game.
+  await plan.getByRole("tab", { name: "Item Build" }).focus();
+  await page.keyboard.press("g");
+  await expect(plan.getByRole("tab", { name: "Game Story" })).toHaveAttribute("aria-selected", "true");
+  await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
   await expectAccessible(page);
 });
 
