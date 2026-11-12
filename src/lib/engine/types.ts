@@ -1,4 +1,6 @@
 // Copied from the backend repo (MCantuncer/dota2-team-picker, services/engine/src/engine/types.ts). Keep in sync.
+import type { StairStep, ThreatPlan } from "./threat";
+
 /** Dota 2 positions: 1 carry, 2 mid, 3 offlane, 4 soft support, 5 hard support. */
 export type Position = 1 | 2 | 3 | 4 | 5;
 export const POSITIONS: readonly Position[] = [1, 2, 3, 4, 5];
@@ -135,6 +137,11 @@ export interface Snapshot {
   patch?: { name: string; startedAt: string };
   /** Highest public match id already counted, so daily runs only add new matches. */
   lastPublicMatchId?: number;
+  /**
+   * Dangerous heroes and their answers, found weekly in about a million recent ranked games (see
+   * threat.ts), biggest drop first, with the game length line of position 1 heroes pooled.
+   */
+  threatPlans?: { at: string; games: number; plans: ThreatPlan[]; pos1Length: StairStep[] };
 }
 
 /** A rank group ("1" to "4") or "all" ranks. */
@@ -160,6 +167,13 @@ export interface ItemTimingSlice {
    * missing in snapshots from before 2026-11-11.
    */
   shares?: [itemId: number, games: number][];
+  /**
+   * When the most bought finished core item from KEY_ITEM_MIN_COST gold (not boots) was done, and how those games
+   * ended: [minute, games, wins] for each minute with at least PACE_MIN_SHARE of its purchases, earliest first.
+   * Positions 1 to 3 only. It shows when, not why: a fast item often follows a game that was already going well.
+   * Missing in snapshots from before 2026-11-12.
+   */
+  pace?: { itemId: number; minutes: [minute: number, games: number, wins: number][] };
 }
 
 export interface ItemStart {
