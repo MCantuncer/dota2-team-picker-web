@@ -12,6 +12,25 @@ export interface StoryTimelineProps {
   heroIcons: Record<string, string>;
   /** Shop items, to find each spike's art by item name. */
   items?: Record<string, ItemInfo>;
+  /** The viewer's checkpoint: their key item's late minute and what to do if it is late, drawn as a flag. */
+  checkpoint?: Checkpoint;
+}
+
+/** "No Blink Dagger by 20 min?" at minute 20, with the rest of the fallback line. */
+export interface Checkpoint {
+  minute: number;
+  question: string;
+  answer: string;
+}
+
+/** The race the headline names, as a band on the axis: a fight window when we are ready first, else a hold zone. */
+export function raceBand(story: Story): { from: number; to: number; label: string; fight: boolean } | undefined {
+  const race = story.race;
+  if (!race) return undefined;
+  const theirs = race.theirs.minute;
+  if (race.ready < theirs) return { from: race.ready, to: theirs, label: `Fight Here, ${race.ready} to ${theirs}`, fight: true };
+  if (race.ready > theirs) return { from: theirs, to: race.ready, label: `Hold Until ${race.ready}`, fight: false };
+  return undefined;
 }
 
 /**
@@ -19,7 +38,7 @@ export interface StoryTimelineProps {
  * the line in green, theirs below in red, a copper mark where our team is ready to fight, and the one
  * thing to do in each chapter under it. Wider than a phone, so it scrolls sideways inside its own box.
  */
-export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
+export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTimelineProps) {
   const chapters = story.chapters;
   if (!chapters.length) return null;
   const width = 100 / chapters.length;
@@ -27,11 +46,19 @@ export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
   const itemImg = itemArt(items);
   const ours = spreadMarks(chapters.flatMap((c) => c.ours).map((s) => ({ spike: s, left: at(s.minute) })));
   const theirs = spreadMarks(chapters.flatMap((c) => c.theirs).map((s) => ({ spike: s, left: at(s.minute) })));
+  const band = raceBand(story);
+  const flag = checkpoint && Math.min(97, Math.max(3, at(checkpoint.minute)));
   return (
     // On phones the box scrolls sideways, so it takes keyboard focus to scroll with the arrow keys.
     <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Story timeline">
       <div className="min-w-[57.5rem]">
-        <div className="relative h-60" role="img" aria-label={timelineLabel(story)}>
+        <div className={`relative ${checkpoint ? "h-[19rem]" : "h-60"}`} role="img" aria-label={`${timelineLabel(story)}${band ? ` ${band.label}.` : ""}${checkpoint ? ` ${checkpoint.question}` : ""}`}>
+          {band && (
+            <div
+              className={`absolute top-[7.25rem] h-6 rounded-xs border-x ${band.fight ? "border-accent/60 bg-accent/15" : "border-dire/50 bg-dire/10"}`}
+              style={{ left: `${at(band.from)}%`, width: `${at(band.to) - at(band.from)}%` }}
+            />
+          )}
           {chapters.map((c, i) => (
             <div
               key={c.phase}
@@ -57,7 +84,15 @@ export function StoryTimeline({ story, heroIcons, items }: StoryTimelineProps) {
             <div className="absolute top-28 h-8 w-0.5 bg-accent" style={{ left: `${at(story.ready)}%` }}>
               {/* Near the end of the axis the label sits left of the mark so it stays inside. */}
               <span className={`absolute top-1.5 whitespace-nowrap text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-2" : "left-2"}`}>
-                Ready to fight
+                {band?.fight ? band.label : "Ready to fight"}
+              </span>
+            </div>
+          )}
+          {checkpoint && flag !== undefined && (
+            <div className="absolute bottom-0 top-[7.25rem] w-0 border-l border-dashed border-warn" style={{ left: `${flag}%` }}>
+              <span className={`absolute bottom-0 flex w-60 flex-col gap-1 ${flag > 70 ? "right-2 items-end text-right" : "left-2 items-start"}`}>
+                <span className="chip h-6 whitespace-nowrap bg-warn-tint px-2 text-[0.8125rem] font-medium text-warn shadow-none">{checkpoint.question}</span>
+                <span className="whitespace-normal text-xs leading-snug text-muted">{checkpoint.answer}</span>
               </span>
             </div>
           )}
