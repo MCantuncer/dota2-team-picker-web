@@ -130,7 +130,7 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
 }
 
 /** Item art by display name. Recipes share their item's name, so the first non-recipe with a name wins. */
-function itemArt(items: Record<string, ItemInfo> | undefined): (name: string) => string | undefined {
+export function itemArt(items: Record<string, ItemInfo> | undefined): (name: string) => string | undefined {
   const byName = new Map<string, string>();
   for (const item of Object.values(items ?? {})) {
     if (!item.key.startsWith("recipe_") && !byName.has(item.name)) byName.set(item.name, item.img);

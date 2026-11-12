@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ItemFork } from "@/lib/item-forks";
-import { ItemForks, lateLine } from "./item-forks";
+import { ForkBlock, lateLine } from "./item-forks";
 
 const fork = (over: Partial<ItemFork>): ItemFork => ({
   itemId: 137,
@@ -18,28 +18,23 @@ const fork = (over: Partial<ItemFork>): ItemFork => ({
   ...over,
 });
 
-describe("ItemForks", () => {
-  it("shows nothing without forks", () => {
-    const { container } = render(<ItemForks forks={[]} />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
+describe("ForkBlock", () => {
   it("splits a key item into on time and late lanes, with the road the late wins took", () => {
-    render(<ItemForks forks={[fork({})]} />);
-    expect(screen.getByRole("heading", { name: "If a Key Item Is Late" })).toBeVisible();
+    render(<ForkBlock fork={fork({})} />);
+    expect(screen.getByRole("group", { name: "If It Is Late" })).toBeVisible();
     const lanes = screen.getByRole("list", { name: "Radiance on time or late" });
     expect(within(lanes).getByRole("img", { name: "15 of 61 wins" })).toBeVisible();
     expect(within(lanes).getByRole("img", { name: "46 of 61 wins" })).toBeVisible();
     const road = within(lanes).getByRole("list", { name: "What these wins bought next" });
     expect(within(road).getByText("Black King Bar")).toBeVisible();
-    expect(within(road).getByText("24 min, next in 24 wins")).toBeVisible();
+    expect(within(road).getByText("Usually 24 min, 24 wins")).toBeVisible();
     expect(within(lanes).getByText("4 of 46 bought Radiance after 18 min.")).toBeVisible();
   });
 
   it("says it in one line when nearly every win had the item on time", () => {
-    render(<ItemForks forks={[fork({ name: "Battle Fury", late: 15, running: 54, onTime: 51, lateGames: 3, split: false, steps: [], road: "none" })]} />);
+    render(<ForkBlock fork={fork({ name: "Battle Fury", late: 15, running: 54, onTime: 51, lateGames: 3, split: false, steps: [], road: "none" })} />);
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
-    expect(screen.getByText(/wins had it on time/)).toHaveTextContent("51 of 54 wins had it on time.");
+    expect(screen.getByText(/so late is rare/)).toHaveTextContent("51 of 54 wins had Battle Fury by 15 min, so late is rare.");
   });
 });
 

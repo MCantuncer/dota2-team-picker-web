@@ -8,6 +8,7 @@ import { PositionLabel } from "./position-label";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
 import { itemForks } from "@/lib/item-forks";
+import type { EnemyItem } from "./build-path";
 import { PlayerItems } from "./player-items";
 import { SkillPlanCard } from "./skill-plan-card";
 
@@ -31,7 +32,7 @@ export interface PlayerViewProps {
   /** Every lane of the plan, for the Game Story's lane map. */
   lanes?: LanePlan[];
   abilities?: Snapshot["heroAbilities"];
-  /** Skill build slices, for the item paths under If a Key Item Is Late. */
+  /** Skill build slices, for the item paths in a core item's detail (If It Is Late). */
   skillBuilds?: Snapshot["skillBuilds"];
   /** Shop items, for the names and art of the items late wins bought. */
   items?: Snapshot["items"];
@@ -41,6 +42,8 @@ export interface PlayerViewProps {
   ready?: number;
   /** The team's part of the Game Story (the minute line, game plans, danger and fallbacks), only on that tab. */
   team?: ReactNode;
+  /** The enemy's key items, set on each Build Path beside our items. */
+  enemyItems?: EnemyItem[];
 }
 
 /** The keys that open each view while focus is inside Your Game (so typing anywhere else is never taken). */
@@ -52,7 +55,7 @@ const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "
  * Your Game mockup, 2026-11-12): the next items, the lane and the ready minute, the first skills. Each view holds
  * only its own part; the team's story is on Game Story alone, so no tab repeats it.
  */
-export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, team }: PlayerViewProps) {
+export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, team, enemyItems }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
   // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
@@ -159,6 +162,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
               icons={icons}
               laneNote={lane ? LANE_NOTES[lane.verdict] : undefined}
               forks={player.build ? itemForks(player.build, skillBuilds?.[player.heroId]?.[player.position]?.itemPaths, items) : []}
+              enemyItems={enemyItems}
             />
           )}
           {view === "Game Story" && (

@@ -179,9 +179,12 @@ describe("GameStoryPanel", () => {
 
   it("shows each step's minute, the minute it is late after, and why it is in this game", () => {
     renderPanel(1);
-    const path = screen.getByRole("list", { name: "Core items, in buy order" });
+    const path = screen.getByRole("list", { name: "Core items in buy order, with the enemy's key items" });
     expect(within(path).getByText("17")).toBeInTheDocument();
     expect(within(path).getByText("Late After 20")).toBeInTheDocument();
+    // The Story's enemy items sit on the same line at their minute.
+    expect(within(path).getByText("Hero 8: Blink Dagger")).toBeInTheDocument();
+    expect(within(path).getByText("19")).toBeInTheDocument();
     // The draft's answer item is open to start, with why it is in this game and its numbers.
     expect(within(path).getByRole("button", { name: "Black King Bar, for Hero 8" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
