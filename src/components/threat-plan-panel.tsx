@@ -71,21 +71,26 @@ function Row({ icon, title, say, picture }: { icon: IconName | "lane"; title: st
   );
 }
 
-/** Columns of bars with the value over each and a name under it. */
+/**
+ * Columns of bars with the value over each and a name under it. Every bar stands on one baseline and every name sits
+ * in one row; your team's column gets a chip under its name instead of a taller column.
+ */
 function Bars({ steps, names, now, label }: { steps: StairStep[]; names: string[]; now?: number; label: string }) {
   const top = Math.max(60, ...steps.map((s) => s.winRate));
   const floor = 35;
   return (
-    <div role="img" aria-label={label} className="flex items-end gap-2">
+    <div role="img" aria-label={label} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
       {steps.map((s, i) => (
-        <div key={names[i]} className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className={`micro font-semibold tabular-nums ${toneOf(s.winRate)}`}>{percent(s.winRate)}</span>
-          <span
-            className={`rounded-xs ${fillOf(s.winRate)} ${now === undefined || now === i ? "" : "opacity-60"}`}
-            style={{ height: Math.max(4, Math.round(((s.winRate - floor) / (top - floor)) * 64)) }}
-          />
-          <span className={`micro ${now === i ? "font-semibold text-accent" : "text-subtle"}`}>{names[i]}</span>
-          {now === i && <span className="micro font-semibold text-accent">Your Team</span>}
+        <div key={names[i]} className="flex min-w-0 flex-col gap-1.5">
+          <div className="flex h-24 flex-col justify-end gap-1.5">
+            <span className={`micro font-semibold tabular-nums ${toneOf(s.winRate)}`}>{percent(s.winRate)}</span>
+            <span
+              className={`rounded-xs ${fillOf(s.winRate)} ${now === undefined || now === i ? "" : "opacity-60"}`}
+              style={{ height: Math.max(4, Math.round(((s.winRate - floor) / (top - floor)) * 64)) }}
+            />
+          </div>
+          <span className={`micro ${now === i ? "font-semibold text-fg" : "text-subtle"}`}>{names[i]}</span>
+          {now === i && <span className="chip micro chip-accent self-start font-semibold whitespace-nowrap">Your Team</span>}
         </div>
       ))}
     </div>
@@ -141,13 +146,14 @@ export function ThreatPlanPanel({ threat, hero, items }: ThreatPlanPanelProps) {
                     </span>
                   ))}
                   . He wins <span className={toneOf(now.winRate)}>{percent(now.winRate)}</span> against teams with{" "}
-                  {STEP_WORDS[threat.step]} of his answers, and <span className="text-dire">{percent(none.winRate)}</span> against
+                  {STEP_WORDS[threat.step]} of his answers, and <span className={toneOf(none.winRate)}>{percent(none.winRate)}</span> against
                   teams with none.
                 </>
               ) : (
                 <>
-                  You have none of his answers. He wins <span className="text-dire">{percent(none.winRate)}</span> against teams
-                  like yours, and <span className="text-radiant">{percent(two.winRate)}</span> against teams with two or more.
+                  You have none of his answers. He wins <span className={toneOf(none.winRate)}>{percent(none.winRate)}</span> against
+                  teams like yours, and <span className={toneOf(two.winRate)}>{percent(two.winRate)}</span> against teams with two or
+                  more.
                 </>
               )}
             </p>
@@ -266,15 +272,18 @@ export function ThreatPlanPanel({ threat, hero, items }: ThreatPlanPanelProps) {
           />
         )}
 
-        {his.length > 1 && group.length === his.length && (
+        {his.length > 1 && (
           <Row
             icon="trend"
             title="Game Length"
             say={
               <p>
                 His win rate goes from <span className={toneOf(his[0]!.winRate)}>{percent(his[0]!.winRate)}</span> in games under 30
-                minutes to <span className={toneOf(his[last]!.winRate)}>{percent(his[last]!.winRate)}</span> past 45. The average
-                carry goes from {percent(group[0]!.winRate)} to {percent(group[last]!.winRate)}.
+                minutes to <span className={toneOf(his[last]!.winRate)}>{percent(his[last]!.winRate)}</span> past 45.
+                {/* The pooled line is for position 1 heroes, so it only stands next to a carry. */}
+                {threat.position === 1 && group.length === his.length && (
+                  <> The average carry goes from {percent(group[0]!.winRate)} to {percent(group[last]!.winRate)}.</>
+                )}
               </p>
             }
             picture={<Bars steps={his} names={LENGTH_NAMES} label={`His win rate by game length: ${his.map((s, i) => `${LENGTH_NAMES[i]} ${percent(s.winRate)}`).join(", ")}`} />}
