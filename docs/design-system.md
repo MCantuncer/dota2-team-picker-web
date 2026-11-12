@@ -286,6 +286,20 @@ The Game Story tab's minute line (`components/story-timeline.tsx`) with three ma
 - **At 20 Min**: the team's fallbacks as two cards, Ahead (radiant left edge) then Behind (dire left edge), question
   bold in the side's colour and the answer under it.
 
+## Lane Board
+
+The Game Story tab's Lanes block (`components/lane-board.tsx`):
+
+- **Lane map**: the logo's square (Radiant bottom left) with the three lanes as lines coloured by verdict (radiant
+  won, line-control even, dire hard); the player's lane is full strength with a glow, the others at 55%. Faces are
+  30px Lane Cut `HeroFace`s on the lines (enemies with the Dire edge), lane names and verdicts as text. One `role="img"`
+  names every verdict.
+- **Versus**: the player's render and the enemy they meet most (the highest `weight` pair) in 3:2 `HeroStage` frames,
+  one `HeroArtPlacement` for both, the enemy mirrored with `HeroArt mirror`. Name and `PositionLabel` under each
+  ("Enemy" before the enemy's role). A "Lane: Hard" chip between them.
+- **Pair bar**: won, even, lost as one 12px bar (radiant, line-control, dire), the shares big under it, then how many
+  lanes they come from. The heading says "Lane results at your rank" or "from all ranks" (`allRanks`).
+
 ## Heroes, icons, states
 
 - **Hero portraits** are 16:9 from the Steam CDN, `object-cover`, `rounded-xs`. Sizes: 40x22 search rows and chips,

@@ -114,6 +114,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
         playerNames={playerNames}
         myPosition={myPosition}
         laneOf={laneOf}
+        lanes={plan.lanes}
         abilities={abilities}
         skillBuilds={skillBuilds}
         items={items}

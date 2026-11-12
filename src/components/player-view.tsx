@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { firstLevels, ItemsPreview, itemsPreviewText, SkillsPreview, skillsPreviewText, StoryPreview, storyPreviewText } from "./answer-previews";
 import { HeroFace } from "./hero-frame";
+import { LaneBoard } from "./lane-board";
 import { PositionLabel } from "./position-label";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
@@ -11,8 +11,6 @@ import { itemForks } from "@/lib/item-forks";
 import { PlayerItems } from "./player-items";
 import { SkillPlanCard } from "./skill-plan-card";
 
-const VERDICT_LABELS: Record<LaneVerdict, string> = { win: "Won lane", even: "Even lane", hard: "Hard lane" };
-const VERDICT_STYLES: Record<LaneVerdict, string> = { win: "text-radiant", even: "text-muted", hard: "text-warn" };
 const LANE_NOTES: Record<LaneVerdict, string> = {
   win: "You win this lane: buy for trades",
   even: "An even lane: the usual start",
@@ -30,6 +28,8 @@ export interface PlayerViewProps {
   playerNames: (string | null)[];
   myPosition?: number;
   laneOf: (heroId: number) => LanePlan | undefined;
+  /** Every lane of the plan, for the Game Story's lane map. */
+  lanes?: LanePlan[];
   abilities?: Snapshot["heroAbilities"];
   /** Skill build slices, for the item paths under If a Key Item Is Late. */
   skillBuilds?: Snapshot["skillBuilds"];
@@ -52,7 +52,7 @@ const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "
  * Your Game mockup, 2026-11-12): the next items, the lane and the ready minute, the first skills. Each view holds
  * only its own part; the team's story is on Game Story alone, so no tab repeats it.
  */
-export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, abilities, skillBuilds, items, headline, ready, team }: PlayerViewProps) {
+export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, team }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
   // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
@@ -164,7 +164,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           {view === "Game Story" && (
             <div className="flex flex-col gap-10">
               {headline && <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{headline}</p>}
-              <PlayerStory player={player} lane={lane} heroName={heroName} icons={icons} />
+              {lanes && <LaneBoard lanes={lanes} player={player} heroName={heroName} icons={icons} />}
               {team}
             </div>
           )}
@@ -175,45 +175,6 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
               <p className="text-sm text-muted">No skill data for this hero yet.</p>
             ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-/** The player's lane, their job and what to do if it goes wrong. */
-function PlayerStory({ player, lane, heroName, icons }: { player: PlayerPlan; lane?: LanePlan; heroName: (id: number) => string; icons: Record<number, string> }) {
-  const face = (heroId: number) => {
-    const icon = icons[heroId];
-    return icon ? (
-      <Image key={heroId} src={icon} alt={heroName(heroId)} width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />
-    ) : (
-      <span key={heroId}>{heroName(heroId)}</span>
-    );
-  };
-  return (
-    <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      {lane && (
-        <div className="flex flex-col gap-2.5">
-          <h3 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">{lane.name}</h3>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-subtle">
-            {lane.ours.map(face)} vs {lane.theirs.length ? lane.theirs.map(face) : "nobody"}
-          </div>
-          <span className={`text-sm font-medium ${VERDICT_STYLES[lane.verdict]}`}>{VERDICT_LABELS[lane.verdict]}</span>
-        </div>
-      )}
-      <div className="flex max-w-[62ch] flex-col gap-4">
-        {lane && <p className="text-[0.9375rem] text-fg">{lane.text}</p>}
-        <p className="text-[0.9375rem] text-fg">{player.job}</p>
-        {player.fallbacks.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <h4 className="text-sm font-medium text-muted">If It Goes Wrong</h4>
-            <ul className="flex flex-col gap-1 text-sm text-fg/85">
-              {player.fallbacks.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   );
