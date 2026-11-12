@@ -274,6 +274,20 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, the detail
   under the open row. The path scrolls sideways on narrow desktops (a labelled, focusable region).
 
+## Skill Track
+
+The Skills and Talents tab (`components/skill-plan-card.tsx`, `components/skill-track.tsx`):
+
+- **Agreement meter** under Skill Order: an 8px radiant meter and "57 of 59 high-rank wins used this order"
+  (`SkillPlan.agreement`); the build reason sentence only when there is no order.
+- **Max order**: each basic ability as a chip (32px icon, name, Max by N) in the order they are maxed, chevrons between
+  on wide screens, then the ultimate in an accent tint chip with the levels it takes.
+- **Track** (default) or **Grid** (`.seg` switch): the track is one 40px cell per level, the level number over the
+  ability icon, the talent mark in an accent tint, or a dashed No Point cell. The grid is the game's skill build table.
+- **Talent tree**: level 25 on top, mirrored; the pick is lit (semibold, copper share bar), the other side muted with
+  a line-control bar. Bars are the share of recent high-rank games that took each talent, with the number beside;
+  a Players Split chip when the two shares are under 15 points apart.
+
 ## Lane Board
 
 The Game Story tab's Lanes block (`components/lane-board.tsx`):
