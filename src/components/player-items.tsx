@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
+import type { ItemFork } from "@/lib/item-forks";
+import { ItemForks } from "./item-forks";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 const ABILITY_CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/";
@@ -14,9 +16,9 @@ interface Art {
 /**
  * The Item Build tab (accepted C board): start and usual lane items as icons only (names on hover), then the Item
  * Journey, one step per core item with its minute, why it is in this game and the enemies it works on,
- * and beside it Their Threats, each group of enemies with the item that answers them.
+ * then what high-rank wins did when a key item came late (item-forks.tsx), and beside it Their Threats, each group of enemies with the item that answers them.
  */
-export function PlayerItems({ player, heroName, icons, laneNote }: Art & { player: PlayerPlan; laneNote?: string }) {
+export function PlayerItems({ player, heroName, icons, laneNote, forks = [] }: Art & { player: PlayerPlan; laneNote?: string; forks?: ItemFork[] }) {
   const build = player.build;
   if (!build) return <p className="text-sm text-muted">No item data for this hero yet.</p>;
   return (
@@ -37,6 +39,7 @@ export function PlayerItems({ player, heroName, icons, laneNote }: Art & { playe
           </div>
         </div>
         <Journey build={build} heroName={heroName} icons={icons} />
+        <ItemForks forks={forks} />
       </div>
       <Threats player={player} heroName={heroName} icons={icons} />
     </div>
