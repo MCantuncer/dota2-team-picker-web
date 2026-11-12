@@ -40,7 +40,8 @@ const plan: SkillPlan = {
 };
 
 describe("SkillPlanCard", () => {
-  it("shows the order as the game's grid: a row per ability in hotkey order, the attribute bonus and the talents", () => {
+  it("shows the order as the game's grid: a row per ability in hotkey order, the attribute bonus and the talents", async () => {
+    const user = userEvent.setup();
     const order = { ...plan, levels: [1, 2, 1, 2, 1, 3, 1, 2, 2, 10, 3, 99] };
     const abilities = {
       abilities: [
@@ -53,6 +54,9 @@ describe("SkillPlanCard", () => {
     };
     const names = { ...plan.names, 2: "Great Cleave", 3: "God's Strength", 4: "Warcry" };
     render(<SkillPlanCard plan={{ ...order, names }} abilities={abilities} />);
+    // The track opens first; the grid is one press away.
+    expect(screen.queryByRole("table")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Grid" }));
     const grid = screen.getByRole("table", { name: "Skill order" });
     const rows = within(grid).getAllByRole("rowheader").map((th) => th.textContent?.replace(/^\+(?=[A-Z])/, ""));
     expect(rows).toEqual([
@@ -69,13 +73,55 @@ describe("SkillPlanCard", () => {
     expect(screen.getByText(plan.buildReason)).toBeInTheDocument();
   });
 
+  it("shows the max order and the track level by level, with the agreement as a meter", () => {
+    const order = { ...plan, levels: [1, 2, 1, 2, 1, 3, 1, 2, 2, 10, 3, 0], agreement: { wins: 57, of: 59, share: 0.97 } };
+    const abilities = {
+      abilities: [
+        { id: 1, key: "sven_storm_bolt", name: "Storm Hammer", slot: 1, maxLevel: 4, ultimate: false },
+        { id: 2, key: "sven_great_cleave", name: "Great Cleave", slot: 2, maxLevel: 4, ultimate: false },
+        { id: 3, key: "sven_gods_strength", name: "God's Strength", slot: 6, maxLevel: 3, ultimate: true },
+      ],
+      talents: [],
+    };
+    render(<SkillPlanCard plan={{ ...order, names: { ...plan.names, 3: "God's Strength" } }} abilities={abilities} />);
+    expect(screen.getByText(/high-rank wins used this order/)).toHaveTextContent("57 of 59 high-rank wins used this order");
+    expect(screen.queryByText(plan.buildReason)).toBeNull();
+    const max = within(screen.getByRole("list", { name: "Max order" })).getAllByRole("listitem").map((li) => li.textContent);
+    expect(max).toEqual(["Storm HammerMax by 7", "Great CleaveMax by 9", "God's Strength6, 11"]);
+    const track = within(screen.getByRole("region", { name: "Skill order by level" })).getAllByRole("listitem");
+    expect(track.map((li) => li.getAttribute("aria-label"))).toEqual([
+      "Level 1: Storm Hammer",
+      "Level 2: Great Cleave",
+      "Level 3: Storm Hammer",
+      "Level 4: Great Cleave",
+      "Level 5: Storm Hammer",
+      "Level 6: God's Strength",
+      "Level 7: Storm Hammer",
+      "Level 8: Great Cleave",
+      "Level 9: Great Cleave",
+      "Level 10: +2 Mana Regen",
+      "Level 11: God's Strength",
+      "Level 12: No point",
+    ]);
+  });
+
+  it("draws how many games took each talent, and says when players split", () => {
+    const shared = { ...plan, talents: [{ ...plan.talents[0]!, usualShare: 0.55, usualGames: 110 }, { ...plan.talents[1]!, usualShare: undefined }] };
+    render(<SkillPlanCard plan={shared} />);
+    const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
+    expect(within(tiers[1]!).getByText("55%")).toBeInTheDocument();
+    expect(within(tiers[1]!).getByText("45%")).toBeInTheDocument();
+    expect(within(tiers[1]!).getByText("Players Split")).toBeInTheDocument();
+    expect(within(tiers[0]!).queryByText("Players Split")).toBeNull();
+  });
+
   it("shows no grid without a build", () => {
     render(<SkillPlanCard plan={{ ...plan, levels: null }} />);
     expect(screen.queryByRole("table")).toBeNull();
     expect(skillRows({ ...plan, levels: null })).toEqual([]);
   });
 
-  it("puts level 25 on top, underlines this game's talent and gives the odds, never raw wins and losses", () => {
+  it("puts level 25 on top, lights this game's talent and gives the odds, never raw wins and losses", () => {
     render(<SkillPlanCard plan={plan} />);
     const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
     expect(within(tiers[0]!).getByRole("button").textContent).toBe("+20% CleaveLevel 15+8 Strength"); // Two tiers.
