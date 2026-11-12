@@ -93,7 +93,7 @@ describe("GameStoryPanel", () => {
     expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
   });
 
-  it("puts the game plan against their dangerous core in place of his danger line", () => {
+  it("puts the game plan against an enemy dangerous core in place of his danger line", () => {
     const step = (winRate: number) => ({ games: 1000, winRate });
     render(
       <GameStoryPanel
@@ -101,7 +101,7 @@ describe("GameStoryPanel", () => {
         heroName={(id) => `Hero ${id}`}
         icons={{}}
         playerNames={[]}
-        threat={{
+        threats={[{
           hero: 8,
           position: 1,
           plan: { hero: 8, answers: [], stair: [step(57.6), step(52.1), step(46)], drop: 10, dropLow: 8, length: [] },
@@ -110,7 +110,7 @@ describe("GameStoryPanel", () => {
           open: [],
           lanes: [],
           length: { his: [], group: [] },
-        }}
+        }]}
       />,
     );
     expect(screen.getByRole("region", { name: "Game Plan Against Hero 8" })).toBeInTheDocument();

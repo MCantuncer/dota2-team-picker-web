@@ -1,16 +1,18 @@
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { DraftThreat, ThreatLane } from "@/lib/engine/threat-plan";
 import type { StairStep } from "@/lib/engine/threat";
 import type { Snapshot } from "@/lib/engine/types";
 import { HeroArt, HeroFace, HeroStage, LaneMark, type HeroArtPlacement } from "./hero-frame";
 import { Icon, type IconName } from "./icon";
+import { ThreatTiles } from "./threat-tiles";
 
 /*
  * Game Plan Against a dangerous enemy core, in the Game Story once all ten heroes are in (it takes his line in Danger
  * Heroes). Four rows of measured facts, each a sentence and a picture: your answers on his stair, his lane with your
  * laners in it, when he finishes his big item, and his win rate by game length. The timing and length rows say when
- * he wins, not why, so they give no advice.
+ * he wins, not why, so they give no advice. With more than one dangerous enemy, a row of tiles (most dangerous first)
+ * picks whose plan shows.
  */
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -98,12 +100,16 @@ function Bars({ steps, names, now, label }: { steps: StairStep[]; names: string[
 }
 
 interface ThreatPlanPanelProps {
-  threat: DraftThreat;
+  /** Every dangerous enemy core, most dangerous first. */
+  threats: DraftThreat[];
   hero: ThreatHeroOf;
   items?: Snapshot["items"];
 }
 
-export function ThreatPlanPanel({ threat, hero, items }: ThreatPlanPanelProps) {
+export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) {
+  const [chosen, setChosen] = useState<number | null>(null);
+  const threat = threats.find((t) => t.hero === chosen) ?? threats[0];
+  if (!threat) return null;
   const him = hero(threat.hero);
   const [none, , two] = threat.plan.stair;
   const now = threat.plan.stair[threat.step]!;
@@ -116,6 +122,12 @@ export function ThreatPlanPanel({ threat, hero, items }: ThreatPlanPanelProps) {
   const last = his.length - 1;
   return (
     <section aria-labelledby="threat-plan-title" className="flex flex-col rounded-xl bg-surface ring-1 ring-line ring-inset">
+      {threats.length > 1 && (
+        <div className="flex flex-col gap-4 border-b border-line p-5 md:p-6">
+          <h3 className="text-sm font-semibold text-subtle">Dangerous Enemies</h3>
+          <ThreatTiles threats={threats} chosen={threat.hero} hero={hero} onChoose={setChosen} />
+        </div>
+      )}
       <div className="flex items-center gap-4 p-5 md:p-6">
         {him.portrait && (
           <HeroStage size={96} isEnemy className="relative h-[4.25rem] w-[6.5rem] shrink-0 overflow-hidden lg:h-24 lg:w-[10.5rem]">

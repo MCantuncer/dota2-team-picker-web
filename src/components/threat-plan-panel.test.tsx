@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { DraftThreat } from "@/lib/engine/threat-plan";
 import { ThreatPlanPanel, threatVerdict } from "./threat-plan-panel";
@@ -37,7 +38,7 @@ describe("ThreatPlanPanel", () => {
   it("shows your answers, his lane, his timing and the game length as facts", () => {
     render(
       <ThreatPlanPanel
-        threat={threat([1, 2], {
+        threats={[threat([1, 2], {
           pace: {
             itemId: 147,
             minute: 16,
@@ -45,7 +46,7 @@ describe("ThreatPlanPanel", () => {
             late: step(5311, 42.9),
             minutes: [[13, 100, 75], [16, 200, 100], [18, 100, 45]],
           },
-        })}
+        })]}
         hero={hero}
         items={{ 147: { key: "manta", name: "Manta Style", cost: 4650, img: "", components: [] } }}
       />,
@@ -60,11 +61,27 @@ describe("ThreatPlanPanel", () => {
   });
 
   it("leaves out the rows it has no data for", () => {
-    render(<ThreatPlanPanel threat={threat([], { lanes: [], length: { his: [], group: [] } })} hero={hero} />);
+    render(<ThreatPlanPanel threats={[threat([], { lanes: [], length: { his: [], group: [] } })]} hero={hero} />);
     const panel = screen.getByRole("region", { name: "Game Plan Against Hero 8" });
     expect(panel).toHaveTextContent("You have none of his answers.");
     expect(panel).not.toHaveTextContent("His Lane");
     expect(panel).not.toHaveTextContent("His Timing");
     expect(panel).not.toHaveTextContent("Game Length");
+    // One dangerous enemy needs no row of tiles.
+    expect(screen.queryByRole("list", { name: "Dangerous Enemies" })).toBeNull();
+  });
+
+  it("gives the average carry line only next to a carry", () => {
+    render(<ThreatPlanPanel threats={[threat([], { position: 3 })]} hero={hero} />);
+    expect(screen.getByRole("region", { name: "Game Plan Against Hero 8" })).not.toHaveTextContent("The average carry");
+  });
+
+  it("switches the plan from the row of dangerous enemies", async () => {
+    const other = threat([], { hero: 9, position: 3, plan: { ...threat([]).plan, hero: 9 } });
+    render(<ThreatPlanPanel threats={[threat([1, 2]), other]} hero={hero} />);
+    const tiles = within(screen.getByRole("list", { name: "Dangerous Enemies" })).getAllByRole("button");
+    expect(tiles.map((t) => t.getAttribute("aria-pressed"))).toEqual(["true", "false"]);
+    await userEvent.click(tiles[1]!);
+    expect(screen.getByRole("region", { name: "Game Plan Against Hero 9" })).toHaveTextContent("You have none of his answers.");
   });
 });
