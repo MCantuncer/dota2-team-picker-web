@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
+import { itemForks } from "@/lib/item-forks";
 import { PlayerItems } from "./player-items";
 import { PositionIcon } from "./position-icon";
 import { SkillPlanCard } from "./skill-plan-card";
@@ -28,6 +29,10 @@ export interface PlayerViewProps {
   myPosition?: number;
   laneOf: (heroId: number) => LanePlan | undefined;
   abilities?: Snapshot["heroAbilities"];
+  /** Skill build slices, for the item paths under If a Key Item Is Late. */
+  skillBuilds?: Snapshot["skillBuilds"];
+  /** Shop items, for the names and art of the items late wins bought. */
+  items?: Snapshot["items"];
 }
 
 /**
@@ -35,7 +40,7 @@ export interface PlayerViewProps {
  * starts with their items (Can 2026-11-03: "show the user's hero items first"). Under the player, three
  * views: Item Build (first), Game Story for their lane and job, and Skills and Talents.
  */
-export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, abilities }: PlayerViewProps) {
+export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, abilities, skillBuilds, items }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
   // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
@@ -94,7 +99,13 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
         />
         <div id={`${id}-view-panel`} role="tabpanel" aria-labelledby={viewTab(view)} tabIndex={0} className="pt-7 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
           {view === "Item Build" && (
-            <PlayerItems player={player} heroName={heroName} icons={icons} laneNote={lane ? LANE_NOTES[lane.verdict] : undefined} />
+            <PlayerItems
+              player={player}
+              heroName={heroName}
+              icons={icons}
+              laneNote={lane ? LANE_NOTES[lane.verdict] : undefined}
+              forks={player.build ? itemForks(player.build, skillBuilds?.[player.heroId]?.[player.position]?.itemPaths, items) : []}
+            />
           )}
           {view === "Game Story" && <PlayerStory player={player} lane={lane} heroName={heroName} icons={icons} />}
           {view === "Skills and Talents" &&
