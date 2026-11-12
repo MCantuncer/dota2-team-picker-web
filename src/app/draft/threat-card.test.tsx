@@ -43,7 +43,7 @@ describe("ThreatCard", () => {
   it("shows the stair with your step and the open answers per seat, your seat first marked", () => {
     render(<ThreatCard threat={threat([29])} others={[{ hero: 42, step: 0 }]} hero={hero} myPosition={1} games={1_000_000} />);
     const card = screen.getByRole("region", { name: "Answer Phantom Lancer" });
-    expect(card).toHaveTextContent("Their Pos 1 Carry");
+    expect(card).toHaveTextContent("Enemy Pos 1 Carry");
     expect(
       screen.getByRole("img", {
         name: "His win rate: No Answers 57.6%, One Answer 52.1%, Two or More 46.0%. Your team: One Answer.",

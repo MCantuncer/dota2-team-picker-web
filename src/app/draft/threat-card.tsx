@@ -61,7 +61,7 @@ export function ThreatCard({ threat, others, hero, myPosition, games }: ThreatCa
             Answer {him.name}
           </h2>
           <span className="chip micro ml-auto bg-dire-tint font-semibold text-dire">
-            Their Pos {threat.position} {POSITION_NAMES[threat.position - 1]}
+            Enemy Pos {threat.position} {POSITION_NAMES[threat.position - 1]}
           </span>
         </div>
 
