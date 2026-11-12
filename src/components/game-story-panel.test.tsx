@@ -211,10 +211,9 @@ describe("GameStoryPanel", () => {
 
   it("lists each enemy by their worst spell, with the item that answers it, or what to do", () => {
     renderPanel(1);
-    const threats = within(screen.getByRole("complementary")).getAllByRole("listitem");
-    expect(threats[0]).toHaveTextContent("Hero 9 Lane, guessedTank who soaks your damage. Don't focus them.");
-    expect(threats[1]).toHaveTextContent("Hex Hero 8No spells, no items.Answer:");
-    expect(within(threats[1]!).getByAltText("Black King Bar")).toBeInTheDocument();
+    const tiles = within(screen.getByRole("region", { name: "Who Hurts You" })).getAllByRole("listitem");
+    expect(tiles[0]).toHaveTextContent("In Your Lane, GuessedTank who soaks your damageHero 9DoDon't focus them.");
+    expect(tiles[1]).toHaveTextContent("HexHero 8No spells, no items.AnswerBlack King Bar");
   });
 
   it("marks rough minutes when there are no real timings", async () => {
