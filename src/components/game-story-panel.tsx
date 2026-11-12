@@ -21,6 +21,8 @@ export interface GameStoryPanelProps {
   abilities?: Snapshot["heroAbilities"];
   /** Shop items, for the item art on the Story timeline. */
   items?: Snapshot["items"];
+  /** Skill build slices, for each player's item paths (If a Key Item Is Late). */
+  skillBuilds?: Snapshot["skillBuilds"];
   /** Game plans against the dangerous enemy cores, most dangerous first; each takes his line in Danger Heroes. */
   threats?: DraftThreat[];
 }
@@ -30,7 +32,7 @@ export interface GameStoryPanelProps {
  * Can 2026-11-03), then the team: the game as a minute line with both teams' key items and one thing to do
  * per chapter, the enemies who decide it, and what the team does if it goes wrong.
  */
-export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, threats = [] }: GameStoryPanelProps) {
+export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, skillBuilds, threats = [] }: GameStoryPanelProps) {
   // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
   const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
   const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
@@ -55,6 +57,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
         myPosition={myPosition}
         laneOf={laneOf}
         abilities={abilities}
+        skillBuilds={skillBuilds}
+        items={items}
       />
 
       <div className="flex flex-col gap-3">

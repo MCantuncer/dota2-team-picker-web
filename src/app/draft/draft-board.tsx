@@ -1125,6 +1125,7 @@ export function DraftBoard({
           heroName={(id) => hero(id).name}
           abilities={engine.data.heroAbilities}
           items={engine.data.items}
+          skillBuilds={engine.data.skillBuilds}
           icons={portraits}
           playerNames={POSITIONS.map((p) => {
             const member = planMembers.find((m) => m.position === p);
