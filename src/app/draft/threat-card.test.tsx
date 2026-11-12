@@ -43,15 +43,15 @@ describe("ThreatCard", () => {
   it("shows the stair with your step and the open answers per seat, your seat first marked", () => {
     render(<ThreatCard threat={threat([29])} others={[{ hero: 42, step: 0 }]} hero={hero} myPosition={1} games={1_000_000} />);
     const card = screen.getByRole("region", { name: "Answer Phantom Lancer" });
-    expect(card).toHaveTextContent("Enemy Pos 1 Carry");
+    expect(card).toHaveTextContent("Enemy Carry");
     expect(
       screen.getByRole("img", {
         name: "His win rate: No Answers 57.6%, One Answer 52.1%, Two or More 46.0%. Your team: One Answer.",
       }),
     ).toBeInTheDocument();
     const seats = within(screen.getByRole("list", { name: "Open Answers" })).getAllByRole("listitem");
-    expect(seats[0]).toHaveTextContent("Your PickYouPos 1 CarrySven−4.2 for him");
-    expect(seats[1]).toHaveTextContent("TeammatesPos 5 Hard SupportWarlock−4.5 for him");
+    expect(seats[0]).toHaveTextContent("Your PickYouCarrySven−4.2 for him");
+    expect(seats[1]).toHaveTextContent("TeammatesHard SupportWarlock−4.5 for him");
     expect(screen.getByRole("list", { name: "Other Dangerous Heroes" })).toHaveTextContent(
       "Wraith King is dangerous too: your team has none of his answers.",
     );

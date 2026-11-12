@@ -1,5 +1,5 @@
 import { HeroArt, HeroStage, LaneMark, type HeroArtPlacement } from "@/components/hero-frame";
-import { POSITION_NAMES } from "@/lib/draft";
+import { PositionLabel } from "@/components/position-label";
 import type { DraftThreat } from "@/lib/engine/threat-plan";
 import type { Position } from "@/lib/engine/types";
 import { Face, type PlanHeroOf } from "./team-plan";
@@ -61,7 +61,7 @@ export function ThreatCard({ threat, others, hero, myPosition, games }: ThreatCa
             Answer {him.name}
           </h2>
           <span className="chip micro ml-auto bg-dire-tint font-semibold text-dire">
-            Enemy Pos {threat.position} {POSITION_NAMES[threat.position - 1]}
+            Enemy <PositionLabel position={threat.position} size={14} />
           </span>
         </div>
 
@@ -85,9 +85,7 @@ export function ThreatCard({ threat, others, hero, myPosition, games }: ThreatCa
                       {isMine ? "Your Pick" : "Teammates"}
                       {isMine && <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>}
                     </span>
-                    <span className="micro text-subtle">
-                      Pos {seat.position} {POSITION_NAMES[seat.position - 1]}
-                    </span>
+                    <PositionLabel position={seat.position} size={14} className="micro text-subtle" />
                   </span>
                   <span className="flex flex-wrap gap-2">
                     {seat.heroes.map((a) => (
