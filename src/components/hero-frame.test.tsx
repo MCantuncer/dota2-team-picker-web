@@ -19,6 +19,19 @@ function renderArt(hero: { heroId: number; portrait: string }, placement = CARD)
 }
 
 describe("HeroArt", () => {
+  it("keeps the face point on the anchor when mirrored for the enemy side", () => {
+    const { container } = render(
+      <HeroStage size={120}>
+        <HeroArt {...ANTI_MAGE} placement={CARD} mirror />
+      </HeroStage>,
+    );
+    const img = container.querySelector("img")!;
+    // Anti-Mage's face is 185px from the left at 360px wide, so 175px from the right once flipped.
+    expect(img.style.left).toBe("calc(50% - 175px)");
+    expect(img.style.transform).toBe("scaleX(-1)");
+  });
+
+
   it("puts each hero's face point on the frame's anchor", () => {
     // At 360px the render is half the 720 space, so each face point moves by half its coordinates.
     const antiMage = renderArt(ANTI_MAGE);

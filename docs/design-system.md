@@ -288,6 +288,20 @@ The Skills and Talents tab (`components/skill-plan-card.tsx`, `components/skill-
   a line-control bar. Bars are the share of recent high-rank games that took each talent, with the number beside;
   a Players Split chip when the two shares are under 15 points apart.
 
+## Lane Board
+
+The Game Story tab's Lanes block (`components/lane-board.tsx`):
+
+- **Lane map**: the logo's square (Radiant bottom left) with the three lanes as lines coloured by verdict (radiant
+  won, line-control even, dire hard); the player's lane is full strength with a glow, the others at 55%. Faces are
+  30px Lane Cut `HeroFace`s on the lines (enemies with the Dire edge), lane names and verdicts as text. One `role="img"`
+  names every verdict.
+- **Versus**: the player's render and the enemy they meet most (the highest `weight` pair) in 3:2 `HeroStage` frames,
+  one `HeroArtPlacement` for both, the enemy mirrored with `HeroArt mirror`. Name and `PositionLabel` under each
+  ("Enemy" before the enemy's role). A "Lane: Hard" chip between them.
+- **Pair bar**: won, even, lost as one 12px bar (radiant, line-control, dire), the shares big under it, then how many
+  lanes they come from. The heading says "Lane results at your rank" or "from all ranks" (`allRanks`).
+
 ## Heroes, icons, states
 
 - **Hero portraits** are 16:9 from the Steam CDN, `object-cover`, `rounded-xs`. Sizes: 40x22 search rows and chips,
