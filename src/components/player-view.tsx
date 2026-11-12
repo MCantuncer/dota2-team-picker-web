@@ -164,7 +164,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           {view === "Game Story" && (
             <div className="flex flex-col gap-10">
               {headline && <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{headline}</p>}
-              {lanes && <LaneBoard lanes={lanes} player={player} heroName={heroName} icons={icons} />}
+              {lanes && <LaneBoard lanes={lanes} player={player} heroName={heroName} icons={icons} onClock={player.position === myPosition} />}
               {team}
             </div>
           )}

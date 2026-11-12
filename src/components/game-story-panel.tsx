@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
+import { keyItemLateLine } from "./lane-board";
 import { PlayerView } from "./player-view";
 import { StoryTimeline } from "./story-timeline";
 import { ThreatPlanPanel } from "./threat-plan-panel";
@@ -42,7 +43,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const danger = plan.danger.filter((line) => !threats.some((t) => line.startsWith(`${heroName(t.hero)}:`)));
   // The viewer's checkpoint on the clock: their key item's late minute and their "No X by N min?" line.
   const me = plan.players.find((p) => p.position === myPosition);
-  const lateLine = me?.fallbacks[me.fallbackSituations?.indexOf("keyItemLate") ?? -1];
+  const lateLine = me && keyItemLateLine(me);
   const checkpoint = me?.keyItem?.lateMinute !== undefined && lateLine ? { minute: me.keyItem.lateMinute, ...askAndAnswer(lateLine) } : undefined;
   const fork = (plan.teamFallbackSituations ?? []).flatMap((situation, i) => {
     const line = plan.teamFallbacks[i];

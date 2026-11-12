@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { LanePlan, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Position } from "@/lib/engine/types";
-import { LaneBoard, playerPair } from "./lane-board";
+import { keyItemLateLine, LaneBoard, playerPair } from "./lane-board";
 
 const mid: LanePlan = {
   name: "Mid",
@@ -65,9 +65,32 @@ describe("LaneBoard", () => {
     expect(within(lanes).getByText("Lane lost? Stop contesting runes.")).toBeInTheDocument();
   });
 
+  it("leaves the late key item line to the Game Clock for the viewer, and keeps it for a teammate", () => {
+    const late: PlayerPlan = {
+      ...player(13, 2),
+      fallbacks: ["Lane lost? Stop contesting runes.", "No Blink Dagger by 20 min? Farm the safe jungle."],
+      fallbackSituations: ["laneLost", "keyItemLate"],
+      keyItem: { itemId: 1, name: "Blink Dagger", lateMinute: 20 },
+    };
+    const { rerender } = render(<LaneBoard lanes={[mid]} player={late} heroName={(id) => `Hero ${id}`} icons={{}} onClock />);
+    expect(screen.getByText("Lane lost? Stop contesting runes.")).toBeInTheDocument();
+    expect(screen.queryByText(/No Blink Dagger by 20 min/)).toBeNull();
+    rerender(<LaneBoard lanes={[mid]} player={late} heroName={(id) => `Hero ${id}`} icons={{}} />);
+    expect(screen.getByText("No Blink Dagger by 20 min? Farm the safe jungle.")).toBeInTheDocument();
+  });
+
   it("shows no bar without lane results", () => {
     render(<LaneBoard lanes={[{ ...mid, pairs: undefined }]} player={player(13, 2)} heroName={(id) => `Hero ${id}`} icons={{}} />);
     expect(screen.queryByText("Hero 13 Won")).toBeNull();
     expect(screen.queryByText(/Lane results/)).toBeNull();
+  });
+});
+
+describe("keyItemLateLine", () => {
+  it("finds the key item's late line by its situation, only when the key item has a late minute", () => {
+    const p: PlayerPlan = { ...player(8, 1), fallbacks: ["A", "B"], fallbackSituations: ["laneLost", "keyItemLate"], keyItem: { itemId: 1, name: "Battle Fury", lateMinute: 16 } };
+    expect(keyItemLateLine(p)).toBe("B");
+    expect(keyItemLateLine({ ...p, keyItem: { itemId: 1, name: "Battle Fury" } })).toBeUndefined();
+    expect(keyItemLateLine({ ...p, fallbackSituations: undefined })).toBeUndefined();
   });
 });
