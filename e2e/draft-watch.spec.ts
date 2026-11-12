@@ -47,11 +47,12 @@ test("Watch Dota reads the enemy's last pick at strategy time, and the Game Stor
     await expect(enemy.getByText(name)).toBeVisible({ timeout: 45_000 });
 
   // Our first slot is the player's own persona art, which is typed in; the Story waits for all ten.
-  const plan = page.getByRole("region", { name: "Game Story" });
+  const plan = page.getByRole("region", { name: "Your Game" });
   await expect(plan).toHaveCount(0);
   const ally = page.getByLabel("My team pick, e.g. cm5");
   await ally.fill("snap");
   await ally.press("Enter");
+  await plan.getByRole("tab", { name: "Game Story" }).click();
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
 });
 

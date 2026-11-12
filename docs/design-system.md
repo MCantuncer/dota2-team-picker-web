@@ -232,6 +232,23 @@ who still has to pick:
   First** is the only copper card: the ring, the node, the chip and the filled Picked.
 - The proven **outsider** takes the next free cell as the dashed card, under that player's section.
 
+## Your Game
+
+Your Game (`components/game-story-panel.tsx`, `components/player-view.tsx`) is the finished draft's answer area:
+
+- A **seat strip** of our five players: 40px face, hero name with the green You pill, role icon and name through
+  `PositionLabel`, then the player's name. The viewer's seat comes first and opens; the strip scrolls sideways, never
+  truncates.
+- Three **answer tabs** (`components/answer-previews.tsx`): cards (`rounded-xl`, line-strong border, raised and a
+  copper underline when open) that show their answer on the tab itself: the next four core items with minutes, the
+  lane verdict chip with the enemy laner and the Ready at N Min chip, the first six skill icons. Each tab is named by
+  its view (`aria-label`) and described by a sentence of its preview; the preview art is hidden from screen readers.
+  Below 640px the cards drop the previews and read as a three-part row.
+- Keys **I**, **G**, **S** open Item Build, Game Story, Skills and Talents while focus is inside Your Game (never
+  from an input, never with a modifier), shown as `.kbd` on each tab and in `aria-keyshortcuts`.
+- The team's part (headline, The Team line, game plans, Danger Heroes, If the Game Goes Wrong) lives on the Game
+  Story tab alone, so no tab repeats it.
+
 ## Hero Art Rules
 
 - **One face point.** Each hero's face centre on its render is measured once, in a 720 wide space, in

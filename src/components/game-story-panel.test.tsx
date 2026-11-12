@@ -84,16 +84,19 @@ const renderPanel = (myPosition?: number) =>
   render(<GameStoryPanel plan={plan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={["Can", null]} myPosition={myPosition} />);
 
 describe("GameStoryPanel", () => {
-  it("tells the story: headline, chapters, danger heroes and the team's fallbacks", () => {
+  it("tells the story under Game Story: headline, chapters, danger heroes and the team's fallbacks", async () => {
+    const user = userEvent.setup();
     renderPanel();
-    const story = screen.getByRole("region", { name: "Game Story" });
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
+    const story = screen.getByRole("region", { name: "Your Game" });
     expect(within(story).getByText("Fight from 14 min, before Hero 9 has Battle Fury at 18.")).toBeInTheDocument();
     expect(within(story).getByText(/Group up and take towers/)).toBeInTheDocument();
     expect(within(story).getByText(/Black King Bar at 21 min/)).toBeInTheDocument();
     expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
   });
 
-  it("puts the game plan against an enemy dangerous core in place of his danger line", () => {
+  it("puts the game plan against an enemy dangerous core in place of his danger line", async () => {
+    const user = userEvent.setup();
     const step = (winRate: number) => ({ games: 1000, winRate });
     render(
       <GameStoryPanel
@@ -113,13 +116,16 @@ describe("GameStoryPanel", () => {
         }]}
       />,
     );
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
     expect(screen.getByRole("region", { name: "Game Plan Against Hero 8" })).toBeInTheDocument();
     expect(screen.queryByText(/Black King Bar at 21 min/)).not.toBeInTheDocument();
     expect(screen.queryByText("Danger Heroes")).not.toBeInTheDocument();
   });
 
-  it("draws the Story as a minute line: our items, theirs, the ready mark and one action per chapter", () => {
+  it("draws the Story as a minute line: our items, theirs, the ready mark and one action per chapter", async () => {
+    const user = userEvent.setup();
     renderPanel();
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
     const timeline = screen.getByRole("img", { name: /^Item timings:/ });
     expect(timeline).toHaveAccessibleName("Item timings: our Hero 1 Black King Bar at 17, their Hero 8 Blink Dagger at 19, ready to fight at 17.");
     expect(within(timeline).getByText("10 to 20 min")).toBeInTheDocument();
@@ -135,9 +141,39 @@ describe("GameStoryPanel", () => {
     expect(tabs[0]).toHaveTextContent("You");
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(within(screen.getByRole("tablist", { name: "Hero 2 view" })).getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
-    // The viewer's hero comes before the team's Story.
-    const order = screen.getByText("Item Journey").compareDocumentPosition(screen.getByText("The Team"));
-    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Item Build holds the items alone: the team's story waits on its own tab.
+    expect(screen.getByText("Item Journey")).toBeInTheDocument();
+    expect(screen.queryByText("The Team")).toBeNull();
+  });
+
+  it("shows each tab's answer on the tab itself, and names it for screen readers", () => {
+    renderPanel(1);
+    const views = within(screen.getByRole("tablist", { name: "Hero 1 view" })).getAllByRole("tab");
+    expect(views.map((t) => t.getAttribute("aria-label"))).toEqual(["Item Build", "Game Story", "Skills and Talents"]);
+    expect(views[0]).toHaveAccessibleDescription("Next: Phase Boots at 9 min, Black King Bar at 17 min.");
+    expect(views[1]).toHaveAccessibleDescription("Hard Lane against Hero 9. Your team is ready at 17 min.");
+    expect(views[0]).toHaveAttribute("aria-keyshortcuts", "I");
+  });
+
+  it("opens a view with its key while focus is inside Your Game, and never while typing elsewhere", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <input aria-label="Search" />
+        <GameStoryPanel plan={plan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} myPosition={1} />
+      </>,
+    );
+    await user.click(screen.getByRole("textbox", { name: "Search" }));
+    await user.keyboard("g");
+    expect(screen.getByRole("tab", { name: "Item Build" })).toHaveAttribute("aria-selected", "true");
+    screen.getByRole("tab", { name: /Hero 1/ }).focus();
+    await user.keyboard("g");
+    expect(screen.getByRole("tab", { name: "Game Story" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Game Story" })).toHaveFocus();
+    await user.keyboard("{Control>}s{/Control}");
+    expect(screen.getByRole("tab", { name: "Game Story" })).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("s");
+    expect(screen.getByRole("tab", { name: "Skills and Talents" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("shows each step's minute, the minute it is late after, and why it is in this game", () => {
