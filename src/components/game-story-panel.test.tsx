@@ -2,7 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { GamePlan } from "@/lib/engine/game-plan";
-import { GameStoryPanel } from "./game-story-panel";
+import { askAndAnswer, GameStoryPanel } from "./game-story-panel";
+import { raceBand } from "./story-timeline";
 import { sentence } from "./build-path";
 
 const item = (itemId: number, name: string, minute: number, extra: { reason?: string; lateMinute?: number; count?: number } = {}) => ({
@@ -263,6 +264,42 @@ describe("GameStoryPanel", () => {
   it("never cuts text off", () => {
     const { container } = renderPanel(1);
     expect(container.querySelector(".truncate, [class*='line-clamp'], [class*='text-ellipsis']")).toBeNull();
+  });
+});
+
+describe("the game clock", () => {
+  const clockPlan: GamePlan = {
+    ...plan,
+    players: plan.players.map((p) =>
+      p.position === 1
+        ? { ...p, keyItem: { itemId: 116, name: "Black King Bar", lateMinute: 20 }, fallbacks: [...p.fallbacks, "No Black King Bar by 20 min? Farm behind your towers."], fallbackSituations: ["laneLost", "keyItemLate"] }
+        : p,
+    ),
+    teamFallbackSituations: ["behindAt20", "aheadAt20"],
+    teamFallbacks: ["Behind at 20? Defend high ground.", "Ahead at 20? Take Roshan."],
+    story: { ...plan.story, race: { ready: 17, theirs: { hero: "Hero 9", item: "Battle Fury", minute: 18 } } },
+  };
+
+  it("draws the fight window when we are ready first, and a hold zone when they are", () => {
+    expect(raceBand(clockPlan.story)).toEqual({ from: 17, to: 18, label: "Fight Here, 17 to 18", fight: true });
+    expect(raceBand({ ...clockPlan.story, race: { ready: 21, theirs: { hero: "Hero 9", item: "Battle Fury", minute: 18 } } })).toMatchObject({ from: 18, to: 21, label: "Hold Until 21", fight: false });
+    expect(raceBand({ ...clockPlan.story, race: undefined })).toBeUndefined();
+  });
+
+  it("flags the viewer's key item minute with its fallback, and splits the team's plan at 20 into Ahead and Behind", async () => {
+    const user = userEvent.setup();
+    render(<GameStoryPanel plan={clockPlan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} myPosition={1} />);
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
+    expect(screen.getByRole("img", { name: /Fight Here, 17 to 18\. No Black King Bar by 20 min\?$/ })).toBeInTheDocument();
+    expect(screen.getByText("Farm behind your towers.")).toBeInTheDocument();
+    const fork = within(screen.getByRole("heading", { name: "At 20 Min" }).parentElement!).getAllByRole("listitem");
+    expect(fork.map((li) => li.textContent)).toEqual(["Ahead at 20?Take Roshan.", "Behind at 20?Defend high ground."]);
+    expect(screen.queryByText("If the Game Goes Wrong")).toBeNull();
+  });
+
+  it("splits a line into its question and answer", () => {
+    expect(askAndAnswer("Behind at 20? Defend towers.")).toEqual({ question: "Behind at 20?", answer: "Defend towers." });
+    expect(askAndAnswer("Defend towers.")).toEqual({ question: "", answer: "Defend towers." });
   });
 });
 

@@ -40,11 +40,19 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   // Each danger line starts with its hero's name ("Faceless Void: ..."); the plan replaces his.
   const danger = plan.danger.filter((line) => !threats.some((t) => line.startsWith(`${heroName(t.hero)}:`)));
+  // The viewer's checkpoint on the clock: their key item's late minute and their "No X by N min?" line.
+  const me = plan.players.find((p) => p.position === myPosition);
+  const lateLine = me?.fallbacks[me.fallbackSituations?.indexOf("keyItemLate") ?? -1];
+  const checkpoint = me?.keyItem?.lateMinute !== undefined && lateLine ? { minute: me.keyItem.lateMinute, ...askAndAnswer(lateLine) } : undefined;
+  const fork = (plan.teamFallbackSituations ?? []).flatMap((situation, i) => {
+    const line = plan.teamFallbacks[i];
+    return line && (situation === "aheadAt20" || situation === "behindAt20") ? [{ ahead: situation === "aheadAt20", ...askAndAnswer(line) }] : [];
+  }).sort((a, b) => Number(b.ahead) - Number(a.ahead));
   const team = (
     <>
       <div className="flex flex-col gap-3">
         <h3 className="label-caps">The Team</h3>
-        <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} />
+        <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} checkpoint={checkpoint} />
       </div>
 
       {threats.length > 0 && <ThreatPlanPanel threats={threats} hero={(id) => ({ name: heroName(id), portrait: icons[id] })} items={items} />}
@@ -65,15 +73,29 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
             )}
           </div>
         )}
-        {plan.teamFallbacks.length > 0 && (
+        {fork.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <h3 className="label-caps">If the Game Goes Wrong</h3>
-            <ul className="flex flex-col gap-1.5 text-fg/85">
-              {plan.teamFallbacks.map((line) => (
-                <li key={line}>{line}</li>
+            <h3 className="label-caps">At 20 Min</h3>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {fork.map((f) => (
+                <li key={f.question} className={`flex flex-col gap-1.5 rounded-xl border border-line-strong border-l-4 bg-surface p-4 ${f.ahead ? "border-l-radiant" : "border-l-dire"}`}>
+                  <b className={`text-[0.9375rem] font-semibold ${f.ahead ? "text-radiant" : "text-dire"}`}>{f.question}</b>
+                  <span className="text-sm text-fg/85">{f.answer}</span>
+                </li>
               ))}
             </ul>
           </div>
+        ) : (
+          plan.teamFallbacks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="label-caps">If the Game Goes Wrong</h3>
+              <ul className="flex flex-col gap-1.5 text-fg/85">
+                {plan.teamFallbacks.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )
         )}
       </div>
     </>
@@ -101,4 +123,10 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
       />
     </section>
   );
+}
+
+/** "Behind at 20? Defend towers." as its question and its answer. A line without a question is all answer. */
+export function askAndAnswer(line: string): { question: string; answer: string } {
+  const at = line.indexOf("?");
+  return at < 0 ? { question: "", answer: line } : { question: line.slice(0, at + 1), answer: line.slice(at + 1).trim() };
 }
