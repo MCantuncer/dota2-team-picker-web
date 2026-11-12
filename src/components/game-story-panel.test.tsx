@@ -93,6 +93,31 @@ describe("GameStoryPanel", () => {
     expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
   });
 
+  it("puts the game plan against an enemy dangerous core in place of his danger line", () => {
+    const step = (winRate: number) => ({ games: 1000, winRate });
+    render(
+      <GameStoryPanel
+        plan={plan}
+        heroName={(id) => `Hero ${id}`}
+        icons={{}}
+        playerNames={[]}
+        threats={[{
+          hero: 8,
+          position: 1,
+          plan: { hero: 8, answers: [], stair: [step(57.6), step(52.1), step(46)], drop: 10, dropLow: 8, length: [] },
+          have: [],
+          step: 0,
+          open: [],
+          lanes: [],
+          length: { his: [], group: [] },
+        }]}
+      />,
+    );
+    expect(screen.getByRole("region", { name: "Game Plan Against Hero 8" })).toBeInTheDocument();
+    expect(screen.queryByText(/Black King Bar at 21 min/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Danger Heroes")).not.toBeInTheDocument();
+  });
+
   it("draws the Story as a minute line: our items, theirs, the ready mark and one action per chapter", () => {
     renderPanel();
     const timeline = screen.getByRole("img", { name: /^Item timings:/ });

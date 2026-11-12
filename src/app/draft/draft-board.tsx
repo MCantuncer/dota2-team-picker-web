@@ -320,17 +320,16 @@ export function DraftBoard({
     return () => clearTimeout(timer);
   }, [shown, myPosition, saveSuggestions]);
 
-  // The dangerous enemy cores and their answers, while the draft is still open (the Game Story takes over after).
-  const threats =
-    engine && allyIds.length + enemies.length < 2 * TEAM_SIZE
-      ? draftThreats(engine, {
-          allies: resolved.map((a) => ({ heroId: a.heroId, position: a.position })),
-          enemies,
-          enemyPositions,
-          bans,
-          rankBracket: bracket,
-        })
-      : null;
+  // The dangerous enemy cores and their answers: the Dangerous Enemies card while the draft is open, then the Game Story's plans.
+  const threats = engine
+    ? draftThreats(engine, {
+        allies: resolved.map((a) => ({ heroId: a.heroId, position: a.position })),
+        enemies,
+        enemyPositions,
+        bans,
+        rankBracket: bracket,
+      })
+    : null;
 
   // Once both teams are in with every ally's position, the game plan for our side.
   const gamePlan = engine ? finishedDraftPlan(engine, picksByPosition, enemies, bracket, matchups, enemyPositions) : null;
@@ -1099,7 +1098,7 @@ export function DraftBoard({
         />
       </section>
 
-      {threats && threats.length > 0 && (
+      {threats && threats.length > 0 && allyIds.length + enemies.length < 2 * TEAM_SIZE && (
         <ThreatCard
           threats={threats}
           hero={planHero}
@@ -1133,6 +1132,7 @@ export function DraftBoard({
             return member.id === (party?.userId ?? SOLO_ME) ? "You" : (planNames[member.id] ?? null);
           })}
           myPosition={myPosition}
+          threats={threats ?? []}
         />
       )}
 
