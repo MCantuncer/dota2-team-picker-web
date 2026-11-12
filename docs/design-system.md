@@ -285,6 +285,18 @@ The Item Build tab's threat tiles (`components/who-hurts-you.tsx`), one per thre
   row: the item in the player's path ("Answer"), or what to do ("Do").
 - Four across from 1280px, two from 640px; on phones each tile is a row with a 128px art box at its left.
 
+## Game Clock
+
+The Game Story tab's minute line (`components/story-timeline.tsx`) with three marks on top of the key items:
+
+- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band on
+  the axis from our ready minute to theirs, the ready label reading "Fight Here, 15 to 17". When they are first, a
+  Dire band reads "Hold Until N".
+- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down to a warn chip with the question
+  ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the axis the label sits left of the line.
+- **At 20 Min**: the team's fallbacks as two cards, Ahead (radiant left edge) then Behind (dire left edge), question
+  bold in the side's colour and the answer under it.
+
 ## Skill Track
 
 The Skills and Talents tab (`components/skill-plan-card.tsx`, `components/skill-track.tsx`):
