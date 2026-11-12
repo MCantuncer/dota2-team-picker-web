@@ -73,7 +73,8 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
                 <span>{heroName(p.heroId)}</span>
                 <span className="flex items-center gap-1.5 text-xs text-muted">
                   <PositionIcon position={p.position} size={12} />
-                  {playerNames[p.position - 1] ?? POSITION_NAMES[p.position - 1]}
+                  {playerNames[p.position - 1] ? `${playerNames[p.position - 1]} · ` : ""}
+                  {POSITION_NAMES[p.position - 1]}
                 </span>
               </span>
             </span>
