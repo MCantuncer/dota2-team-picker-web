@@ -320,7 +320,7 @@ export function DraftBoard({
     return () => clearTimeout(timer);
   }, [shown, myPosition, saveSuggestions]);
 
-  // A dangerous enemy core and his answers, while the draft is still open (the Game Story takes over after).
+  // The dangerous enemy cores and their answers, while the draft is still open (the Game Story takes over after).
   const threats =
     engine && allyIds.length + enemies.length < 2 * TEAM_SIZE
       ? draftThreats(engine, {
@@ -1099,10 +1099,9 @@ export function DraftBoard({
         />
       </section>
 
-      {threats?.main && threats.main.step < 2 && (
+      {threats && threats.length > 0 && (
         <ThreatCard
-          threat={threats.main}
-          others={threats.others}
+          threats={threats}
           hero={planHero}
           myPosition={myPosition}
           games={engine.data.threatPlans?.games ?? 0}
