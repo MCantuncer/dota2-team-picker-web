@@ -35,6 +35,15 @@ export function playerPair(lane: LanePlan, heroId: number): (PairLane & { weight
   return (lane.pairs ?? []).filter((p) => p.hero === heroId).reduce<(PairLane & { weight: number }) | undefined>((best, p) => (!best || p.weight > best.weight ? p : best), undefined);
 }
 
+/**
+ * The player's "No X by N min?" line, when their key item has a late minute: the Game Clock's checkpoint flag says it
+ * for the viewer, so their Lane Board leaves it out.
+ */
+export function keyItemLateLine(player: PlayerPlan): string | undefined {
+  if (player.keyItem?.lateMinute === undefined) return undefined;
+  return player.fallbacks[player.fallbackSituations?.indexOf("keyItemLate") ?? -1];
+}
+
 const pct = (n: number, of: number) => Math.round((n / of) * 100);
 
 /**
@@ -42,9 +51,11 @@ const pct = (n: number, of: number) => Math.round((n / of) * 100);
  * coloured by its verdict with the player's lane lit, then the player against the enemy they meet most as two
  * renders, and that pair's real lane results as a won, even and lost bar with the counts.
  */
-export function LaneBoard({ lanes, player, heroName, icons }: Art & { lanes: LanePlan[]; player: PlayerPlan }) {
+export function LaneBoard({ lanes, player, heroName, icons, onClock = false }: Art & { lanes: LanePlan[]; player: PlayerPlan; onClock?: boolean }) {
   const lane = lanes.find((l) => l.ours.includes(player.heroId));
   if (!lane) return null;
+  const clockLine = onClock ? keyItemLateLine(player) : undefined;
+  const fallbacks = player.fallbacks.filter((line) => line !== clockLine);
   const pair = playerPair(lane, player.heroId);
   const enemy = pair?.enemy ?? lane.theirs[0];
   const enemyPosition = enemy !== undefined && lane.theirs.length === ENEMY_POSITIONS[lane.name]?.length ? ENEMY_POSITIONS[lane.name]![lane.theirs.indexOf(enemy)] : undefined;
@@ -70,11 +81,11 @@ export function LaneBoard({ lanes, player, heroName, icons }: Art & { lanes: Lan
           <div className="flex max-w-[62ch] flex-col gap-3">
             <p className="text-[0.9375rem] text-fg">{lane.text}</p>
             <p className="text-[0.9375rem] text-fg">{player.job}</p>
-            {player.fallbacks.length > 0 && (
+            {fallbacks.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <h4 className="text-sm font-medium text-muted">If It Goes Wrong</h4>
                 <ul className="flex flex-col gap-1 text-sm text-fg/85">
-                  {player.fallbacks.map((line) => (
+                  {fallbacks.map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ul>
