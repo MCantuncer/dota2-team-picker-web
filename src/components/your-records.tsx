@@ -1,3 +1,4 @@
+import { POSITION_NAMES } from "@/lib/draft";
 import { bestPair, type Records, recordText, type SuggestionBucket } from "@/lib/records";
 
 const BUCKET_NAMES: Record<SuggestionBucket, string> = {
@@ -51,7 +52,7 @@ export function YourRecords({ records }: { records: Records }) {
                       {pair && (
                         <span className="text-muted">
                           {" "}
-                          Best as <span className="num">Pos {pair.mine}</span> with them <span className="num">Pos {pair.theirs}</span>:{" "}
+                          Best as {POSITION_NAMES[pair.mine - 1]} with them as {POSITION_NAMES[pair.theirs - 1]}:{" "}
                           <span className="num">{recordText(pair)}</span>.
                         </span>
                       )}

@@ -109,13 +109,13 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
           <span className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 text-sm text-muted">
               <PositionIcon position={s.position} size={18} className="text-accent" />
-              Pos {s.position} · {POSITION_NAMES[s.position]}
+              {POSITION_NAMES[s.position]}
             </span>
             <span
               className="micro pl-6 text-subtle"
               title={
                 s.played
-                  ? `Played Pos ${s.position} in ${s.played.games} of their last ${s.played.of} games with a known position`
+                  ? `Played ${POSITION_NAMES[s.position]} in ${s.played.games} of their last ${s.played.of} games with a known position`
                   : undefined
               }
             >
@@ -198,10 +198,8 @@ function Coverage({ seats }: { seats: Seat[] }) {
             >
               <PositionIcon position={p} size={24} className={who.length ? "text-muted" : "text-warn"} />
               <span className="flex min-w-0 flex-col text-sm leading-tight">
-                <span className="font-semibold text-fg">Pos {p}</span>
-                <span className={who.length ? "text-subtle" : "text-warn"}>
-                  {who.length ? POSITION_NAMES[p] : "Nobody yet"}
-                </span>
+                <span className="font-semibold text-fg">{POSITION_NAMES[p]}</span>
+                {!who.length && <span className="text-warn">Nobody yet</span>}
               </span>
               <span
                 className="ml-auto flex"

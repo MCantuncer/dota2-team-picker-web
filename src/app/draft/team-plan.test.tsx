@@ -217,7 +217,7 @@ describe("TeamPlanLane", () => {
     renderLane();
     expect(within(screen.getByRole("list", { name: "Team Plan" })).getAllByRole("article")).toHaveLength(5);
     expect(card("Juggernaut").getByText("Deniz")).toBeVisible();
-    expect(card("Juggernaut").getByText("Pos 1")).toBeVisible();
+    expect(card("Juggernaut").getByText("Carry")).toBeVisible();
     expect(card("Invoker").getByText("You")).toBeVisible();
     expect(card("Invoker").queryByText("Me")).toBeNull();
     // Every reason, the number bold first, a real minus sign, and a face for the hero it names.

@@ -121,7 +121,7 @@ function Results({ report, nowS, name }: { report: FillCheckReport; nowS: number
               return (
                 <tr key={p} className="border-t border-line">
                   <td className="py-1.5">
-                    Pos {p} {posName}
+                    {posName}
                   </td>
                   <td className="py-1.5">{fill.gamesByPosition[p] ?? 0}</td>
                   <td className="py-1.5">{strong ? strongText(strong.imp) : "none"}</td>
@@ -167,7 +167,7 @@ function HeroList({
           {rows.map((r) => (
             <li key={`${r.heroId}:${r.position}`} className="flex flex-col gap-0.5 border-t border-line py-2 text-sm">
               <span className="font-medium text-fg">
-                {name(r.heroId)} <span className="text-muted">Pos {r.position}</span>
+                {name(r.heroId)} <span className="text-muted">{POSITION_NAMES[r.position - 1]}</span>
                 {"kind" in r && r.kind === "proven" && <span className="text-muted"> · Proven</span>}
               </span>
               <span className="num text-muted">

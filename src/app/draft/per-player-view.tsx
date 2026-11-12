@@ -194,14 +194,12 @@ function PlayerSection({
         <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-surface px-5 py-3 ring-1 ring-line ring-inset">
           <h3
             id={headingId}
-            aria-label={`${isMine ? "You" : name}, Pos ${c.position} ${role}`}
+            aria-label={`${isMine ? "You" : name}, ${role}`}
             className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2"
           >
             <span className="flex items-center gap-1.5 text-subtle">
               <PositionIcon position={c.position} size={16} />
-              <span className="text-sm font-medium text-muted">
-                Pos {c.position} {role}
-              </span>
+              <span className="text-sm font-medium text-muted">{role}</span>
             </span>
             {isMine ? (
               <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>

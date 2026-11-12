@@ -139,7 +139,7 @@ describe("PickStrip", () => {
     const card = screen.getByRole("article", { name: "Invoker" });
     expect(card).toHaveAttribute("id", "pick-detail");
     expect(card).toHaveTextContent("Clear Best Pick");
-    expect(card).toHaveTextContent("Pos 2 Mid");
+    expect(card).toHaveTextContent("Mid");
     expect(card).toHaveTextContent("+9.7Points");
     expect(card).toHaveTextContent("1st of 49 Mids");
     expect(card).toHaveTextContent("5.8 points ahead of Ember Spirit, more than the 2.9 the data could be off by");
