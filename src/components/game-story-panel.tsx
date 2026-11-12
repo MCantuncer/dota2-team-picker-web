@@ -3,7 +3,8 @@ import type { GamePlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
 import { keyItemLateLine } from "./lane-board";
 import { PlayerView } from "./player-view";
-import { StoryTimeline } from "./story-timeline";
+import type { EnemyItem } from "./build-path";
+import { itemArt, StoryTimeline } from "./story-timeline";
 import { ThreatPlanPanel } from "./threat-plan-panel";
 import type { DraftThreat } from "@/lib/engine/threat-plan";
 
@@ -22,7 +23,7 @@ export interface GameStoryPanelProps {
   abilities?: Snapshot["heroAbilities"];
   /** Shop items, for the item art on the Story timeline. */
   items?: Snapshot["items"];
-  /** Skill build slices, for each player's item paths (If a Key Item Is Late). */
+  /** Skill build slices, for each player's item paths (If It Is Late, in a core item's detail). */
   skillBuilds?: Snapshot["skillBuilds"];
   /** Game plans against the dangerous enemy cores, most dangerous first; each takes his line in Danger Heroes. */
   threats?: DraftThreat[];
@@ -38,6 +39,10 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
   const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
   const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
+  const itemImg = itemArt(items);
+  const enemyItems: EnemyItem[] = plan.story.chapters
+    .flatMap((c) => c.theirs)
+    .map((s) => ({ hero: s.hero, heroIcon: heroIcons[s.hero], item: s.item, img: itemImg(s.item), minute: s.minute, around: s.around }));
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   // Each danger line starts with its hero's name ("Faceless Void: ..."); the plan replaces his.
   const danger = plan.danger.filter((line) => !threats.some((t) => line.startsWith(`${heroName(t.hero)}:`)));
@@ -122,6 +127,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
         headline={plan.story.headline}
         ready={plan.story.ready}
         team={team}
+        enemyItems={enemyItems}
       />
     </section>
   );

@@ -271,8 +271,16 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - Every tile is a toggle (`aria-pressed`); the open one has a copper ring. Its **detail** opens right under it: art,
   name, a Dire tint chip "For <Enemy>" with the faces, the numbers as stat blocks (Usual, Late After, Copies) and at
   most two sentences. The draft's first answer item is open to start.
-- Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, the detail
-  under the open row. The path scrolls sideways on narrow desktops (a labelled, focusable region).
+- **Enemy items** on the same line, below it, at their minute: a Dire dot, the item with a 20px enemy face on its
+  corner, the minute in Dire red and "Hero: Item". Ours sit above the line, theirs below, so the race reads at a
+  glance. Rough (around) minutes leave them off.
+- **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (subtle) under its late minute, and
+  its detail ends with the split: two neutral lanes (copper for on time, grey for late) sized by their share of the
+  wins, what the late wins bought next with usual minutes, and a Wins Only note. No green or red: neither lane is
+  the right one. The path's Late After uses the fork's minute, so both say the same number.
+- Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, enemy items
+  as indented rows, the detail under the open row. The path scrolls sideways on narrow desktops (a labelled,
+  focusable region).
 
 ## Who Hurts You
 
