@@ -1,8 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem } from "@/lib/engine/item-build";
-import { PlayerItems, usualLane } from "./player-items";
+import { usualLane } from "./build-path";
+import { PlayerItems } from "./player-items";
 
 const item = (itemId: number, name: string, minute: number, extra: Partial<BuildItem> = {}): BuildItem => ({
   itemId,
@@ -33,25 +35,48 @@ describe("usualLane", () => {
   });
 });
 
-describe("PlayerItems lane items", () => {
-  it("shows the usual lane items as icons after the start, with no minute", () => {
+describe("Build Path", () => {
+  it("shows the usual lane items as tiles after the start, with no minute", () => {
     renderItems([nullTalisman, bracer, wand]);
     const lane = screen.getByRole("list", { name: "Lane items, in buy order" });
-    expect(within(lane).getAllByRole("img").map((img) => img.getAttribute("alt"))).toEqual(["Null Talisman", "Bracer", "Magic Wand"]);
-    expect(screen.queryByText("2 min")).not.toBeInTheDocument();
-    expect(screen.queryByText("Null Talisman")).not.toBeInTheDocument();
+    expect(within(lane).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Null Talisman", "Bracer", "Magic Wand"]);
+    expect(within(lane).queryByText("2")).not.toBeInTheDocument();
   });
 
-  it("keeps a lane item this draft asks for as an Item Journey step with its reason and minute", () => {
+  it("puts a lane item this draft asks for on the path with its minute, open with its reason", () => {
     renderItems([nullTalisman, earlyWand]);
-    expect(screen.getByText("Magic Wand")).toBeInTheDocument();
-    expect(screen.getByText("3 min")).toBeInTheDocument();
+    const path = screen.getByRole("list", { name: "Core items, in buy order" });
+    expect(within(path).getByRole("button", { name: "Magic Wand" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(path).getByText("3")).toBeInTheDocument();
     expect(screen.getByText("Against Zeus's spells: get it early.")).toBeInTheDocument();
     const lane = screen.getByRole("list", { name: "Lane items, in buy order" });
-    expect(within(lane).getAllByRole("img").map((img) => img.getAttribute("alt"))).toEqual(["Null Talisman"]);
+    expect(within(lane).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Null Talisman"]);
   });
 
-  it("shows no lane strip when there are no usual lane items", () => {
+  it("opens an item's numbers under it when its tile is pressed", async () => {
+    const user = userEvent.setup();
+    renderItems([nullTalisman, earlyWand]);
+    await user.click(screen.getByRole("button", { name: "Phase Boots" }));
+    expect(screen.getByRole("button", { name: "Phase Boots" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Magic Wand" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("heading", { name: "Phase Boots" })).toBeInTheDocument();
+    expect(screen.getByText("9 min")).toBeInTheDocument();
+    expect(screen.getByText("Usual")).toBeInTheDocument();
+  });
+
+  it("names the enemy an item is bought for on its tile and in its detail", () => {
+    const salve = item(39, "Healing Salve", 0, { reason: "Hard lane against Hero 11: more sustain", against: [11] });
+    render(
+      <PlayerItems
+        player={{ ...player([]), build: { ...player([]).build!, start: [salve] } }}
+        heroName={(id) => `Hero ${id}`}
+        icons={{ 11: "/hero-11.png" }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Healing Salve, for Hero 11" })).toBeInTheDocument();
+  });
+
+  it("shows no lane kit when there are no usual lane items", () => {
     renderItems([]);
     expect(screen.queryByRole("list", { name: "Lane items, in buy order" })).not.toBeInTheDocument();
   });
