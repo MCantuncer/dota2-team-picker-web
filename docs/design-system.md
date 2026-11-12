@@ -274,6 +274,18 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, the detail
   under the open row. The path scrolls sideways on narrow desktops (a labelled, focusable region).
 
+## Game Clock
+
+The Game Story tab's minute line (`components/story-timeline.tsx`) with three marks on top of the key items:
+
+- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band on
+  the axis from our ready minute to theirs, the ready label reading "Fight Here, 15 to 17". When they are first, a
+  Dire band reads "Hold Until N".
+- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down to a warn chip with the question
+  ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the axis the label sits left of the line.
+- **At 20 Min**: the team's fallbacks as two cards, Ahead (radiant left edge) then Behind (dire left edge), question
+  bold in the side's colour and the answer under it.
+
 ## Skill Track
 
 The Skills and Talents tab (`components/skill-plan-card.tsx`, `components/skill-track.tsx`):
