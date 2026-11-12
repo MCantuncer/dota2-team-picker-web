@@ -5,7 +5,8 @@
  * his answers your team has, the open answers for each empty seat, his lane against your laners, when he
  * usually finishes his big item, and his win rate by game length. No advice is made up here.
  *
- * One full plan per game: the qualifying enemy with the biggest drop. Other qualifying enemies get one line.
+ * Every dangerous enemy core gets a plan, most dangerous first: the highest win rate against teams with as many of
+ * his answers as yours has now (dangerOf), so the order changes as your team picks his answers.
  */
 import { LANE_OPPONENTS, guessEnemyPositions, knownPositions } from "./positions";
 import { chooseTimingSlice } from "./item-timing-slice";
@@ -61,7 +62,10 @@ export interface DraftThreat {
   have: AnswerEdge[];
   /** Which stair step your team is on: 0, 1 or 2 (two or more answers). */
   step: 0 | 1 | 2;
-  /** Open answers for each empty seat, where the pick engine agrees he does worse against them, worst for him first. */
+  /**
+   * Open answers for each empty seat, where the pick engine agrees he does worse against them, worst for him first.
+   * Each hero shows once, at the empty seat he is played at most.
+   */
   open: { position: Position; heroes: AnswerEdge[] }[];
   lanes: ThreatLane[];
   pace?: ThreatPace;
@@ -78,12 +82,12 @@ export interface DraftThreatsInput {
 }
 
 /**
- * The full plan for the most dangerous enemy core in the draft, and one line for each other one. Empty when
+ * A plan for each dangerous enemy core in the draft (likely position 1 to 3), most dangerous first. Empty when
  * the snapshot has no plans or no enemy core qualifies.
  */
-export function draftThreats(engine: Engine, input: DraftThreatsInput): { main?: DraftThreat; others: { hero: number; step: 0 | 1 | 2 }[] } {
+export function draftThreats(engine: Engine, input: DraftThreatsInput): DraftThreat[] {
   const plans = engine.data.threatPlans?.plans ?? [];
-  if (plans.length === 0 || input.enemies.length === 0) return { others: [] };
+  if (plans.length === 0 || input.enemies.length === 0) return [];
   const fits = guessEnemyPositions(
     input.enemies.map((e) => engine.fit(e)),
     knownPositions(input.enemies, input.enemyPositions),
@@ -92,45 +96,56 @@ export function draftThreats(engine: Engine, input: DraftThreatsInput): { main?:
     input.enemies.map((e, i) => [e, POSITIONS.reduce((best, p) => (fits[i]![p] > fits[i]![best] ? p : best), 1 as Position)]),
   );
   const allies = input.allies.map((a) => a.heroId);
-  // Plans are sorted by drop, biggest first.
-  const qualifying = plans.filter((p) => {
-    const pos = positionOf.get(p.hero);
-    return pos !== undefined && pos <= 3;
-  });
-  const stepOf = (plan: ThreatPlan) => Math.min(2, allies.filter((a) => plan.answers.some((x) => x.hero === a)).length) as 0 | 1 | 2;
-  const [first, ...rest] = qualifying;
-  const others = rest.map((p) => ({ hero: p.hero, step: stepOf(p) }));
-  if (!first) return { others };
-  const position = positionOf.get(first.hero)!;
   const bracket = input.rankBracket;
-  const edge = (h: number): AnswerEdge => ({ hero: h, edge: engine.matchupEdge(first.hero, h, bracket) });
-  const answerIds = first.answers.map((a) => a.hero);
   const taken = new Set([...allies, ...input.enemies, ...(input.bans ?? [])]);
   const filled = new Set(input.allies.flatMap((a) => (a.position ? [a.position] : [])));
-  const open = allies.length >= 5 ? [] : POSITIONS.filter((p) => !filled.has(p)).map((seat) => ({
-    position: seat,
-    heroes: answerIds
-      .filter((h) => !taken.has(h) && engine.data.heroes[h] && engine.fit(h)[seat] >= SEAT_SHARE)
-      .map(edge)
-      .filter((a) => a.edge < 0)
-      .sort((a, b) => a.edge - b.edge)
-      .slice(0, OPEN_PER_SEAT),
-  })).filter((s) => s.heroes.length > 0);
-  return {
-    main: {
-      hero: first.hero,
-      position,
-      plan: first,
-      have: allies.filter((a) => answerIds.includes(a)).map(edge),
-      step: stepOf(first),
-      open,
-      lanes: threatLanes(engine, first.hero, position, input.allies, bracket),
-      pace: threatPace(engine, first.hero, position, bracket),
-      length: { his: first.length, group: engine.data.threatPlans?.pos1Length ?? [] },
-    },
-    others,
+  const seats = allies.length >= 5 ? [] : POSITIONS.filter((p) => !filled.has(p));
+  // Each open answer shows once, at the empty seat he is played at most.
+  const seatOf = (h: number) => {
+    const fit = engine.fit(h);
+    const best = seats.reduce<Position | undefined>((b, p) => (b === undefined || fit[p] > fit[b] ? p : b), undefined);
+    return best !== undefined && fit[best] >= SEAT_SHARE ? best : undefined;
   };
+  const threatOf = (plan: ThreatPlan, position: Position): DraftThreat => {
+    const edge = (h: number): AnswerEdge => ({ hero: h, edge: engine.matchupEdge(plan.hero, h, bracket) });
+    const answerIds = plan.answers.map((a) => a.hero);
+    const have = allies.filter((a) => answerIds.includes(a));
+    const candidates = answerIds
+      .filter((h) => !taken.has(h) && engine.data.heroes[h])
+      .map((h) => ({ ...edge(h), seat: seatOf(h) }))
+      .filter((a) => a.seat !== undefined && a.edge < 0)
+      .sort((a, b) => a.edge - b.edge);
+    const open = seats
+      .map((seat) => ({
+        position: seat,
+        heroes: candidates
+          .filter((a) => a.seat === seat)
+          .slice(0, OPEN_PER_SEAT)
+          .map(({ hero, edge: e }) => ({ hero, edge: e })),
+      }))
+      .filter((s) => s.heroes.length > 0);
+    return {
+      hero: plan.hero,
+      position,
+      plan,
+      have: have.map(edge),
+      step: Math.min(2, have.length) as 0 | 1 | 2,
+      open,
+      lanes: threatLanes(engine, plan.hero, position, input.allies, bracket),
+      pace: threatPace(engine, plan.hero, position, bracket),
+      length: { his: plan.length, group: engine.data.threatPlans?.pos1Length ?? [] },
+    };
+  };
+  return plans
+    .flatMap((plan) => {
+      const position = positionOf.get(plan.hero);
+      return position !== undefined && position <= 3 ? [threatOf(plan, position)] : [];
+    })
+    .sort((a, b) => dangerOf(b) - dangerOf(a) || b.plan.drop - a.plan.drop);
 }
+
+/** How dangerous he is in this draft: his win rate against teams with as many of his answers as yours has now. */
+export const dangerOf = (t: DraftThreat): number => t.plan.stair[t.step].winRate;
 
 /**
  * His lane with each of your laners who face his position in it (STRATZ laneOutcome: the result is the whole
