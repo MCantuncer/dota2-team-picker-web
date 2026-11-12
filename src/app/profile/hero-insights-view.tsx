@@ -234,7 +234,7 @@ function HeroRow({
             {positions.map((p) => (
               <span key={p} className="chip micro" title={`In your ${POSITION_NAMES[p - 1]} pool`}>
                 <PositionIcon position={p} size={12} />
-                Pos {p}
+                {POSITION_NAMES[p - 1]}
               </span>
             ))}
           </span>

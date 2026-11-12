@@ -37,7 +37,7 @@ describe("Slips", () => {
     render(<Slips slips={[slip, { ...slip, userId: "v", outside: [99] }]} heroes={heroes} nowMs={NOW} />);
     const [first, second] = screen.getAllByRole("listitem");
     expect(first).toHaveTextContent("Lina");
-    expect(first).toHaveTextContent("Pos 5");
+    expect(first).toHaveTextContent("Hard Support");
     expect(first).toHaveTextContent("1 of 3 outside:Visage");
     expect(first).toHaveTextContent("Today, 12:30");
     expect(second).toHaveTextContent("Hero 99");

@@ -37,7 +37,7 @@ describe("PreviousGames", () => {
     );
     const [first, second] = within(screen.getByRole("list")).getAllByRole("listitem");
     expect(first.textContent).toContain("Monkey King");
-    expect(first.textContent).toContain("Pos 1 Carry");
+    expect(first.textContent).toContain("Carry");
     expect(first.textContent).toContain("Won");
     expect(first.textContent).toContain("2 Nov · 34:05");
     expect(first.textContent).toContain("9/2/7");

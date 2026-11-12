@@ -55,7 +55,7 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
             {game.position ? (
               <>
                 <PositionIcon position={game.position} size={18} className="text-muted" />
-                Pos {game.position} {POSITION_NAMES[game.position - 1]}
+                {POSITION_NAMES[game.position - 1]}
               </>
             ) : (
               "Position unknown"

@@ -10,11 +10,11 @@ test("a Team with open seats suggests heroes for every teammate, as if they can 
 
   // Per Player opens with the player's own column and one Teammate column per other position.
   await expect(page.getByRole("heading", { name: "Per Player" })).toBeVisible();
-  await page.getByRole("button", { name: "Pos 1", exact: true }).click();
+  await page.getByRole("button", { name: "Carry", exact: true }).click();
   await expect(page.getByRole("list", { name: "Suggested heroes for You" })).toBeVisible();
   const mates = page.getByRole("list", { name: "Suggested heroes for Teammate" });
   await expect(mates).toHaveCount(4);
-  await expect(page.getByRole("heading", { name: /Teammate.*Pos 1/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /Teammate.*Carry/ })).toHaveCount(0);
   await expect(mates.first().locator(":scope > li")).toHaveCount(6);
   // Teammates have no hero pool, so nothing is marked Outside Pool.
   await expect(page.getByText("Outside Pool")).toHaveCount(0);

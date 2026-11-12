@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icon";
 import { Avatar } from "@/components/account-menu";
+import { PositionLabel } from "@/components/position-label";
 import { PARTY_SIZE, POSITION_NAMES, toParty, type Party, type PartyMember } from "@/lib/party";
 import { fetchPartyLink, type PartyLink } from "@/lib/party-link";
 import { createClient } from "@/lib/supabase/client";
@@ -429,15 +430,17 @@ function Seat({
             onChange={(e) => onPosition(e.target.value ? Number(e.target.value) : null)}
             className="field h-8 w-full py-0 text-sm"
           >
-            <option value="">Any position</option>
+            <option value="">Any Position</option>
             {Object.entries(POSITION_NAMES).map(([n, name]) => (
               <option key={n} value={n}>
-                Pos {n} {name}
+                {name}
               </option>
             ))}
           </select>
+        ) : position ? (
+          <PositionLabel position={position} size={14} className="min-w-0 text-sm text-muted" />
         ) : (
-          <span className="truncate text-sm text-muted">{position ? `Pos ${position} ${POSITION_NAMES[position]}` : "Any position"}</span>
+          <span className="truncate text-sm text-muted">Any Position</span>
         )}
         {(isLeader || isCaptain) && (
           <span className="flex flex-wrap gap-1">

@@ -52,7 +52,7 @@ describe("TeamSeats", () => {
     ]);
     const seats = within(screen.getByRole("list", { name: "Team Seats" })).getAllByRole("listitem");
     expect(seats).toHaveLength(5);
-    expect(seats[0]).toHaveTextContent(/^Pos 1Carry\s*Ana$/);
+    expect(seats[0]).toHaveTextContent(/^Carry\s*Ana$/);
     expect(seats[0]).toHaveAttribute("title", "Ana, Night Shift");
     expect(seats[1]).toHaveTextContent("You");
     expect(seats[2]).toHaveAttribute("title", "Open Seat, Any Hero");
@@ -70,7 +70,7 @@ describe("TeamSeats", () => {
   it("adds a friend to an open seat with the keyboard only", async () => {
     const calls = setup([{ id: SOLO_ME, position: 2 }]);
     await userEvent.click(screen.getAllByRole("button", { name: "Add Player to Pos 4" })[0]);
-    const search = screen.getByRole("combobox", { name: "Find a Stack mate or friend for Pos 4" });
+    const search = screen.getByRole("combobox", { name: "Find a Stack mate or friend for Soft Support" });
     expect(search).toHaveFocus();
     await userEvent.keyboard("bo{Enter}");
     expect(calls.place).toHaveBeenCalledWith("b", 4);

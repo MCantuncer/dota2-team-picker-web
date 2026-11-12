@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/icon";
+import { PositionIcon } from "@/components/position-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroFace } from "@/components/hero-frame";
@@ -542,7 +543,7 @@ export function DraftBoard({
   const showsPicks = !isFullBoard(draft) && !mine;
   const picksHeading = (
     <>
-      Picks for Pos {myPosition} <span className="text-muted">{POSITION_NAMES[myPosition - 1]}</span>
+      Picks for {POSITION_NAMES[myPosition - 1]}
     </>
   );
 
@@ -880,10 +881,14 @@ export function DraftBoard({
                   <button
                     key={p}
                     aria-pressed={myPosition === p}
+                    aria-label={POSITION_NAMES[p - 1]}
                     title={POSITION_NAMES[p - 1]}
                     onClick={() => choosePosition(p)}
+                    className="inline-flex items-center gap-1.5"
                   >
-                    Pos {p}
+                    <PositionIcon position={p} size={16} />
+                    {/* Below xl only the chosen role keeps its name, so the row fits beside Rank. */}
+                    <span className={myPosition === p ? "" : "max-xl:hidden"}>{POSITION_NAMES[p - 1]}</span>
                   </button>
                 ))}
               </div>
@@ -1204,7 +1209,7 @@ export function DidYouPick({
             Did you pick {hero.name}?
           </span>
           <span className="text-sm text-muted">
-            Read from your Dota screen into My Team. If it&apos;s yours, it takes your Pos {position} spot.
+            Read from your Dota screen into My Team. If it&apos;s yours, it takes your {POSITION_NAMES[position - 1]} spot.
           </span>
         </span>
       </span>

@@ -97,7 +97,7 @@ export function CheckInCard({
           {found ? (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <p className="text-muted">
-                {me ? `${me.name}, ${POSITION_NAMES[game.myPosition - 1]}` : `Pos ${game.myPosition}`}
+                {me ? `${me.name}, ${POSITION_NAMES[game.myPosition - 1]}` : POSITION_NAMES[game.myPosition - 1]}
                 {game.matchId && (
                   <>
                     <span className="px-2 text-subtle">|</span>

@@ -155,12 +155,11 @@ export function TeamSeats({
                   <span className="flex min-w-0 flex-col gap-1.5">
                     {/* Muted, not subtle, on the open seat's copper wash so the label keeps 4.5:1 contrast. */}
                     <span
-                      className={`micro flex items-center gap-1.5 ${adding === position ? "text-muted" : "text-subtle"}`}
-                      title={POSITION_NAMES[position]}
+                      className={`micro flex items-start gap-1.5 max-sm:min-h-8 ${adding === position ? "text-muted" : "text-subtle"}`}
                     >
-                      <PositionIcon position={position} size={12} />
-                      Pos {position}
-                      <span className="max-lg:hidden">{POSITION_NAMES[position]}</span>
+                      {/* Two lines on a phone, so "Soft Support" can wrap and every seat's next line still lines up. */}
+                      <PositionIcon position={position} size={12} className="mt-0.5 shrink-0" />
+                      {POSITION_NAMES[position]}
                     </span>
                     {seat?.id === SOLO_ME ? (
                       <span className="micro w-fit rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>

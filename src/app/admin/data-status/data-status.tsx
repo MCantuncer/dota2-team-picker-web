@@ -88,7 +88,7 @@ export function FillLanes({ fill, heroes }: { fill: FillStatus; heroes: Map<numb
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="font-semibold text-fg">
-                Pos {p.position} <span className="font-normal text-muted">{POSITION_NAMES[p.position]}</span>
+                {POSITION_NAMES[p.position]}
               </h3>
               <span className="num text-sm text-muted">{percent(p)}%</span>
             </div>
