@@ -274,6 +274,17 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, the detail
   under the open row. The path scrolls sideways on narrow desktops (a labelled, focusable region).
 
+## Who Hurts You
+
+The Item Build tab's threat tiles (`components/who-hurts-you.tsx`), one per threat row so an answer is said once:
+
+- A 16:9 enemy `HeroStage` with the first enemy's render (one `HeroArtPlacement` for every tile), the other enemies of
+  the row as 32px faces top left, and the key spell icon bottom left.
+- Under it: In Your Lane (or In Your Lane, Guessed) as a Dire tint chip, the spell names as the title, the heroes and
+  the threat kind (`kind`: Magic Burst, Illusions, Lockdown, Tank...), each spell's line, then the answer on a raised
+  row: the item in the player's path ("Answer"), or what to do ("Do").
+- Four across from 1280px, two from 640px; on phones each tile is a row with a 128px art box at its left.
+
 ## Game Clock
 
 The Game Story tab's minute line (`components/story-timeline.tsx`) with three marks on top of the key items:
