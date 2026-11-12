@@ -32,11 +32,11 @@ describe("supportCopyNote", () => {
   const on = { state: "on", from: 4 } as const;
 
   it("tells the source list where its heroes go", () => {
-    expect(supportCopyNote(on, 4)).toBe("Pos 5 gets the same heroes. Change Pos 5 any time to make it its own list.");
+    expect(supportCopyNote(on, 4)).toBe("Hard Support gets the same heroes. Change Hard Support any time to make it its own list.");
   });
 
   it("tells the other list where its heroes come from", () => {
-    expect(supportCopyNote(on, 5)).toBe("Copied from Pos 4. Change this list any time to make it its own.");
+    expect(supportCopyNote(on, 5)).toBe("Copied from Soft Support. Change this list any time to make it its own.");
   });
 
   it("says nothing on other positions or when copying is not on", () => {

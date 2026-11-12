@@ -101,7 +101,7 @@ export function CheckInPrompt({
             {found ? (game.won ? "Victory" : "Defeat") : "How Did It Go?"}
           </h2>
           <p className="text-sm text-muted">
-            {heroName ? `${heroName}, ${POSITION_NAMES[game.myPosition - 1]}` : `Your last game, Pos ${game.myPosition}`}
+            {heroName ? `${heroName}, ${POSITION_NAMES[game.myPosition - 1]}` : `Your last game, ${POSITION_NAMES[game.myPosition - 1]}`}
           </p>
         </div>
         {state === "open" && (

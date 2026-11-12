@@ -21,7 +21,7 @@ describe("YourRecords", () => {
     expect(items).toEqual([
       "Picked from the top 3 suggestions: 58% won in 12 games.",
       "Picked a hero we didn't suggest: 3 games, too few for a win rate.",
-      "Bea: 55% won in 20 games. Best as Pos 2 with them Pos 4: 75% won in 12 games.",
+      "Bea: 55% won in 20 games. Best as Mid with them as Soft Support: 75% won in 12 games.",
     ]);
   });
 

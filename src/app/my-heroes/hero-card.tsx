@@ -4,6 +4,7 @@ import Image from "next/image";
 import { type ReactNode, useEffect, useRef } from "react";
 import { renderOf } from "@/components/hero-render";
 import { Icon } from "@/components/icon";
+import { POSITION_NAMES } from "@/lib/draft";
 import { daysAgo, type FillNumbers } from "@/lib/top-heroes";
 
 interface CardHero {
@@ -113,7 +114,7 @@ export function HeroCard({
       <span className="text-xs text-accent sm:text-xs">From Your Games · {positionName}</span>
     ) : source.kind === "copied" ? (
       <span className="text-xs text-muted">
-        Copied from Pos {source.from} · {positionName}
+        Copied from {POSITION_NAMES[source.from - 1]} · {positionName}
       </span>
     ) : (
       <span className="text-xs text-muted">{positionName}</span>

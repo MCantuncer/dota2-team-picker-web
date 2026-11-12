@@ -64,7 +64,7 @@ export function PreviousGames({
             <option value="">All Positions</option>
             {POSITION_NAMES.map((p, i) => (
               <option key={p} value={i + 1}>
-                {i + 1} {p}
+                {p}
               </option>
             ))}
           </select>
@@ -143,7 +143,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
           {heroName}
         </Link>
         <span className="text-xs text-subtle">
-          {game.position ? `Pos ${game.position} ${POSITION_NAMES[game.position - 1]}` : "Position unknown"}
+          {game.position ? POSITION_NAMES[game.position - 1] : "Position unknown"}
         </span>
       </div>
       <span className={`w-10 text-sm font-medium ${game.isWin ? "text-radiant" : "text-dire"}`}>

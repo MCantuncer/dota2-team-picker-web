@@ -104,12 +104,12 @@ function lane(props: Partial<Parameters<typeof PerPlayerLane>[0]> = {}) {
 describe("PerPlayerLane", () => {
   it("gives each player a section headed by their seat, the reader's with You, and the plan's hero for it", () => {
     lane();
-    const you = screen.getByRole("region", { name: "You, Pos 2 Mid" });
+    const you = screen.getByRole("region", { name: "You, Mid" });
     expect(within(you).getByText("You")).toBeInTheDocument();
     expect(you).toHaveTextContent("2 of Your Heroes");
     expect(within(you).getByTitle("The Team Plan's hero for this seat")).toHaveTextContent("Team Plan Invoker");
 
-    const emreSection = screen.getByRole("region", { name: "Emre, Pos 3 Offlane" });
+    const emreSection = screen.getByRole("region", { name: "Emre, Offlane" });
     expect(emreSection).toHaveTextContent("2 of Emre's Heroes");
     expect(within(emreSection).getByRole("list", { name: "Suggested heroes for Emre" }).querySelectorAll(":scope > li")).toHaveLength(2);
   });
@@ -179,11 +179,11 @@ describe("PerPlayerLane", () => {
       plan: null,
       gamesOf: (playerId, heroId) => (playerId === "emre" && heroId === 2 ? 38 : null),
     });
-    expect(within(screen.getByRole("region", { name: "Teammate, Pos 4 Soft Support" })).getByText("Any Hero")).toHaveAttribute(
+    expect(within(screen.getByRole("region", { name: "Teammate, Soft Support" })).getByText("Any Hero")).toHaveAttribute(
       "title",
       "Teammate has no heroes for this position, so these are the best of every hero",
     );
-    expect(screen.getByRole("region", { name: "Emre, Pos 3 Offlane" })).toHaveTextContent("1 of Emre's Heroes and 1 Played");
+    expect(screen.getByRole("region", { name: "Emre, Offlane" })).toHaveTextContent("1 of Emre's Heroes and 1 Played");
     expect(within(screen.getByRole("article", { name: "Axe" })).getByText("Outside Pool")).toHaveAttribute(
       "title",
       expect.stringContaining("Emre played it 38 times"),

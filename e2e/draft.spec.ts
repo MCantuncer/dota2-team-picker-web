@@ -252,7 +252,7 @@ test("the draft screen shows the game plan once both teams are in", async ({ pag
 
   const plan = page.getByRole("region", { name: "Game Story" });
   await expect(plan.getByRole("heading", { name: "The Team" })).toBeVisible();
-  await expect(plan.getByRole("tab", { name: /Pos [1-5]/ })).toHaveCount(5);
+  await expect(plan.getByRole("tab", { name: /Carry|Mid|Offlane|Soft Support|Hard Support/ })).toHaveCount(5);
   await expectAccessible(page);
 });
 

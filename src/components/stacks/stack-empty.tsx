@@ -70,8 +70,7 @@ export function StackEmpty({ hero, create }: { hero?: string; create: ReactNode 
             >
               <PositionIcon position={p} size={32} className="text-subtle" />
               <span className="flex flex-col items-center leading-tight">
-                <span className="text-sm font-semibold text-muted sm:text-base">Pos {p}</span>
-                <span className="text-sm text-subtle max-sm:hidden">{POSITION_NAMES[p]}</span>
+                <span className="text-center text-sm font-semibold text-muted sm:text-base">{POSITION_NAMES[p]}</span>
               </span>
               <span className="micro text-subtle max-sm:hidden">Open Seat</span>
             </li>

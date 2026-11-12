@@ -7,6 +7,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
+import { POSITION_NAMES } from "@/lib/draft";
 import { RankMedal } from "@/components/rank-medal";
 import type { HeroArt } from "@/components/stacks/stack-lineup";
 import { bestPair, gameModeName, signatureHeroes, winPercent, type Friend, type SharedGame } from "@/lib/friends";
@@ -96,7 +97,7 @@ export function FriendDetail({
             {f.positions.map((p) => (
               <span key={p} className="chip h-6 gap-1.5 pl-1">
                 <PositionIcon position={p} size={16} />
-                Pos {p}
+                {POSITION_NAMES[p - 1]}
               </span>
             ))}
             {lastGame && <span className="text-subtle">Last game {lastGame}</span>}

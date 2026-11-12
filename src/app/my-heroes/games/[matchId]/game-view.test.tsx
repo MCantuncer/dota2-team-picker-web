@@ -67,7 +67,7 @@ describe("GameView", () => {
     render(<GameView game={game()} heroes={heroes} />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Monkey King");
     expect(screen.getByText("Lost")).toBeTruthy();
-    expect(screen.getByText(/Pos 1 Carry/).textContent).toMatch(/Pos 1 Carry\s*\|\s*2 Nov 2026\s*\|\s*34:05/);
+    expect(screen.getByText(/^\s*Carry/).textContent).toMatch(/Carry\s*\|\s*2 Nov 2026\s*\|\s*34:05/);
     const numbers = screen.getByRole("region", { name: "Numbers" }).textContent;
     expect(numbers).toContain("Better than 42% of Monkey King games");
     expect(numbers).toContain("In 33% of your team's kills");

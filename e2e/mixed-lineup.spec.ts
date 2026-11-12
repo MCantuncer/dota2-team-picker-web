@@ -22,7 +22,7 @@ test("a Team mixes Stack mates and friends, and friends who don't share are plan
   // Keyboard only: open the Pos 4 seat, find the friend, and add them.
   await page.locator('[data-seat-add="4"]:visible').focus();
   await page.keyboard.press("Enter");
-  const search = planFor.getByRole("combobox", { name: "Find a Stack mate or friend for Pos 4" });
+  const search = planFor.getByRole("combobox", { name: "Find a Stack mate or friend for Soft Support" });
   await expect(search).toBeFocused();
   // Everyone once, and never someone who hasn't accepted the friend request.
   const options = planFor.getByRole("listbox").getByRole("option");

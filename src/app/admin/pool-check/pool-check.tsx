@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { POSITION_NAMES } from "@/lib/draft";
 import { joinedText } from "@/lib/admin-players";
 import { listsText, type PoolCheck, type PoolSlip } from "@/lib/admin-pool-check";
 
@@ -48,7 +49,7 @@ export function Slips({ slips, heroes, nowMs }: { slips: PoolSlip[]; heroes: { i
           <li key={`${s.draftId}-${s.userId}`} className={`${ROW} border-t border-line first:border-t-0`}>
             <span className="min-w-0 font-medium break-words text-fg">{s.name}</span>
             <span className="num col-start-2 row-start-1 justify-self-end text-sm text-muted md:justify-self-start">
-              Pos {s.position}
+              {POSITION_NAMES[s.position - 1]}
             </span>
             <span className="col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-sm md:col-span-1">
               <span className="text-muted">

@@ -583,9 +583,7 @@ export function BestCard({
           <span className="flex items-center gap-2.5">
             <span className="flex items-center gap-1.5 text-subtle">
               <PositionIcon position={ctx.position} size={14} />
-              <span className="micro text-muted">
-                Pos {ctx.position} {POSITION_NAMES[ctx.position - 1]}
-              </span>
+              <span className="micro text-muted">{POSITION_NAMES[ctx.position - 1]}</span>
             </span>
             <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
           </span>

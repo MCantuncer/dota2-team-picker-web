@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import type { Position } from "@/lib/engine/types";
+import { POSITION_NAMES } from "@/lib/draft";
 import { SOLO_ME } from "@/lib/solo-queue";
 import type { Seat, TeamPerson } from "@/lib/team-lineup";
 import type { PlannableStack } from "./use-team-lineup";
@@ -11,21 +12,21 @@ interface Option {
   id: string;
   name: string;
   meta: string;
-  /** What choosing it does, e.g. "Add to Pos 5". */
+  /** What choosing it does, e.g. "Add to Hard Support". */
   action: string;
   disabled: boolean;
 }
 
 type Filter = "all" | "friends" | string;
 
-/** "Night Shift · Friend · plays Pos 4, 5", or why they can't bring heroes. */
+/** "Night Shift · Friend · plays Soft Support, Hard Support", or why they can't bring heroes. */
 function describe(p: TeamPerson, seat: Seat | undefined): string {
   const parts = p.stacks.filter((s) => s.role !== "owner").map((s) => s.name);
   if (p.isFriend) parts.push("Friend");
   if (!p.canAdd) parts.push("Not shared with Managers");
-  else if (seat) parts.push(`In this lineup at Pos ${seat.position}`);
+  else if (seat) parts.push(`In this lineup as ${POSITION_NAMES[seat.position - 1]}`);
   else if (!p.shared) parts.push("heroes not shared, planned as any hero");
-  else if (p.positions.length) parts.push(`plays Pos ${p.positions.join(", ")}`);
+  else if (p.positions.length) parts.push(`plays ${p.positions.map((n) => POSITION_NAMES[n - 1]).join(", ")}`);
   return parts.join(" · ");
 }
 
@@ -61,7 +62,7 @@ export function AddPlayer({
   const options: Option[] = [
     ...(seatOf(SOLO_ME) || q || filter !== "all"
       ? []
-      : [{ id: SOLO_ME, name: "You", meta: "Play this position yourself", action: `Add Me to Pos ${position}`, disabled: false }]),
+      : [{ id: SOLO_ME, name: "You", meta: "Play this position yourself", action: `Add Me to ${POSITION_NAMES[position - 1]}`, disabled: false }]),
     ...people
       .filter((p) => inFilter(p, filter) && p.name.toLowerCase().includes(q))
       .map((p) => {
@@ -70,7 +71,7 @@ export function AddPlayer({
           id: p.id,
           name: p.name,
           meta: describe(p, seat),
-          action: seat ? `Move to Pos ${position}` : `Add to Pos ${position}`,
+          action: seat ? `Move to ${POSITION_NAMES[position - 1]}` : `Add to ${POSITION_NAMES[position - 1]}`,
           disabled: !p.canAdd,
         };
       }),
@@ -104,7 +105,7 @@ export function AddPlayer({
     <div
       role="dialog"
       aria-modal="false"
-      aria-label={`Add a player to Pos ${position}`}
+      aria-label={`Add a player to ${POSITION_NAMES[position - 1]}`}
       className="flex w-full max-w-lg flex-col gap-2.5 rounded-md bg-surface p-3 shadow-lg ring-1 ring-inset ring-line-strong"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onClose();
@@ -118,8 +119,8 @@ export function AddPlayer({
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={current ? `${listId}-${current.id}` : undefined}
-        aria-label={`Find a Stack mate or friend for Pos ${position}`}
-        placeholder={`Find a Stack mate or friend for Pos ${position}`}
+        aria-label={`Find a Stack mate or friend for ${POSITION_NAMES[position - 1]}`}
+        placeholder={`Find a Stack mate or friend for ${POSITION_NAMES[position - 1]}`}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -145,7 +146,7 @@ export function AddPlayer({
           </button>
         ))}
       </div>
-      <ul id={listId} role="listbox" aria-label={`Players for Pos ${position}`} className="flex flex-col">
+      <ul id={listId} role="listbox" aria-label={`Players for ${POSITION_NAMES[position - 1]}`} className="flex flex-col">
         {options.map((o) => {
           const on = o === current;
           return (

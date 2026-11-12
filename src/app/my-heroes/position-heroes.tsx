@@ -239,10 +239,10 @@ export function PositionHeroes({
                   )}
                 </span>
                 <span className={`num truncate text-xs ${isActive ? "text-muted" : "text-subtle"}`}>
-                  Pos {p.n} · {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
+                  {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
                 </span>
               </span>
-              <span className={`num text-xs sm:hidden ${isActive ? "font-semibold" : "font-medium"}`}>Pos {p.n}</span>
+              <span className="sr-only sm:hidden">{p.name}</span>
               {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
           );
@@ -253,7 +253,7 @@ export function PositionHeroes({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-2">
             <h2 className="section-title">
-              {pos.name} Heroes <span className="num text-base font-medium text-subtle">Pos {pos.n}</span>
+              {pos.name} Heroes
             </h2>
             <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
               <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">

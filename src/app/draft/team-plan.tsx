@@ -412,9 +412,9 @@ export function PositionCard({
           )}
         </div>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <span className="flex items-center gap-1.5 text-subtle" title={POSITION_NAMES[slot.position]}>
+          <span className="flex items-center gap-1.5 text-subtle">
             <PositionIcon position={slot.position} size={14} />
-            <span className="micro text-muted">Pos {slot.position}</span>
+            <span className="micro text-muted">{POSITION_NAMES[slot.position]}</span>
           </span>
           {isMine ? (
             <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
@@ -507,7 +507,7 @@ export function AnotherSuperTeam({
                   <li
                     key={s.position}
                     className="flex w-[5.5rem] min-w-0 flex-col gap-1.5"
-                    title={`Pos ${s.position}: ${s.name}`}
+                    title={`${POSITION_NAMES[s.position]}: ${s.name}`}
                   >
                     <HeroStage size={60} className="h-[3.25rem] w-full">
                       {portrait && <HeroArt heroId={s.heroId} portrait={portrait} placement={TILE_ART} />}

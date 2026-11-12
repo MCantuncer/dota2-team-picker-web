@@ -89,10 +89,10 @@ describe("PositionHeroes Support Copy", () => {
     showSupport();
     await userEvent.click(screen.getByRole("button", { name: "Monkey King" }));
     expect(rpc).toHaveBeenCalledWith("set_favorite_hero", { hero_position: 4, hero: 114, is_on: true });
-    expect(screen.getByText("Pos 5 gets the same heroes. Change Pos 5 any time to make it its own list.")).toBeInTheDocument();
+    expect(screen.getByText("Hard Support gets the same heroes. Change Hard Support any time to make it its own list.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /Hard Support/ }));
     expect(screen.getByRole("button", { name: /^Remove Monkey King from / })).toBeInTheDocument();
-    expect(screen.getByText("Copied from Pos 4. Change this list any time to make it its own.")).toBeInTheDocument();
+    expect(screen.getByText("Copied from Soft Support. Change this list any time to make it its own.")).toBeInTheDocument();
   });
 
   it("Stop Copying keeps both lists and hides the note", async () => {

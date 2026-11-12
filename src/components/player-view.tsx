@@ -5,6 +5,7 @@ import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "rea
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
 import { PlayerItems } from "./player-items";
+import { PositionIcon } from "./position-icon";
 import { SkillPlanCard } from "./skill-plan-card";
 
 const POSITION_NAMES = ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"];
@@ -70,8 +71,10 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
               </span>
               <span className="flex flex-col items-start">
                 <span>{heroName(p.heroId)}</span>
-                <span className="text-xs text-muted">
-                  {playerNames[p.position - 1] ?? POSITION_NAMES[p.position - 1]} · Pos {p.position}
+                <span className="flex items-center gap-1.5 text-xs text-muted">
+                  <PositionIcon position={p.position} size={12} />
+                  {playerNames[p.position - 1] ? `${playerNames[p.position - 1]} · ` : ""}
+                  {POSITION_NAMES[p.position - 1]}
                 </span>
               </span>
             </span>

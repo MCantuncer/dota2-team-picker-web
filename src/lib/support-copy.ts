@@ -3,6 +3,7 @@
  * until they change the other list or press Stop Copying. The database does the copying
  * (set_favorite_hero); this reads its answer and words the note My Heroes shows.
  */
+import { POSITION_NAMES } from "./draft";
 
 export type SupportPosition = 4 | 5;
 
@@ -46,8 +47,8 @@ export function supportCopyNote(copy: SupportCopy, position: number): string | n
   if (copy.state !== "on" || !copy.from || (position !== 4 && position !== 5)) return null;
   const other = 9 - copy.from;
   return position === copy.from
-    ? `Pos ${other} gets the same heroes. Change Pos ${other} any time to make it its own list.`
-    : `Copied from Pos ${copy.from}. Change this list any time to make it its own.`;
+    ? `${POSITION_NAMES[other - 1]} gets the same heroes. Change ${POSITION_NAMES[other - 1]} any time to make it its own list.`
+    : `Copied from ${POSITION_NAMES[copy.from - 1]}. Change this list any time to make it its own.`;
 }
 
 type SupportHeroes = Record<SupportPosition, number[]>;

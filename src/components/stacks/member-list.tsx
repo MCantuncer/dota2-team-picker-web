@@ -4,8 +4,10 @@ import Image from "next/image";
 import { Icon } from "@/components/icon";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Avatar } from "@/components/account-menu";
+import { PositionIcon } from "@/components/position-icon";
 import { RankMedal } from "@/components/rank-medal";
 import { SteamLogo } from "@/components/steam-button";
+import { POSITION_NAMES } from "@/lib/draft";
 import { rankName } from "@/lib/rank";
 import type { Member } from "@/lib/stacks";
 
@@ -144,8 +146,15 @@ function MemberRow({
               ))
             )}
           </span>
-          <span className="ml-auto shrink-0 num text-xs text-subtle md:hidden">
-            {m.positions.length ? `Pos ${m.positions.join(" ")}` : "No positions"}
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-subtle md:hidden">
+            {m.positions.length
+              ? m.positions.map((p) => (
+                  <span key={p} title={POSITION_NAMES[p - 1]}>
+                    <PositionIcon position={p} size={16} />
+                    <span className="sr-only">{POSITION_NAMES[p - 1]}</span>
+                  </span>
+                ))
+              : "No Positions"}
           </span>
         </button>
         {(canRemove || onRole) && (
