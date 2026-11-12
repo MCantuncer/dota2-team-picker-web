@@ -93,13 +93,15 @@ interface HeroArtProps {
   /** The hero's Steam portrait; the render's URL is derived from it. */
   portrait: string;
   placement: HeroArtPlacement;
+  /** Flips the render to face left, for the enemy side of a versus; the face point flips with it. */
+  mirror?: boolean;
 }
 
 /**
  * The hero's full-body render, placed so its face point lands at `placement.at` of the frame. Decorative: the card
  * writes the hero's name. Put it in a HeroStage (or any `relative` box that clips).
  */
-export function HeroArt({ heroId, portrait, placement }: HeroArtProps) {
+export function HeroArt({ heroId, portrait, placement, mirror = false }: HeroArtProps) {
   const src = renderOf(portrait);
   if (!src) return null;
   const measured = heroFacePoint(heroId);
@@ -108,6 +110,8 @@ export function HeroArt({ heroId, portrait, placement }: HeroArtProps) {
   const width = Math.min(HERO_ART_MAX_WIDTH_PX, Math.round(placement.width));
   const scale = width / RENDER_SPACE_WIDTH;
   const [atX, atY] = placement.at;
+  // Mirrored, the face sits as far from the right edge as it did from the left.
+  const fromLeft = mirror ? width - Math.round(faceX * scale) : Math.round(faceX * scale);
   return (
     <Image
       src={src}
@@ -119,8 +123,9 @@ export function HeroArt({ heroId, portrait, placement }: HeroArtProps) {
       style={{
         width,
         height: "auto",
-        left: `calc(${atX * 100}% - ${Math.round(faceX * scale)}px)`,
+        left: `calc(${atX * 100}% - ${fromLeft}px)`,
         top: `calc(${atY * 100}% - ${Math.round(faceY * scale)}px)`,
+        ...(mirror ? { transform: "scaleX(-1)" } : {}),
       }}
     />
   );
