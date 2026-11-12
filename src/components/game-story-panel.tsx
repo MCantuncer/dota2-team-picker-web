@@ -28,9 +28,10 @@ export interface GameStoryPanelProps {
 }
 
 /**
- * The Game Story for a finished draft: how we win, then the viewer's own hero first (items, lane, skills;
- * Can 2026-11-03), then the team: the game as a minute line with both teams' key items and one thing to do
- * per chapter, the enemies who decide it, and what the team does if it goes wrong.
+ * Your Game, for a finished draft: the viewer's own hero first (Can 2026-11-03), and three answer tabs (Can's go
+ * on the Your Game mockup, 2026-11-12). Game Story holds how we win and the team's part: the game as a minute
+ * line with both teams' key items, the game plans against the enemies who decide it, and what the team does if
+ * it goes wrong. It is on that tab alone, so the other tabs do not repeat it.
  */
 export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, skillBuilds, threats = [] }: GameStoryPanelProps) {
   // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
@@ -39,28 +40,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   // Each danger line starts with its hero's name ("Faceless Void: ..."); the plan replaces his.
   const danger = plan.danger.filter((line) => !threats.some((t) => line.startsWith(`${heroName(t.hero)}:`)));
-  return (
-    <section aria-label="Game Story" className="flex flex-col gap-8 border-t border-line pt-6">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="section-title">Game Story</h2>
-          {action}
-        </div>
-        <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{plan.story.headline}</p>
-      </div>
-
-      <PlayerView
-        players={plan.players}
-        heroName={heroName}
-        icons={icons}
-        playerNames={playerNames}
-        myPosition={myPosition}
-        laneOf={laneOf}
-        abilities={abilities}
-        skillBuilds={skillBuilds}
-        items={items}
-      />
-
+  const team = (
+    <>
       <div className="flex flex-col gap-3">
         <h3 className="label-caps">The Team</h3>
         <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} />
@@ -95,6 +76,29 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           </div>
         )}
       </div>
+    </>
+  );
+  return (
+    <section aria-label="Your Game" className="flex flex-col gap-6 border-t border-line pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="section-title">Your Game</h2>
+        {action}
+      </div>
+
+      <PlayerView
+        players={plan.players}
+        heroName={heroName}
+        icons={icons}
+        playerNames={playerNames}
+        myPosition={myPosition}
+        laneOf={laneOf}
+        abilities={abilities}
+        skillBuilds={skillBuilds}
+        items={items}
+        headline={plan.story.headline}
+        ready={plan.story.ready}
+        team={team}
+      />
     </section>
   );
 }
