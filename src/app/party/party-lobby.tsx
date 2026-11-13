@@ -265,14 +265,8 @@ export function PartyLobby({
                 isLeader={m.id === party.leaderId}
                 isCaptain={m.id === party.captain.id}
                 isMe={m.id === userId}
-                // null means "any position"; the generated types can't mark a function argument nullable.
-                onPosition={(want) =>
-                  run("Position not saved", () =>
-                    supabase.rpc("set_party_position", {
-                      want: want as number,
-                    }),
-                  )
-                }
+                // Every member holds a position; taking a held one swaps the two players.
+                onPosition={(want) => run("Position not saved", () => supabase.rpc("set_party_position", { want }))}
                 onRemove={
                   isLeader && m.id !== userId
                     ? () => run("Could not remove", () => supabase.rpc("remove_from_party", { target: m.id }))
@@ -385,7 +379,7 @@ function Seat({
   isLeader: boolean;
   isCaptain: boolean;
   isMe: boolean;
-  onPosition: (want: number | null) => void;
+  onPosition: (want: number) => void;
   onRemove?: () => void;
 }) {
   const position = member.position;
@@ -428,10 +422,16 @@ function Seat({
             aria-label="Your position this game"
             data-tour="party-position"
             value={position ?? ""}
-            onChange={(e) => onPosition(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => {
+              if (e.target.value) onPosition(Number(e.target.value));
+            }}
             className="field h-8 w-full py-0 text-sm"
           >
-            <option value="">Any Position</option>
+            {!position && (
+              <option value="" disabled>
+                Pick a Position
+              </option>
+            )}
             {Object.entries(POSITION_NAMES).map(([n, name]) => (
               <option key={n} value={n}>
                 {name}
@@ -441,7 +441,7 @@ function Seat({
         ) : position ? (
           <PositionLabel position={position} size={14} className="min-w-0 text-sm text-muted" />
         ) : (
-          <span className="truncate text-sm text-muted">Any Position</span>
+          <span className="truncate text-sm text-muted">No Position Yet</span>
         )}
         {(isLeader || isCaptain) && (
           <span className="flex flex-wrap gap-1">
