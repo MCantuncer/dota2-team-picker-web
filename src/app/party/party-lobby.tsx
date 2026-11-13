@@ -196,7 +196,7 @@ export function PartyLobby({
             <li key={i} className={`aspect-video rounded-sm bg-surface ring-1 ring-inset ring-line ${i > 1 ? "max-sm:hidden" : ""}`} />
           ))}
         </ul>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
+        <div data-tour="party-start" className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
           <p className="flex-1 text-sm text-muted">You&apos;re not in a party. Start one and invite your friends and teammates.</p>
           {stacks.length > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted">
@@ -293,7 +293,7 @@ export function PartyLobby({
       </section>
 
       <div className="flex flex-col gap-3 rounded-md bg-surface p-4 sm:flex-row sm:items-center sm:gap-6 sm:px-5">
-        <div className="min-w-0 flex-1">
+        <div data-tour="party-captain" className="min-w-0 flex-1">
           <DraftCaptain
             party={party}
             userId={userId}
@@ -303,7 +303,7 @@ export function PartyLobby({
             stepDown={() => supabase.rpc("step_down_captain")}
           />
         </div>
-        <Link href="/draft" className="btn btn-secondary shrink-0">
+        <Link href="/draft" data-tour="party-draft" className="btn btn-secondary shrink-0">
           Open Party Draft
         </Link>
       </div>
@@ -329,7 +329,7 @@ export function PartyLobby({
       )}
 
       {isLeader ? (
-        <section aria-label="Invite" className="flex flex-col gap-2">
+        <section aria-label="Invite" data-tour="party-invite" className="flex flex-col gap-2">
           <h2 className="section-title">
             Invite <span className="num text-base font-medium text-subtle">{toInvite.length}</span>
           </h2>
@@ -426,6 +426,7 @@ function Seat({
         {isMe ? (
           <select
             aria-label="Your position this game"
+            data-tour="party-position"
             value={position ?? ""}
             onChange={(e) => onPosition(e.target.value ? Number(e.target.value) : null)}
             className="field h-8 w-full py-0 text-sm"

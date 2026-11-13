@@ -42,7 +42,7 @@ export function StackLineup({
   const shared = seats.some((s) => s.positions.length > 0);
   return (
     <>
-      <section aria-labelledby="lineup-heading" className="flex flex-col gap-3.5">
+      <section aria-labelledby="lineup-heading" data-tour="stack-lineup" className="flex flex-col gap-3.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 id="lineup-heading" className="section-title">
             Lineup
@@ -181,7 +181,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
 /** Who in the Stack plays each position; an uncovered position is marked in amber. */
 function Coverage({ seats }: { seats: Seat[] }) {
   return (
-    <section aria-labelledby="coverage-heading" className="flex flex-col gap-3.5">
+    <section aria-labelledby="coverage-heading" data-tour="stack-coverage" className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 id="coverage-heading" className="section-title">
           Position Coverage

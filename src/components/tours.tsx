@@ -14,7 +14,7 @@ export type TourStep = {
   movesOn?: boolean;
 };
 
-export type TourId = "draft" | "my-heroes" | "your-games" | "one-game";
+export type TourId = "draft" | "my-heroes" | "your-games" | "one-game" | "party" | "stacks" | "stack" | "friends" | "profile" | "report";
 
 export const TOURS: Record<TourId, TourStep[]> = {
   draft: [
@@ -215,6 +215,217 @@ export const TOURS: Record<TourId, TourStep[]> = {
       target: "one-game-opendota",
       title: "Full Match",
       tip: (verb) => `${verb} it to open the whole match on OpenDota.`,
+    },
+  ],
+  party: [
+    {
+      target: "party-start",
+      title: "Start a Party",
+      tip: (verb) => (
+        <>
+          {verb} <b>Start a Party</b>, then invite up to 4 players.
+        </>
+      ),
+    },
+    {
+      target: "party-position",
+      title: "Your Position",
+      tip: () => "Pick the role you play this game. The party draft plans around it.",
+    },
+    {
+      target: "party-captain",
+      title: "Draft Captain",
+      tip: () => "One player enters the draft for the whole party.",
+    },
+    {
+      target: "party-draft",
+      title: "Party Draft",
+      tip: (verb) => `${verb} it to plan a pick for all five of you.`,
+    },
+    {
+      target: "party-link",
+      title: "Invite Link",
+      tip: () => "Paste it in Discord or Steam chat. Anyone with it can join.",
+    },
+    {
+      target: "party-stack",
+      title: "Invite from Stack",
+      tip: (verb) => (
+        <>
+          Tick who plays this game, then {verb.toLowerCase()} <b>Invite</b>.
+        </>
+      ),
+    },
+    {
+      target: "party-invite",
+      title: "Invite Friends",
+      tip: (verb) => (
+        <>
+          {verb} <b>Invite</b> and it pops up on their screen.
+        </>
+      ),
+    },
+  ],
+  stacks: [
+    {
+      target: "stacks-tabs",
+      title: "Your Stacks",
+      tip: (verb) => (
+        <>
+          {verb} a Stack to open it, or <b>New Stack</b> to make one.
+        </>
+      ),
+    },
+    {
+      target: "stack-draft",
+      title: "Draft for Your Stack",
+      tip: (verb) => `${verb} it to draft with this Stack's players and heroes.`,
+    },
+    {
+      target: "stacks-page",
+      title: "Stack Page",
+      tip: () => "Requests to join, and whether anyone can find this Stack.",
+    },
+    {
+      target: "stack-lineup",
+      title: "Lineup",
+      tip: () => "Each player's top hero for the position they play most.",
+    },
+    {
+      target: "stack-coverage",
+      title: "Position Coverage",
+      tip: () => "Who plays each position. A position no one covers shows in amber.",
+    },
+    {
+      target: "stacks-invite",
+      title: "Invite Players",
+      tip: () => "Invite a friend in one click. Players not on the site yet need your friend link first.",
+    },
+    {
+      target: "stacks-find",
+      title: "Find a Stack",
+      tip: () => "Ask to join a Stack and the owner answers on the site.",
+    },
+  ],
+  stack: [
+    {
+      target: "stack-draft",
+      title: "Draft for This Stack",
+      tip: (verb) => `${verb} it to draft with this Stack's players and heroes.`,
+    },
+    {
+      target: "stack-manage",
+      title: "Manage Stack",
+      tip: () => "Invite players and set who plays which position.",
+    },
+    {
+      target: "stack-ask",
+      title: "Ask to Join",
+      tip: () => "The owner answers on the site.",
+    },
+    {
+      target: "stack-open",
+      title: "Open to Requests",
+      tip: () => "Tick it so anyone can find this Stack and ask to join.",
+    },
+    {
+      target: "stack-lineup",
+      title: "Lineup",
+      tip: () => "Each player's top hero for the position they play most.",
+    },
+    {
+      target: "stack-coverage",
+      title: "Position Coverage",
+      tip: () => "Who plays each position. A position no one covers shows in amber.",
+    },
+    {
+      target: "stack-requests",
+      title: "Players Who Want to Join",
+      tip: (verb) => (
+        <>
+          {verb} <b>Accept</b> to add them as a Player.
+        </>
+      ),
+    },
+  ],
+  friends: [
+    {
+      target: "friends-link",
+      title: "Your Friend Link",
+      tip: (verb) => (
+        <>
+          {verb} <b>Copy Link</b> and send it to the people you queue with.
+        </>
+      ),
+    },
+    {
+      target: "friends-list",
+      title: "Your Friends",
+      tip: (verb) => `${verb} a friend to see their heroes and your games together.`,
+    },
+    {
+      target: "friends-invite",
+      title: "Invite to Party",
+      tip: () => "It pops up on their screen while they are on the site.",
+    },
+    {
+      target: "friends-draft",
+      title: "Plan a Draft",
+      tip: (verb) => `${verb} it to open the draft with them on your team.`,
+    },
+  ],
+  profile: [
+    {
+      target: "profile-rank",
+      title: "Your Rank",
+      tip: (verb) => `Read from OpenDota. ${verb} the refresh button after a game.`,
+    },
+    {
+      target: "profile-positions",
+      title: "Positions Played",
+      tip: () => "The roles you played in your recent games, with your wins in each.",
+    },
+    {
+      target: "profile-heroes",
+      title: "Your Heroes",
+      tip: () => "Your wins on every hero you played, for the period you pick.",
+    },
+    {
+      target: "profile-privacy",
+      title: "Privacy",
+      tip: () => "Choose whether friends can plan drafts with your heroes.",
+    },
+    {
+      target: "profile-edit",
+      title: "Edit My Heroes",
+      tip: () => "The heroes your picks lean toward, for each position.",
+    },
+  ],
+  report: [
+    {
+      target: "report-team",
+      title: "Your Team",
+      tip: () => "Each hero's numbers, and the key items with the minute they came.",
+    },
+    {
+      target: "report-lanes",
+      title: "Lanes at 10 Minutes",
+      tip: () => "How far ahead or behind each lane was in net worth.",
+    },
+    {
+      target: "report-turning",
+      title: "Turning Points",
+      tip: () => "The swings and fights that decided the game.",
+    },
+    {
+      target: "report-hurt",
+      title: "What Hurt You",
+      tip: () => "Where your damage taken came from, and the enemy who did best.",
+    },
+    {
+      target: "report-feedback",
+      title: "Your Feedback",
+      tip: (verb) => `${verb} it for your own review of this game.`,
     },
   ],
 };

@@ -6,6 +6,7 @@ import { getRecords } from "@/lib/records";
 import { createClient } from "@/lib/supabase/server";
 import { YourRecords } from "@/components/your-records";
 import type { StackOption } from "./invite-from-stack";
+import { PageTour } from "@/components/page-tour";
 import { PartyLobby, type Invitee } from "./party-lobby";
 
 export const metadata: Metadata = { title: "Party · Dota 2 Team Picker" };
@@ -63,13 +64,17 @@ export default async function PartyPage() {
 
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="page-title">{leader ? `${leader.name}'s Party` : "Party"}</h1>
-        <p className="text-sm text-muted">
-          Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site, or share the invite link.
-        </p>
-        <p className="text-sm text-muted">A Stack is your saved group. A party is who&apos;s playing this game.</p>
-        <p className="text-sm text-muted">Party members see each other&apos;s heroes and match stats.</p>
+      {/* The ? gets its own column, so the intro wraps beside it and never runs under it. */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="page-title">{leader ? `${leader.name}'s Party` : "Party"}</h1>
+          <p className="text-sm text-muted">
+            Gather up to 5 players for your next game. Invites pop up on their screen while they&apos;re on the site, or share the invite link.
+          </p>
+          <p className="text-sm text-muted">A Stack is your saved group. A party is who&apos;s playing this game.</p>
+          <p className="text-sm text-muted">Party members see each other&apos;s heroes and match stats.</p>
+        </div>
+        <PageTour tour="party" />
       </div>
       {/* Keyed by party, so joining from the invite pop-up (which refreshes this page) shows the new party. */}
       <PartyLobby key={party?.id ?? "none"} userId={user.id} initialParty={party} initialLink={link} invitees={invitees} stacks={stacks} heroArt={heroArt} />

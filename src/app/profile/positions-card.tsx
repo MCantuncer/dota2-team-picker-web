@@ -25,7 +25,7 @@ export function PositionsCard({ played, games, poolPositions }: PositionsCardPro
   const unknown = played?.unknown;
   const top = positions?.[0];
   return (
-    <section aria-labelledby="positions-played" className="card flex flex-col gap-3 p-4">
+    <section aria-labelledby="positions-played" data-tour="profile-positions" className="card flex flex-col gap-3 p-4">
       <span className="flex items-baseline justify-between gap-3">
         <h3 id="positions-played" className="text-base font-semibold text-fg">
           Positions Played

@@ -5,6 +5,7 @@ import { getItems } from "@/lib/items";
 import { getRecords } from "@/lib/records";
 import { getReport, type Report } from "@/lib/reports";
 import { createClient } from "@/lib/supabase/server";
+import { PageTour } from "@/components/page-tour";
 import { YourRecords } from "@/components/your-records";
 import { type ReportArt, ReportView } from "./report-view";
 
@@ -58,7 +59,7 @@ export default async function ReportPage({ params }: PageProps<"/reports/[draftI
   const feedbackHref = !feedback.error && feedback.data ? `/my-heroes/games/${feedback.data.match_id}` : null;
 
   return (
-    <ReportPageShell>
+    <ReportPageShell tour>
       {report.status === "waiting_parse" && (
         <p className="notice text-sm">
           From the match summary. Lanes, fights and damage come once OpenDota parses the replay, usually within a few hours.
@@ -81,10 +82,14 @@ function emptyMessage(report: Report): string {
   return "The report is on its way. It is usually ready within 10 minutes of the game being found.";
 }
 
-function ReportPageShell({ children }: { children: React.ReactNode }) {
+/** `tour` adds the page's ? once there is a report to walk through. */
+function ReportPageShell({ children, tour = false }: { children: React.ReactNode; tour?: boolean }) {
   return (
     <main className="page flex flex-1 flex-col gap-6 py-10">
-      <h1 className="page-title">Game Report</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+        <h1 className="page-title">Game Report</h1>
+        {tour && <PageTour tour="report" />}
+      </div>
       {children}
     </main>
   );

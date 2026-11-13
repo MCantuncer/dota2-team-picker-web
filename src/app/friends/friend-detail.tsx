@@ -247,13 +247,14 @@ function FriendActions({ friend: f, partyRole, onRemove }: { friend: Friend; par
             onClick={invite}
             disabled={state !== "idle" || partyRole === "member"}
             aria-describedby={partyRole === "member" ? "invite-note" : undefined}
+            data-tour="friends-invite"
             className="btn btn-primary max-sm:flex-1"
           >
             <Icon name={state === "sent" ? "check" : "send"} />
             {state === "sent" ? "Invite Sent" : "Invite to Party"}
           </button>
         )}
-        <Link href={`/draft?with=${f.id}`} className="btn btn-secondary">
+        <Link href={`/draft?with=${f.id}`} data-tour="friends-draft" className="btn btn-secondary">
           Plan a Draft
         </Link>
         <div className="relative">

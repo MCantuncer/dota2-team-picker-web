@@ -52,14 +52,14 @@ export function ReportView({
           <OpenDotaButton matchId={facts.matchId} />
         </div>
         {feedbackHref && (
-          <Link href={feedbackHref} className="btn btn-secondary btn-sm self-start">
+          <Link href={feedbackHref} data-tour="report-feedback" className="btn btn-secondary btn-sm self-start">
             Your Feedback
             <Icon name="chevronRight" />
           </Link>
         )}
       </header>
 
-      <section aria-labelledby="report-heroes" className="flex flex-col gap-3">
+      <section aria-labelledby="report-heroes" data-tour="report-team" className="flex flex-col gap-3">
         <h2 id="report-heroes" className="section-title">
           Your Team
         </h2>
@@ -71,10 +71,10 @@ export function ReportView({
       </section>
 
       {facts.lanes && (
-        <LineSection id="report-lanes" title="Lanes at 10 Minutes" lines={facts.lanes.map((l) => laneLine(l, name))} />
+        <LineSection id="report-lanes" tour="report-lanes" title="Lanes at 10 Minutes" lines={facts.lanes.map((l) => laneLine(l, name))} />
       )}
-      {turning.length > 0 && <LineSection id="report-turning" title="Turning Points" lines={turning} />}
-      {hurt.length > 0 && <LineSection id="report-hurt" title="What Hurt You" lines={hurt} />}
+      {turning.length > 0 && <LineSection id="report-turning" tour="report-turning" title="Turning Points" lines={turning} />}
+      {hurt.length > 0 && <LineSection id="report-hurt" tour="report-hurt" title="What Hurt You" lines={hurt} />}
       {facts.draft && facts.draft.length > 0 && (
         <LineSection id="report-draft" title="Draft" lines={facts.draft.map((d) => draftLine(d, name))} />
       )}
@@ -82,9 +82,9 @@ export function ReportView({
   );
 }
 
-function LineSection({ id, title, lines }: { id: string; title: string; lines: string[] }) {
+function LineSection({ id, title, lines, tour }: { id: string; title: string; lines: string[]; tour?: string }) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-2 border-t border-line pt-5">
+    <section aria-labelledby={id} data-tour={tour} className="flex flex-col gap-2 border-t border-line pt-5">
       <h2 id={id} className="section-title">
         {title}
       </h2>

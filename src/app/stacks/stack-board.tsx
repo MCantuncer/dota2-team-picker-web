@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { MemberList, type HeroFace } from "@/components/stacks/member-list";
 import { bannerHero, StackBanner, type BannerStack } from "@/components/stacks/stack-banner";
 import { StackCrest } from "@/components/stacks/stack-crest";
+import { PageTour } from "@/components/page-tour";
 import { StackEmpty } from "@/components/stacks/stack-empty";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
 import type { Seat } from "@/lib/stack-seats";
@@ -112,20 +113,24 @@ export function StackBoard({
         <StackEmpty hero={emptyHero} create={<CreateStack userId={userId} />} />
       ) : (
         <>
-          <nav aria-label="Your Stacks" className="flex flex-wrap items-center gap-2">
-            {stacks.map((s) => (
-              <Link
-                key={s.id}
-                href={`/stacks?stack=${s.id}`}
-                aria-current={s.id === current?.id ? "page" : undefined}
-                className={`btn btn-sm ${s.id === current?.id ? "btn-secondary text-fg" : "btn-ghost text-muted"}`}
-              >
-                {s.name}
-                {!s.owned && <span className="text-xs text-subtle">Manager</span>}
-              </Link>
-            ))}
-            <CreateStack userId={userId} compact />
-          </nav>
+          {/* The ? gets its own column, so the Stack names wrap beside it and never run under it. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+            <nav aria-label="Your Stacks" data-tour="stacks-tabs" className="flex flex-wrap items-center gap-2">
+              {stacks.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/stacks?stack=${s.id}`}
+                  aria-current={s.id === current?.id ? "page" : undefined}
+                  className={`btn btn-sm ${s.id === current?.id ? "btn-secondary text-fg" : "btn-ghost text-muted"}`}
+                >
+                  {s.name}
+                  {!s.owned && <span className="text-xs text-subtle">Manager</span>}
+                </Link>
+              ))}
+              <CreateStack userId={userId} compact />
+            </nav>
+            <PageTour tour="stacks" />
+          </div>
 
           {current && (
             <div className="flex flex-col gap-8">
@@ -151,7 +156,7 @@ export function StackBoard({
                   }
                 />
               )}
-              <section aria-labelledby="invite-heading" className="flex flex-col gap-3.5">
+              <section aria-labelledby="invite-heading" data-tour="stacks-invite" className="flex flex-col gap-3.5">
                 <h2 id="invite-heading" className="section-title">
                   Invite Players
                 </h2>

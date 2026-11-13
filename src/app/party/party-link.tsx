@@ -81,7 +81,7 @@ export function PartyLinkCard({
   };
 
   return (
-    <section aria-labelledby="party-link-heading" className="flex flex-col gap-2">
+    <section aria-labelledby="party-link-heading" data-tour="party-link" className="flex flex-col gap-2">
       <h2 id="party-link-heading" className="section-title">
         Invite Link
       </h2>

@@ -178,7 +178,7 @@ export function FindStacks({
 
   return (
     <div className="flex max-w-6xl flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1.5">
+      <div data-tour="stacks-find" className="flex flex-col gap-1.5">
         <h2 className="section-title">Find a Stack</h2>
         <p className="text-sm text-muted">Ask to join and the owner answers on the site.</p>
       </div>

@@ -104,7 +104,7 @@ export function InviteFromStack({
 
   if (!stacks.length) return null;
   return (
-    <section aria-labelledby="stack-invite-heading" className="flex flex-col gap-3">
+    <section aria-labelledby="stack-invite-heading" data-tour="party-stack" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="stack-invite-heading" className="section-title">
           Invite from Stack
