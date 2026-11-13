@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { Icon } from "@/components/icon";
+import { PageTour } from "@/components/page-tour";
 import { RankMedal } from "@/components/rank-medal";
 import { heroInsights, type HeroSort, readPeriod, recordFor } from "@/lib/hero-insights";
 import { rankName } from "@/lib/rank";
@@ -63,7 +64,11 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   return (
     <main className="page flex flex-col gap-10 py-10">
       <section className="flex flex-col gap-5">
-        <h1 className="page-title">Your Profile</h1>
+        {/* The ? gets its own column at the end of the title row. */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+          <h1 className="page-title">Your Profile</h1>
+          <PageTour tour="profile" />
+        </div>
         {profile?.steam_id && (
           <SteamIdentity
             name={profile.steam_name || profile.display_name || "Steam Player"}
@@ -79,7 +84,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         </h2>
         {isSteam ? (
           <>
-            <div className="flex items-center gap-4">
+            <div data-tour="profile-rank" className="flex items-center gap-4 self-start">
               {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -127,7 +132,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           Privacy
         </h2>
         {/* Until the profile loads, show sharing as off rather than claim it is on. */}
-        <ShareHeroesSwitch initialOn={profile?.share_heroes_with_friends ?? false} />
+        <div data-tour="profile-privacy" className="self-start">
+          <ShareHeroesSwitch initialOn={profile?.share_heroes_with_friends ?? false} />
+        </div>
       </section>
 
       <section aria-labelledby="pool-heading" className="flex flex-col gap-2 border-t border-line pt-6">
@@ -138,7 +145,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           <p className="min-w-0 flex-1 basis-60 text-sm text-muted">
             Suggestions lean toward the heroes you pick for each position.
           </p>
-          <Link href="/my-heroes" className="btn btn-secondary btn-sm">
+          <Link href="/my-heroes" data-tour="profile-edit" className="btn btn-secondary btn-sm">
             <Icon name="pencil" />
             Edit My Heroes
           </Link>

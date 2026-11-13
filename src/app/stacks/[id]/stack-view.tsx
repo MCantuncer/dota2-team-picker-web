@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
+import { PageTour } from "@/components/page-tour";
 import { RankMedal } from "@/components/rank-medal";
 import { bannerHero, StackBanner } from "@/components/stacks/stack-banner";
 import { StackLineup, type HeroArt } from "@/components/stacks/stack-lineup";
@@ -60,10 +61,14 @@ export function StackView({
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="flex max-w-6xl flex-col gap-8">
-      <Link href="/stacks" className="btn btn-ghost btn-sm -mb-4 self-start text-muted">
-        <Icon name="chevronLeft" />
-        Back to Stacks
-      </Link>
+      {/* Back on the left, the page's ? on the right, each in its own column. */}
+      <div className="-mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6">
+        <Link href="/stacks" className="btn btn-ghost btn-sm justify-self-start text-muted">
+          <Icon name="chevronLeft" />
+          Back to Stacks
+        </Link>
+        <PageTour tour="stack" />
+      </div>
       <StackBanner
         stack={stack}
         seats={seats}
@@ -87,7 +92,7 @@ export function StackView({
       )}
 
       {runs && (
-        <section aria-labelledby="requests-heading" className="flex flex-col gap-3.5">
+        <section aria-labelledby="requests-heading" data-tour="stack-requests" className="flex flex-col gap-3.5">
           <h2 id="requests-heading" className="section-title flex items-center gap-2">
             <Icon name="userPlus" />
             Players Who Want to Join
@@ -155,7 +160,7 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
 
   if (stack.myRole === "owner") {
     return (
-      <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary btn-lg">
+      <Link href={`/stacks?stack=${stack.id}`} data-tour="stack-manage" className="btn btn-secondary btn-lg">
         <Icon name="users" large />
         Manage Stack
       </Link>
@@ -165,7 +170,7 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
     return (
       <div className="flex items-center gap-2">
         {stack.myRole === "co_captain" && (
-          <Link href={`/stacks?stack=${stack.id}`} className="btn btn-secondary btn-lg">
+          <Link href={`/stacks?stack=${stack.id}`} data-tour="stack-manage" className="btn btn-secondary btn-lg">
             <Icon name="users" large />
             Manage Stack
           </Link>
@@ -188,7 +193,7 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
   }
   if (!stack.openToRequests) return null;
   return (
-    <button onClick={ask} disabled={busy} className="btn btn-primary btn-lg">
+    <button onClick={ask} disabled={busy} data-tour="stack-ask" className="btn btn-primary btn-lg">
       <Icon name="userPlus" large />
       Ask to Join
     </button>
@@ -211,7 +216,7 @@ function OpenToggle({ stack, onError }: { stack: StackSummary; onError: (e: stri
   };
 
   return (
-    <label className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+    <label data-tour="stack-open" className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
       <input type="checkbox" checked={open} disabled={busy} onChange={(e) => toggle(e.target.checked)} />
       <span>Open to Requests</span>
       <span className="text-muted">

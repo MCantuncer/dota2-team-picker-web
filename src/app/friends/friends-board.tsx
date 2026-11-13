@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
+import { PageTour } from "@/components/page-tour";
 import { RankMedal } from "@/components/rank-medal";
 import type { HeroArt } from "@/components/stacks/stack-lineup";
 import { winPercent, type Friend, type FriendRequest, type SharedGame } from "@/lib/friends";
@@ -80,12 +81,22 @@ export function FriendsBoard({
 
   return (
     <>
-      <div className={`flex flex-wrap items-end justify-between gap-x-8 gap-y-4 ${opened ? "max-lg:hidden" : ""}`}>
+      {/* Title, friend link, then the page's ?, each in its own column; on a phone the link drops under both. */}
+      <div
+        className={`grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-6 gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] ${opened ? "max-lg:hidden" : ""}`}
+      >
         <div className="flex flex-col gap-1.5">
           <h1 className="page-title">Friends</h1>
           <p className="text-sm text-muted">Who you queue with, and how you do together.</p>
         </div>
-        {friendCode && <FriendLink code={friendCode} />}
+        {friendCode && (
+          <div className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+            <FriendLink code={friendCode} />
+          </div>
+        )}
+        <div className="self-start sm:col-start-3 sm:row-start-1">
+          <PageTour tour="friends" />
+        </div>
       </div>
       {error && <p role="alert" className="text-sm text-dire">{error}</p>}
       {opened && (
@@ -95,7 +106,7 @@ export function FriendsBoard({
       )}
 
       <div className="grid items-start gap-5 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <aside aria-label="Your friends" className={`card overflow-hidden ${opened ? "max-lg:hidden" : ""}`}>
+        <aside aria-label="Your friends" data-tour="friends-list" className={`card overflow-hidden ${opened ? "max-lg:hidden" : ""}`}>
           {incoming.length > 0 && (
             <Group title="Requests" count={incoming.length} accent>
               {incoming.map((r) => (
@@ -285,7 +296,7 @@ function FriendLink({ code }: { code: string }) {
   };
 
   return (
-    <div className="flex w-full flex-col gap-1.5 sm:w-[27rem]">
+    <div data-tour="friends-link" className="flex w-full flex-col gap-1.5 sm:w-[27rem]">
       <label htmlFor="friend-link" className="text-sm text-subtle">
         Your Friend Link
       </label>
