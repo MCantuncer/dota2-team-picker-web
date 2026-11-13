@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CutOutline, HeroFace } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
@@ -51,6 +52,8 @@ export function PartySeats({
   captainId,
   hero,
   heroAt,
+  actions,
+  footer,
 }: {
   /** The party's name: "Can's Party". */
   title: string;
@@ -60,14 +63,25 @@ export function PartySeats({
   hero: (id: number) => HeroArt;
   /** The hero picked or planned for a position, shown as a face in its seat. */
   heroAt: (position: Position) => number | null;
+  /** The party's buttons, in their own column at the right of the head. */
+  actions?: ReactNode;
+  /** Notes and errors under the seats. */
+  footer?: ReactNode;
 }) {
   return (
     <section aria-label="Team Seats" className="flex flex-col gap-3">
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span aria-hidden className="live-dot text-radiant" />
-        <span className="font-semibold text-fg">{title}</span>
-        <span className="text-subtle">{seatCount(seats)}</span>
-      </p>
+      {/* The buttons get their own column, so the name wraps beside them and never runs under them. */}
+      <div className="grid items-center gap-x-6 gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+          <span className="micro text-subtle">Team Seats</span>
+          <span className="flex items-center gap-2">
+            <span aria-hidden className="live-dot text-radiant" />
+            <span className="font-semibold text-fg">{title}</span>
+            <span className="text-subtle">{seatCount(seats)}</span>
+          </span>
+        </p>
+        {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
+      </div>
       <ul
         aria-label="Seats"
         className="grid min-w-0 divide-line rounded-xl bg-surface ring-1 ring-line ring-inset max-sm:divide-y sm:grid-cols-5 sm:divide-x"
@@ -117,6 +131,7 @@ export function PartySeats({
           );
         })}
       </ul>
+      {footer}
     </section>
   );
 }

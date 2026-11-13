@@ -5,11 +5,21 @@ import type { Party } from "@/lib/party";
 
 type Run = (what: string, call: () => PromiseLike<{ error: { message: string } | null }>) => Promise<void>;
 
+/** The one captain button a player has now: Step Down, Become or Take Captain, or Ask for it. */
+export interface CaptainAction {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  /** Step Down is the quiet one. */
+  quiet: boolean;
+}
+
 /**
- * Who runs the party's draft. The draft captain enters picks for everyone and plans all five
- * heroes; with no captain, anyone in the party can enter the draft.
+ * Who runs the party's draft, as a line and the button the player has. The draft captain enters
+ * picks for everyone and plans all five heroes; with no captain, anyone in the party can enter the
+ * draft. `note` says when the role moved away from the player or the captain kept it.
  */
-export function DraftCaptain({
+export function useDraftCaptain({
   party,
   userId,
   busy,
@@ -87,6 +97,22 @@ export function DraftCaptain({
   else if (captainId) line = `${name(captainId)} enters the draft for the party.`;
   else line = "None yet. Anyone can enter the draft.";
 
+  let action: CaptainAction | null = null;
+  if (isCaptain) action = { label: "Step Down", onClick: () => run("Could not step down", stepDown), disabled: busy, quiet: true };
+  else if (canTake) action = { label: captainId ? "Take Captain" : "Become Captain", onClick: take, disabled: busy, quiet: false };
+  else if (canAsk && !waiting)
+    action = {
+      label: waitLeft > 0 ? `Ask Again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the Captain"} for Captain`,
+      onClick: take,
+      disabled: busy || waitLeft > 0,
+      quiet: false,
+    };
+  return { line, note, waiting, action };
+}
+
+/** The Draft Captain section of the party lobby: who runs the draft, and the player's captain button. */
+export function DraftCaptain(props: Parameters<typeof useDraftCaptain>[0]) {
+  const { line, note, action } = useDraftCaptain(props);
   return (
     <section aria-label="Draft Captain" className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -95,19 +121,9 @@ export function DraftCaptain({
           {note ?? line}
         </p>
       </div>
-      {isCaptain && (
-        <button onClick={() => run("Could not step down", stepDown)} disabled={busy} className="btn btn-ghost btn-sm">
-          Step Down
-        </button>
-      )}
-      {canTake && (
-        <button onClick={take} disabled={busy} className="btn btn-secondary btn-sm">
-          {captainId ? "Take Captain" : "Become Captain"}
-        </button>
-      )}
-      {canAsk && !waiting && (
-        <button onClick={take} disabled={busy || waitLeft > 0} className="btn btn-secondary btn-sm">
-          {waitLeft > 0 ? `Ask Again in ${waitLeft} s` : `Ask ${captainId ? name(captainId) : "the Captain"} for Captain`}
+      {action && (
+        <button onClick={action.onClick} disabled={action.disabled} className={`btn btn-sm ${action.quiet ? "btn-ghost" : "btn-secondary"}`}>
+          {action.label}
         </button>
       )}
     </section>
