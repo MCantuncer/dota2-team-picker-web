@@ -157,6 +157,7 @@ export function BanLine({
   return (
     <section
       aria-labelledby={headingId}
+      data-tour="draft-bans"
       className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3 border-t border-line px-5 py-3 lg:col-span-2"
     >
       <div className="flex items-center gap-2.5">

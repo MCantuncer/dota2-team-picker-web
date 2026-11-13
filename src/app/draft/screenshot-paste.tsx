@@ -134,7 +134,7 @@ export function useDotaScreen({
     watchControls:
       enabled && watchable ? (
         watch.state === "off" || watch.state === "failed" || watch.state === "ended" ? (
-          <button onClick={watch.start} className="btn btn-secondary btn-sm" aria-label="Watch Dota" title="Watch Dota">
+          <button onClick={watch.start} className="btn btn-secondary btn-sm" aria-label="Watch Dota" title="Watch Dota" data-tour="draft-watch">
             <span className="flex text-muted">
               <Icon name="play" />
             </span>

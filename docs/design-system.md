@@ -59,6 +59,7 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `attr-str`, `attr-agi`, `attr-int`, `attr-uni` | 12px attribute glyphs only, always next to the word |
 | `rank-0` to `rank-7` | Rank badge ramp, Herald to Immortal |
 | `steam`, `steam-hover` | The Steam sign-in button only |
+| `scrim` | The dim over the page around a Page Tour's lit control. Nothing else |
 
 `radiant-strong` and `dire-strong` are for borders and bars, never text. Never rely on red and green alone: pair them
 with a label, a position or the column they sit in.
@@ -123,6 +124,7 @@ one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`)
 | `.lane-digits` + `.lane-digit` | Position digits under a hero on a rail: the chosen one (`aria-checked`) is a small Lane Cut tile, a guess (`data-guess`) is dashed |
 | `.lane-spine` + `.lane-node` | The Team Plan's mid lane: one bright line through the position cards, a node per card. `.lane-node-open` is a ring, `.lane-node-done` filled (picked), `.lane-node-now` the copper dot, only for Pick First |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
+| `.tour-button`, `.tour-dot`, `.tour-ring`, `.tour-tip`, `.tour-sheet` | The Page Tour: the ? button and its unseen dot, the lit ring, the tip card and its phone sheet. Use them through `PageTour`, see Page Tour below |
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
 or class in its own small PR, then use it.
@@ -248,6 +250,24 @@ Your Game (`components/game-story-panel.tsx`, `components/player-view.tsx`) is t
   from an input, never with a modifier), shown as `.kbd` on each tab and in `aria-keyshortcuts`.
 - The team's part (headline, The Team line, game plans, Danger Heroes, If the Game Goes Wrong) lives on the Game
   Story tab alone, so no tab repeats it.
+
+## Page Tour
+
+`PageTour` (`components/page-tour.tsx`) is the **?** button that teaches a page by lighting one control at a time. Can
+asked for "click here to do this" tips with a Next button, not walls of guide text (2026-11-13).
+
+- The **?** is the last of the page's own buttons, top right; alone in that spot on a page with no buttons. Never
+  beside the page title (Can: it reads like a new feature tag there).
+- It never starts on its own. A copper dot (the logo's dot) marks a page whose tour this browser has not opened; opening
+  or closing it once clears the dot.
+- One step per control: the page dims (`scrim`), the control gets a copper ring and stays usable, and a tip card sits
+  under it (above when there is no room) with "3 of 8", a progress line, a Title Case title, one sentence, Back and
+  Next. On a phone the card is a bottom sheet with 44px buttons. Arrow keys move, Esc closes, focus returns to **?**.
+- Tips are one sentence that says what to do: "Click the role you play. Every pick is scored for it." Use `verb`
+  so a phone says Tap. Name keys with `Kbd`.
+- Steps live in `components/tours.tsx` and point at `data-tour="..."` marks on the controls. A step whose control is
+  not on screen (no picks yet, Watch Dota on a phone) is left out of the count. `movesOn` lets a click on the lit
+  control move the tour on; leave it off for text boxes.
 
 ## Hero Art Rules
 

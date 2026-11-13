@@ -76,6 +76,7 @@ import { useSoloBoard } from "./use-solo-board";
 import { FollowOnPhone } from "./follow-on-phone";
 import { FollowPcPanel, PhoneFollowingChip } from "./follow-pc";
 import { isPhone } from "@/lib/solo-draft";
+import { PageTour } from "@/components/page-tour";
 
 const noSubscribe = () => () => {};
 
@@ -617,6 +618,7 @@ export function DraftBoard({
         enemies.length < TEAM_SIZE && (
           <HeroInput
             id="enemy"
+            tour="draft-enemy"
             placeholder="Enemy pick, e.g. sf2"
             search={search}
             exclude={taken}
@@ -869,9 +871,10 @@ export function DraftBoard({
                 </button>
               </>
             )}
+            <PageTour tour="draft" />
           </div>
           <div className="flex flex-col items-start gap-3 max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-tour="draft-role">
               <span className="micro text-subtle" id="my-position">
                 Role
               </span>
