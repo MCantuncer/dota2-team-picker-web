@@ -24,6 +24,7 @@ export function PartyPanel({
   hero,
   heroAt,
   refresh,
+  notes = [],
 }: {
   party: Party;
   seats: PartySeat[];
@@ -31,6 +32,8 @@ export function PartyPanel({
   hero: (id: number) => { name: string; image?: string };
   heroAt: (position: Position) => number | null;
   refresh: () => Promise<void>;
+  /** What starting the party left undone, shown on this screen until it reloads. */
+  notes?: string[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -103,6 +106,13 @@ export function PartyPanel({
           <p className="text-sm text-muted empty:hidden" aria-live="polite">
             {moved}
           </p>
+          {notes.length > 0 && (
+            <ul role="status" className="notice notice-warn text-sm">
+              {notes.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          )}
           {error && (
             <p role="alert" className="notice notice-error text-sm">
               {error}
