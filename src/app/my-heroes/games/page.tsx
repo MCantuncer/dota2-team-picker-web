@@ -108,7 +108,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
 
   const showRecord = Boolean(profile.data?.steam_id) && record !== null && record.games > 0;
   return (
-    <main className="page flex flex-1 flex-col gap-8 py-10">
+    <main className="page flex flex-1 flex-col gap-8 overflow-x-clip py-10">
       <section aria-labelledby="your-games-title" className="relative isolate flex min-h-60 flex-col gap-5">
         {showRecord && (
           <HeroRender
