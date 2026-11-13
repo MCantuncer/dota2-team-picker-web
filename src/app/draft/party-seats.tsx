@@ -1,10 +1,112 @@
-import type { ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CutOutline, HeroFace } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 import { POSITION_NAMES } from "@/lib/party";
 import { seatCount, type PartySeat } from "@/lib/party-seats";
+import { AddButton } from "./team-seats";
+
+/** What the player may do on the seats; each is left out when they may not. */
+export interface SeatControls {
+  /** The seat the picker is open for. */
+  adding: Position | null;
+  /** Opens the picker on an open seat: invite someone (leader) or move someone there (planner). */
+  add?: (position: Position) => void;
+  /** Opens the picker on someone else's seat, to swap another player in (planner). */
+  swap?: (position: Position) => void;
+  /** Removes a member or frees a seated player's seat (leader). */
+  remove?: (seat: PartySeat) => void;
+  /** Sends a Not on Site player's invite again (leader). */
+  reinvite?: (seat: PartySeat) => void;
+}
+
+/**
+ * One quiet corner button on someone else's seat, opening what the player may do with it: Invite
+ * Again, Swap Someone In, Remove or Free Seat. One button keeps the seat's labels clear.
+ */
+function SeatMenu({ seat, controls }: { seat: PartySeat; controls: SeatControls }) {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    menuRef.current?.querySelector<HTMLButtonElement>("[role=menuitem]")?.focus();
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [open]);
+
+  const items = [
+    ...(seat.status === "away" && controls.reinvite ? [{ label: "Invite Again", run: () => controls.reinvite?.(seat), danger: false }] : []),
+    ...(controls.swap ? [{ label: "Swap Someone In", run: () => controls.swap?.(seat.position), danger: false }] : []),
+    ...(controls.remove
+      ? [{ label: seat.status === "in" ? "Remove from Party" : "Free Seat", run: () => controls.remove?.(seat), danger: true }]
+      : []),
+  ];
+  if (!items.length) return null;
+
+  const onMenuKey = (e: React.KeyboardEvent) => {
+    const buttons = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]") ?? [])];
+    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === "Escape") {
+      // Closing the menu must not also clear the draft.
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+      buttonRef.current?.focus();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      buttons.at((at + (e.key === "ArrowDown" ? 1 : -1)) % buttons.length)?.focus();
+    } else if (e.key === "Tab") setOpen(false);
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-label={`More for ${seat.name}`}
+        title={`More for ${seat.name}`}
+        onClick={() => setOpen((o) => !o)}
+        className={`flex size-6 items-center justify-center rounded-md text-muted hover:bg-hover hover:text-fg [&_svg]:size-3.5 ${open ? "bg-raised text-fg" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"}`}
+      >
+        <Icon name="more" />
+      </button>
+      <div
+        ref={menuRef}
+        id={menuId}
+        role="menu"
+        aria-label={`Actions for ${seat.name}`}
+        hidden={!open}
+        onKeyDown={onMenuKey}
+        className="absolute top-full right-0 z-20 mt-1 w-56 rounded-xl bg-surface p-1 shadow-xl ring-1 shadow-black/40 ring-line-strong ring-inset"
+      >
+        {items.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              item.run();
+            }}
+            className={`flex w-full items-center rounded-lg px-2.5 py-2 text-left text-sm outline-none hover:bg-hover focus-visible:bg-hover ${item.danger ? "text-dire" : "text-fg"}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /** A hero's name and 16:9 portrait; the portrait is missing when the hero list couldn't be loaded. */
 interface HeroArt {
@@ -54,6 +156,7 @@ export function PartySeats({
   heroAt,
   actions,
   footer,
+  controls,
 }: {
   /** The party's name: "Can's Party". */
   title: string;
@@ -67,6 +170,7 @@ export function PartySeats({
   actions?: ReactNode;
   /** Notes and errors under the seats. */
   footer?: ReactNode;
+  controls?: SeatControls;
 }) {
   return (
     <section aria-label="Team Seats" className="flex flex-col gap-3">
@@ -95,7 +199,7 @@ export function PartySeats({
             <li
               key={position}
               data-seat={position}
-              className="relative flex min-h-18 min-w-0 items-center gap-3 px-5 py-4 max-sm:min-h-16 max-sm:px-4 max-sm:py-3"
+              className={`group relative flex min-h-18 min-w-0 items-center gap-3 px-5 py-4 max-sm:min-h-16 max-sm:px-4 max-sm:py-3 ${controls?.adding === position ? "bg-accent-tint" : ""}`}
             >
               {art?.image ? (
                 <HeroFace portrait={art.image} name={art.name} size={40} />
@@ -113,6 +217,13 @@ export function PartySeats({
                   <span className="micro w-fit rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
                 ) : seat ? (
                   <span className="text-sm font-semibold break-words text-fg">{seat.name}</span>
+                ) : controls?.add ? (
+                  <AddButton
+                    position={position}
+                    open={controls.adding === position}
+                    label="Add Player"
+                    onClick={() => controls.add?.(position)}
+                  />
                 ) : (
                   <span className="text-sm text-subtle">Open</span>
                 )}
@@ -125,6 +236,11 @@ export function PartySeats({
               {status && (
                 <span className="ml-auto sm:hidden">
                   <StatusLine status={status} />
+                </span>
+              )}
+              {seat && seat.id !== userId && controls && (
+                <span className="absolute top-1 right-1">
+                  <SeatMenu seat={seat} controls={controls} />
                 </span>
               )}
             </li>

@@ -7,7 +7,10 @@ import { useDraftCaptain } from "@/app/party/draft-captain";
 import { POSITION_NAMES } from "@/lib/draft";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 import type { Party } from "@/lib/party";
-import type { PartySeat } from "@/lib/party-seats";
+import { seatChoice, type PartySeat } from "@/lib/party-seats";
+import { toTeamPeople, type LineupRow, type TeamPerson } from "@/lib/team-lineup";
+import { AddPlayer } from "./add-player";
+import type { PlannableStack } from "./use-team-lineup";
 import { createClient } from "@/lib/supabase/client";
 import { PartySeats } from "./party-seats";
 
@@ -25,6 +28,8 @@ export function PartyPanel({
   heroAt,
   refresh,
   notes = [],
+  planner,
+  stacks,
 }: {
   party: Party;
   seats: PartySeat[];
@@ -34,6 +39,10 @@ export function PartyPanel({
   refresh: () => Promise<void>;
   /** What starting the party left undone, shown on this screen until it reloads. */
   notes?: string[];
+  /** Who runs the party's screen: the Draft Captain, else the leader. They move players. */
+  planner: string | null;
+  /** The Stacks the player runs, for the picker's chips. */
+  stacks: PlannableStack[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -63,6 +72,41 @@ export function PartyPanel({
     if (error) return setError(`Could not leave: ${error.message}`);
     setError(null);
     router.refresh();
+  };
+
+  // The seat picker: the leader invites friends and Stack mates; the planner moves party players.
+  const isLeader = party.leaderId === userId;
+  const isPlanner = planner === userId;
+  const [adding, setAdding] = useState<Position | null>(null);
+  const [people, setPeople] = useState<TeamPerson[] | null>(null);
+  const open = async (position: Position) => {
+    if (adding === position) return setAdding(null);
+    setAdding(position);
+    if (people || !isLeader) return;
+    const { data, error } = await supabase.rpc("lineup_players");
+    if (error) {
+      // The party's own players can still be moved.
+      setPeople([]);
+      return setError(`Friends and Stack mates not loaded: ${error.message}`);
+    }
+    setPeople(toTeamPeople((data ?? []) as LineupRow[]).people);
+  };
+  // Everyone in the party can be moved, even someone who joined by link and isn't a friend.
+  const inParty: TeamPerson[] = seats
+    .filter((s) => s.id !== userId && !people?.some((p) => p.id === s.id))
+    .map((s) => ({ id: s.id, name: s.name, avatarUrl: s.avatarUrl, positions: [], stacks: [], isFriend: false, shared: true, canAdd: true }));
+  const pickable = [...inParty, ...(people ?? []).filter((p) => p.id !== userId)];
+  const pick = (id: string) => {
+    const at = adding;
+    const choice = at ? seatChoice({ personId: id, position: at, seats, isLeader, isPlanner }) : null;
+    if (!at || !choice) return;
+    setAdding(null);
+    void run(
+      choice.kind === "invite" ? "Invite not sent" : "Not moved",
+      choice.kind === "invite"
+        ? () => supabase.rpc("invite_to_party", { target: id, seat: at })
+        : () => supabase.rpc("set_member_position", { target: id, want: at }),
+    );
   };
 
   const leader = party.members.find((m) => m.id === party.leaderId)?.name;
@@ -98,8 +142,40 @@ export function PartyPanel({
           </button>
         </>
       }
+      controls={{
+        adding,
+        add: isLeader || isPlanner ? (p) => void open(p) : undefined,
+        swap: isPlanner ? (p) => void open(p) : undefined,
+        remove: isLeader
+          ? (seat) =>
+              void run(
+                seat.status === "in" ? "Could not remove" : "Seat not freed",
+                seat.status === "in"
+                  ? () => supabase.rpc("remove_from_party", { target: seat.id })
+                  : () => supabase.rpc("unseat_player", { target: seat.id }),
+              )
+          : undefined,
+        reinvite: isLeader
+          ? (seat) => void run("Invite not sent", () => supabase.rpc("invite_to_party", { target: seat.id }))
+          : undefined,
+      }}
       footer={
         <>
+          {adding && (isLeader && !people ? (
+            <p className="text-sm text-muted">Loading your Stacks and friends…</p>
+          ) : (
+            <div className={`flex ${adding > 2 ? "sm:justify-end" : ""}`}>
+              <AddPlayer
+                position={adding}
+                people={pickable}
+                seats={[]}
+                stacks={isLeader ? stacks : []}
+                onPick={pick}
+                onClose={() => setAdding(null)}
+                choose={(p) => seatChoice({ personId: p.id, position: adding, seats, isLeader, isPlanner })}
+              />
+            </div>
+          ))}
           <p className="text-sm text-muted empty:hidden" aria-live="polite">
             {captainLine}
           </p>
