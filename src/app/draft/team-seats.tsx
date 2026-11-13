@@ -25,13 +25,23 @@ const focusSoon = (selector: string) =>
     shown?.focus();
   });
 
-/** Plan For, in the toolbar: Just Me, or Team. */
-export function PlanForSwitch({ mode, onJustMe, onTeam }: { mode: "me" | "team"; onJustMe: () => void; onTeam: () => void }) {
+/** Plan For, in the toolbar: Just Me, or Team. In a party it stays on Team, and `lockedWhy` says why. */
+export function PlanForSwitch({
+  mode,
+  onJustMe,
+  onTeam,
+  lockedWhy,
+}: {
+  mode: "me" | "team";
+  onJustMe: () => void;
+  onTeam: () => void;
+  lockedWhy?: string;
+}) {
   return (
     <div className="flex items-center gap-2" data-tour="draft-plan">
       <span className="micro text-subtle">Plan For</span>
       <div className="lane-seg lane-seg-sm" role="group" aria-label="Plan For">
-        <button type="button" aria-pressed={mode === "me"} onClick={onJustMe}>
+        <button type="button" aria-pressed={mode === "me"} onClick={onJustMe} disabled={Boolean(lockedWhy)} title={lockedWhy}>
           Just Me
         </button>
         <button type="button" aria-pressed={mode === "team"} onClick={onTeam}>

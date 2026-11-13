@@ -195,8 +195,10 @@ export function DraftBoard({
   const planNames = party
     ? { ...party.names, ...Object.fromEntries([...(live.party?.members ?? []), ...live.seated].map((m) => [m.id, m.name])) }
     : (lineupPlan?.names ?? {});
-  // In a lineup, the player's position is the one they have there.
-  const myPosition = lineupPlan?.myPosition ?? soloPosition;
+  // In a party the player's position is their seat, kept live; in a lineup, the one they have there.
+  const seatPosition = party ? live.party?.members.find((m) => m.id === party.userId)?.position : null;
+  const myPosition = lineupPlan?.myPosition ?? (isPosition(seatPosition) ? seatPosition : soloPosition);
+  const [roleError, setRoleError] = useState<string | null>(null);
   const captainId = party ? (live.party?.captain.id ?? null) : null;
   // The planner runs the party's screen: the Draft Captain, else the leader. Everyone else watches it.
   const planner = party ? live.planner : null;
@@ -446,7 +448,14 @@ export function DraftBoard({
   /** Sets where an enemy plays, swapping with the enemy set there, so the engine stops guessing it. */
   const placeEnemy = (heroId: number, position: Position | null) =>
     act(...positionActions(resolvedEnemies, heroId, position, "enemy"));
-  const choosePosition = (p: Position) => {
+  const choosePosition = async (p: Position) => {
+    // In a party Role moves the player's seat, swapping with the member there.
+    if (party) {
+      const { error } = await createClient().rpc("set_party_position", { want: p });
+      if (error) return setRoleError(`Position not saved: ${error.message}`);
+      setRoleError(null);
+      return live.refresh();
+    }
     // In Team the player's seat moves too, swapping with whoever sat there.
     if (lineupPlan?.myPosition) lineup.place(SOLO_ME, p);
     setMyPosition(p);
@@ -497,6 +506,8 @@ export function DraftBoard({
 
   // Seated players who haven't joined are planned with their own heroes, the same as members.
   const seats = live.party ? partySeats(live.party, live.seated) : null;
+  // Seats held for players who haven't joined: Role can't take them.
+  const waitingSeats = (seats ?? []).filter((s) => s.status !== "in");
   const planMembers: PlanMember[] = seats
     ? [
         ...seats.map((s) => ({ id: s.id, position: s.position })),
@@ -900,22 +911,32 @@ export function DraftBoard({
                 Role
               </span>
               <div className="lane-seg lane-seg-sm max-sm:[&>button]:px-2.5" role="group" aria-labelledby="my-position">
-                {POSITIONS.map((p) => (
-                  <button
-                    key={p}
-                    aria-pressed={myPosition === p}
-                    aria-label={POSITION_NAMES[p - 1]}
-                    title={POSITION_NAMES[p - 1]}
-                    onClick={() => choosePosition(p)}
-                    className="inline-flex items-center gap-1.5"
-                  >
-                    <PositionIcon position={p} size={16} />
-                    {/* Below xl only the chosen role keeps its name, so the row fits beside Rank. */}
-                    <span className={myPosition === p ? "" : "max-xl:hidden"}>{POSITION_NAMES[p - 1]}</span>
-                  </button>
-                ))}
+                {POSITIONS.map((p) => {
+                  const waiting = waitingSeats.find((s) => s.position === p);
+                  return (
+                    <button
+                      key={p}
+                      aria-pressed={myPosition === p}
+                      aria-label={POSITION_NAMES[p - 1]}
+                      title={waiting ? `Seat Waiting for ${waiting.name}` : POSITION_NAMES[p - 1]}
+                      disabled={Boolean(waiting)}
+                      onClick={() => void choosePosition(p)}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <PositionIcon position={p} size={16} />
+                      {/* Below xl only the chosen role keeps its name, so the row fits beside Rank. */}
+                      <span className={myPosition === p ? "" : "max-xl:hidden"}>{POSITION_NAMES[p - 1]}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+            {/* Phones can't hover for the reason a Role is off, so it is written out. */}
+            {waitingSeats.length > 0 && (
+              <p className="text-xs text-subtle sm:hidden">
+                {waitingSeats.map((s) => `${POSITION_NAMES[s.position - 1]} is waiting for ${s.name}.`).join(" ")}
+              </p>
+            )}
             <label className="flex items-center gap-2">
               <span className="micro text-subtle">Rank</span>
               <select
@@ -934,7 +955,11 @@ export function DraftBoard({
               </select>
             </label>
           </div>
-          {!party && (
+          {party ? (
+            <div className="max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-start-2 lg:row-start-1">
+              <PlanForSwitch mode="team" onJustMe={() => {}} onTeam={() => {}} lockedWhy="Leave the Party to Plan Just for You" />
+            </div>
+          ) : (
             <div className="max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-start-2 lg:row-start-1">
               <PlanForSwitch
                 mode={lineup.mode}
@@ -980,6 +1005,11 @@ export function DraftBoard({
       {rankError && (
         <p role="alert" className="notice notice-error text-sm">
           {rankError}
+        </p>
+      )}
+      {roleError && (
+        <p role="alert" className="notice notice-error text-sm">
+          {roleError}
         </p>
       )}
 
