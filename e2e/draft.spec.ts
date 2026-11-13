@@ -52,6 +52,34 @@ test("a number key opens a pick and Enter then marks it picked", async ({ page }
   await expect(page.getByRole("region", { name: "My team" }).getByText(second)).toBeVisible();
 });
 
+test("the ? button walks the page one control at a time and remembers it was opened", async ({ page }) => {
+  await page.goto("/draft");
+  const enemy = page.getByLabel("Enemy pick");
+  await enemy.fill("pudge");
+  await enemy.press("Enter");
+  await expect(page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li")).toHaveCount(8);
+
+  const help = page.getByRole("button", { name: "Page Tour" });
+  await expect(help.locator(".tour-dot")).toBeVisible();
+  await help.click();
+  const tip = page.getByRole("dialog");
+  await expect(tip).toHaveAccessibleName("Your Role");
+  await expect(tip).toContainText(/^1 of \d+/);
+  await expectAccessible(page);
+
+  // The lit control still works and moves the tour on.
+  await page.getByRole("group", { name: "Role" }).getByRole("button", { name: "Mid" }).click();
+  await expect(tip).toHaveAccessibleName("Who to Plan For");
+  await page.keyboard.press("ArrowRight");
+  await expect(tip).toHaveAccessibleName("Add Enemy Heroes");
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+  await expect(help).toBeFocused();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Page Tour" }).locator(".tour-dot")).toHaveCount(0);
+});
+
 test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dota", async ({ page }) => {
   await page.goto("/draft");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeVisible();

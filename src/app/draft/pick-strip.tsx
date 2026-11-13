@@ -193,6 +193,7 @@ export function PickStrip({
       )}
       <Stop node={<span className="lane-node lane-node-now" />} nodeClass="top-[3.25rem]">
         <div
+          data-tour="draft-picks"
           className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
           style={{ "--cols": columns } as CSSProperties}
         >

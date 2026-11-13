@@ -28,7 +28,7 @@ const focusSoon = (selector: string) =>
 /** Plan For, in the toolbar: Just Me, or Team. */
 export function PlanForSwitch({ mode, onJustMe, onTeam }: { mode: "me" | "team"; onJustMe: () => void; onTeam: () => void }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-tour="draft-plan">
       <span className="micro text-subtle">Plan For</span>
       <div className="lane-seg lane-seg-sm" role="group" aria-label="Plan For">
         <button type="button" aria-pressed={mode === "me"} onClick={onJustMe}>
