@@ -82,6 +82,8 @@ export function useTeamLineup({
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // The Stack the seats were last filled from, so a party started from them is that Stack's.
+  const [stack, setStack] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   // Seats are cleaned and saved only after a load worked, so a failed load never wipes them.
   const [trusted, setTrusted] = useState(false);
@@ -143,6 +145,7 @@ export function useTeamLineup({
       startStack.current = null;
       forgetStartParams();
       setSeats(fillFromStack(clean, next.people, from).seats);
+      setStack(from);
     } else if (friend) {
       startWith.current = null;
       forgetStartParams();
@@ -207,12 +210,15 @@ export function useTeamLineup({
       if (!loaded) return;
       const result = fillFromStack(seatsNow.current, loaded.people, fromStack);
       setSeats(result.seats);
+      setStack(fromStack);
       setNotice(
         result.left.length
           ? `${result.left.map((p) => p.name).join(", ")} didn't fit: all seats are taken.`
           : null,
       );
     },
+    /** The Stack the seats were last filled from, if any. */
+    stack,
     /** Set in Team: every position planned, open seats as teammates. */
     plan,
   };

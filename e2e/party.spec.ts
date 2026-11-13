@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, newPlayer, seedFriend, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, newPlayer, seedFriend, seedStack, test, uniqueEmail } from "./helpers";
 
 test("a party player can become draft captain and step down", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-captain"), "Lion");
@@ -126,4 +126,31 @@ test("in a party Role moves your seat, a waiting seat can't be taken, and Plan F
   await page.reload();
   await expect(role.getByRole("button", { name: "Mid" })).toHaveAttribute("aria-pressed", "true");
   await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toContainText("Mid");
+});
+
+test("Invite 2 to Party turns the planned seats into a party and keeps the board", async ({ page }) => {
+  const email = uniqueEmail("party-start");
+  await newPlayer(page, email, "Mirana");
+  await seedStack(email, "Night Owls", [
+    { name: "Tusk", position: 3 },
+    { name: "Lina", position: 2 },
+  ]);
+  await page.goto("/draft");
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
+  const planFor = page.getByRole("region", { name: "Plan For" });
+  await planFor.getByLabel("Fill From Stack").selectOption({ label: "Night Owls" });
+  await expect(planFor.getByRole("list", { name: "Team Seats" })).toContainText("Tusk");
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await ally.fill("cm5");
+  await ally.press("Enter");
+
+  await planFor.getByRole("button", { name: "Invite 2 to Party" }).click();
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  await expect(seats).toContainText("Mirana's Party");
+  await expect(seats).toContainText("1 in Party, 2 Waiting");
+  await expect(seats.getByRole("listitem").filter({ hasText: "Tusk" })).toContainText("Invited");
+  await expect(seats.getByRole("listitem").filter({ hasText: "Lina" })).toContainText("Invited");
+  // The pick typed before the party is in the party draft.
+  await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toBeVisible();
+  await expectAccessible(page);
 });

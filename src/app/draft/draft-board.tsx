@@ -53,6 +53,7 @@ import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
 import { PartyPanel } from "./party-panel";
+import { saveStartNote, startNoteLines, startPartyFromSeats, takeStartNote } from "@/lib/start-party";
 import { PlanForSwitch, TeamSeats } from "./team-seats";
 import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
@@ -175,6 +176,17 @@ export function DraftBoard({
   useEffect(() => {
     if (partyGone) router.refresh();
   }, [partyGone, router]);
+  // Just started from planned seats: keep the side, and say once what didn't go through.
+  const [startLines, setStartLines] = useState<string[]>([]);
+  useEffect(() => {
+    if (!party) return;
+    const note = takeStartNote();
+    if (!note) return;
+    // Browser storage is read after mount, so the server and the first render agree.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStartLines(startNoteLines(note));
+    if (note.side) setPartySide(note.side);
+  }, [party]);
   // Out of a party, the player can plan for a Stack they run, online or not. The party always wins.
   // Team: any mix of Stack mates and friends, online or not; open seats are teammates who can play any hero.
   const lineup = useTeamLineup({
@@ -460,6 +472,32 @@ export function DraftBoard({
     if (lineupPlan?.myPosition) lineup.place(SOLO_ME, p);
     setMyPosition(p);
     writeStorage(POSITION_KEY, p);
+  };
+
+  // Invite N to Party: the planned seats become the party, and the board moves into its draft.
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const startParty = async () => {
+    const mine = lineup.seats.find((s) => s.id === SOLO_ME);
+    if (!mine) return;
+    setStarting(true);
+    const result = await startPartyFromSeats(createClient(), {
+      team: lineup.stack,
+      mySeat: mine.position,
+      planned: lineup.seats
+        .filter((s) => s.id !== SOLO_ME)
+        .map((s) => ({ id: s.id, name: lineup.people?.find((p) => p.id === s.id)?.name ?? "a player", position: s.position })),
+      board: solo.draft,
+      side: solo.side,
+    });
+    if ("error" in result) {
+      setStarting(false);
+      return setStartError(result.error);
+    }
+    setStartError(null);
+    saveStartNote(result.note);
+    // The page loads again as the party's draft.
+    router.refresh();
   };
 
   const taken = new Set(draft.map((e) => e.heroId));
@@ -1012,6 +1050,11 @@ export function DraftBoard({
           {roleError}
         </p>
       )}
+      {startError && (
+        <p role="alert" className="notice notice-error text-sm">
+          {startError}
+        </p>
+      )}
 
       {locked ? (
         <p className="text-xs text-subtle">
@@ -1088,6 +1131,7 @@ export function DraftBoard({
           hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
           heroAt={(p) => picksByPosition[p - 1] ?? teamPlan?.slots.find((slot) => slot.position === p)?.heroId ?? null}
           refresh={live.refresh}
+          notes={startLines}
         />
       )}
       {!party && (
@@ -1103,6 +1147,8 @@ export function DraftBoard({
           onPlace={lineup.place}
           onRemove={lineup.remove}
           onFill={lineup.fill}
+          onStartParty={signedIn ? () => void startParty() : undefined}
+          starting={starting}
         />
       )}
 
