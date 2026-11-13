@@ -49,7 +49,7 @@ export function WhoHurtsYou({ player, heroName, icons }: Art & { player: PlayerP
         </h3>
         <span className="text-sm text-muted">{"Each enemy's worst spell for you, and your answer"}</span>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {player.threatRows.map((row) => (
           <Tile key={row.enemies.map((e) => e.heroId).join("-")} row={row} note={note} answer={path.find((i) => i.itemId === row.answer)} heroName={heroName} icons={icons} />
         ))}
@@ -70,9 +70,11 @@ function Tile({ row, note, answer, heroName, icons }: Art & { row: ThreatRow; no
   const title = spells.length ? spells.map((s) => s.name).join(", ") : first.threat;
   // The spell lines say what each spell does; without a spell, the threat line says what the hero does.
   const lines = spells.length ? spells.map((s) => (spells.length > 1 ? `${s.name}: ${sentence(s.line)}` : sentence(s.line))) : others.length ? row.enemies.map((e) => `${heroName(e.heroId)}: ${sentence(e.threat)}`) : [];
+  // From sm up each tile is four rows of the list's grid (art, title, lines, answer), so the answers of tiles
+  // side by side start on one line however long the text above them runs.
   return (
-    <li className="flex gap-3 overflow-hidden rounded-xl border border-line-strong bg-surface p-3 sm:flex-col sm:gap-0 sm:p-0">
-      <HeroStage size={160} isEnemy className="relative block aspect-video w-32 shrink-0 self-start overflow-hidden sm:w-full">
+    <li className="grid grid-cols-[8rem_minmax(0,1fr)] content-start gap-x-3 gap-y-3 overflow-hidden rounded-xl border border-line-strong bg-surface p-3 sm:row-span-4 sm:grid-cols-1 sm:grid-rows-subgrid sm:gap-0 sm:p-0">
+      <HeroStage size={160} isEnemy className="relative row-span-2 block aspect-video w-full self-start overflow-hidden sm:row-span-1">
         {icons[first.heroId] && <HeroArt heroId={first.heroId} portrait={icons[first.heroId]!} placement={TILE_ART} />}
         {others.length > 0 && (
           <span className="absolute left-1.5 top-1.5 flex gap-1.5 sm:left-3 sm:top-3">
@@ -95,41 +97,55 @@ function Tile({ row, note, answer, heroName, icons }: Art & { row: ThreatRow; no
           />
         )}
       </HeroStage>
-      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:p-4">
-        <div className="flex flex-col items-start gap-1">
-          {lane && (
-            <span className="chip h-6 bg-dire-tint px-2 text-xs font-medium text-dire shadow-none">{lane.laneSure ? "In Your Lane" : "In Your Lane, Guessed"}</span>
-          )}
-          <b className="text-base font-semibold text-fg">{title}</b>
-          <span className="text-[0.8125rem] text-muted">
-            {row.enemies.map((e) => heroName(e.heroId)).join(", ")}
-            {kinds.length > 0 && ` · ${kinds.join(", ")}`}
-          </span>
-        </div>
-        {lines.length > 0 && (
-          <ul className="flex flex-col gap-1 text-sm text-muted">
-            {lines.map((l) => (
-              <li key={l}>{l}</li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-auto flex items-center gap-3 rounded-lg bg-raised p-2.5">
-          {answer ? (
-            <>
-              <Image src={ITEM_CDN + answer.img} alt="" width={44} height={32} className="h-8 w-11 shrink-0 rounded-md object-cover" />
-              <span className="flex flex-col leading-tight">
-                <span className="text-xs text-subtle">Answer</span>
-                <b className="text-sm font-semibold text-fg">{answer.name}</b>
-              </span>
-            </>
-          ) : (
-            <span className="flex flex-col leading-tight">
-              <span className="text-xs text-subtle">Do</span>
-              <span className="text-sm text-fg">{row.tip ? sentence(row.tip) : "Play your game."}</span>
+      <div className="flex min-w-0 flex-col items-start gap-1 sm:px-5 sm:pt-5">
+        {lane && <span className="chip h-6 bg-dire-tint px-2 text-xs font-medium text-dire shadow-none">{lane.laneSure ? "In Your Lane" : "In Your Lane, Guessed"}</span>}
+        <b className="text-base font-semibold text-fg">{title}</b>
+        <span className="text-[0.8125rem] text-muted">
+          {row.enemies.map((e) => heroName(e.heroId)).join(", ")}
+          {kinds.length > 0 && ` · ${kinds.join(", ")}`}
+        </span>
+      </div>
+      <ul className="flex min-w-0 flex-col gap-1.5 text-sm leading-relaxed text-muted empty:hidden sm:px-5 sm:pt-3 sm:empty:block">
+        {lines.map((l) => (
+          <li key={l}>{l}</li>
+        ))}
+      </ul>
+      <TileAnswer row={row} answer={answer} heroName={heroName} icons={icons} />
+    </li>
+  );
+}
+
+/**
+ * What to do about the tile's enemies, under a line across the tile: the answer item from the player's path, or
+ * this game's tip with the art it names (the heroes to hit or fight next to, an item, a spell). No label or box:
+ * the art and a sentence that starts with a verb say it is the thing to do.
+ */
+function TileAnswer({ row, answer, heroName, icons }: Art & { row: ThreatRow; answer?: BuildItem }) {
+  const art = row.tipArt;
+  return (
+    <div className="col-span-2 flex items-center gap-3.5 border-t border-line pt-3 sm:col-span-1 sm:mx-5 sm:mt-5 sm:self-start sm:pb-5 sm:pt-4">
+      {answer ? (
+        <>
+          <Image src={ITEM_CDN + answer.img} alt="" width={55} height={40} className="h-10 w-[3.4375rem] shrink-0 rounded-md object-cover" />
+          <p className="text-sm leading-relaxed text-fg">
+            Buy <b className="font-semibold">{answer.name}</b>
+            <span className="text-muted">, around {answer.minute} min.</span>
+          </p>
+        </>
+      ) : (
+        <>
+          {art && "heroes" in art && (
+            <span className="flex shrink-0 gap-1.5">
+              {art.heroes.map((id) =>
+                icons[id] ? <HeroFace key={id} portrait={icons[id]!} name={heroName(id)} size={40} isEnemy={art.side === "enemy"} isDecorative /> : null,
+              )}
             </span>
           )}
-        </div>
-      </div>
-    </li>
+          {art && "item" in art && <Image src={ITEM_CDN + art.img} alt="" width={55} height={40} className="h-10 w-[3.4375rem] shrink-0 rounded-md object-cover" />}
+          {art && "spell" in art && <Image src={`${ABILITY_CDN}${art.spell}.png`} alt="" width={40} height={40} className="size-10 shrink-0 rounded-md" />}
+          <p className="text-sm leading-relaxed text-fg">{row.tip ? sentence(row.tip) : "Play your game."}</p>
+        </>
+      )}
+    </div>
   );
 }

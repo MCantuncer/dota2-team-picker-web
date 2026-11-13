@@ -216,8 +216,8 @@ describe("GameStoryPanel", () => {
   it("lists each enemy by their worst spell, with the item that answers it, or what to do", () => {
     renderPanel(1);
     const tiles = within(screen.getByRole("region", { name: "Who Hurts You" })).getAllByRole("listitem");
-    expect(tiles[0]).toHaveTextContent("In Your Lane, GuessedTank who soaks your damageHero 9DoDon't focus them.");
-    expect(tiles[1]).toHaveTextContent("HexHero 8No spells, no items.AnswerBlack King Bar");
+    expect(tiles[0]).toHaveTextContent("In Your Lane, GuessedTank who soaks your damageHero 9Don't focus them.");
+    expect(tiles[1]).toHaveTextContent("HexHero 8No spells, no items.Buy Black King Bar, around 17 min.");
   });
 
   it("marks rough minutes when there are no real timings", async () => {
