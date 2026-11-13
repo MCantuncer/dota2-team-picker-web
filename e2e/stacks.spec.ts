@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, newPlayer, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, newPlayer, startPartyOnDraft, test, uniqueEmail } from "./helpers";
 
 test("any player creates a Stack, invites a friend, and the friend joins", async ({ page, browser }) => {
   const ownerEmail = uniqueEmail("stack-owner");
@@ -34,18 +34,14 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await page.reload();
   await expect(page.getByRole("region", { name: "Lineup" }).getByText("Tusk")).toBeVisible();
 
-  // The owner starts a party for the Stack and invites from it in one click.
-  await page.goto("/party");
-  await page.getByLabel("Stack", { exact: true }).selectOption({ label: "Night Owls" });
-  await page.getByRole("button", { name: "Start a Party" }).click();
+  // The owner starts a party on Draft and invites from the Stack in one click.
+  await startPartyOnDraft(page);
+  await page.getByRole("region", { name: "Team Seats" }).getByRole("button", { name: "Invite from Stack" }).click();
   const fromStack = page.getByRole("region", { name: "Invite from Stack" });
-  // Starting a party redraws the lobby once from the server, which clears a tick made before it lands. Tick again
-  // until the Invite button takes it.
-  await expect(async () => {
-    await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
-    await fromStack.getByRole("button", { name: "Invite" }).click({ timeout: 1000 });
-  }).toPass();
+  await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
+  await fromStack.getByRole("button", { name: "Invite" }).click();
   await expect(fromStack.getByText("Invite sent.")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: "Tusk" })).toContainText("Invited");
   await expectAccessible(page);
   await palContext.close();
 });
