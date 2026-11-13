@@ -1130,6 +1130,8 @@ isOneToOne: false
                            },
 "first_free_position":
 { Args: { "party": string }; Returns: number
+                           } |
+{ Args: { "party": string,"player": string }; Returns: number
                            },
 "forget_match_files":
 { Args: { "matches": (number)[] }; Returns: number
