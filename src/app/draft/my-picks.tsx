@@ -247,6 +247,7 @@ function PickActions({
         type="button"
         onClick={() => onPicked(s.heroId)}
         aria-label={`Picked ${s.name}${owner ? ` for ${owner}` : ""}`}
+        data-tour={isLarge ? "draft-picked" : undefined}
         className={`btn ${isCopper ? "btn-primary" : "btn-secondary"} ${isLarge ? "" : "btn-sm w-[6.25rem]"}`}
       >
         <span className={`flex ${isCopper ? "" : "text-radiant"}`}>
@@ -760,7 +761,10 @@ export function BestCard({
           )}
         </div>
 
-        <div className="min-w-0 border-t border-line pt-5 empty:hidden md:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0.5 xl:pl-6">
+        <div
+          data-tour="draft-why"
+          className="min-w-0 border-t border-line pt-5 empty:hidden md:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0.5 xl:pl-6"
+        >
           <WhyLines s={s} ctx={ctx} control={control} idBase={nameId} />
         </div>
 

@@ -14,6 +14,8 @@ export interface PickedHero {
 
 interface HeroInputProps {
   id: string;
+  /** Marks the box for a Page Tour step (see components/tours.tsx). */
+  tour?: string;
   placeholder: string;
   /** The box's name for screen readers, when the placeholder is a short form of it. */
   label?: string;
@@ -30,7 +32,7 @@ interface HeroInputProps {
  * box undoes the last add. Several heroes can go in at once, separated by spaces (`pa sf`); the list
  * and the arrows apply to the last one. With `withPosition`, a digit after a hero sets its position (`cm5`).
  */
-export function HeroInput({ id, placeholder, label, search, exclude, withPosition, onPick, onUndo, inputRef }: HeroInputProps) {
+export function HeroInput({ id, tour, placeholder, label, search, exclude, withPosition, onPick, onUndo, inputRef }: HeroInputProps) {
   const [value, setValue] = useState("");
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -73,7 +75,7 @@ export function HeroInput({ id, placeholder, label, search, exclude, withPositio
   };
 
   return (
-    <div className="relative min-w-0">
+    <div className="relative min-w-0" data-tour={tour}>
       <input
         id={id}
         ref={inputRef}

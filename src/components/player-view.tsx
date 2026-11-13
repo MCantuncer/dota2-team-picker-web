@@ -46,6 +46,8 @@ export interface PlayerViewProps {
   enemyItems?: EnemyItem[];
 }
 
+/** The Page Tour step that lights each view's tab (see components/tours.tsx). */
+const VIEW_TOURS: Record<View, string> = { "Item Build": "your-game-items", "Game Story": "your-game-story", "Skills and Talents": "your-game-skills" };
 /** The keys that open each view while focus is inside Your Game (so typing anywhere else is never taken). */
 const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "Skills and Talents" };
 
@@ -88,6 +90,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
     <div className="flex flex-col gap-6" onKeyDown={onKeyDown}>
       <Tabs
         label="Players"
+        tour="your-game-seats"
         items={ordered.map((p) => ({ key: String(p.position), id: playerTab(p.position), controls: `${id}-player-panel` }))}
         selected={String(player.position)}
         onSelect={(key) => setPicked({ for: myPosition, position: Number(key) })}
@@ -123,7 +126,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
       <div id={`${id}-player-panel`} role="tabpanel" aria-labelledby={playerTab(player.position)} className="flex flex-col gap-6">
         <Tabs
           label={`${heroName(player.heroId)} view`}
-          items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel`, label: v, describedBy: `${viewTab(v)}-preview`, shortcut: SHORTCUTS[v] }))}
+          items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel`, label: v, describedBy: `${viewTab(v)}-preview`, shortcut: SHORTCUTS[v], tour: VIEW_TOURS[v] }))}
           selected={view}
           onSelect={(key) => setView(key as View)} // The keys are VIEWS.
           className="grid grid-cols-3 gap-2 sm:gap-3"
@@ -192,10 +195,13 @@ function Tabs({
   onSelect,
   className,
   buttonClassName = "",
+  tour,
   render,
 }: {
   label: string;
-  items: { key: string; id: string; controls: string; label?: string; describedBy?: string; shortcut?: string }[];
+  /** Marks the tab row for a Page Tour step; each item can mark its own tab with `tour` too. */
+  tour?: string;
+  items: { key: string; id: string; controls: string; label?: string; describedBy?: string; shortcut?: string; tour?: string }[];
   selected: string;
   onSelect: (key: string) => void;
   className: string;
@@ -214,7 +220,7 @@ function Tabs({
     refs.current[to]?.focus();
   };
   return (
-    <div role="tablist" aria-label={label} className={className}>
+    <div role="tablist" aria-label={label} className={className} data-tour={tour}>
       {items.map((item, i) => {
         const on = item.key === selected;
         return (
@@ -231,6 +237,7 @@ function Tabs({
             aria-label={item.label}
             aria-describedby={item.describedBy}
             aria-keyshortcuts={item.shortcut}
+            data-tour={item.tour}
             tabIndex={on ? 0 : -1}
             onClick={() => onSelect(item.key)}
             onKeyDown={(e) => move(e, i)}
