@@ -144,7 +144,7 @@ export function StackBanner({
 
       <div className="mt-auto flex flex-wrap items-center gap-2.5 pt-2">
         {runs && (
-          <Link href={`/draft?stack=${stack.id}`} className="btn btn-primary btn-lg">
+          <Link href={`/draft?stack=${stack.id}`} data-tour="stack-draft" className="btn btn-primary btn-lg">
             <Icon name="play" large />
             Draft for {stack.name}
           </Link>
@@ -152,6 +152,7 @@ export function StackBanner({
         {stackPage && (
           <Link
             href={`/stacks/${stack.id}`}
+            data-tour="stacks-page"
             className="btn btn-secondary btn-lg"
             aria-label={
               waiting > 0

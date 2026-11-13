@@ -53,7 +53,7 @@ export function HeroInsightsView({
   period: Period;
 }) {
   return (
-    <section aria-labelledby="heroes-heading" className="flex flex-col gap-5 border-t border-line pt-6">
+    <section aria-labelledby="heroes-heading" data-tour="profile-heroes" className="flex flex-col gap-5 border-t border-line pt-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <h2 id="heroes-heading" className="section-title">
