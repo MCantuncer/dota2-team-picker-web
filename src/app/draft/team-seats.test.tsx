@@ -122,6 +122,32 @@ describe("TeamSeats", () => {
   });
 });
 
+describe("TeamSeats party button", () => {
+  it("invites the planned teammates, or starts an empty party, only once the player is seated", async () => {
+    const start = vi.fn();
+    setup(
+      [
+        { id: SOLO_ME, position: 2 },
+        { id: "a", position: 1 },
+        { id: "b", position: 4 },
+      ],
+      { onStartParty: start },
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Invite 2 to Party" }));
+    expect(start).toHaveBeenCalled();
+  });
+
+  it("reads Start Party with nobody else seated, and is off while starting", () => {
+    setup([{ id: SOLO_ME, position: 2 }], { onStartParty: vi.fn(), starting: true });
+    expect(screen.getByRole("button", { name: "Start Party" })).toBeDisabled();
+  });
+
+  it("is not offered when the player has no seat", () => {
+    setup([{ id: "a", position: 1 }], { onStartParty: vi.fn() });
+    expect(screen.queryByRole("button", { name: /to Party|Start Party/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("PlanForSwitch", () => {
   it("locks Just Me with the reason while in a party", async () => {
     const justMe = vi.fn();

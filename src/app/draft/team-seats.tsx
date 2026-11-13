@@ -68,6 +68,8 @@ export function TeamSeats({
   onPlace,
   onRemove,
   onFill,
+  onStartParty,
+  starting = false,
 }: {
   mode: "me" | "team";
   seats: Seat[];
@@ -82,6 +84,9 @@ export function TeamSeats({
   onPlace: (id: string, position: Position) => void;
   onRemove: (id: string) => void;
   onFill: (stackId: string) => void;
+  /** Starts a party from these seats; left out signed out. */
+  onStartParty?: () => void;
+  starting?: boolean;
 }) {
   const [adding, setAdding] = useState<Position | null>(null);
   if (mode === "me" && !notice) return null;
@@ -98,6 +103,14 @@ export function TeamSeats({
     focusSoon(`[data-seat-add="${seat.position}"]`);
   };
 
+  // The planned teammates get a seat and an invite each; with nobody else seated it starts an empty party.
+  const invites = seats.filter((s) => s.id !== SOLO_ME).length;
+  const startParty = onStartParty && signedIn && meSeated && (
+    <button type="button" onClick={onStartParty} disabled={starting} className="btn btn-primary btn-sm shrink-0">
+      <Icon name="send" />
+      {invites ? `Invite ${invites} to Party` : "Start Party"}
+    </button>
+  );
   const fillFromStack = stacks.length > 0 && people && (
     <select
       aria-label="Fill From Stack"
@@ -123,11 +136,14 @@ export function TeamSeats({
       )}
       {mode === "team" && (
         <div className="flex flex-col gap-3">
-          {/* Fill From Stack sits in its own row, so it never fights the seats' height. */}
-          {fillFromStack && (
-            <div className="flex items-center justify-between gap-3">
+          {/* Fill From Stack and the party button sit in their own row, so they never fight the seats' height. */}
+          {(fillFromStack || startParty) && (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <span className="micro text-subtle">Team Seats</span>
-              {fillFromStack}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {fillFromStack}
+                {startParty}
+              </div>
             </div>
           )}
           {/* Five equal cells in one panel. On a phone the cells stack their parts, so all five seats stay in view. */}
