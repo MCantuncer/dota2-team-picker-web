@@ -92,7 +92,7 @@ export default async function DraftPage() {
 
   return (
     <main className="page flex flex-1 flex-col gap-5 py-8">
-      <DraftBoard player={player} portraits={portraits} signedIn={Boolean(user)} party={party} userId={user?.id ?? null} stacks={stacks} />
+      <DraftBoard key={party?.id ?? "solo"} player={player} portraits={portraits} signedIn={Boolean(user)} party={party} userId={user?.id ?? null} stacks={stacks} />
     </main>
   );
 }

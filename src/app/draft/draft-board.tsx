@@ -3,6 +3,7 @@
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroFace } from "@/components/hero-frame";
 import { HeroInput } from "@/components/hero-input";
@@ -43,7 +44,6 @@ import { perPlayerColumns } from "@/lib/per-player";
 import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
-import { DraftCaptainBar } from "./draft-captain-bar";
 import { EmptyPoolNotice } from "./empty-pool-notice";
 import { SuperTeamPanel } from "./super-team";
 import { TeamPlanLane } from "./team-plan";
@@ -52,7 +52,7 @@ import { PositionPicker } from "./position-picker";
 import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
-import { PartySeats } from "./party-seats";
+import { PartyPanel } from "./party-panel";
 import { PlanForSwitch, TeamSeats } from "./team-seats";
 import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
@@ -169,6 +169,12 @@ export function DraftBoard({
   const [soloPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
   const live = useLiveParty(party?.party ?? null, party?.seated);
+  const router = useRouter();
+  // Removed from the party, or it closed: the page loads again as the player's own draft.
+  const partyGone = party !== null && live.party === null;
+  useEffect(() => {
+    if (partyGone) router.refresh();
+  }, [partyGone, router]);
   // Out of a party, the player can plan for a Stack they run, online or not. The party always wins.
   // Team: any mix of Stack mates and friends, online or not; open seats are teammates who can play any hero.
   const lineup = useTeamLineup({
@@ -971,7 +977,6 @@ export function DraftBoard({
         </div>
       )}
 
-      {party && live.party && <DraftCaptainBar party={live.party} userId={party.userId} refresh={live.refresh} />}
       {rankError && (
         <p role="alert" className="notice notice-error text-sm">
           {rankError}
@@ -1045,14 +1050,14 @@ export function DraftBoard({
         </BanLine>
       </section>
 
-      {seats && party && (
-        <PartySeats
-          title={`${live.party!.members.find((m) => m.id === live.party!.leaderId)?.name ?? "The Leader"}'s Party`}
+      {seats && party && live.party && (
+        <PartyPanel
+          party={live.party}
           seats={seats}
           userId={party.userId}
-          captainId={captainId}
           hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
           heroAt={(p) => picksByPosition[p - 1] ?? teamPlan?.slots.find((slot) => slot.position === p)?.heroId ?? null}
+          refresh={live.refresh}
         />
       )}
       {!party && (

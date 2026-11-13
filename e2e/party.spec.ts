@@ -65,7 +65,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await expect(page.getByRole("button", { name: "Picked" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "My Picks" })).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: /^Rank/ })).toBeDisabled();
-  await expect(page.getByRole("region", { name: "Draft captain" }).getByText("Ali enters the draft for the party.")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: "Ali" })).toContainText("Draft Captain");
   await expect(page.getByPlaceholder("My team pick, e.g. cm5")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "New draft" })).toBeHidden();
   await expectAccessible(page);
@@ -83,4 +83,23 @@ test("the party planner sees suggestions per player", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Per Player" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Suggested heroes for Lion" })).toBeVisible();
   await expectAccessible(page);
+});
+
+test("Draft shows the party in Team Seats, and Leave Party goes back to your own draft", async ({ page }) => {
+  await newPlayer(page, uniqueEmail("party-seats"), "Lion");
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
+
+  await page.goto("/draft");
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  await expect(seats).toContainText("Lion's Party");
+  await expect(seats).toContainText("1 in Party");
+  await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toContainText("In Party");
+  await expect(seats.getByRole("button", { name: "Become Captain" })).toBeVisible();
+  await expectAccessible(page);
+
+  await seats.getByRole("button", { name: "Leave Party" }).click();
+  await expect(page.getByRole("group", { name: "Plan For" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats" })).toHaveCount(0);
 });
