@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SOLO_ME } from "@/lib/solo-queue";
 import type { Seat, TeamPerson } from "@/lib/team-lineup";
-import { TeamSeats } from "./team-seats";
+import { PlanForSwitch, TeamSeats } from "./team-seats";
 
 const person = (id: string, name: string, more: Partial<TeamPerson> = {}): TeamPerson => ({
   id,
@@ -119,5 +119,18 @@ describe("TeamSeats", () => {
     expect(screen.getByText(/to add Stack mates and friends/)).toBeInTheDocument();
     await userEvent.click(screen.getAllByRole("button", { name: "Add Me to Pos 3" })[0]);
     expect(calls.place).toHaveBeenCalledWith(SOLO_ME, 3);
+  });
+});
+
+describe("PlanForSwitch", () => {
+  it("locks Just Me with the reason while in a party", async () => {
+    const justMe = vi.fn();
+    render(<PlanForSwitch mode="team" onJustMe={justMe} onTeam={() => {}} lockedWhy="Leave the Party to Plan Just for You" />);
+    const button = screen.getByRole("button", { name: "Just Me" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "Leave the Party to Plan Just for You");
+    await userEvent.click(button);
+    expect(justMe).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Team" })).toHaveAttribute("aria-pressed", "true");
   });
 });
