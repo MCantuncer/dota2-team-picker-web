@@ -15,8 +15,8 @@ const party = (captainId: string | null, online = true): Party => ({
   teamId: null,
   captain: { id: captainId, online, requestBy: null, requestMsLeft: 0 },
   members: [
-    { id: "can", name: "Can", avatarUrl: null, position: 2, askWaitMs: 0 },
-    { id: "deniz", name: "Deniz", avatarUrl: null, position: 1, askWaitMs: 0 },
+    { id: "can", name: "Can", avatarUrl: null, position: 2, positionSetBy: null, askWaitMs: 0 },
+    { id: "deniz", name: "Deniz", avatarUrl: null, position: 1, positionSetBy: null, askWaitMs: 0 },
   ],
 });
 
@@ -56,6 +56,20 @@ describe("PartyPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Leave Party" }));
     expect(rpc).toHaveBeenCalledWith("leave_party");
     expect(refreshPage).toHaveBeenCalled();
+  });
+
+  it("says who moved the player's seat", () => {
+    const moved = party(null);
+    moved.members[1] = { ...moved.members[1]!, positionSetBy: "can" };
+    setup(moved, "deniz");
+    expect(screen.getByText("Can moved you to Carry.")).toBeInTheDocument();
+  });
+
+  it("stays quiet when the player picked their own seat", () => {
+    const self = party(null);
+    self.members[1] = { ...self.members[1]!, positionSetBy: "deniz" };
+    setup(self, "deniz");
+    expect(screen.queryByText(/moved you/)).not.toBeInTheDocument();
   });
 
   it("shows a failed leave and stays", async () => {

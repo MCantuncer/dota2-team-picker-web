@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, newPlayer, test, uniqueEmail } from "./helpers";
+import { befriend, expectAccessible, newPlayer, seedFriend, test, uniqueEmail } from "./helpers";
 
 test("a party player can become draft captain and step down", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-captain"), "Lion");
@@ -102,4 +102,28 @@ test("Draft shows the party in Team Seats, and Leave Party goes back to your own
   await seats.getByRole("button", { name: "Leave Party" }).click();
   await expect(page.getByRole("group", { name: "Plan For" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Seats" })).toHaveCount(0);
+});
+
+test("in a party Role moves your seat, a waiting seat can't be taken, and Plan For stays on Team", async ({ page }) => {
+  const email = uniqueEmail("party-role");
+  await newPlayer(page, email, "Lion");
+  await seedFriend(email, "Mert", { position: 3 });
+  await page.goto("/party");
+  await page.getByRole("button", { name: "Start a party" }).click();
+  await page.getByRole("button", { name: "Invite", exact: true }).click();
+
+  await page.goto("/draft");
+  const role = page.getByRole("group", { name: "Role" });
+  await expect(role.getByRole("button", { name: "Carry" })).toHaveAttribute("aria-pressed", "true");
+  // Mert hasn't joined, so his Offlane seat waits for him.
+  await expect(role.getByRole("button", { name: "Offlane" })).toBeDisabled();
+  await expect(role.getByRole("button", { name: "Offlane" })).toHaveAttribute("title", "Seat Waiting for Mert");
+  await expect(page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Just Me" })).toBeDisabled();
+
+  await role.getByRole("button", { name: "Mid" }).click();
+  await expect(role.getByRole("button", { name: "Mid" })).toHaveAttribute("aria-pressed", "true");
+  const seats = page.getByRole("list", { name: "Seats" });
+  await page.reload();
+  await expect(role.getByRole("button", { name: "Mid" })).toHaveAttribute("aria-pressed", "true");
+  await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toContainText("Mid");
 });

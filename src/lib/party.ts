@@ -20,6 +20,8 @@ export interface PartyMember {
   name: string;
   avatarUrl: string | null;
   position: number | null;
+  /** Who last set their position: themselves, or the planner who moved them. */
+  positionSetBy: string | null;
   /** Milliseconds until this player may ask for draft captain again; 0 when they can now. */
   askWaitMs: number;
 }
@@ -79,6 +81,7 @@ export function toParty(rows: Record<string, unknown>[] | null): Party | null {
         name: (r.display_name as string | null) ?? "Unnamed",
         avatarUrl: steamAvatar(r.avatar_url as string | null),
         position: (r.position as number | null) ?? null,
+        positionSetBy: str(r.position_set_by),
         askWaitMs: asked === null ? 0 : Math.max(0, asked + CAPTAIN_ASK_COOLDOWN_MS - now),
       };
     }),

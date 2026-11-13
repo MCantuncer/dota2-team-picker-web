@@ -9,7 +9,7 @@ describe("toParty", () => {
 
   it("keeps the order and fills in missing names", () => {
     const party = toParty([
-      { party_id: "p", leader_id: "a", user_id: "a", display_name: "Can", avatar_url: null, position: 3 },
+      { party_id: "p", leader_id: "a", user_id: "a", display_name: "Can", avatar_url: null, position: 3, position_set_by: "b" },
       { party_id: "p", leader_id: "a", user_id: "b", display_name: null, avatar_url: "https://evil.example/x.png", position: null },
     ]);
     expect(party).toEqual({
@@ -18,8 +18,8 @@ describe("toParty", () => {
       teamId: null,
       captain: { id: null, online: false, requestBy: null, requestMsLeft: 0 },
       members: [
-        { id: "a", name: "Can", avatarUrl: null, position: 3, askWaitMs: 0 },
-        { id: "b", name: "Unnamed", avatarUrl: null, position: null, askWaitMs: 0 },
+        { id: "a", name: "Can", avatarUrl: null, position: 3, positionSetBy: "b", askWaitMs: 0 },
+        { id: "b", name: "Unnamed", avatarUrl: null, position: null, positionSetBy: null, askWaitMs: 0 },
       ],
     });
   });

@@ -4,11 +4,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
 import { useDraftCaptain } from "@/app/party/draft-captain";
-import type { Position } from "@/lib/engine/types";
+import { POSITION_NAMES } from "@/lib/draft";
+import { POSITIONS, type Position } from "@/lib/engine/types";
 import type { Party } from "@/lib/party";
 import type { PartySeat } from "@/lib/party-seats";
 import { createClient } from "@/lib/supabase/client";
 import { PartySeats } from "./party-seats";
+
+const isPosition = (v: unknown): v is Position => POSITIONS.includes(v as Position);
 
 /**
  * The party on Draft: its Team Seats with the player's captain button and Leave Party in the head,
@@ -60,6 +63,10 @@ export function PartyPanel({
   };
 
   const leader = party.members.find((m) => m.id === party.leaderId)?.name;
+  // When someone else moved the player's seat, say who and where, so the new Role is no surprise.
+  const me = party.members.find((m) => m.id === userId);
+  const mover = me?.positionSetBy && me.positionSetBy !== userId ? party.members.find((m) => m.id === me.positionSetBy) : null;
+  const moved = mover && isPosition(me?.position) ? `${mover.name} moved you to ${POSITION_NAMES[me.position - 1]}.` : null;
   // The crown on a seat says who the captain is; the line only shows what just changed or a request's countdown.
   const captainLine = captain.note ?? (captain.waiting ? captain.line : null);
   return (
@@ -92,6 +99,9 @@ export function PartyPanel({
         <>
           <p className="text-sm text-muted empty:hidden" aria-live="polite">
             {captainLine}
+          </p>
+          <p className="text-sm text-muted empty:hidden" aria-live="polite">
+            {moved}
           </p>
           {error && (
             <p role="alert" className="notice notice-error text-sm">

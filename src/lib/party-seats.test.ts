@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Party, PartyMember } from "@/lib/party";
 import { partySeats, seatCount, toSeatedPlayers, type SeatedPlayer } from "@/lib/party-seats";
 
-const member = (id: string, position: number | null): PartyMember => ({ id, name: id, avatarUrl: null, position, askWaitMs: 0 });
+const member = (id: string, position: number | null): PartyMember => ({ id, name: id, avatarUrl: null, position, positionSetBy: null, askWaitMs: 0 });
 const party = (members: PartyMember[]): Party => ({
   id: "p",
   leaderId: members[0]!.id,
