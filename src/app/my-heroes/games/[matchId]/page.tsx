@@ -42,7 +42,7 @@ export default async function GamePage({ params }: PageProps<"/my-heroes/games/[
   }
 
   return (
-    <main className="page flex flex-1 flex-col gap-6 py-10">
+    <main className="page flex flex-1 flex-col gap-6 overflow-x-clip py-10">
       <Link href="/my-heroes/games" className="btn btn-ghost btn-sm -mb-2 -ml-3 self-start">
         <Icon name="chevronLeft" />
         Back to Your Games

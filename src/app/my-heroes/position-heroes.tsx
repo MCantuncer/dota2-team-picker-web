@@ -210,7 +210,7 @@ export function PositionHeroes({
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Positions" className="grid grid-cols-5 gap-1 border-b border-line">
+      <nav aria-label="Positions" data-tour="my-heroes-roles" className="grid grid-cols-5 gap-1 border-b border-line">
         {POSITIONS.map((p) => {
           const isActive = p.n === active;
           const count = picks[p.n]?.length ?? 0;
@@ -256,7 +256,7 @@ export function PositionHeroes({
               {pos.name} Heroes
             </h2>
             <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg">
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-fg" data-tour="my-heroes-use">
                 <input type="checkbox" checked={isPlayed} onChange={(e) => setPosition(active, e.target.checked)} className="lane-check" />
                 Use in drafts
               </label>
@@ -266,7 +266,7 @@ export function PositionHeroes({
           {headingAction}
         </div>
 
-        <div className="flex min-h-12 flex-wrap gap-2">
+        <div className="flex min-h-12 flex-wrap gap-2" data-tour={chosen.length > 0 ? "my-heroes-list" : undefined}>
           {chosen.length === 0 && <p className="self-center text-sm text-subtle">No heroes yet. Add your best ones first; five to ten is plenty.</p>}
           {shown.map((id, i) => {
             const h = byId.get(id);
@@ -389,7 +389,7 @@ export function PositionHeroes({
           </div>
         )}
 
-        <div className="flex items-center gap-3 border-t border-line pt-4">
+        <div className="flex items-center gap-3 border-t border-line pt-4" data-tour="my-heroes-search">
           <input
             type="search"
             value={query}

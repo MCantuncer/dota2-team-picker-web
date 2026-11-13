@@ -61,3 +61,38 @@ test("Your Games shows strengths and problems with what to change", async ({ pag
   const missing = await page.goto("/my-heroes/games/1");
   expect(missing?.status()).toBe(404);
 });
+
+test("My Heroes, Your Games and a game each have a ? tour of their own", async ({ page }) => {
+  const email = uniqueEmail("tours");
+  await newPlayer(page, email, "Tours");
+  await seedFeedback(email);
+
+  const tip = page.getByRole("dialog");
+  const open = async () => {
+    await page.getByRole("button", { name: "Page Tour" }).click();
+    await expect(tip).toContainText(/^1 of \d+/);
+  };
+
+  await page.goto("/my-heroes");
+  await open();
+  await expect(tip).toHaveAccessibleName("Your Roles");
+  await expectAccessible(page);
+  await page.keyboard.press("Escape");
+
+  await page.goto("/my-heroes/games");
+  await open();
+  await expect(tip).toHaveAccessibleName("Your Numbers");
+  await tip.getByRole("button", { name: "Next" }).click();
+  await expect(tip).toHaveAccessibleName("Strengths and Problems");
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("link", { name: /Monkey King lost/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Monkey King");
+  await open();
+  await expect(tip).toHaveAccessibleName("Numbers");
+  // Walk to the last step: the OpenDota button, which ends the tour with Done.
+  while ((await tip.getByRole("button", { name: "Done" }).count()) === 0) await tip.getByRole("button", { name: "Next" }).click();
+  await expect(tip).toHaveAccessibleName("Full Match");
+  await tip.getByRole("button", { name: "Done" }).click();
+  await expect(tip).toBeHidden();
+});

@@ -14,7 +14,7 @@ export type TourStep = {
   movesOn?: boolean;
 };
 
-export type TourId = "draft";
+export type TourId = "draft" | "my-heroes" | "your-games" | "one-game";
 
 export const TOURS: Record<TourId, TourStep[]> = {
   draft: [
@@ -121,6 +121,100 @@ export const TOURS: Record<TourId, TourStep[]> = {
           Skill order and talents for this draft. <Kbd>S</Kbd> opens it.
         </>
       ),
+    },
+  ],
+  "my-heroes": [
+    {
+      target: "my-heroes-roles",
+      title: "Your Roles",
+      tip: (verb) => `${verb} a role to edit its heroes.`,
+      movesOn: true,
+    },
+    {
+      target: "my-heroes-use",
+      title: "Use in Drafts",
+      tip: () => "Tick it to use this role's heroes in your picks.",
+    },
+    {
+      target: "my-heroes-fill",
+      title: "Fill from My Games",
+      tip: (verb) => `${verb} it to add the heroes you play most in this role.`,
+    },
+    {
+      target: "my-heroes-list",
+      title: "Your Top 5",
+      tip: (verb) => (
+        <>
+          {verb} a hero, then <b>Add to Top 5</b>. Those get a boost in your picks.
+        </>
+      ),
+    },
+    {
+      target: "my-heroes-search",
+      title: "Add a Hero",
+      tip: (verb) => (
+        <>
+          Type a name and press <Kbd>Enter</Kbd>, or {verb.toLowerCase()} any portrait below.
+        </>
+      ),
+    },
+    {
+      target: "my-heroes-games",
+      title: "Your Games",
+      tip: (verb) => `${verb} it to see what wins and loses you games.`,
+    },
+  ],
+  "your-games": [
+    {
+      target: "your-games-numbers",
+      title: "Your Numbers",
+      tip: () => "Games, wins and your most played hero, from your recent games.",
+    },
+    {
+      target: "your-games-findings",
+      title: "Strengths and Problems",
+      tip: (verb) => (
+        <>
+          {verb} <b>Show Details</b> for the games behind each one.
+        </>
+      ),
+    },
+    {
+      target: "your-games-filter",
+      title: "Filter",
+      tip: () => "Narrow the list by hero, role or result.",
+    },
+    {
+      target: "your-games-row",
+      title: "One Game",
+      tip: (verb) => `${verb} a game for its full review.`,
+    },
+  ],
+  "one-game": [
+    {
+      target: "one-game-numbers",
+      title: "Numbers",
+      tip: () => "Each one next to other players on the same hero.",
+    },
+    {
+      target: "one-game-findings",
+      title: "Went Well and To Fix",
+      tip: () => "What happened, what it cost and what to do next time.",
+    },
+    {
+      target: "one-game-lane",
+      title: "Lane at 10 Minutes",
+      tip: () => "How far ahead or behind your lane was at 10 minutes.",
+    },
+    {
+      target: "one-game-deaths",
+      title: "Deaths",
+      tip: () => "Every death on the game clock, with the ones before 10 minutes counted.",
+    },
+    {
+      target: "one-game-opendota",
+      title: "Full Match",
+      tip: (verb) => `${verb} it to open the whole match on OpenDota.`,
     },
   ],
 };

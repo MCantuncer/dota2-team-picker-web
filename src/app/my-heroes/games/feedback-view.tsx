@@ -37,7 +37,7 @@ export function FeedbackView({ feedback }: { feedback: PlayerFeedback }) {
           Nothing stood out in these games: no number was far enough from the average to call it a strength or a problem.
         </p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2" data-tour="your-games-findings">
           <FindingList id="feedback-strengths" title="Strengths" tone="strength" findings={feedback.strengths} />
           <FindingList id="feedback-problems" title="Problems" tone="problem" findings={feedback.problems} />
         </div>

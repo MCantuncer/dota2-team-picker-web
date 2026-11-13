@@ -7,6 +7,7 @@ import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamCard } from "./steam-card";
 import { YourGamesCard } from "./your-games-card";
+import { PageTour } from "@/components/page-tour";
 import { type FillAdded, FillButton, FillCard, FillProvider } from "./hero-fill";
 import { type FillNumbers, fillNumbers, topByPosition } from "@/lib/top-heroes";
 import { type PlayerRecord, playerRecord, RECORD_SELECT } from "@/lib/player-record";
@@ -143,13 +144,17 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
 
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="page-title">{welcome ? "Welcome to the Team" : "My Heroes"}</h1>
-        <p className="text-sm text-muted">
-          Pick the positions you play, then your heroes for each one.{" "}
-          {teamNames.length > 0 && <>Your captain in {teamNames.join(", ")} drafts from this list. </>}
-          Changes save right away.
-        </p>
+      {/* The ? gets its own column, so the intro wraps beside it and never runs under it. */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="page-title">{welcome ? "Welcome to the Team" : "My Heroes"}</h1>
+          <p className="text-sm text-muted">
+            Pick the positions you play, then your heroes for each one.{" "}
+            {teamNames.length > 0 && <>Your captain in {teamNames.join(", ")} drafts from this list. </>}
+            Changes save right away.
+          </p>
+        </div>
+        <PageTour tour="my-heroes" />
       </div>
       <FillProvider row={fillRow} steamLinked={Boolean(profile?.steam_id)}>
         <FillCard added={added} />

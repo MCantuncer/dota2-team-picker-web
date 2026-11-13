@@ -48,7 +48,7 @@ export function PreviousGames({
         <h2 id="previous-games" className="section-title">
           Previous Games <span className="num text-base font-medium text-subtle">{total}</span>
         </h2>
-        <form method="get" className="flex flex-wrap items-center gap-2" aria-label="Filter games">
+        <form method="get" className="flex flex-wrap items-center gap-2" aria-label="Filter games" data-tour="your-games-filter">
           <select name="hero" defaultValue={filters.heroId ?? ""} aria-label="Hero" className="field text-sm">
             <option value="">All Heroes</option>
             {heroOptions
@@ -131,7 +131,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
   return (
     // The whole row opens the game: the hero name's link stretches over it. That page has the OpenDota button,
     // so the list doesn't repeat one on every row.
-    <li className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface">
+    <li data-tour="your-games-row" className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface">
       <span aria-hidden className={`h-8 w-0.5 rounded-full ${game.isWin ? "bg-radiant" : "bg-dire"}`} />
       {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-xs" />}
       <div className="flex min-w-36 flex-col">

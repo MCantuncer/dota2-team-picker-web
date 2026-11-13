@@ -129,7 +129,7 @@ export function FillButton({ place = "heading", primary = false }: { place?: "he
   if (place === "heading" && (state === "no_games" || state === "too_few" || state === "failed")) return null;
   const running = state === "running";
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3" data-tour="my-heroes-fill">
       {readyAt && now && !running && <span className="text-sm text-subtle">{againAt(readyAt, now)}</span>}
       <button
         type="button"
