@@ -76,6 +76,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"draft_search_accounts": {
+                  Row: {
+                    "account_id": number,"draft_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": number,"draft_id": string
+                  }
+                  Update: {
+                    "account_id"?: number,"draft_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "draft_search_accounts_draft_id_fkey"
+      columns: ["draft_id"]
+isOneToOne: false
+      referencedRelation: "party_drafts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"draft_suggestions": {
                   Row: {
                     "draft_id": string,"first_shown_at": string,"heroes": (number)[],"list_rule": string | null,"outside": (number)[] | null,"position": number,"scores": (number)[],"updated_at": string,"user_id": string,"win_chance": number | null
@@ -440,14 +460,14 @@ isOneToOne: false
                   ]
                 },"party_invites": {
                   Row: {
-                    "created_at": string,"invited_by": string,"party_id": string,"status": string,"user_id": string
+                    "created_at": string,"expires_at": string,"invited_by": string,"party_id": string,"status": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"invited_by": string,"party_id": string,"status"?: string,"user_id": string
+                    "created_at"?: string,"expires_at"?: string,"invited_by": string,"party_id": string,"status"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"invited_by"?: string,"party_id"?: string,"status"?: string,"user_id"?: string
+                    "created_at"?: string,"expires_at"?: string,"invited_by"?: string,"party_id"?: string,"status"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -518,14 +538,14 @@ isOneToOne: true
                   ]
                 },"party_members": {
                   Row: {
-                    "captain_asked_at": string | null,"joined_at": string,"party_id": string,"position": number | null,"user_id": string
+                    "captain_asked_at": string | null,"joined_at": string,"party_id": string,"position": number | null,"position_set_by": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "captain_asked_at"?: string | null,"joined_at"?: string,"party_id": string,"position"?: number | null,"user_id": string
+                    "captain_asked_at"?: string | null,"joined_at"?: string,"party_id": string,"position"?: number | null,"position_set_by"?: string | null,"user_id": string
                   }
                   Update: {
-                    "captain_asked_at"?: string | null,"joined_at"?: string,"party_id"?: string,"position"?: number | null,"user_id"?: string
+                    "captain_asked_at"?: string | null,"joined_at"?: string,"party_id"?: string,"position"?: number | null,"position_set_by"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -535,7 +555,45 @@ isOneToOne: false
       referencedRelation: "parties"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "party_members_position_set_by_fkey"
+      columns: ["position_set_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "party_members_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"party_seats": {
+                  Row: {
+                    "created_at": string,"party_id": string,"placed_by": string | null,"position": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"party_id": string,"placed_by"?: string | null,"position": number,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"party_id"?: string,"placed_by"?: string | null,"position"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "party_seats_party_id_fkey"
+      columns: ["party_id"]
+isOneToOne: false
+      referencedRelation: "parties"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "party_seats_placed_by_fkey"
+      columns: ["placed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "party_seats_user_id_fkey"
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -1036,6 +1094,9 @@ isOneToOne: false
               "account_ids": (number)[],"allies": (number)[],"created_at": string,"draft_id": string
             }[]
                            },
+"copy_board_to_party_draft":
+{ Args: { "actions": Json,"draft": string }; Returns: undefined
+                           },
 "create_phone_sign_in":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -1066,6 +1127,9 @@ isOneToOne: false
                            },
 "find_is_due":
 { Args: { "base": string,"checked": string,"max_tries": number,"tries": number }; Returns: boolean
+                           },
+"first_free_position":
+{ Args: { "party": string }; Returns: number
                            },
 "forget_match_files":
 { Args: { "matches": (number)[] }; Returns: number
@@ -1114,7 +1178,7 @@ isOneToOne: false
 { Args: { "target": string,"team": string }; Returns: string
                            },
 "invite_to_party":
-{ Args: { "target": string }; Returns: undefined
+{ Args: { "seat"?: number,"target": string }; Returns: undefined
                            },
 "invited_to_party":
 { Args: { "party": string }; Returns: boolean
@@ -1163,6 +1227,9 @@ isOneToOne: false
 "may_change_draft":
 { Args: { "draft": string }; Returns: boolean
                            },
+"move_in_party":
+{ Args: { "actor": string,"party": string,"target": string,"want": number }; Returns: undefined
+                           },
 "my_friends":
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_url": string,"display_name": string,"incoming": boolean,"since": string,"status": string,"steam_linked": boolean,"user_id": string
@@ -1181,7 +1248,7 @@ isOneToOne: false
                            },
 "my_party_invites":
 { Args: Record<PropertyKey, never>; Returns: {
-              "created_at": string,"invited_by": string,"inviter_avatar_url": string,"inviter_name": string,"members": number,"party_id": string
+              "created_at": string,"expires_at": string,"invited_by": string,"inviter_avatar_url": string,"inviter_name": string,"members": number,"party_id": string,"position": number,"seated": boolean
             }[]
                            },
 "my_record_games":
@@ -1228,12 +1295,17 @@ isOneToOne: false
                            },
 "party_player_stats":
 { Args: Record<PropertyKey, never>; Returns: {
-              "display_name": string,"favorites": Json,"hero_stats": Json,"positions": (number)[],"rank_tier": number,"top": Json,"user_id": string
+              "display_name": string,"favorites": Json,"hero_stats": Json,"positions": (number)[],"rank_tier": number,"seated": boolean,"top": Json,"user_id": string
+            }[]
+                           },
+"party_seats_view":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avatar_url": string,"created_at": string,"display_name": string,"invite_live": boolean,"placed_by": string,"position": number,"user_id": string
             }[]
                            },
 "party_view":
 { Args: Record<PropertyKey, never>; Returns: {
-              "avatar_url": string,"captain_asked_at": string,"captain_id": string,"captain_online": boolean,"captain_request_by": string,"captain_request_expires_at": string,"display_name": string,"joined_at": string,"leader_id": string,"party_id": string,"position": number,"server_now": string,"team_id": string,"user_id": string
+              "avatar_url": string,"captain_asked_at": string,"captain_id": string,"captain_online": boolean,"captain_request_by": string,"captain_request_expires_at": string,"display_name": string,"joined_at": string,"leader_id": string,"party_id": string,"position": number,"position_set_by": string,"server_now": string,"team_id": string,"user_id": string
             }[]
                            },
 "played_draft":
@@ -1300,6 +1372,9 @@ isOneToOne: false
 "set_game_started":
 { Args: { "check_in": string,"started": boolean }; Returns: string
                            },
+"set_member_position":
+{ Args: { "target": string,"want": number }; Returns: undefined
+                           },
 "set_party_captain":
 { Args: { "party": string,"who": string }; Returns: undefined
                            },
@@ -1320,6 +1395,9 @@ isOneToOne: false
                            },
 "set_top_hero":
 { Args: { "hero": number,"hero_position": number,"is_top": boolean,"replace_hero"?: number }; Returns: Json
+                           },
+"shares_with":
+{ Args: { "player": string,"viewer": string }; Returns: boolean
                            },
 "skip_check_in":
 { Args: { "check_in": string }; Returns: undefined
@@ -1372,7 +1450,7 @@ isOneToOne: false
             }[]
                            },
 "start_party":
-{ Args: { "team"?: string }; Returns: string
+{ Args: { "seat"?: number,"team"?: string }; Returns: string
                            },
 "start_party_draft":
 { Args: Record<PropertyKey, never>; Returns: string
@@ -1411,6 +1489,9 @@ isOneToOne: false
                            },
 "top_heroes":
 { Args: { "hero_position": number,"player": string }; Returns: Json
+                           },
+"unseat_player":
+{ Args: { "target": string }; Returns: undefined
                            },
 "user_id_by_email":
 { Args: { "address": string }; Returns: string
