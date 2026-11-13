@@ -15,8 +15,8 @@ function DeadLink() {
   return (
     <AuthCard title="Link Not Working">
       <p className="text-muted">This invite link no longer works. Ask the party leader for a new one.</p>
-      <Link href="/party" className="btn btn-secondary self-start">
-        Go to Party
+      <Link href="/draft" className="btn btn-secondary self-start">
+        Go to Draft
       </Link>
     </AuthCard>
   );
@@ -47,7 +47,7 @@ export default async function JoinPartyPage({ params }: PageProps<"/invite/[code
   ]);
   if (currentError) throw currentError;
   if (!party) return <DeadLink />;
-  if (party.isMember) redirect("/party");
+  if (party.isMember) redirect("/draft");
 
   const leader = party.leaderName;
   const isFull = party.members >= PARTY_SIZE;

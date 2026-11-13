@@ -100,7 +100,7 @@ describe("FriendsBoard", () => {
 
   it("shows Open Party for a friend already in your party", () => {
     show({ selected: emre });
-    expect(screen.getByRole("link", { name: "Open Party" })).toHaveAttribute("href", "/party");
+    expect(screen.getByRole("link", { name: "Open Draft" })).toHaveAttribute("href", "/draft");
   });
 
   it("says why a friend who doesn't share has no rank, and shows what you played together", () => {

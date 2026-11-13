@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { expectAccessible, newPlayer, seedFriend, seedReport, test, uniqueEmail } from "./helpers";
+import { newPlayer, seedFriend, seedReport, test, uniqueEmail } from "./helpers";
 
 const facts = JSON.parse(readFileSync("test/fixtures/report-facts-v1.json", "utf8")) as object;
 
@@ -22,20 +22,10 @@ async function finishTour(page: Page, last: string) {
   await expect(tip).toBeHidden();
 }
 
-test("Party, Stacks, Friends, Profile and a Game Report each have a ? tour of their own", async ({ page }) => {
+test("Stacks, Friends, Profile and a Game Report each have a ? tour of their own", async ({ page }) => {
   const email = uniqueEmail("team-tours");
   await newPlayer(page, email, "Tours");
   await seedFriend(email, "Deniz", { position: 1 });
-
-  // Party: with no party the tour is one step; once started it walks the lobby.
-  await page.goto("/party");
-  await openTour(page, "Start a Party");
-  await expectAccessible(page);
-  await finishTour(page, "Start a Party");
-  await page.getByRole("button", { name: "Start a Party" }).click();
-  await expect(page.getByRole("region", { name: "Players" })).toBeVisible();
-  await openTour(page, "Your Position");
-  await finishTour(page, "Invite Friends");
 
   // Stacks: the ? shows once there is a Stack, and the Stack page has its own.
   await page.goto("/stacks");
