@@ -11,7 +11,7 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
   const top = record.topHero;
   const range = record.firstAt && record.lastAt ? `${day(record.firstAt)} to ${day(record.lastAt)}` : `Last ${RECORD_DAYS} days`;
   return (
-    <dl className="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
+    <dl data-tour="your-games-numbers" className="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
       <Tile label="Games">
         <dd className="num text-2xl font-semibold text-fg">{record.games}</dd>
         <dd className="text-xs text-subtle">{range}</dd>
