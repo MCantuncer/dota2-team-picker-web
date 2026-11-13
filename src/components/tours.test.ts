@@ -1,13 +1,14 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOURS } from "./tours";
 
 /** Every source file's text, so a step's mark can be found wherever its control lives. */
 function sources(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return sources(path);
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return sources(path);
+    const { name } = entry;
     return /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && name !== "tours.tsx" ? [readFileSync(path, "utf8")] : [];
   });
 }
