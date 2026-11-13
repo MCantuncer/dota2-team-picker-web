@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { GamesWins, Position, RankBracket } from "@/lib/engine/types";
 import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
+import { toSeatedPlayers } from "@/lib/party-seats";
 import { createClient } from "@/lib/supabase/server";
 import { topByPosition } from "@/lib/top-heroes";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
@@ -31,15 +32,17 @@ export default async function DraftPage() {
       { data: favorites, error: favError },
       { data: profile, error: profileError },
       { data: partyRows, error: partyError },
+      { data: seatRows, error: seatError },
     ] = await Promise.all([
       supabase.from("favorite_positions").select("position").eq("user_id", user.id),
       supabase.from("favorite_heroes").select("position, hero_id, top_slot").eq("user_id", user.id).order("created_at"),
       supabase.from("profiles").select("rank_tier, hero_stats, steam_name").eq("id", user.id).single(),
       supabase.rpc("party_view"),
+      supabase.rpc("party_seats_view"),
     ]);
     const error = posError ?? favError ?? profileError;
     if (error) throw new Error(`Could not load your heroes: ${error.message}`);
-    if (partyError) throw new Error(`Could not load your party: ${partyError.message}`);
+    if (partyError ?? seatError) throw new Error(`Could not load your party: ${(partyError ?? seatError)!.message}`);
 
     const found = toParty(partyRows);
     if (found) {
@@ -51,6 +54,7 @@ export default async function DraftPage() {
         myPosition: me?.position ? (me.position as Position) : null,
         members: found.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null })),
         party: found,
+        seated: toSeatedPlayers(seatRows),
       };
     }
 

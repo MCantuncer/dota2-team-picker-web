@@ -38,6 +38,7 @@ import { planTeam } from "@/lib/engine/plan";
 import type { Party } from "@/lib/party";
 import { createClient } from "@/lib/supabase/client";
 import { toPlanSlots, type PlanMember } from "@/lib/party-plan";
+import { partySeats, type SeatedPlayer } from "@/lib/party-seats";
 import { perPlayerColumns } from "@/lib/per-player";
 import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
@@ -51,6 +52,7 @@ import { PositionPicker } from "./position-picker";
 import { useDotaScreen } from "./screenshot-paste";
 import { useLiveParty } from "./use-live-party";
 import { usePartyDraft } from "./use-party-draft";
+import { PartySeats } from "./party-seats";
 import { PlanForSwitch, TeamSeats } from "./team-seats";
 import { BanFace, BanLine, EmptySlots, Rail, RailSlot } from "./draft-rails";
 import { BetterChance, type DraftOdds } from "./better-chance";
@@ -105,6 +107,8 @@ export interface PartyInfo {
   members: PlanMember[];
   /** The party as the page loaded it; the screen keeps it live for the draft captain. */
   party: Party;
+  /** Players the leader seated who haven't joined, as the page loaded them. */
+  seated: SeatedPlayer[];
 }
 
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
@@ -164,7 +168,7 @@ export function DraftBoard({
   const setMySide = party ? setPartySide : solo.setSide;
   const [soloPosition, setMyPosition] = useState<Position>(party?.myPosition ?? player.positions[0] ?? 1);
   const shared = usePartyDraft(party?.id ?? null, party?.userId ?? null);
-  const live = useLiveParty(party?.party ?? null);
+  const live = useLiveParty(party?.party ?? null, party?.seated);
   // Out of a party, the player can plan for a Stack they run, online or not. The party always wins.
   // Team: any mix of Stack mates and friends, online or not; open seats are teammates who can play any hero.
   const lineup = useTeamLineup({
@@ -181,7 +185,10 @@ export function DraftBoard({
   // whole party sees the planner's Team Plan.
   const pool = party ? live.pool : (lineupPlan?.pool ?? null);
   const planPlayers = party ? live.players : (lineupPlan?.players ?? {});
-  const planNames = party ? party.names : (lineupPlan?.names ?? {});
+  // In a party: everyone who was, is or is seated in it, so a player who joins later has a name too.
+  const planNames = party
+    ? { ...party.names, ...Object.fromEntries([...(live.party?.members ?? []), ...live.seated].map((m) => [m.id, m.name])) }
+    : (lineupPlan?.names ?? {});
   // In a lineup, the player's position is the one they have there.
   const myPosition = lineupPlan?.myPosition ?? soloPosition;
   const captainId = party ? (live.party?.captain.id ?? null) : null;
@@ -247,8 +254,10 @@ export function DraftBoard({
   const [notMine, setNotMine] = useState<ReadonlySet<number>>(new Set());
   // The reader found your own slot (by your Steam name or its glow), so it knows which hero is yours.
   const [ownSlotFound, setOwnSlotFound] = useState(false);
-  // In a party every screen holds the same lobby positions free, so everyone sees the same guesses.
-  const lobbyPositions = (live.party?.members ?? party?.members ?? []).flatMap((m) => (isPosition(m.position) ? [m.position] : []));
+  // In a party every screen holds the same seats' positions free, so everyone sees the same guesses.
+  const lobbyPositions = [...(live.party?.members ?? party?.members ?? []), ...live.seated].flatMap((m) =>
+    isPosition(m.position) ? [m.position] : [],
+  );
   // Team holds the seated players' positions; teammates in open seats go where their hero fits best.
   const seatedPositions = lineup.seats.map((s) => s.position);
   const reserved = party && lobbyPositions.length ? lobbyPositions : lineupPlan ? seatedPositions : [myPosition];
@@ -480,8 +489,14 @@ export function DraftBoard({
   if (loadError) return <p className="notice notice-error">{loadError}. Reload the page to try again.</p>;
   if (!engine || !search) return <p className="text-sm text-muted">Loading hero data…</p>;
 
-  const planMembers: PlanMember[] = live.party
-    ? live.party.members.map((m) => ({ id: m.id, position: (m.position as Position | null) ?? null }))
+  // Seated players who haven't joined are planned with their own heroes, the same as members.
+  const seats = live.party ? partySeats(live.party, live.seated) : null;
+  const planMembers: PlanMember[] = seats
+    ? [
+        ...seats.map((s) => ({ id: s.id, position: s.position })),
+        // A member without a position yet still gets one of the positions left.
+        ...live.party!.members.filter((m) => !seats.some((s) => s.id === m.id)).map((m) => ({ id: m.id, position: null })),
+      ]
     : party
       ? party.members
       : (lineupPlan?.members ?? []);
@@ -1030,6 +1045,16 @@ export function DraftBoard({
         </BanLine>
       </section>
 
+      {seats && party && (
+        <PartySeats
+          title={`${live.party!.members.find((m) => m.id === live.party!.leaderId)?.name ?? "The Leader"}'s Party`}
+          seats={seats}
+          userId={party.userId}
+          captainId={captainId}
+          hero={(id) => ({ name: engine.hero(id)?.name ?? "", image: portraits[id] })}
+          heroAt={(p) => picksByPosition[p - 1] ?? teamPlan?.slots.find((slot) => slot.position === p)?.heroId ?? null}
+        />
+      )}
       {!party && (
         <TeamSeats
           mode={lineup.mode}
