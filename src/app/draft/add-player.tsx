@@ -42,6 +42,7 @@ export function AddPlayer({
   stacks,
   onPick,
   onClose,
+  choose,
 }: {
   position: Position;
   people: TeamPerson[];
@@ -49,6 +50,11 @@ export function AddPlayer({
   stacks: PlannableStack[];
   onPick: (id: string) => void;
   onClose: () => void;
+  /**
+   * In a party: what picking each person does ("Invite to Mid", "Move to Mid") and where they sit,
+   * or null when they can't be picked for this seat. There is no You row; Role moves the player.
+   */
+  choose?: (p: TeamPerson) => { action: string; meta?: string } | null;
 }) {
   const listId = useId();
   const [query, setQuery] = useState("");
@@ -60,12 +66,16 @@ export function AddPlayer({
     f === "all" ? true : f === "friends" ? p.isFriend : p.stacks.some((s) => s.id === f);
   const q = query.trim().toLowerCase();
   const options: Option[] = [
-    ...(seatOf(SOLO_ME) || q || filter !== "all"
+    ...(choose || seatOf(SOLO_ME) || q || filter !== "all"
       ? []
       : [{ id: SOLO_ME, name: "You", meta: "Play this position yourself", action: `Add Me to ${POSITION_NAMES[position - 1]}`, disabled: false }]),
     ...people
       .filter((p) => inFilter(p, filter) && p.name.toLowerCase().includes(q))
       .map((p) => {
+        if (choose) {
+          const c = choose(p);
+          return { id: p.id, name: p.name, meta: c?.meta ?? describe(p, undefined), action: c?.action ?? "", disabled: !c };
+        }
         const seat = seatOf(p.id);
         return {
           id: p.id,

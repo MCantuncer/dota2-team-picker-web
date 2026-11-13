@@ -247,7 +247,7 @@ export function TeamSeats({
 }
 
 /** The quiet Add Player control of an open seat; its label hides on a phone, where the cell is narrow. */
-function AddButton({ position, open, label, onClick }: { position: Position; open: boolean; label: string; onClick: () => void }) {
+export function AddButton({ position, open, label, onClick }: { position: Position; open: boolean; label: string; onClick: () => void }) {
   return (
     <button
       type="button"

@@ -1,5 +1,5 @@
 import { POSITIONS, type Position } from "@/lib/engine/types";
-import { steamAvatar, type Party } from "@/lib/party";
+import { POSITION_NAMES, steamAvatar, type Party } from "@/lib/party";
 
 /** A player the leader seated who hasn't joined on the site: invited, or in the game without the site. */
 export interface SeatedPlayer {
@@ -71,4 +71,40 @@ export function seatCount(seats: PartySeat[]): string {
   const inParty = seats.filter((s) => s.status === "in").length;
   const waiting = seats.length - inParty;
   return waiting ? `${inParty} in Party, ${waiting} Waiting` : `${inParty} in Party`;
+}
+
+/** What picking a person for a seat does in a party: invite them there, or move them there. */
+export interface SeatChoice {
+  kind: "invite" | "move";
+  action: string;
+  meta?: string;
+}
+
+const STATUS_WORDS: Record<SeatStatus, string> = { in: "In Party", invited: "Invited", away: "Not on Site" };
+
+/**
+ * The picker row for `personId` on `position`. The planner moves anyone in the party (a taken seat
+ * swaps); the leader invites anyone else, into an open seat only. Null when neither applies.
+ */
+export function seatChoice({
+  personId,
+  position,
+  seats,
+  isLeader,
+  isPlanner,
+}: {
+  personId: string;
+  position: Position;
+  seats: PartySeat[];
+  isLeader: boolean;
+  isPlanner: boolean;
+}): SeatChoice | null {
+  const name = POSITION_NAMES[position];
+  const at = seats.find((s) => s.id === personId);
+  if (at) {
+    if (at.position === position || !isPlanner) return null;
+    return { kind: "move", action: `Move to ${name}`, meta: `${STATUS_WORDS[at.status]} as ${POSITION_NAMES[at.position]}` };
+  }
+  if (!isLeader || seats.some((s) => s.position === position)) return null;
+  return { kind: "invite", action: `Invite to ${name}` };
 }

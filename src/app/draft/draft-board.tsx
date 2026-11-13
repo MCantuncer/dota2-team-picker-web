@@ -1132,6 +1132,8 @@ export function DraftBoard({
           heroAt={(p) => picksByPosition[p - 1] ?? teamPlan?.slots.find((slot) => slot.position === p)?.heroId ?? null}
           refresh={live.refresh}
           notes={startLines}
+          planner={planner}
+          stacks={stacks}
         />
       )}
       {!party && (

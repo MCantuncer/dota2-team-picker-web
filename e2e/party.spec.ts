@@ -154,3 +154,26 @@ test("Invite 2 to Party turns the planned seats into a party and keeps the board
   await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toBeVisible();
   await expectAccessible(page);
 });
+
+test("the leader invites a friend into an open seat and frees it again", async ({ page }) => {
+  const email = uniqueEmail("party-picker");
+  await newPlayer(page, email, "Lion");
+  await seedFriend(email, "Mert", { position: 3 });
+  await page.goto("/draft");
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
+  await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
+
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  await expect(seats).toContainText("Lion's Party");
+  await seats.getByRole("button", { name: "Add Player to Pos 4" }).click();
+  await page.getByRole("option", { name: /Mert/ }).click();
+  const mert = seats.getByRole("listitem").filter({ hasText: "Mert" });
+  await expect(mert).toContainText("Soft Support");
+  await expect(mert).toContainText("Invited");
+  await expectAccessible(page);
+
+  await seats.getByRole("button", { name: "More for Mert" }).click();
+  await page.getByRole("menuitem", { name: "Free Seat" }).click();
+  await expect(mert).toHaveCount(0);
+  await expect(seats).toContainText("1 in Party");
+});
