@@ -41,6 +41,22 @@ describe("WhoHurtsYou", () => {
     expect(within(one!).getByText("Hit the real hero.")).toBeInTheDocument();
   });
 
+  it("says when to buy the answer, and shows the art a tip names next to it", () => {
+    const withArt: PlayerPlan = {
+      ...player,
+      threatRows: [
+        player.threatRows[0]!,
+        { ...player.threatRows[1]!, tip: "Keep your distance until Enigma's Black Hole is used", tipArt: { spell: "enigma_black_hole" } },
+      ],
+    };
+    const { container } = render(<WhoHurtsYou player={withArt} heroName={(id) => `Hero ${id}`} icons={{}} />);
+    expect(screen.getByText(", around 20 min.")).toBeInTheDocument();
+    expect(screen.getByText("Keep your distance until Enigma's Black Hole is used.")).toBeInTheDocument();
+    expect(screen.queryByText("Do")).not.toBeInTheDocument();
+    // Once on the first tile's art (Enigma's spell), once beside the second tile's tip.
+    expect([...container.querySelectorAll("img")].filter((i) => i.getAttribute("src")?.includes("enigma_black_hole"))).toHaveLength(2);
+  });
+
   it("shows nothing without threats", () => {
     const { container } = render(<WhoHurtsYou player={{ ...player, threatRows: [] }} heroName={(id) => `Hero ${id}`} icons={{}} />);
     expect(container).toBeEmptyDOMElement();
