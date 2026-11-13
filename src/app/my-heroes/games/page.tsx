@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/icon";
+import { PageTour } from "@/components/page-tour";
 import { getHeroes } from "@/lib/heroes";
 import { PLAYER_FEEDBACK_SELECT, readPlayerFeedback } from "@/lib/player-feedback";
 import { GAMES_PER_PAGE, PLAYER_GAMES_SELECT, readFilters, readGameRow } from "@/lib/player-games";
@@ -107,7 +108,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
 
   const showRecord = Boolean(profile.data?.steam_id) && record !== null && record.games > 0;
   return (
-    <main className="page flex flex-1 flex-col gap-8 py-10">
+    <main className="page flex flex-1 flex-col gap-8 overflow-x-clip py-10">
       <section aria-labelledby="your-games-title" className="relative isolate flex min-h-60 flex-col gap-5">
         {showRecord && (
           <HeroRender
@@ -115,15 +116,18 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
             className="absolute -right-16 -top-4 -z-10 w-[min(26rem,70vw)] opacity-70 sm:-right-4 sm:opacity-100"
           />
         )}
-        <div className="flex flex-col gap-1.5">
-          <Link href="/my-heroes" className="btn btn-ghost btn-sm -ml-3 self-start">
-            <Icon name="chevronLeft" />
-            Back to My Heroes
-          </Link>
-          <h1 id="your-games-title" className="page-title">
-            Your Games
-          </h1>
-          <p className="max-w-xl text-sm text-muted">{introText(showRecord ? record : null)}</p>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
+          <div className="flex flex-col gap-1.5">
+            <Link href="/my-heroes" className="btn btn-ghost btn-sm -ml-3 self-start">
+              <Icon name="chevronLeft" />
+              Back to My Heroes
+            </Link>
+            <h1 id="your-games-title" className="page-title">
+              Your Games
+            </h1>
+            <p className="max-w-xl text-sm text-muted">{introText(showRecord ? record : null)}</p>
+          </div>
+          <PageTour tour="your-games" />
         </div>
         {showRecord && record && <RecordStrip record={record} hero={topHero} />}
         {showRecord && record && record.latest.length > 1 && (

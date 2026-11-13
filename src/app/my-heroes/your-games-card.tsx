@@ -26,7 +26,7 @@ export function YourGamesCard({
   }
   const latest = record?.latest ?? [];
   return (
-    <Link href="/my-heroes/games" className="card flex items-center gap-4 p-4 hover:border-line-hover">
+    <Link href="/my-heroes/games" data-tour="my-heroes-games" className="card flex items-center gap-4 p-4 hover:border-line-hover">
       <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-sm bg-accent-tint text-accent">
         <Icon name="chart" large />
       </span>

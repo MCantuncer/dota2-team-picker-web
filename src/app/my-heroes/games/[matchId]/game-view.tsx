@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroRender } from "@/components/hero-render";
 import { Icon, type IconName } from "@/components/icon";
+import { PageTour } from "@/components/page-tour";
 import { PositionIcon } from "@/components/position-icon";
 import type { Finding } from "@/lib/player-feedback";
 import { buildingName, clock, type Death, type GameDetail } from "@/lib/player-game";
@@ -81,10 +82,12 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-ghost"
+              data-tour="one-game-opendota"
             >
               OpenDota
               <Icon name="external" />
             </a>
+            <PageTour tour="one-game" />
           </div>
         </div>
       </header>
@@ -100,7 +103,10 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
       {game.status === "parsed" &&
         (hasFindings ? (
           // A side with nothing in it is left out rather than shown as an empty box.
-          <div className={`grid gap-8 ${game.strengths.length > 0 && game.problems.length > 0 ? "lg:grid-cols-2" : ""}`}>
+          <div
+            data-tour="one-game-findings"
+            className={`grid gap-8 ${game.strengths.length > 0 && game.problems.length > 0 ? "lg:grid-cols-2" : ""}`}
+          >
             {game.strengths.length > 0 && (
               <FindingList id="game-strengths" title="Went Well" tone="strength" findings={game.strengths} />
             )}
@@ -170,7 +176,7 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
   const shown = [...main, ...more].filter((t) => t.value !== null);
   if (shown.length === 0) return null;
   return (
-    <section aria-labelledby="game-numbers" className="flex flex-col gap-3">
+    <section aria-labelledby="game-numbers" data-tour="one-game-numbers" className="flex flex-col gap-3">
       <h2 id="game-numbers" className="section-title">
         Numbers
       </h2>
@@ -229,7 +235,7 @@ function Lane({ lane }: { lane: NonNullable<GameDetail["lane"]> }) {
   const diff = lane.netWorthDiff;
   const share = diff === null ? 0 : Math.min(1, Math.abs(diff) / LANE_SCALE) * 50;
   return (
-    <section aria-labelledby="game-lane" className="flex flex-col gap-3">
+    <section aria-labelledby="game-lane" data-tour="one-game-lane" className="flex flex-col gap-3">
       <h2 id="game-lane" className="section-title">
         Lane at 10 Minutes
       </h2>
@@ -297,7 +303,7 @@ function Deaths({
   // Keep the last tick clear of the game length label at the right end, on a phone too.
   const ticks = [600, 1200, 1800, 2400, 3000, 3600].filter((t) => t < durationS * 0.88);
   return (
-    <section aria-labelledby="game-deaths" className="flex flex-col gap-3">
+    <section aria-labelledby="game-deaths" data-tour="one-game-deaths" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 id="game-deaths" className="section-title">
           Deaths <span className="num text-base font-medium text-subtle">{deaths.length}</span>
