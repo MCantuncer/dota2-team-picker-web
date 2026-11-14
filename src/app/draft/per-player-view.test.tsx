@@ -114,8 +114,36 @@ describe("PerPlayerLane", () => {
     expect(within(emreSection).getByRole("list", { name: "Suggested heroes for Emre" }).querySelectorAll(":scope > li")).toHaveLength(2);
   });
 
-  it("uses the My Picks cards: verdict, number-first reasons, chips and score parts", () => {
+  it("shows compact cards that open their reasons and score parts on a click and close again", async () => {
+    lane({ onPicked: vi.fn(), onBanned: vi.fn() });
+    const invoker = screen.getByRole("article", { name: "Invoker" });
+    expect(invoker).toHaveTextContent("+9.7");
+    expect(invoker).toHaveTextContent("1st of 49 Mids");
+    expect(invoker).toHaveTextContent("5.7 points ahead of Ember Spirit");
+    expect(invoker).not.toHaveTextContent("Why This Hero");
+    expect(invoker).not.toHaveTextContent("Score Parts");
+    // Picked and Banned stay on the compact card, and pressing them does not open it.
+    await userEvent.click(within(invoker).getByRole("button", { name: "Banned Invoker" }));
+    expect(invoker).not.toHaveTextContent("Score Parts");
+
+    // A click anywhere on the card opens it; the chevron says so and closes it again.
+    await userEvent.click(within(invoker).getByText("1st of 49 Mids"));
+    const chevron = within(invoker).getByRole("button", { name: "Hide Why for Invoker" });
+    expect(chevron).toHaveAttribute("aria-expanded", "true");
+    expect(invoker).toHaveTextContent("Why This Hero");
+    expect(invoker).toHaveTextContent("Score Parts");
+    // Only that card opens.
+    expect(screen.getByRole("article", { name: "Ember Spirit" })).not.toHaveTextContent("Score Parts");
+    await userEvent.click(chevron);
+    expect(within(invoker).getByRole("button", { name: "Show Why for Invoker" })).toHaveAttribute("aria-expanded", "false");
+    expect(invoker).not.toHaveTextContent("Score Parts");
+  });
+
+  it("uses the My Picks cards: verdict, number-first reasons, chips and score parts", async () => {
     lane();
+    for (const name of ["Invoker", "Mars"]) {
+      await userEvent.click(screen.getByRole("button", { name: `Show Why for ${name}` }));
+    }
     const invoker = screen.getByRole("article", { name: "Invoker" });
     expect(invoker).toHaveTextContent("+9.7");
     expect(invoker).toHaveTextContent("1st of 49 Mids");
