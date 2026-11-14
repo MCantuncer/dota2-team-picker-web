@@ -577,12 +577,12 @@ export async function startPartyOnDraft(page: Page) {
   await page.goto("/draft");
   await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
   await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
-  await expect(page.getByRole("list", { name: "Seats" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats", exact: true })).toBeVisible();
 }
 
 /** Invites a friend or Stack mate into an open seat of the party on Draft, through Add Player. */
 export async function inviteOnDraft(page: Page, name: string, position: number) {
   await page.getByRole("region", { name: "Team Seats" }).getByRole("button", { name: `Add Player to Pos ${position}` }).click();
   await page.getByRole("option", { name: new RegExp(name) }).click();
-  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: name })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats", exact: true }).getByRole("listitem").filter({ hasText: name })).toBeVisible();
 }
