@@ -4,7 +4,7 @@ import type { Database } from "./database.types";
 import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 
 /** Pages that need a signed-in user. Others are open to everyone. */
-const PRIVATE_PATHS = ["/profile", "/my-heroes", "/friends", "/party", "/reports"];
+const PRIVATE_PATHS = ["/profile", "/my-heroes", "/friends", "/reports"];
 
 /**
  * Refreshes the Supabase session cookie on every request, so Server

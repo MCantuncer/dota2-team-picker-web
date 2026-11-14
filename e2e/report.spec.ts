@@ -57,16 +57,3 @@ test("another player's report is not found", async ({ page, browser }) => {
   const res = await page.goto(`/reports/${draftId}`);
   expect(res?.status()).toBe(404);
 });
-
-test("the Party page shows records once a game is reported", async ({ page }) => {
-  const email = uniqueEmail("records");
-  await newPlayer(page, email, "Mars");
-  await page.goto("/party");
-  const records = page.getByRole("region", { name: "Your records" });
-  await expect(records).toContainText("Records start after your first reported party game");
-
-  await seedReport(email, { status: "ready", facts });
-  await page.reload();
-  await expect(records).toContainText("No suggestions saved for the pick: 1 game, too few for a win rate.");
-  await expectAccessible(page);
-});

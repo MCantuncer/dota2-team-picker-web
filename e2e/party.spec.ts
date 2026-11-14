@@ -42,8 +42,6 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await inviteOnDraft(page, "Ali", 2);
   await ali.goto("/draft");
   await ali.getByRole("alertdialog").getByRole("button", { name: "Join" }).click();
-  await ali.waitForURL(/\/party$/);
-  await ali.goto("/draft");
   const aliSeats = ali.getByRole("region", { name: "Team Seats" });
   await expect(aliSeats).toContainText("Can's Party");
   await page.reload();

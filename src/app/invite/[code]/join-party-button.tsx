@@ -18,7 +18,7 @@ export function JoinPartyButton({ code }: { code: string }) {
       setBusy(false);
       return setError(error.message);
     }
-    router.push("/party");
+    router.push("/draft");
     router.refresh();
   };
 

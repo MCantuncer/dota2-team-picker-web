@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
-import { useDraftCaptain } from "@/app/party/draft-captain";
-import { InviteFromStack } from "@/app/party/invite-from-stack";
+import { useDraftCaptain } from "./draft-captain";
+import { InviteFromStack } from "./invite-from-stack";
 import { POSITION_NAMES } from "@/lib/draft";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 import type { Party } from "@/lib/party";

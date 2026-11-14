@@ -109,23 +109,3 @@ export function useDraftCaptain({
     };
   return { line, note, waiting, action };
 }
-
-/** The Draft Captain section of the party lobby: who runs the draft, and the player's captain button. */
-export function DraftCaptain(props: Parameters<typeof useDraftCaptain>[0]) {
-  const { line, note, action } = useDraftCaptain(props);
-  return (
-    <section aria-label="Draft Captain" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold text-fg">Draft Captain</span>
-        <p className="text-sm text-muted" aria-live="polite">
-          {note ?? line}
-        </p>
-      </div>
-      {action && (
-        <button onClick={action.onClick} disabled={action.disabled} className={`btn btn-sm ${action.quiet ? "btn-ghost" : "btn-secondary"}`}>
-          {action.label}
-        </button>
-      )}
-    </section>
-  );
-}

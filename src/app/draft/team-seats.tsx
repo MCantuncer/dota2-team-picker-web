@@ -149,6 +149,7 @@ export function TeamSeats({
           {/* Five equal cells in one panel. On a phone the cells stack their parts, so all five seats stay in view. */}
           <ul
             aria-label="Team Seats"
+            data-tour="draft-seats"
             className="grid min-w-0 grid-cols-5 divide-x divide-line rounded-xl bg-surface ring-1 ring-line ring-inset"
           >
             {POSITIONS.map((position) => {
