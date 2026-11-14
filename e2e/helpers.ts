@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { randomInt } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type BrowserContext, type Page } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Database, Json } from "../src/lib/supabase/database.types";
 
@@ -34,9 +34,14 @@ export function heroData(): Promise<Record<string, unknown>> {
  * Playwright's `test`, with the hero data bucket answered from the fixture: the local Supabase stack runs
  * without Storage, so the site's real hero data URL has nothing behind it in tests.
  */
+/** Serves the hero data fixture to a page or a second player's browser context. */
+export async function routeHeroData(target: Page | BrowserContext) {
+  await target.route(SNAPSHOT_URL, async (route) => route.fulfill({ json: await heroData() }));
+}
+
 export const test = base.extend({
   page: async ({ page }, provide) => {
-    await page.route(SNAPSHOT_URL, async (route) => route.fulfill({ json: await heroData() }));
+    await routeHeroData(page);
     // No edge functions locally: My Heroes' first-visit fill gets "not now", so the saved state stands.
     await page.route("**/functions/v1/fill-heroes", (route) => route.fulfill({ json: { claimed: false } }));
     await provide(page);
@@ -577,12 +582,12 @@ export async function startPartyOnDraft(page: Page) {
   await page.goto("/draft");
   await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
   await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
-  await expect(page.getByRole("list", { name: "Seats" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats", exact: true })).toBeVisible();
 }
 
 /** Invites a friend or Stack mate into an open seat of the party on Draft, through Add Player. */
 export async function inviteOnDraft(page: Page, name: string, position: number) {
   await page.getByRole("region", { name: "Team Seats" }).getByRole("button", { name: `Add Player to Pos ${position}` }).click();
   await page.getByRole("option", { name: new RegExp(name) }).click();
-  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: name })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Seats", exact: true }).getByRole("listitem").filter({ hasText: name })).toBeVisible();
 }

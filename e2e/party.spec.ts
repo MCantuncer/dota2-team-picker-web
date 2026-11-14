@@ -4,6 +4,7 @@ import {
   expectAccessible,
   inviteOnDraft,
   newPlayer,
+  routeHeroData,
   seedFriend,
   seedStack,
   startPartyOnDraft,
@@ -33,6 +34,8 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   const aliEmail = uniqueEmail("captain-ali");
   await newPlayer(page, canEmail, "Can");
   const aliContext = await browser.newContext();
+  // Ali opens Draft too, which needs the hero data.
+  await routeHeroData(aliContext);
   const ali = await aliContext.newPage();
   await newPlayer(ali, aliEmail, "Ali");
   await befriend(canEmail, aliEmail);
@@ -41,7 +44,9 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await startPartyOnDraft(page);
   await inviteOnDraft(page, "Ali", 2);
   await ali.goto("/draft");
-  await ali.getByRole("alertdialog").getByRole("button", { name: "Join" }).click();
+  const invite = ali.getByRole("alertdialog");
+  await invite.getByRole("button", { name: "Join" }).click();
+  await expect(invite).toBeHidden();
   const aliSeats = ali.getByRole("region", { name: "Team Seats" });
   await expect(aliSeats).toContainText("Can's Party");
   await page.reload();
@@ -73,7 +78,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await expect(page.getByRole("button", { name: "Picked" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "My Picks" })).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: /^Rank/ })).toBeDisabled();
-  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: "Ali" })).toContainText("Draft Captain");
+  await expect(page.getByRole("list", { name: "Seats", exact: true }).getByRole("listitem").filter({ hasText: "Ali" })).toContainText("Draft Captain");
   await expect(page.getByPlaceholder("My team pick, e.g. cm5")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "New draft" })).toBeHidden();
   await expectAccessible(page);
@@ -101,7 +106,7 @@ test("Draft shows the party in Team Seats, and Leave Party goes back to your own
 
   await seats.getByRole("button", { name: "Leave Party" }).click();
   await expect(page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Just Me" })).toBeEnabled();
-  await expect(page.getByRole("list", { name: "Seats" })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Seats", exact: true })).toHaveCount(0);
 });
 
 test("in a party Role moves your seat, a waiting seat can't be taken, and Plan For stays on Team", async ({ page }) => {
@@ -120,7 +125,7 @@ test("in a party Role moves your seat, a waiting seat can't be taken, and Plan F
 
   await role.getByRole("button", { name: "Mid" }).click();
   await expect(role.getByRole("button", { name: "Mid" })).toHaveAttribute("aria-pressed", "true");
-  const seats = page.getByRole("list", { name: "Seats" });
+  const seats = page.getByRole("list", { name: "Seats", exact: true });
   await page.reload();
   await expect(role.getByRole("button", { name: "Mid" })).toHaveAttribute("aria-pressed", "true");
   await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toContainText("Mid");
