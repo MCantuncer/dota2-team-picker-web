@@ -34,6 +34,8 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await newPlayer(page, canEmail, "Can");
   const aliContext = await browser.newContext();
   const ali = await aliContext.newPage();
+  ali.on("pageerror", (e) => console.log("DIAG ali pageerror:", e.message));
+  ali.on("console", (m) => m.type() === "error" && console.log("DIAG ali console:", m.text()));
   await newPlayer(ali, aliEmail, "Ali");
   await befriend(canEmail, aliEmail);
 
@@ -45,6 +47,8 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await invite.getByRole("button", { name: "Join" }).click();
   await expect(invite).toBeHidden();
   const aliSeats = ali.getByRole("region", { name: "Team Seats" });
+  await expect.soft(aliSeats).toContainText("Can's Party");
+  await ali.reload();
   await expect(aliSeats).toContainText("Can's Party");
   await page.reload();
   const seats = page.getByRole("region", { name: "Team Seats" });
