@@ -16,7 +16,7 @@ test("a hero pool card adds the hero to the player's position", async ({ page })
   await page.goto("/draft");
   await expect(page.getByRole("region", { name: /Add Monkey King/ })).toHaveCount(0);
 
-  await page.goto("/party");
+  await page.goto("/friends");
   await card.getByRole("button", { name: "Add Hero" }).click();
   await expect(page.getByRole("heading", { name: "Monkey King is in your carry heroes" })).toBeVisible();
 
@@ -30,7 +30,7 @@ test("closing a hero pool card asks again later, not never", async ({ page }) =>
   await newPlayer(page, email, "Pool Later");
   await seedPoolCard(email);
 
-  await page.goto("/party");
+  await page.goto("/friends");
   await page.getByRole("button", { name: "Ask me later" }).click();
   await expect(page.getByRole("region", { name: /Add Monkey King/ })).toHaveCount(0);
   await page.reload();
