@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { PositionIcon } from "@/components/position-icon";
 import type { PickFirst, PlannedSlot } from "@/lib/engine/plan";
 import type { Position } from "@/lib/engine/types";
@@ -15,8 +15,8 @@ import { Face, HeadMark, minus, Stop, type PlanHeroOf } from "./team-plan";
 /*
  * Per Player as the Lane Board's mid lane, full width: the lane starts at the mark beside the view tabs, then one
  * section per player who still has to pick. Each section starts at its seat (a stop with the position icon) and the
- * player's heroes follow as the same cards as My Picks, two to a row from 1024px, one stop per row. Copper only on
- * the card that is the Team Plan's Pick First.
+ * player's heroes follow as compact cards, two to a row from 1024px, one stop per row; a click opens a card's Why This
+ * Hero and Score Parts. Copper only on the card that is the Team Plan's Pick First.
  */
 
 interface PerPlayerLaneProps {
@@ -149,6 +149,21 @@ function PlayerSection({
   onBanned?: (heroId: number) => void;
 }) {
   const list = c.suggestions;
+  // Cards open one by one and stay open through picks and bans while their hero is listed.
+  const [openIds, setOpenIds] = useState<ReadonlySet<number>>(new Set());
+  const toggle = (id: number) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  // Cells in list order with the outsider last. From 1024px two share a row; a closed card fills its cell to line up
+  // with the card beside it, unless that one is open, so the closed one keeps its compact height.
+  const cells = [...list.map((s) => s.heroId), ...(c.outsider ? [c.outsider.pick.heroId] : [])];
+  const isFullAt = (i: number) => {
+    const start = i - (i % 2);
+    return !openIds.has(cells[start]!) && !(cells[start + 1] !== undefined && openIds.has(cells[start + 1]!));
+  };
   const moves = useRankMoves(
     list.map((s) => s.heroId),
     draftKey,
@@ -256,6 +271,9 @@ function PlayerSection({
                 ctx={ctx}
                 now={isNow(s.heroId) ? now : null}
                 isInPlan={planned?.heroId === s.heroId}
+                isOpen={openIds.has(s.heroId)}
+                onToggle={() => toggle(s.heroId)}
+                isFull={isFullAt(i)}
               />
             </li>
           ))}
@@ -270,6 +288,9 @@ function PlayerSection({
                 ctx={ctx}
                 outsiderText={outsiderText(c.outsider, owner)}
                 isInPlan={planned?.heroId === c.outsider.pick.heroId}
+                isOpen={openIds.has(c.outsider.pick.heroId)}
+                onToggle={() => toggle(c.outsider!.pick.heroId)}
+                isFull={isFullAt(list.length)}
               />
             </li>
           </ol>

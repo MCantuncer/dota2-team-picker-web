@@ -48,6 +48,8 @@ export interface PickEntry {
 
 /** Every pick card puts the render's face on the same spot at the same scale. */
 const PICK_ART: HeroArtPlacement = { width: 350, at: [0.5, 0.4] };
+/** The phone's smaller pick frame, beside the name: the same framing at its size. */
+const PICK_ART_PHONE: HeroArtPlacement = { width: 210, at: [0.5, 0.4] };
 /** The Best pick's larger frame. */
 const BEST_ART: HeroArtPlacement = { width: 360, at: [0.5, 0.36] };
 
@@ -506,13 +508,21 @@ export function ScoreParts({
   );
 }
 
-/** The art frame of a pick card: across the card on a phone, 13rem wide beside the name from 640px. */
+/**
+ * The art frame of a pick card, beside the name: 8rem wide on a phone, 13rem from 640px. Each size is its own frame
+ * kind with its own placement, so faces line up within it; only one of the two shows.
+ */
 function PickFrame({ id, ctx }: { id: number; ctx: PickCtx }) {
   const { portrait } = ctx.hero(id);
   return (
-    <HeroStage key={id} size={120} className="h-40 w-full shrink-0 sm:h-30 sm:w-52">
-      {portrait && <HeroArt heroId={id} portrait={portrait} placement={PICK_ART} />}
-    </HeroStage>
+    <>
+      <HeroStage key={`${id}-phone`} size={72} className="h-18 w-32 shrink-0 sm:hidden">
+        {portrait && <HeroArt heroId={id} portrait={portrait} placement={PICK_ART_PHONE} />}
+      </HeroStage>
+      <HeroStage key={id} size={120} className="h-30 w-52 shrink-0 max-sm:hidden">
+        {portrait && <HeroArt heroId={id} portrait={portrait} placement={PICK_ART} />}
+      </HeroStage>
+    </>
   );
 }
 
@@ -527,10 +537,11 @@ function playedChip(games: number | null | undefined, owner?: string): { title: 
 }
 
 /**
- * A pick as an equal card: the art, the rank and name, chips, score and place; the verdict against the list's first;
- * Why This Hero; Score Parts; the actions. Content runs top down and spare space stays at the bottom. The hero from
- * outside the pool is a quieter dashed card with the engine's line at its head. The Team Plan's Pick First (`now`)
- * is the only copper card: the ring, the chip and the filled Picked.
+ * A pick as an equal card. Closed, it is compact: the art, the rank and name, chips, score and place, Picked and
+ * Banned beside the score so a pick stays one click, and the verdict against the list's first. A click anywhere on
+ * that summary (or its chevron) opens Why This Hero and Score Parts under it. The hero from outside the pool is a
+ * quieter dashed card with the engine's line at its head. The Team Plan's Pick First (`now`) is the only copper
+ * card: the ring, the chip and the filled Picked.
  */
 export function PickCard({
   entry,
@@ -540,6 +551,9 @@ export function PickCard({
   outsiderText,
   now = null,
   isInPlan = false,
+  isOpen,
+  onToggle,
+  isFull = true,
 }: {
   entry: PickEntry;
   /** The place in the list; null for the hero from outside the pool. */
@@ -551,6 +565,11 @@ export function PickCard({
   now?: { title: string } | null;
   /** The hero the Team Plan chose for this seat. */
   isInPlan?: boolean;
+  /** Why This Hero and Score Parts are showing. */
+  isOpen: boolean;
+  onToggle: () => void;
+  /** Fills its cell, so closed cards in a row line up; off when the card beside it is open. */
+  isFull?: boolean;
 }) {
   const s = entry.suggestion;
   const nameId = rank === null ? `outsider-${s.heroId}` : `pick-${s.heroId}`;
@@ -559,13 +578,14 @@ export function PickCard({
   const whose = ctx.owner ? `${ctx.owner}'s` : "Your";
   const [open, setOpen] = useState<OpenWhy | null>(null);
   const control: WhyControl = { open, onOpen: setOpen };
+  const detailsId = `${nameId}-details`;
   return (
     <article
       aria-labelledby={nameId}
-      className={`flex h-full min-w-0 flex-col gap-5 rounded-xl p-5 sm:p-6 ${
+      className={`flex min-w-0 flex-col gap-5 rounded-xl p-5 transition-colors sm:p-6 ${isFull ? "h-full" : ""} ${
         isOutsider
           ? "border border-dashed border-line-control bg-surface/50"
-          : `bg-surface ring-1 ring-inset ${now ? "ring-accent/45" : "ring-line"}`
+          : `bg-surface ring-1 ring-inset ${now ? "ring-accent/45" : isOpen ? "ring-line-hover" : "ring-line hover:ring-line-hover"}`
       }`}
     >
       {isOutsider && (
@@ -579,10 +599,22 @@ export function PickCard({
           </p>
         </div>
       )}
-      <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
-        <PickFrame id={s.heroId} ctx={ctx} />
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+      {/* The summary opens and closes the details on a click anywhere outside its buttons; the chevron is the control. */}
+      <div
+        className="flex cursor-pointer flex-col gap-5"
+        onClick={(e) => {
+          if (!(e.target as HTMLElement).closest("button, a")) onToggle();
+        }}
+      >
+        {/*
+          On a phone the name runs across the card, then the art beside the chips and score, then Picked and Banned.
+          From 640px the art stands beside all three.
+        */}
+        <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-4 gap-y-4 sm:grid-cols-[13rem_minmax(0,1fr)] sm:grid-rows-[auto_auto_1fr] sm:gap-x-5 sm:gap-y-3">
+          <span className="row-start-2 flex sm:row-span-3 sm:row-start-1">
+            <PickFrame id={s.heroId} ctx={ctx} />
+          </span>
+          <div className="col-span-2 row-start-1 flex min-w-0 items-start gap-2.5 sm:col-span-1 sm:col-start-2">
             {rank !== null && (
               <span
                 aria-hidden
@@ -593,63 +625,81 @@ export function PickCard({
                 {rank}
               </span>
             )}
-            <h3 id={nameId} data-hero-name className="text-xl leading-7 font-semibold tracking-tight break-words text-fg">
+            <h3 id={nameId} data-hero-name className="min-w-0 flex-1 text-xl leading-7 font-semibold tracking-tight break-words text-fg">
               {s.name}
             </h3>
-          </div>
-          <span className="flex flex-wrap items-center gap-2 empty:hidden">
-            {now && (
-              <span className={BEST_CHIP} title={now.title}>
-                Pick First
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? detailsId : undefined}
+              aria-label={`${isOpen ? "Hide" : "Show"} Why for ${s.name}`}
+              title={isOpen ? "Hide Why" : "Show Why"}
+              onClick={onToggle}
+              className="btn btn-ghost btn-icon btn-sm -my-0.5 -mr-1.5 shrink-0"
+            >
+              <span className={`flex transition-transform ${isOpen ? "rotate-180 text-fg" : "text-subtle"}`}>
+                <Icon name="chevronDown" />
               </span>
-            )}
-            <PickChips
-              move={entry.move}
-              isWeak={entry.isWeak}
-              risk={entry.risk}
-              hero={ctx.hero}
-              isInPlan={isInPlan}
-              owner={ctx.owner}
-              outside={
-                isOutsider
-                  ? { title: `Not one of ${ctx.owner ? `${ctx.owner}'s` : "your"} heroes for this position` }
-                  : playedChip(entry.playedGames, ctx.owner)
-              }
-            />
-          </span>
-          <Score s={s} gain={entry.gain} position={ctx.position} />
+            </button>
+          </div>
+          <div className="row-start-2 flex min-w-0 flex-col justify-center gap-3 sm:col-start-2 sm:justify-start">
+            <span className="flex flex-wrap items-center gap-2 empty:hidden">
+              {now && (
+                <span className={BEST_CHIP} title={now.title}>
+                  Pick First
+                </span>
+              )}
+              <PickChips
+                move={entry.move}
+                isWeak={entry.isWeak}
+                risk={entry.risk}
+                hero={ctx.hero}
+                isInPlan={isInPlan}
+                owner={ctx.owner}
+                outside={
+                  isOutsider
+                    ? { title: `Not one of ${ctx.owner ? `${ctx.owner}'s` : "your"} heroes for this position` }
+                    : playedChip(entry.playedGames, ctx.owner)
+                }
+              />
+            </span>
+            <Score s={s} gain={entry.gain} position={ctx.position} />
+          </div>
+          {ctx.onPicked && ctx.onBanned && (
+            <span className="col-span-2 row-start-3 flex items-end sm:col-span-1 sm:col-start-2">
+              <PickActions s={s} isBest={false} isNow={Boolean(now)} ctx={ctx} />
+            </span>
+          )}
         </div>
+
+        {entry.verdict && <VerdictBlock verdict={entry.verdict} leader={leader} ctx={ctx} />}
       </div>
 
-      {entry.verdict && <VerdictBlock verdict={entry.verdict} leader={leader} ctx={ctx} />}
+      {isOpen && (
+        <div id={detailsId} className="flex flex-col gap-5">
+          <div className="border-t border-line pt-5 empty:hidden">
+            <WhyLines s={s} ctx={ctx} control={control} idBase={nameId} />
+          </div>
 
-      <div className="border-t border-line pt-5 empty:hidden">
-        <WhyLines s={s} ctx={ctx} control={control} idBase={nameId} />
-      </div>
-
-      <div className="flex flex-col gap-3 border-t border-line pt-5">
-        <h4 className="micro flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-subtle">
-          Score Parts
-          <span className="tabular-nums">
-            <span className="font-semibold text-fg">{signed(split.draft)}</span> From This Draft,{" "}
-            <span className="font-semibold text-fg">{signed(split.base)}</span> From Meta, Role and Comfort
-          </span>
-        </h4>
-        {/* Two columns while a card has the room: across the lane below 1024px, half of it from 1280px. */}
-        <ScoreParts
-          s={s}
-          className="grid items-start gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
-          control={control}
-          idBase={nameId}
-          hero={ctx.hero}
-          owner={ctx.owner}
-        />
-      </div>
-
-      {ctx.onPicked && ctx.onBanned && (
-        <span className="flex border-t border-line pt-3">
-          <PickActions s={s} isBest={false} isNow={Boolean(now)} ctx={ctx} />
-        </span>
+          <div className="flex flex-col gap-3 border-t border-line pt-5">
+            <h4 className="micro flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-subtle">
+              Score Parts
+              <span className="tabular-nums">
+                <span className="font-semibold text-fg">{signed(split.draft)}</span> From This Draft,{" "}
+                <span className="font-semibold text-fg">{signed(split.base)}</span> From Meta, Role and Comfort
+              </span>
+            </h4>
+            {/* Two columns while a card has the room: across the lane below 1024px, half of it from 1280px. */}
+            <ScoreParts
+              s={s}
+              className="grid items-start gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+              control={control}
+              idBase={nameId}
+              hero={ctx.hero}
+              owner={ctx.owner}
+            />
+          </div>
+        </div>
       )}
     </article>
   );
