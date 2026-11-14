@@ -177,3 +177,18 @@ test("the leader invites a friend into an open seat and frees it again", async (
   await expect(mert).toHaveCount(0);
   await expect(seats).toContainText("1 in Party");
 });
+
+test("the leader copies an invite link from Draft and can make a new one", async ({ page }) => {
+  await newPlayer(page, uniqueEmail("party-link-draft"), "Lion");
+  await page.goto("/draft");
+  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
+  await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
+
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  await seats.getByRole("button", { name: "Copy Invite Link" }).click();
+  // Copied, or shown to copy by hand where the browser blocks the clipboard.
+  await expect(seats.getByRole("status").filter({ hasText: "It works for 24 hours." })).toBeVisible();
+  await seats.getByRole("button", { name: "New Link" }).click();
+  await expect(seats.getByRole("alert")).toHaveCount(0);
+  await expectAccessible(page);
+});
