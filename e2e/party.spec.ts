@@ -4,6 +4,7 @@ import {
   expectAccessible,
   inviteOnDraft,
   newPlayer,
+  routeHeroData,
   seedFriend,
   seedStack,
   startPartyOnDraft,
@@ -33,9 +34,9 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   const aliEmail = uniqueEmail("captain-ali");
   await newPlayer(page, canEmail, "Can");
   const aliContext = await browser.newContext();
+  // Ali opens Draft too, which needs the hero data.
+  await routeHeroData(aliContext);
   const ali = await aliContext.newPage();
-  ali.on("pageerror", (e) => console.log("DIAG ali pageerror:", e.message));
-  ali.on("console", (m) => m.type() === "error" && console.log("DIAG ali console:", m.text()));
   await newPlayer(ali, aliEmail, "Ali");
   await befriend(canEmail, aliEmail);
 
@@ -47,12 +48,6 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await invite.getByRole("button", { name: "Join" }).click();
   await expect(invite).toBeHidden();
   const aliSeats = ali.getByRole("region", { name: "Team Seats" });
-  await expect.soft(aliSeats).toContainText("Can's Party");
-  await ali.reload();
-  await ali.waitForLoadState("networkidle").catch(() => {});
-  console.log("DIAG ali url:", ali.url());
-  console.log("DIAG ali text:", (await ali.locator("body").innerText()).slice(0, 2500));
-  console.log("DIAG can text:", (await page.locator("main").innerText()).slice(0, 1500));
   await expect(aliSeats).toContainText("Can's Party");
   await page.reload();
   const seats = page.getByRole("region", { name: "Team Seats" });
