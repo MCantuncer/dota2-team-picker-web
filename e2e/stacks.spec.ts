@@ -41,7 +41,7 @@ test("any player creates a Stack, invites a friend, and the friend joins", async
   await fromStack.getByRole("checkbox", { name: "Tusk" }).check();
   await fromStack.getByRole("button", { name: "Invite" }).click();
   await expect(fromStack.getByText("Invite sent.")).toBeVisible();
-  await expect(page.getByRole("list", { name: "Seats" }).getByRole("listitem").filter({ hasText: "Tusk" })).toContainText("Invited");
+  await expect(page.getByRole("list", { name: "Seats", exact: true }).getByRole("listitem").filter({ hasText: "Tusk" })).toContainText("Invited");
   await expectAccessible(page);
   await palContext.close();
 });
