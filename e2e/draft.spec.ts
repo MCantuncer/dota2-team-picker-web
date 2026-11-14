@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { SNAPSHOT_URL } from "../src/lib/engine/snapshot";
 import type { Page } from "@playwright/test";
-import { expectAccessible, heroData, newPlayer, savedSuggestions, seedHeroStats, seedMidHeroes, test, uniqueEmail } from "./helpers";
+import { expectAccessible, heroData, newPlayer, savedSuggestions, seedHeroStats, seedMidHeroes, startPartyOnDraft, test, uniqueEmail } from "./helpers";
 
 /** The position chosen for an ally, as its checked radio. */
 const chosen = (page: Page, hero: string) =>
@@ -187,11 +187,7 @@ test("the draft screen shows the win chance once a checked model exists", async 
 
 test("in a party the draft is kept for the whole party", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-draft"), "Earthshaker");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
-
-  await page.goto("/draft");
+  await startPartyOnDraft(page);
   await expect(page.getByRole("main").getByText("Party", { exact: true })).toBeVisible();
   const ally = page.getByLabel("My team pick, e.g. cm5");
   await ally.fill("cm5");
@@ -215,11 +211,7 @@ test("in a party the draft is kept for the whole party", async ({ page }) => {
 
 test("the party leader can plan the whole team", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-plan"), "Tiny");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
-
-  await page.goto("/draft");
+  await startPartyOnDraft(page);
   await page.getByRole("button", { name: "Team Plan" }).click();
   const plan = page.getByRole("list", { name: "Team Plan" }).locator(":scope > li");
   await expect(plan).toHaveCount(5);
@@ -239,11 +231,7 @@ test("the party leader can plan the whole team", async ({ page }) => {
 test("a party draft saves what each player was shown and ends with the after-game card", async ({ page }) => {
   const email = uniqueEmail("after-game");
   await newPlayer(page, email, "Lina");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
-
-  await page.goto("/draft");
+  await startPartyOnDraft(page);
   await expect(page.getByRole("list", { name: "Suggested heroes" }).locator(":scope > li")).toHaveCount(8);
   await expect.poll(async () => (await savedSuggestions(email)).map((r) => r.heroes.length)).toEqual([8]);
   await expect(page.getByRole("link", { name: /^Add .+ Heroes$/ })).toHaveAttribute("href", "/my-heroes");

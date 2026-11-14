@@ -1,22 +1,30 @@
 import { expect } from "@playwright/test";
-import { befriend, expectAccessible, newPlayer, seedFriend, seedStack, test, uniqueEmail } from "./helpers";
+import {
+  befriend,
+  expectAccessible,
+  inviteOnDraft,
+  newPlayer,
+  seedFriend,
+  seedStack,
+  startPartyOnDraft,
+  test,
+  uniqueEmail,
+} from "./helpers";
 
 test("a party player can become draft captain and step down", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-captain"), "Lion");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
+  await startPartyOnDraft(page);
 
-  const captain = page.getByRole("region", { name: "Draft captain" });
-  await expect(captain.getByText("None yet. Anyone can enter the draft.")).toBeVisible();
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  const me = seats.getByRole("listitem").filter({ hasText: "You" });
+  await expect(me).toContainText("In Party");
   await expectAccessible(page);
 
-  await captain.getByRole("button", { name: "Become captain" }).click();
-  await expect(captain.getByText("You enter the draft for the party.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Players" }).getByText("Draft Captain", { exact: true })).toBeVisible();
-
-  await captain.getByRole("button", { name: "Step down" }).click();
-  await expect(captain.getByText("None yet. Anyone can enter the draft.")).toBeVisible();
-  await expect(captain.getByRole("button", { name: "Become captain" })).toBeVisible();
+  await seats.getByRole("button", { name: "Become Captain" }).click();
+  await expect(me).toContainText("Draft Captain");
+  await seats.getByRole("button", { name: "Step Down" }).click();
+  await expect(me).toContainText("In Party");
+  await expect(seats.getByRole("button", { name: "Become Captain" })).toBeVisible();
 });
 
 // The e2e stack runs without Realtime, so each side reloads to see the other's change.
@@ -29,35 +37,37 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await newPlayer(ali, aliEmail, "Ali");
   await befriend(canEmail, aliEmail);
 
-  // Can starts a party, invites Ali, and becomes draft captain.
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await page.getByRole("button", { name: "Invite", exact: true }).click();
-  await ali.goto("/party");
+  // Can starts a party on Draft, invites Ali into Mid, and becomes draft captain.
+  await startPartyOnDraft(page);
+  await inviteOnDraft(page, "Ali", 2);
+  await ali.goto("/draft");
   await ali.getByRole("alertdialog").getByRole("button", { name: "Join" }).click();
-  await expect(ali.getByRole("region", { name: "Players" }).getByText("Can")).toBeVisible();
+  await ali.waitForURL(/\/party$/);
+  await ali.goto("/draft");
+  const aliSeats = ali.getByRole("region", { name: "Team Seats" });
+  await expect(aliSeats).toContainText("Can's Party");
   await page.reload();
-  await expect(page.getByRole("region", { name: "Players" }).getByText("Ali")).toBeVisible();
-  await page.getByRole("region", { name: "Draft captain" }).getByRole("button", { name: "Become captain" }).click();
+  const seats = page.getByRole("region", { name: "Team Seats" });
+  await expect(seats.getByRole("listitem").filter({ hasText: "Ali" })).toContainText("In Party");
+  await seats.getByRole("button", { name: "Become Captain" }).click();
+  await expect(seats.getByRole("listitem").filter({ hasText: "You" })).toContainText("Draft Captain");
 
   // Ali asks; Can gets the prompt and says Yes.
-  await expect(page.getByRole("region", { name: "Draft captain" }).getByText("You enter the draft for the party.")).toBeVisible();
   await ali.reload();
-  const aliBar = ali.getByRole("region", { name: "Draft captain" });
-  await aliBar.getByRole("button", { name: "Ask Can for captain" }).click();
-  await expect(aliBar.getByText(/Asked Can/)).toBeVisible();
+  await aliSeats.getByRole("button", { name: "Ask Can for Captain" }).click();
+  await expect(aliSeats.getByText(/Asked Can/)).toBeVisible();
   await page.reload();
   const prompt = page.getByRole("region", { name: "Draft captain request" });
   await expect(prompt).toBeVisible();
   await expectAccessible(page);
-  await prompt.getByRole("button", { name: "Give captain" }).click();
+  await prompt.getByRole("button", { name: "Give Captain" }).click();
   await expect(prompt).toBeHidden();
 
   await ali.reload();
-  await expect(aliBar.getByText("You enter the draft for the party.")).toBeVisible();
+  await expect(aliSeats.getByRole("listitem").filter({ hasText: "You" })).toContainText("Draft Captain");
 
   // Can now watches the draft that Ali enters, without the boxes to type heroes in.
-  await page.goto("/draft");
+  await page.reload();
   await expect(page.getByText("Ali enters every hero. Tell them which of your picks you want.")).toBeVisible();
   // Can's own picks come first, then Ali's Team Plan, read only: no Picked or Banned buttons, and Ali sets the rank.
   await expect(page.getByRole("status").getByText("Watching Ali's Draft")).toBeVisible();
@@ -74,11 +84,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
 
 test("the party planner sees suggestions per player", async ({ page }) => {
   await newPlayer(page, uniqueEmail("per-player"), "Lion");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await expect(page.getByRole("region", { name: "Draft captain" })).toBeVisible();
-
-  await page.goto("/draft");
+  await startPartyOnDraft(page);
   await page.getByRole("button", { name: "Per Player" }).click();
   await expect(page.getByRole("heading", { name: "Per Player" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Suggested heroes for Lion" })).toBeVisible();
@@ -87,11 +93,7 @@ test("the party planner sees suggestions per player", async ({ page }) => {
 
 test("Draft shows the party in Team Seats, and Leave Party goes back to your own draft", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-seats"), "Lion");
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await expect(page.getByRole("button", { name: "Leave party" })).toBeVisible();
-
-  await page.goto("/draft");
+  await startPartyOnDraft(page);
   const seats = page.getByRole("region", { name: "Team Seats" });
   await expect(seats).toContainText("Lion's Party");
   await expect(seats).toContainText("1 in Party");
@@ -100,7 +102,7 @@ test("Draft shows the party in Team Seats, and Leave Party goes back to your own
   await expectAccessible(page);
 
   await seats.getByRole("button", { name: "Leave Party" }).click();
-  await expect(page.getByRole("group", { name: "Plan For" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Just Me" })).toBeEnabled();
   await expect(page.getByRole("list", { name: "Seats" })).toHaveCount(0);
 });
 
@@ -108,11 +110,9 @@ test("in a party Role moves your seat, a waiting seat can't be taken, and Plan F
   const email = uniqueEmail("party-role");
   await newPlayer(page, email, "Lion");
   await seedFriend(email, "Mert", { position: 3 });
-  await page.goto("/party");
-  await page.getByRole("button", { name: "Start a party" }).click();
-  await page.getByRole("button", { name: "Invite", exact: true }).click();
+  await startPartyOnDraft(page);
+  await inviteOnDraft(page, "Mert", 3);
 
-  await page.goto("/draft");
   const role = page.getByRole("group", { name: "Role" });
   await expect(role.getByRole("button", { name: "Carry" })).toHaveAttribute("aria-pressed", "true");
   // Mert hasn't joined, so his Offlane seat waits for him.
@@ -159,9 +159,7 @@ test("the leader invites a friend into an open seat and frees it again", async (
   const email = uniqueEmail("party-picker");
   await newPlayer(page, email, "Lion");
   await seedFriend(email, "Mert", { position: 3 });
-  await page.goto("/draft");
-  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
-  await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
+  await startPartyOnDraft(page);
 
   const seats = page.getByRole("region", { name: "Team Seats" });
   await expect(seats).toContainText("Lion's Party");
@@ -180,9 +178,7 @@ test("the leader invites a friend into an open seat and frees it again", async (
 
 test("the leader copies an invite link from Draft and can make a new one", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-link-draft"), "Lion");
-  await page.goto("/draft");
-  await page.getByRole("group", { name: "Plan For" }).getByRole("button", { name: "Team", exact: true }).click();
-  await page.getByRole("region", { name: "Plan For" }).getByRole("button", { name: "Start Party" }).click();
+  await startPartyOnDraft(page);
 
   const seats = page.getByRole("region", { name: "Team Seats" });
   await seats.getByRole("button", { name: "Copy Invite Link" }).click();
