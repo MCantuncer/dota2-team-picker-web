@@ -24,7 +24,7 @@ export default async function DraftPage() {
   const heroesPromise = getHeroes().catch(() => []);
   let player: Player = { heroes: {}, top: {}, positions: [], rank: null, personal: {} };
   let party: PartyInfo | null = null;
-  // Stacks the player runs (owner or Manager), to plan a draft for out of a party.
+  // Stacks for Plan For (out of a party) or Invite from Stack (in one).
   let stacks: PlannableStack[] = [];
   if (user) {
     const [
@@ -58,22 +58,23 @@ export default async function DraftPage() {
       };
     }
 
-    if (!party) {
-      const [owned, managed] = await Promise.all([
-        supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
-        supabase.from("team_members").select("teams(id, name)").eq("user_id", user.id).eq("role", "co_captain"),
-      ]);
-      // Plan For is an extra: without it the solo draft still works.
-      if (owned.error ?? managed.error) console.error("Draft Stacks:", (owned.error ?? managed.error)!.message);
-      else
-        stacks = [
-          ...(owned.data ?? []),
-          // One team per membership row (teams.id is the key), typed loosely by the client.
-          ...(managed.data ?? [])
-            .map((m) => m.teams as unknown as PlannableStack | null)
-            .filter((t): t is PlannableStack => t !== null),
-        ];
-    }
+    // Out of a party: Stacks the player runs (owner or Manager), to plan for. In a party: every Stack
+    // they are in, for Invite from Stack, as the Party page had; the database checks each invite.
+    const memberships = supabase.from("team_members").select("teams(id, name)").eq("user_id", user.id);
+    const [owned, joined] = await Promise.all([
+      supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
+      party ? memberships : memberships.eq("role", "co_captain"),
+    ]);
+    // Stacks are an extra: without them the draft and the party still work.
+    if (owned.error ?? joined.error) console.error("Draft Stacks:", (owned.error ?? joined.error)!.message);
+    else
+      stacks = [
+        ...(owned.data ?? []),
+        // One team per membership row (teams.id is the key), typed loosely by the client.
+        ...(joined.data ?? [])
+          .map((m) => m.teams as unknown as PlannableStack | null)
+          .filter((t): t is PlannableStack => t !== null),
+      ];
 
     const heroes: Record<number, number[]> = {};
     for (const f of favorites ?? []) (heroes[f.position] ??= []).push(f.hero_id);
