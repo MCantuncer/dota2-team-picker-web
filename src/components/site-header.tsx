@@ -84,14 +84,13 @@ async function HeaderSession() {
       .eq("status", "pending")
       .neq("user_id", user.id),
   ]);
-  // The party chip is a shortcut only: without it the Party page still works, so a failure just hides it.
+  // The party chip is a shortcut only: without it Draft still shows the party, so a failure just hides it.
   if (partyError) console.error("Header party:", partyError.message);
   const party = partyError ? null : toParty(partyRows);
 
   const nav: NavItem[] = [
     { href: "/draft", label: "Draft", icon: "swords" },
     { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
-    { href: "/party", label: "Party", icon: "users" },
     { href: "/stacks", label: "Stacks", icon: "layers", badge: (stackInvites?.length ?? 0) + (joinRequests ?? 0) },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];

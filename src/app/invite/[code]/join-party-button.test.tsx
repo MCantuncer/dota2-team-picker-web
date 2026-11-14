@@ -19,7 +19,7 @@ describe("JoinPartyButton", () => {
     render(<JoinPartyButton code="0123456789abcdef" />);
     await userEvent.click(screen.getByRole("button", { name: "Join Party" }));
     expect(rpc).toHaveBeenCalledWith("join_party_by_link", { code: "0123456789abcdef" });
-    expect(push).toHaveBeenCalledWith("/party");
+    expect(push).toHaveBeenCalledWith("/draft");
   });
 
   it("shows why joining failed and stays on the page", async () => {

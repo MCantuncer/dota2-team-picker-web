@@ -238,9 +238,9 @@ function FriendActions({ friend: f, partyRole, onRemove }: { friend: Friend; par
     <div className="flex flex-col items-end gap-1.5 max-sm:w-full sm:ml-auto">
       <div className="flex gap-2 max-sm:w-full">
         {f.party === "yours" ? (
-          <Link href="/party" className="btn btn-secondary max-sm:flex-1">
-            <Icon name="users" />
-            Open Party
+          <Link href="/draft" className="btn btn-secondary max-sm:flex-1">
+            <Icon name="swords" />
+            Open Draft
           </Link>
         ) : (
           <button

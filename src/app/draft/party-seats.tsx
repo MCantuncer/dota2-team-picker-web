@@ -188,6 +188,7 @@ export function PartySeats({
       </div>
       <ul
         aria-label="Seats"
+        data-tour="draft-seats"
         className="grid min-w-0 divide-line rounded-xl bg-surface ring-1 ring-line ring-inset max-sm:divide-y sm:grid-cols-5 sm:divide-x"
       >
         {POSITIONS.map((position) => {

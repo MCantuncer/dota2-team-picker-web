@@ -14,7 +14,7 @@ export type TourStep = {
   movesOn?: boolean;
 };
 
-export type TourId = "draft" | "my-heroes" | "your-games" | "one-game" | "party" | "stacks" | "stack" | "friends" | "profile" | "report";
+export type TourId = "draft" | "my-heroes" | "your-games" | "one-game" | "stacks" | "stack" | "friends" | "profile" | "report";
 
 export const TOURS: Record<TourId, TourStep[]> = {
   draft: [
@@ -33,6 +33,16 @@ export const TOURS: Record<TourId, TourStep[]> = {
         </>
       ),
       movesOn: true,
+    },
+    {
+      target: "draft-seats",
+      title: "Team Seats",
+      tip: (verb) => (
+        <>
+          Seat your teammates, then {verb.toLowerCase()} <b>Invite to Party</b>. Each seat says who is In Party, Invited or Not on
+          Site.
+        </>
+      ),
     },
     {
       target: "draft-enemy",
@@ -215,55 +225,6 @@ export const TOURS: Record<TourId, TourStep[]> = {
       target: "one-game-opendota",
       title: "Full Match",
       tip: (verb) => `${verb} it to open the whole match on OpenDota.`,
-    },
-  ],
-  party: [
-    {
-      target: "party-start",
-      title: "Start a Party",
-      tip: (verb) => (
-        <>
-          {verb} <b>Start a Party</b>, then invite up to 4 players.
-        </>
-      ),
-    },
-    {
-      target: "party-position",
-      title: "Your Position",
-      tip: () => "Pick the role you play this game. The party draft plans around it.",
-    },
-    {
-      target: "party-captain",
-      title: "Draft Captain",
-      tip: () => "One player enters the draft for the whole party.",
-    },
-    {
-      target: "party-draft",
-      title: "Party Draft",
-      tip: (verb) => `${verb} it to plan a pick for all five of you.`,
-    },
-    {
-      target: "party-link",
-      title: "Invite Link",
-      tip: () => "Paste it in Discord or Steam chat. Anyone with it can join.",
-    },
-    {
-      target: "party-stack",
-      title: "Invite from Stack",
-      tip: (verb) => (
-        <>
-          Tick who plays this game, then {verb.toLowerCase()} <b>Invite</b>.
-        </>
-      ),
-    },
-    {
-      target: "party-invite",
-      title: "Invite Friends",
-      tip: (verb) => (
-        <>
-          {verb} <b>Invite</b> and it pops up on their screen.
-        </>
-      ),
     },
   ],
   stacks: [
