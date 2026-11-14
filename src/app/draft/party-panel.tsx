@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icon";
 import { useDraftCaptain } from "@/app/party/draft-captain";
+import { InviteFromStack } from "@/app/party/invite-from-stack";
 import { POSITION_NAMES } from "@/lib/draft";
 import { POSITIONS, type Position } from "@/lib/engine/types";
 import type { Party } from "@/lib/party";
@@ -12,6 +13,7 @@ import { toTeamPeople, type LineupRow, type TeamPerson } from "@/lib/team-lineup
 import { AddPlayer } from "./add-player";
 import type { PlannableStack } from "./use-team-lineup";
 import { createClient } from "@/lib/supabase/client";
+import { InviteLinkNote, useInviteLink } from "./invite-link";
 import { PartySeats } from "./party-seats";
 
 const isPosition = (v: unknown): v is Position => POSITIONS.includes(v as Position);
@@ -65,6 +67,10 @@ export function PartyPanel({
     become: () => supabase.rpc("become_captain"),
     stepDown: () => supabase.rpc("step_down_captain"),
   });
+  // The leader's other ways in: a Stack's tick list, and a link for Discord. Off when every seat is held.
+  const full = seats.length >= 5;
+  const [stackOpen, setStackOpen] = useState(false);
+  const link = useInviteLink(setError);
   const leave = async () => {
     setBusy(true);
     const { error } = await supabase.rpc("leave_party");
@@ -126,6 +132,31 @@ export function PartyPanel({
       heroAt={heroAt}
       actions={
         <>
+          {isLeader && stacks.length > 0 && (
+            <button
+              type="button"
+              aria-expanded={stackOpen && !full}
+              onClick={() => setStackOpen((o) => !o)}
+              disabled={full}
+              title={full ? "Party Is Full" : undefined}
+              className="btn btn-secondary btn-sm"
+            >
+              <Icon name="layers" />
+              Invite from Stack
+            </button>
+          )}
+          {isLeader && (
+            <button
+              type="button"
+              onClick={link.copy}
+              disabled={full || link.busy}
+              title={full ? "Party Is Full" : undefined}
+              className="btn btn-secondary btn-sm"
+            >
+              <Icon name="copy" />
+              Copy Invite Link
+            </button>
+          )}
           {captain.action && (
             <button
               type="button"
@@ -176,6 +207,17 @@ export function PartyPanel({
               />
             </div>
           ))}
+          {isLeader && stackOpen && !full && (
+            <InviteFromStack
+              stacks={stacks}
+              initialStack={party.teamId}
+              memberIds={seats.map((s) => s.id)}
+              openSeats={5 - seats.length}
+              onInvited={() => void refresh()}
+            />
+          )}
+          {isLeader && !full && <InviteLinkNote link={link} />}
+          {isLeader && full && <p className="text-sm text-subtle">Party Is Full. Free a seat to invite someone else.</p>}
           <p className="text-sm text-muted empty:hidden" aria-live="polite">
             {captainLine}
           </p>

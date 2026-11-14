@@ -26,14 +26,20 @@ const twoSeats: PartySeat[] = [
   { position: 2, id: "can", name: "Can", avatarUrl: null, status: "in" },
 ];
 
-function setup(p: Party, userId: string, seats: PartySeat[] = twoSeats, planner: string | null = "can") {
+function setup(
+  p: Party,
+  userId: string,
+  seats: PartySeat[] = twoSeats,
+  planner: string | null = "can",
+  stacks: { id: string; name: string }[] = [],
+) {
   const refresh = vi.fn().mockResolvedValue(undefined);
   render(
     <PartyPanel
       party={p}
       seats={seats}
       planner={planner}
-      stacks={[]}
+      stacks={stacks}
       userId={userId}
       hero={() => ({ name: "" })}
       heroAt={() => null}
@@ -110,7 +116,44 @@ describe("PartyPanel", () => {
 
   it("gives a member no seat controls", () => {
     setup(party(null), "deniz");
-    expect(screen.queryByRole("button", { name: /Add Player|More for/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add Player|More for|Invite from Stack|Copy Invite Link/ })).not.toBeInTheDocument();
+  });
+
+  it("copies the invite link, and makes a new one on request", async () => {
+    rpc.mockImplementation(async (name: string, args: { fresh?: boolean }) =>
+      name === "party_link"
+        ? { data: [{ code: args.fresh ? "bbbbbbbbbbbbbbbb" : "aaaaaaaaaaaaaaaa", expires_at: "2099-01-01T00:00:00Z" }], error: null }
+        : { error: null },
+    );
+    const user = userEvent.setup();
+    setup(party(null), "can");
+    await user.click(screen.getByRole("button", { name: "Copy Invite Link" }));
+    expect(await screen.findByText("Invite link copied. It works for 24 hours.")).toBeInTheDocument();
+    expect(await navigator.clipboard.readText()).toMatch(/\/invite\/aaaaaaaaaaaaaaaa$/);
+    await user.click(screen.getByRole("button", { name: "New Link" }));
+    expect(rpc).toHaveBeenCalledWith("party_link", { fresh: true });
+    await vi.waitFor(async () => expect(await navigator.clipboard.readText()).toMatch(/bbbbbbbbbbbbbbbb$/));
+  });
+
+  it("opens Invite from Stack for the leader", async () => {
+    rpc.mockImplementation(async (name: string) => (name === "stack_members" ? { data: [], error: null } : { error: null }));
+    setup(party(null), "can", twoSeats, "can", [{ id: "owls", name: "Night Owls" }]);
+    await userEvent.click(screen.getByRole("button", { name: "Invite from Stack" }));
+    expect(rpc).toHaveBeenCalledWith("stack_members", { team: "owls" });
+  });
+
+  it("says the party is full and turns the invite buttons off", () => {
+    const full: PartySeat[] = [1, 2, 3, 4, 5].map((n) => ({
+      position: n as PartySeat["position"],
+      id: n === 2 ? "can" : `p${n}`,
+      name: `P${n}`,
+      avatarUrl: null,
+      status: "in",
+    }));
+    setup(party(null), "can", full, "can", [{ id: "owls", name: "Night Owls" }]);
+    expect(screen.getByRole("button", { name: "Invite from Stack" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Copy Invite Link" })).toBeDisabled();
+    expect(screen.getByText(/Party Is Full/)).toBeInTheDocument();
   });
 
   it("shows a failed leave and stays", async () => {
