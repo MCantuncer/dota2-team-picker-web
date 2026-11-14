@@ -18,7 +18,7 @@ interface BetterChanceProps {
   plan: DraftOdds | null;
   /** Heroes picked on both sides. */
   picked: number;
-  /** My team's side, which colours its half of the bar. */
+  /** My team's side, which colours its half of the bar. On Dire the bar is mirrored, as in game: Radiant on the left. */
   side: Side;
 }
 
@@ -33,7 +33,8 @@ const PARTS: [keyof EdgeParts, string, IconName][] = [
 ];
 
 /**
- * Who Has the Better Chance: a tug of war between my team (left) and the enemy (right). The solid marker is the draft
+ * Who Has the Better Chance: a tug of war between Radiant (left) and Dire (right), so my team sits on its own side as in
+ * game and on the rest of the Draft page; with no side chosen, my team is on the left. The solid marker is the draft
  * now, the dashed one where the Team Plan's five would put it. Until the win model passes its check it shows the
  * draft edge in points and says so; with a checked model it shows the win chance. Beside it, the edge's three parts.
  * Hidden until a hero is picked on either side.
@@ -48,6 +49,10 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
   const favored = favoredSide(now.edge, now.chance);
   const ours = side === "radiant" ? "radiant" : "dire";
   const theirs = side === "radiant" ? "dire" : "radiant";
+  // On Dire my team is on the right, so a lean toward my team moves right instead of left.
+  const mirrored = side === "dire";
+  const [left, right]: [Side, Side] = mirrored ? [theirs, ours] : [ours, theirs];
+  const toward = (l: number) => (mirrored ? l : -l);
   const text = { radiant: "text-radiant", dire: "text-dire" };
   const tint = { radiant: "bg-radiant-tint", dire: "bg-dire-tint" };
   const fill = { radiant: "bg-radiant-strong", dire: "bg-dire-strong" };
@@ -55,6 +60,9 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
   const leader = favored === "ours" ? ours : favored === "theirs" ? theirs : null;
   const verdict = favored === "ours" ? "Your Team Favored" : favored === "theirs" ? "Enemy Favored" : "Even Draft";
   const leanNow = lean(now);
+  // Where the bar ends up on screen, from −1 (left end) to 1 (right end).
+  const xNow = toward(leanNow);
+  const label = (team: Side) => (team === ours ? "Your Team" : "Enemy");
   const partRange = edgeRange([...Object.values(now.parts), ...Object.values(plan?.parts ?? {})], 5);
   const end = hasChance ? "100%" : `+${range}`;
 
@@ -104,13 +112,13 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
 
         <div className="flex flex-col gap-2">
           <div className="micro flex items-center justify-between font-semibold">
-            <span className={`flex items-center gap-1.5 ${text[ours]}`}>
-              <span className={`size-2 rounded-xs ${dot[ours]}`} />
-              Your Team
+            <span data-testid="chance-left" className={`flex items-center gap-1.5 ${text[left]}`}>
+              <span className={`size-2 rounded-xs ${dot[left]}`} />
+              {label(left)}
             </span>
-            <span className={`flex items-center gap-1.5 ${text[theirs]}`}>
-              Enemy
-              <span className={`size-2 rounded-xs ${dot[theirs]}`} />
+            <span data-testid="chance-right" className={`flex items-center gap-1.5 ${text[right]}`}>
+              {label(right)}
+              <span className={`size-2 rounded-xs ${dot[right]}`} />
             </span>
           </div>
           <div
@@ -118,14 +126,15 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
             aria-label={`${verdict}: ${show(now)} now${plan ? `, ${show(plan)} with the plan` : ""}`}
             className="relative flex h-3 rounded-xs"
           >
-            <span className={`h-full flex-1 rounded-l-xs ${tint[ours]}`} />
-            <span className={`h-full flex-1 rounded-r-xs ${tint[theirs]}`} />
+            <span className={`h-full flex-1 rounded-l-xs ${tint[left]}`} />
+            <span className={`h-full flex-1 rounded-r-xs ${tint[right]}`} />
             <span
-              className={`absolute inset-y-0 ${leanNow >= 0 ? `right-1/2 ${fill[ours]}` : `left-1/2 ${fill[theirs]}`}`}
+              data-testid="chance-fill"
+              className={`absolute inset-y-0 ${xNow <= 0 ? "right-1/2" : "left-1/2"} ${fill[leanNow >= 0 ? ours : theirs]}`}
               style={{
                 width: `${Math.abs(leanNow) * 50}%`,
                 clipPath:
-                  leanNow >= 0
+                  xNow <= 0
                     ? "polygon(10px 0, 100% 0, 100% 100%, 0 100%)"
                     : "polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%)",
               }}
@@ -135,13 +144,14 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
               <span
                 title="With the Plan"
                 className="absolute top-1/2 size-3.5 -translate-1/2 rounded-full border-2 border-dashed border-fg/70 bg-surface"
-                style={{ left: `${50 - lean(plan) * 50}%` }}
+                style={{ left: `${50 + toward(lean(plan)) * 50}%` }}
               />
             )}
             <span
               title="Now"
+              data-testid="chance-now"
               className="absolute top-1/2 size-4 -translate-1/2 rounded-full bg-fg ring-3 ring-surface"
-              style={{ left: `${50 - leanNow * 50}%` }}
+              style={{ left: `${50 + xNow * 50}%` }}
             />
           </div>
           <div className="micro flex items-center justify-between text-subtle tabular-nums">
@@ -184,7 +194,7 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
                 <span className="relative h-1.5 rounded-xs bg-raised" aria-hidden>
                   <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-line-control" />
                   <span
-                    className={`absolute inset-y-0 rounded-xs ${partLean >= 0 ? "right-1/2" : "left-1/2"} ${dot[color ?? ours]}`}
+                    className={`absolute inset-y-0 rounded-xs ${toward(partLean) <= 0 ? "right-1/2" : "left-1/2"} ${dot[color ?? ours]}`}
                     style={{ width: `${Math.abs(partLean) * 50}%` }}
                   />
                 </span>
