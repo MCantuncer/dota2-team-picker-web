@@ -6,6 +6,7 @@ import type { Chapter, Spike, Story } from "@/lib/engine/story";
 import type { ItemInfo, Snapshot } from "@/lib/engine/types";
 import { FaceStack } from "./face-stack";
 import { HeroFace } from "./hero-frame";
+import { ItemBand, ItemButton } from "./item-card";
 import { ABILITY_CDN } from "./skill-track";
 import { itemArt } from "./story-timeline";
 import { namedHeroes } from "@/lib/story-axis";
@@ -265,7 +266,23 @@ function RoshanReady({
           return (
             <li key={`${s.hero}-${s.item}`} className="flex items-center gap-2.5">
               {portrait && <HeroFace portrait={portrait} name={s.hero} size={40} />}
-              {img && <Image src={CDN + img} alt="" width={55} height={40} className="h-10 w-[3.4375rem] rounded-md object-cover" />}
+              {img && (
+                <ItemButton
+                  card={{
+                    name: s.item,
+                    img,
+                    band: (
+                      <ItemBand
+                        facts={[{ value: `${s.around ? "~" : ""}${s.minute} min`, label: "Usual", tone: "text-radiant" }]}
+                        chip={{ text: s.hero, enemy: false, faces: [{ name: s.hero, portrait }] }}
+                      />
+                    ),
+                  }}
+                  className="shrink-0"
+                >
+                  <Image src={CDN + img} alt="" width={55} height={40} className="block h-10 w-[3.4375rem] rounded-md object-cover" />
+                </ItemButton>
+              )}
               <span className="min-w-0 flex-1 text-sm text-muted">{s.item}</span>
               <b className="num text-radiant">{ITEM_MINUTE(s)}</b>
             </li>

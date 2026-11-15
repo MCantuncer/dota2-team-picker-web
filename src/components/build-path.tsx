@@ -1,13 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
-import type { ItemInfo } from "@/lib/engine/types";
 import type { ItemFork } from "@/lib/item-forks";
 import { HeroFace } from "./hero-frame";
-import { Coin, ItemParts, ItemSpells, ItemStatLines } from "./item-anatomy";
-import { recipeOf } from "@/lib/item-recipe";
+import { ItemBand, ItemButton, type ItemCardContent } from "./item-card";
 import { ForkBlock } from "./item-forks";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -63,9 +61,8 @@ export function sentence(text: string): string {
 /**
  * The Build Path (Can's go on the Your Game mockup, 2026-11-12): the start and lane kits as item tiles, then the
  * core items in buy order on one line, each with its minute big and its late minute under it. Items bought for
- * this draft carry the enemy's face. A tile opens its detail right under itself: the numbers as stat blocks, what the
- * item gives and how it is built (from `items`), and at most two sentences on why. The draft's first answer item is
- * open to start, else the first core item.
+ * this draft carry the enemy's face. Every item opens its card right next to itself (item-card.tsx): this game's
+ * minutes, the enemies it is for and why on top of what the item gives and how it is built.
  */
 export function BuildPath({
   build,
@@ -74,8 +71,7 @@ export function BuildPath({
   note,
   forks = [],
   enemyItems = [],
-  items,
-}: Art & { build: ItemBuild; note?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[]; items?: Record<string, ItemInfo> }) {
+}: Art & { build: ItemBuild; note?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[] }) {
   const rough = build.timings === "around";
   const path = pathItems(build);
   // Our items and the enemy's on one line in minute order, ours first on a tie; rough minutes can't be set beside theirs.
@@ -90,17 +86,9 @@ export function BuildPath({
     ...usualLane(build).map((item) => ({ key: `lane-${item.itemId}`, where: "lane" as const, item })),
     ...path.map((item) => ({ key: `path-${item.itemId}`, where: "path" as const, item })),
   ];
-  const [picked, setPicked] = useState<string>();
-  const open =
-    stops.find((s) => s.key === picked) ?? stops.find((s) => s.where === "path" && s.item.reason) ?? stops.find((s) => s.where === "path") ?? stops[0];
   // The other boots go once, under the core boots (the first core item bought in the lane phase).
   const boots = build.core.find((i) => i.phase === "lane");
-  const detail = open && <Detail stop={open} rough={rough} heroName={heroName} icons={icons} fork={open.where === "path" ? forkOf(open.item) : undefined} items={items} />;
-  const tile = (stop: Stop) => ({
-    pressed: open?.key === stop.key,
-    onClick: () => setPicked(stop.key),
-    label: tileLabel(stop.item, heroName),
-  });
+  const cardOf = (stop: Stop) => stopCard(stop, rough, heroName, icons, stop.where === "path" ? forkOf(stop.item) : undefined);
 
   return (
     <div className="flex flex-col gap-6">
@@ -110,10 +98,9 @@ export function BuildPath({
       </div>
 
       <div className="flex flex-wrap gap-x-8 gap-y-5">
-        <Kit title="Start" label="Start items" stops={stops.filter((s) => s.where === "start")} tile={tile} heroName={heroName} icons={icons} />
-        <Kit title="Lane" label="Lane items, in buy order" stops={stops.filter((s) => s.where === "lane")} tile={tile} heroName={heroName} icons={icons} />
+        <Kit title="Start" label="Start items" stops={stops.filter((s) => s.where === "start")} cardOf={cardOf} heroName={heroName} icons={icons} />
+        <Kit title="Lane" label="Lane items, in buy order" stops={stops.filter((s) => s.where === "lane")} cardOf={cardOf} heroName={heroName} icons={icons} />
       </div>
-      {open && open.where !== "path" && detail}
 
       {path.length > 0 && (
         <div role="region" aria-label="Core items" tabIndex={0} className="-mx-2 overflow-x-auto px-2 pb-1 pt-2 focus-visible:outline-2 focus-visible:outline-accent">
@@ -138,8 +125,7 @@ export function BuildPath({
               // The fork's late minute is the one its win counts split at, so the path says the same minute.
               const late = fork?.late ?? item.lateMinute;
               const stop = stops.find((s) => s.where === "path" && s.item === item)!; // Every path item is a stop.
-              const { pressed, onClick, label } = tile(stop);
-              const step = (
+              return [
                 <li
                   key={stop.key}
                   style={at}
@@ -149,7 +135,7 @@ export function BuildPath({
                     {rough ? "~" : ""}
                     {item.minute}
                   </span>
-                  <ItemTile item={item} pressed={pressed} onClick={onClick} label={label} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 sm:order-2" />
+                  <ItemTile item={item} card={cardOf(stop)} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 sm:order-2" />
                   <span className="col-start-3 row-start-1 self-end text-[0.8125rem] font-medium leading-tight text-fg sm:order-3 sm:min-h-[2.125rem] sm:self-auto">{item.name}</span>
                   <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight sm:order-4 sm:mb-2 sm:min-h-[1.125rem] sm:items-center sm:self-auto">
                     {!rough && late !== undefined && <span className="text-warn">Late After {late}</span>}
@@ -168,17 +154,8 @@ export function BuildPath({
                     )}
                   </span>
                   <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 shrink-0 rounded-full sm:mt-auto bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] sm:block" />
-                </li>
-              );
-              // The detail opens right under its item: under the line on wide screens, under the row on phones.
-              return pressed
-                ? [
-                    step,
-                    <li key="detail" role="none" className="relative sm:sticky sm:left-0 sm:col-span-full sm:row-start-3 sm:mt-6 sm:max-w-3xl">
-                      {detail}
-                    </li>,
-                  ]
-                : [step];
+                </li>,
+              ];
             })}
           </ol>
         </div>
@@ -193,7 +170,9 @@ export function BuildPath({
               const line = [item.reason, instead && `Instead of ${instead}`].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
               return (
                 <li key={item.itemId} className="flex items-center gap-3 text-sm">
-                  <ItemArt item={item} className="h-8 w-11" />
+                  <ItemButton label={item.name} card={{ itemId: item.itemId, name: item.name, img: item.img, band: line ? <ItemBand why={line} /> : undefined }} className="shrink-0">
+                    <ItemArt item={item} className="h-8 w-11" />
+                  </ItemButton>
                   <span className="text-fg">{item.name}</span>
                   {line && <span className="text-muted">{line}</span>}
                 </li>
@@ -213,7 +192,7 @@ function tileLabel(item: BuildItem, heroName: (id: number) => string): string {
   return foes.length ? `${name}, for ${foes.map(heroName).join(" and ")}` : name;
 }
 
-function Kit({ title, label, stops, tile, heroName, icons }: Art & { title: string; label: string; stops: Stop[]; tile: (s: Stop) => { pressed: boolean; onClick: () => void; label: string } }) {
+function Kit({ title, label, stops, cardOf, heroName, icons }: Art & { title: string; label: string; stops: Stop[]; cardOf: (s: Stop) => ItemCardContent }) {
   if (!stops.length) return null;
   return (
     <div className="flex flex-col gap-2.5">
@@ -221,7 +200,7 @@ function Kit({ title, label, stops, tile, heroName, icons }: Art & { title: stri
       <ul aria-label={label} className="flex flex-wrap gap-2.5">
         {stops.map((stop) => (
           <li key={stop.key} className="flex w-16 flex-col items-center gap-1 text-center">
-            <ItemTile item={stop.item} {...tile(stop)} heroName={heroName} icons={icons} />
+            <ItemTile item={stop.item} card={cardOf(stop)} heroName={heroName} icons={icons} />
             <span className="text-xs leading-tight text-subtle">{stop.item.name}</span>
           </li>
         ))}
@@ -230,36 +209,25 @@ function Kit({ title, label, stops, tile, heroName, icons }: Art & { title: stri
   );
 }
 
-/** An item as a pressable tile: its art, a copy count, and the face of the enemy it is bought for. */
-function ItemTile({
-  item,
-  pressed,
-  onClick,
-  label,
-  heroName,
-  icons,
-  className = "",
-}: Art & { item: BuildItem; pressed: boolean; onClick: () => void; label: string; className?: string }) {
+/** An item as a tile that opens its card: its art, a copy count, and the face of the enemy it is bought for. */
+function ItemTile({ item, card, heroName, icons, className = "" }: Art & { item: BuildItem; card: ItemCardContent; className?: string }) {
   const foe = item.against?.[0];
   return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className={`relative cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${className}`}
-    >
-      <ItemArt item={item} className={`h-[2.9375rem] w-16 ${pressed ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
-      {item.count && (
-        <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+    <ItemButton label={tileLabel(item, heroName)} card={card} className={className}>
+      {(open) => (
+        <>
+          <ItemArt item={item} className={`h-[2.9375rem] w-16 ${open ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
+          {item.count && (
+            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+          )}
+          {foe !== undefined && icons[foe] && (
+            <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">
+              <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
+            </span>
+          )}
+        </>
       )}
-      {foe !== undefined && icons[foe] && (
-        <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">
-          <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
-        </span>
-      )}
-    </button>
+    </ItemButton>
   );
 }
 
@@ -268,80 +236,29 @@ function ItemArt({ item, className }: { item: BuildItem; className: string }) {
 }
 
 /**
- * The open item as a Dota-style tooltip (Can 2026-11-15, "Dota like"): a header with the art, the name and the gold,
- * a band with this game's numbers (usual and late minute, copies, the enemies it is for, why), the bonuses as
- * "+5 Strength" lines, each spell in its box, the parts it is built from, and the If It Is Late split last.
+ * A Build Path item's card: on top of the shop tooltip, this game's numbers (usual and late minute, copies), the
+ * enemies it is for, why, and the If It Is Late split last.
  */
-function Detail({ stop, rough, heroName, icons, fork, items }: Art & { stop: Stop; rough: boolean; fork?: ItemFork; items?: Record<string, ItemInfo> }) {
+function stopCard(stop: Stop, rough: boolean, heroName: (id: number) => string, icons: Record<number, string>, fork?: ItemFork): ItemCardContent {
   const { item } = stop;
   const foes = foesOf(item);
   const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
   const late = fork?.late ?? item.lateMinute;
-  const info = items?.[item.itemId];
   const facts = [
-    ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual", tone: "text-fg" }] : []),
+    ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual" }] : []),
     ...(stop.where === "path" && !rough && late !== undefined ? [{ value: `${late} min`, label: "Late After", tone: "text-warn" }] : []),
-    ...(item.count ? [{ value: `x${item.count}`, label: "Copies", tone: "text-fg" }] : []),
+    ...(item.count ? [{ value: `x${item.count}`, label: "Copies" }] : []),
   ];
-  const game = facts.length > 0 || foes.length > 0 || why;
-  const parts = items && recipeOf(item.itemId, items) ? <ItemParts itemId={item.itemId} items={items} /> : null;
-  const body = info && (info.stats?.length || info.abilities?.length);
-  return (
-    <div aria-live="polite" className="flex max-w-xl flex-col overflow-hidden rounded-xl bg-surface shadow-[inset_0_0_0_1px_var(--line-strong)]">
-      <div className="flex items-center gap-4 border-b border-line-strong bg-linear-to-b from-hover to-raised px-5 py-4">
-        <ItemArt item={item} className="h-16 w-[5.5rem] shrink-0 shadow-[0_0_0_1px_var(--line-hover)]" />
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <h4 className="text-xl font-semibold tracking-[-0.01em] text-fg">{item.name}</h4>
-          {info?.cost ? (
-            <span className="num flex items-center gap-2 text-base font-semibold text-accent-bright">
-              <Coin />
-              {info.cost.toLocaleString("en-US")}
-              <span className="sr-only"> gold</span>
-            </span>
-          ) : null}
-        </div>
-      </div>
-      {game && (
-        <div className="flex flex-col gap-2.5 border-b border-line bg-bg px-5 py-3">
-          {(facts.length > 0 || foes.length > 0) && (
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {facts.length > 0 && (
-                <dl className="contents">
-                  {facts.map((f) => (
-                    <div key={f.label} className="flex items-baseline gap-1.5">
-                      <dt className="order-last text-[0.8125rem] text-subtle">{f.label}</dt>
-                      <dd className={`num text-[0.9375rem] font-semibold ${f.tone}`}>{f.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-              {foes.length > 0 && (
-                <span className="flex items-center gap-2">
-                  <span className="chip h-6 gap-1.5 bg-dire-tint px-2 text-[0.8125rem] font-medium text-dire shadow-none">
-                    {item.against?.length ? "For" : "Works on"} {foes.map(heroName).join(" and ")}
-                  </span>
-                  {foes.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={24} isEnemy isDecorative /> : null))}
-                </span>
-              )}
-            </div>
-          )}
-          {why && <p className="text-sm leading-relaxed text-muted">{why}</p>}
-        </div>
-      )}
-      {body && (
-        <div className="flex flex-col gap-4 px-5 pt-4 [&:last-child]:pb-5">
-          <ItemStatLines item={info} />
-          <ItemSpells item={info} />
-        </div>
-      )}
-      {parts && <div className={`px-5 pb-5 ${body ? "mt-4 border-t border-line pt-4" : "pt-4"}`}>{parts}</div>}
-      {fork && (
-        <div className="mt-4 px-5 pb-5">
-          <ForkBlock fork={fork} />
-        </div>
-      )}
-    </div>
-  );
+  const chip = foes.length
+    ? { text: `${item.against?.length ? "For" : "Works on"} ${foes.map(heroName).join(" and ")}`, enemy: true, faces: foes.map((id) => ({ name: heroName(id), portrait: icons[id] })) }
+    : undefined;
+  return {
+    itemId: item.itemId,
+    name: item.name,
+    img: item.img,
+    band: facts.length || chip || why ? <ItemBand facts={facts} chip={chip} why={why || undefined} /> : undefined,
+    footer: fork ? <ForkBlock fork={fork} /> : undefined,
+  };
 }
 
 /** An enemy's key item under the line: the item with the hero's face on it, the minute in Dire red and the item. */
@@ -351,7 +268,20 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
       style={style}
       className="relative ml-4 grid grid-cols-[3rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 sm:row-start-2 sm:ml-0 sm:flex sm:flex-col sm:items-center sm:gap-1 sm:px-1 sm:pt-3 sm:text-center"
     >
-      <span className="relative col-start-1 sm:order-1">
+      <ItemButton
+        label={`Enemy ${enemy.hero}: ${enemy.item}`}
+        card={{
+          name: enemy.item,
+          img: enemy.img,
+          band: (
+            <ItemBand
+              facts={[{ value: `${enemy.around ? "~" : ""}${enemy.minute} min`, label: "Usual", tone: "text-dire" }]}
+              chip={{ text: `Enemy ${enemy.hero}`, enemy: true, faces: [{ name: enemy.hero, portrait: enemy.heroIcon }] }}
+            />
+          ),
+        }}
+        className="col-start-1 w-fit sm:order-1"
+      >
         {enemy.img ? (
           <Image src={ITEM_CDN + enemy.img} alt="" width={44} height={32} className="block h-8 w-11 rounded-md object-cover" />
         ) : (
@@ -362,7 +292,7 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
             <HeroFace portrait={enemy.heroIcon} name={enemy.hero} size={20} isEnemy isDecorative />
           </span>
         )}
-      </span>
+      </ItemButton>
       <span className="num col-start-2 text-base font-semibold text-dire sm:order-2">
         {enemy.around ? "~" : ""}
         {enemy.minute}

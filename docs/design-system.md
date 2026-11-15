@@ -295,12 +295,23 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
   corner, the minute in Dire red and "Hero: Item". Ours sit above the line, theirs below, so the race reads at a
   glance. Rough (around) minutes leave them off.
 - **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (subtle) under its late minute, and
-  its detail ends with the split: two neutral lanes (copper for on time, grey for late) sized by their share of the
+  its card ends with the split: two neutral lanes (copper for on time, grey for late) sized by their share of the
   wins, what the late wins bought next with usual minutes, and a Wins Only note. No green or red: neither lane is
   the right one. The path's Late After uses the fork's minute, so both say the same number.
 - Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, enemy items
-  as indented rows, the detail under the open row. The path scrolls sideways on narrow desktops (a labelled,
-  focusable region).
+  as indented rows. The path scrolls sideways on narrow desktops (a labelled, focusable region).
+
+## Item Card
+
+Every item icon on the game plan opens one card right next to itself (`components/item-card.tsx`, Can 2026-11-15:
+"pop up a card when user clicks any item"), never a fixed panel somewhere else:
+
+- The Dota-style tooltip: header with art, name and gold; a band on `bg` with this game's numbers where the place has
+  them (Usual and Late After minutes, a For or Enemy chip with faces, why); "+5 Strength" lines; spell boxes; Built From.
+- Desktop: a 30rem popover under the item, else over it, else beside it, kept inside the screen and under the header.
+  Phone: a sheet from the bottom with a scrim. One card at a time; Escape, Close, a click outside or a second press
+  closes it and focus goes back to the item.
+- A part, or an item inside the card, opens over the card with a Back button. An open item's tile keeps its copper ring.
 
 ## Who Hurts You
 

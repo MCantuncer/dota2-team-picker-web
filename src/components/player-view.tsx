@@ -166,7 +166,6 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
               laneNote={lane ? LANE_NOTES[lane.verdict] : undefined}
               forks={player.build ? itemForks(player.build, skillBuilds?.[player.heroId]?.[player.position]?.itemPaths, items) : []}
               enemyItems={enemyItems}
-              items={items}
             />
           )}
           {view === "Game Story" && (

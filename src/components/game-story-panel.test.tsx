@@ -126,7 +126,7 @@ describe("GameStoryPanel", () => {
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
-    const timeline = screen.getByRole("img", { name: /^Item timings:/ });
+    const timeline = screen.getByRole("group", { name: /^Item timings:/ });
     expect(timeline).toHaveAccessibleName("Item timings: our Hero 1 Black King Bar at 17, their Hero 8 Blink Dagger at 19, ready to fight at 17.");
     expect(within(timeline).getByText("10 to 20 min")).toBeInTheDocument();
     expect(within(timeline).getByText("Ready to fight")).toBeInTheDocument();
@@ -176,7 +176,8 @@ describe("GameStoryPanel", () => {
     expect(screen.getByRole("tab", { name: "Skills and Talents" })).toHaveAttribute("aria-selected", "true");
   });
 
-  it("shows each step's minute, the minute it is late after, and why it is in this game", () => {
+  it("shows each step's minute, the minute it is late after, and why it is in this game", async () => {
+    const user = userEvent.setup();
     renderPanel(1);
     const path = screen.getByRole("list", { name: "Core items in buy order, with the enemy's key items" });
     expect(within(path).getByText("17")).toBeInTheDocument();
@@ -184,9 +185,15 @@ describe("GameStoryPanel", () => {
     // The Story's enemy items sit on the same line at their minute.
     expect(within(path).getByText("Hero 8: Blink Dagger")).toBeInTheDocument();
     expect(within(path).getByText("19")).toBeInTheDocument();
-    // The draft's answer item is open to start, with why it is in this game and its numbers.
-    expect(within(path).getByRole("button", { name: "Black King Bar, for Hero 8" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
+    // The draft's answer item opens its card, with why it is in this game and its numbers.
+    await user.click(within(path).getByRole("button", { name: "Black King Bar, for Hero 8" }));
+    expect(within(path).getByRole("button", { name: "Black King Bar, for Hero 8" })).toHaveAttribute("aria-expanded", "true");
+    const card = screen.getByRole("dialog", { name: "Black King Bar" });
+    expect(within(card).getByText("Against Hero 8: buy it early. Spell immunity for the big fights.")).toBeInTheDocument();
+    // The enemy's item opens its card too.
+    await user.click(within(path).getByRole("button", { name: "Enemy Hero 8: Blink Dagger" }));
+    expect(within(screen.getByRole("dialog", { name: "Blink Dagger" })).getByText("Enemy Hero 8")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
     // The usual lane items are tiles after the start, with no minute; the other boots sit under the boots.
     expect(within(screen.getByRole("list", { name: "Lane items, in buy order" })).getByRole("button", { name: "Wraith Band" })).toBeInTheDocument();
     expect(screen.getByText(/Or Power Treads at/)).toBeInTheDocument();
@@ -223,7 +230,9 @@ describe("GameStoryPanel", () => {
     const user = userEvent.setup();
     renderPanel(1);
     await user.click(screen.getByRole("tab", { name: /Hero 2/ }));
-    expect(screen.getByText("~8 min")).toBeInTheDocument();
+    const path = screen.getByRole("list", { name: /^Core items/ });
+    await user.click(within(path).getAllByRole("button")[0]!);
+    expect(within(screen.getByRole("dialog")).getByText("~8 min")).toBeInTheDocument();
     expect(screen.getByText("Rough minutes from all games")).toBeInTheDocument();
   });
 
@@ -294,7 +303,7 @@ describe("the game clock", () => {
     const user = userEvent.setup();
     render(<GameStoryPanel plan={clockPlan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} myPosition={1} />);
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
-    expect(screen.getByRole("img", { name: /Fight Here, 17 to 18\. No Black King Bar by 20 min\?$/ })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /Fight Here, 17 to 18\. No Black King Bar by 20 min\?$/ })).toBeInTheDocument();
     expect(screen.getByText("31 of 48 high-rank wins without it bought Manta Style next, around 19 min.")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "At 20 Min" })).toBeNull();
     expect(screen.queryByText("If the Game Goes Wrong")).toBeNull();

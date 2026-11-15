@@ -1,11 +1,12 @@
 import Image from "next/image";
 import { useId } from "react";
 import { type ItemFork, MIN_GROUP } from "@/lib/item-forks";
+import { ItemBand, ItemButton } from "./item-card";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
 /**
- * If a key item is late (the approved Your Game mockup, Can 2026-11-12), inside that item's detail on the Build
+ * If a key item is late (the approved Your Game mockup, Can 2026-11-12), inside that item's card on the Build
  * Path: one line when nearly every win had it on time, or two lanes splitting at its late minute, each sized by
  * its share of the wins. A late lane with a common road lists what those wins bought next.
  */
@@ -45,7 +46,16 @@ function Split({ fork }: { fork: ItemFork }) {
           <ul aria-label="What these wins bought next" className="flex flex-wrap gap-x-5 gap-y-2.5">
             {fork.steps.map((s) => (
               <li key={s.itemId} className="flex min-w-0 items-center gap-2.5">
-                {s.img ? <ItemArt img={s.img} /> : <span aria-hidden className="h-8 w-11 shrink-0 rounded-md border border-dashed border-line-strong" />}
+                {s.img ? (
+                  <ItemButton
+                    card={{ itemId: s.itemId, name: s.name, img: s.img, band: <ItemBand facts={[{ value: `${s.minute} min`, label: "Usual" }, { value: String(s.games), label: "Wins" }]} /> }}
+                    className="shrink-0"
+                  >
+                    <ItemArt img={s.img} />
+                  </ItemButton>
+                ) : (
+                  <span aria-hidden className="h-8 w-11 shrink-0 rounded-md border border-dashed border-line-strong" />
+                )}
                 <span className="flex flex-col">
                   <span className="text-sm font-semibold text-fg">{s.name}</span>
                   <span className="num text-xs text-subtle">

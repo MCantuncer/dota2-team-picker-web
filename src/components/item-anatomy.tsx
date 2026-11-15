@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { ItemAbility, ItemInfo } from "@/lib/engine/types";
-import { RECIPE_IMG, recipeOf } from "@/lib/item-recipe";
+import { RECIPE_IMG, recipeOf, type RecipePart } from "@/lib/item-recipe";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -98,8 +98,11 @@ export function ItemSpells({ item }: { item: ItemInfo }) {
   );
 }
 
-/** The parts the item is built from, the recipe scroll last, each with its name and gold. Nothing for a basic item. */
-export function ItemParts({ itemId, items }: { itemId: number; items: Record<string, ItemInfo> }) {
+/**
+ * The parts the item is built from, the recipe scroll last, each with its name and gold. Nothing for a basic item.
+ * With `onPick`, each part (not the scroll) is a button that opens that part's own card.
+ */
+export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Record<string, ItemInfo>; onPick?: (part: RecipePart) => void }) {
   const item = items[itemId];
   const recipe = recipeOf(itemId, items);
   if (!item || !recipe) return null;
@@ -110,14 +113,7 @@ export function ItemParts({ itemId, items }: { itemId: number; items: Record<str
       <ol className="flex flex-wrap gap-2.5">
         {parts.map((part) => (
           <li key={`${part.itemId}-${part.name}`} className="flex w-[4.75rem] flex-col items-center gap-1.5 text-center">
-            <span className="relative">
-              <Image src={ITEM_CDN + part.img} alt="" width={60} height={44} className="block h-11 w-[3.75rem] rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
-              {part.count > 1 && (
-                <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
-                  x{part.count}
-                </span>
-              )}
-            </span>
+            <PartArt part={part} onPick={onPick && part.itemId ? () => onPick(part) : undefined} />
             <span className="text-xs leading-tight text-muted">
               {part.count > 1 && <span className="sr-only">{part.count} </span>}
               {part.name}
@@ -131,5 +127,31 @@ export function ItemParts({ itemId, items }: { itemId: number; items: Record<str
         ))}
       </ol>
     </section>
+  );
+}
+
+/** A part's art with its copy count; a button to the part's own card when the card can open one. */
+function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
+  const art = (
+    <>
+      <Image src={ITEM_CDN + part.img} alt="" width={60} height={44} className="block h-11 w-[3.75rem] rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
+      {part.count > 1 && (
+        <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
+          x{part.count}
+        </span>
+      )}
+    </>
+  );
+  if (!onPick) return <span className="relative">{art}</span>;
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-label={`Open ${part.name}`}
+      title={part.name}
+      className="relative cursor-pointer rounded-md transition-[filter] hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    >
+      {art}
+    </button>
   );
 }
