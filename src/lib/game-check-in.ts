@@ -148,7 +148,7 @@ export const STORY_FEELS: { value: StoryFeel; label: string }[] = [
 /** What decided the game, at most `MAX_TAGS`. The values match the backend's fixed list. */
 export const CHECK_IN_TAGS = [
   { value: "our_draft", label: "Our Draft", icon: "helmet" },
-  { value: "their_draft", label: "Their Draft", icon: "skull" },
+  { value: "their_draft", label: "Enemy Draft", icon: "skull" },
   { value: "laning", label: "Laning", icon: "swords" },
   { value: "mid_game", label: "Fights", icon: "flame" },
   { value: "late_game", label: "Late Game", icon: "clock" },
