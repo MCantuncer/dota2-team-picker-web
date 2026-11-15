@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { BetterChance, type DraftOdds } from "./better-chance";
+import { BetterChance, type DraftOdds, rangeText } from "./better-chance";
 
 const odds = (edge: number, chance: number | null = null): DraftOdds => ({
   edge,
@@ -72,5 +72,45 @@ describe("BetterChance", () => {
     render(<BetterChance now={odds(-5)} plan={null} picked={4} side="dire" />);
     expect(screen.getByTestId("chance-fill")).toHaveClass("right-1/2", "bg-radiant-strong");
     expect(parseFloat(screen.getByTestId("chance-now").style.left)).toBeLessThan(50);
+  });
+
+  it("puts the win range up front once the draft is full, with the range drawn on the bar and no plan", () => {
+    const range = { won: 0.61, low: 0.6, high: 0.62, games: 1377 };
+    render(<BetterChance now={odds(14)} plan={odds(20)} picked={10} side="radiant" range={range} />);
+    expect(screen.getByText("Teams With Drafts Like This Won")).toBeInTheDocument();
+    expect(screen.getByTestId("edge-now")).toHaveTextContent("60% to 62%");
+    expect(screen.getByText("Draft edge +14.0 points, from 1,377 ranked games")).toBeInTheDocument();
+    expect(screen.getByText("Your Team Favored")).toBeInTheDocument();
+    expect(screen.queryByTestId("edge-plan")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Your Team Favored: teams with drafts like this won 60% to 62%" }),
+    ).toBeInTheDocument();
+    // On Radiant my team is on the left: 61% puts the dot 11% left of the middle, the box from 10% to 12% left of it.
+    expect(parseFloat(screen.getByTestId("chance-now").style.left)).toBeCloseTo(39);
+    expect(parseFloat(screen.getByTestId("chance-range").style.left)).toBeCloseTo(38);
+    expect(parseFloat(screen.getByTestId("chance-range").style.width)).toBeCloseTo(2);
+    expect(screen.getByText("What Moves It")).toBeInTheDocument();
+    expect(screen.queryByText(/appears once/)).not.toBeInTheDocument();
+  });
+
+  it("names the enemy when teams like mine lost more than they won, and mirrors the range on Dire", () => {
+    const range = { won: 0.42, low: 0.4, high: 0.44, games: 925 };
+    render(<BetterChance now={odds(-9)} plan={null} picked={10} side="dire" range={range} />);
+    expect(screen.getByText("Enemy Favored")).toBeInTheDocument();
+    expect(screen.getByTestId("edge-now")).toHaveTextContent("40% to 44%");
+    // On Dire my team is on the right, so losing more than winning moves the dot left of the middle.
+    expect(parseFloat(screen.getByTestId("chance-now").style.left)).toBeCloseTo(42);
+  });
+
+  it("says when the range will show while the draft is not full", () => {
+    render(<BetterChance now={odds(3)} plan={null} picked={6} side="radiant" rangeLater />);
+    expect(screen.getByText(/Once all 10 heroes are in and your side is set/)).toBeInTheDocument();
+  });
+});
+
+describe("rangeText", () => {
+  it("gives whole percents, or one number when both ends round the same", () => {
+    expect(rangeText({ won: 0.553, low: 0.541, high: 0.566, games: 1 })).toBe("54% to 57%");
+    expect(rangeText({ won: 0.553, low: 0.551, high: 0.554, games: 1 })).toBe("About 55%");
   });
 });
