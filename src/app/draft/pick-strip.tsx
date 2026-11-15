@@ -20,6 +20,13 @@ import { Face, FacedText, HeadMark, minus, Stop, type PlanHeroOf } from "./team-
 const TILE_ART: HeroArtPlacement = { width: 232, at: [0.5, 0.44] };
 /** The strip is eight tiles wide, so a ninth (the hero from outside the pool) only narrows them a little. */
 const STRIP_COLUMNS = 8;
+/**
+ * Below the wide screen the tiles fill whole rows: up to five in one row, more as two even rows (6 as 3 + 3, 8 as
+ * 4 + 4), never one tile left alone on a row.
+ */
+export function narrowColumns(cells: number): number {
+  return cells <= 5 ? Math.max(1, cells) : Math.ceil(cells / 2);
+}
 
 const signed = (n: number) => `${n < 0 ? "−" : "+"}${Math.abs(n).toFixed(1)}`;
 
@@ -194,8 +201,8 @@ export function PickStrip({
       <Stop node={<span className="lane-node lane-node-now" />} nodeClass="top-[3.25rem]">
         <div
           data-tour="draft-picks"
-          className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
-          style={{ "--cols": columns } as CSSProperties}
+          className="grid min-w-0 grid-cols-1 gap-2 md:grid-cols-[repeat(var(--narrow),minmax(0,1fr))] xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+          style={{ "--cols": columns, "--narrow": narrowColumns(cells) } as CSSProperties}
         >
           <ol aria-label="Suggested heroes" className="contents">
             {tiles.map((entry, i) => (
@@ -263,7 +270,7 @@ function TileReason({ entry, ctx }: { entry: PickEntry; ctx: PickCtx }) {
         </span>
       )}
       {risk && (
-        <span className="flex items-center gap-1.5 text-warn sm:hidden">
+        <span className="flex items-center gap-1.5 text-warn md:hidden">
           <Icon name="alert" />
           <span className="sr-only">Risk:</span>
           <Face id={risk.heroId} hero={ctx.hero} isEnemy />
@@ -305,7 +312,7 @@ function Tile({
   const risk = entry.risk && !entry.isWeak ? entry.risk : null;
   return (
     <li
-      className={`relative grid min-w-0 grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-lg p-2.5 sm:row-span-5 sm:grid-cols-1 sm:grid-rows-subgrid sm:items-stretch ${
+      className={`relative grid min-w-0 grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-lg p-2.5 md:row-span-5 md:grid-cols-1 md:grid-rows-subgrid md:items-stretch ${
         isOutsider
           ? "border border-dashed border-line-control bg-surface/50"
           : `ring-1 ring-inset ${isBest ? "ring-accent/45" : isOpen ? "ring-line-hover" : "ring-line"} ${isOpen ? "bg-raised" : "bg-surface"}`
@@ -319,10 +326,10 @@ function Tile({
         aria-label={`${s.name}, ${signed(s.score)} points${entry.gain !== null ? `, ${signed(entry.gain)}% win chance` : ""}${
           risk ? `, risk ${ctx.hero(risk.heroId).name}` : ""
         }. Show why.`}
-        className="col-span-2 grid min-w-0 grid-cols-subgrid items-center gap-y-2 rounded-md text-left sm:col-span-1 sm:row-span-4 sm:grid-cols-1 sm:grid-rows-subgrid sm:items-stretch"
+        className="col-span-2 grid min-w-0 grid-cols-subgrid items-center gap-y-2 rounded-md text-left md:col-span-1 md:row-span-4 md:grid-cols-1 md:grid-rows-subgrid md:items-stretch"
       >
         <span className="relative block">
-          <HeroStage key={s.heroId} size={72} className="h-16 w-full sm:h-[4.5rem]">
+          <HeroStage key={s.heroId} size={72} className="h-16 w-full md:h-[4.5rem]">
             {portrait && <HeroArt heroId={s.heroId} portrait={portrait} placement={TILE_ART} />}
           </HeroStage>
           {number !== null && (
@@ -330,10 +337,10 @@ function Tile({
               {number}
             </kbd>
           )}
-          {label && <span className="chip chip-accent micro absolute top-1.5 right-1.5 z-2 max-sm:hidden">{label}</span>}
+          {label && <span className="chip chip-accent micro absolute top-1.5 right-1.5 z-2 max-md:hidden">{label}</span>}
           {risk && (
             <span
-              className="chip micro absolute bottom-1.5 left-1.5 z-2 h-auto gap-1 py-0.5 pr-0.5 pl-1 text-warn max-sm:hidden"
+              className="chip micro absolute bottom-1.5 left-1.5 z-2 h-auto gap-1 py-0.5 pr-0.5 pl-1 text-warn max-md:hidden"
               title={`Risk: ${signed(risk.points)} points against ${ctx.hero(risk.heroId).name}`}
             >
               <Icon name="alert" />
@@ -342,13 +349,13 @@ function Tile({
             </span>
           )}
         </span>
-        <span className="flex min-w-0 flex-col gap-1 sm:contents">
+        <span className="flex min-w-0 flex-col gap-1 md:contents">
           <span className="flex min-w-0 flex-wrap content-start items-center gap-x-2 gap-y-1">
             <span data-hero-name className="text-sm leading-5 font-semibold break-words text-fg">
               {s.name}
             </span>
             {/* On a phone the art is too small for the Best label, so it sits beside the name. */}
-            {label && <span className="chip chip-accent micro sm:hidden">{label}</span>}
+            {label && <span className="chip chip-accent micro md:hidden">{label}</span>}
             {/* Beside the name, or under a long one: the art keeps only the Best label and the risk. */}
             {mark && <span className="chip micro">{mark}</span>}
           </span>
@@ -373,7 +380,7 @@ function Tile({
         </span>
       </button>
       {isOpen && (
-        <svg viewBox="0 0 16 8" aria-hidden className={`absolute -bottom-3 left-1/2 h-2 w-4 -translate-x-1/2 max-sm:hidden ${isBest ? "text-accent" : "text-line-hover"}`}>
+        <svg viewBox="0 0 16 8" aria-hidden className={`absolute -bottom-3 left-1/2 h-2 w-4 -translate-x-1/2 max-md:hidden ${isBest ? "text-accent" : "text-line-hover"}`}>
           <path d="M1 1l7 6 7-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
@@ -382,13 +389,13 @@ function Tile({
           type="button"
           onClick={() => ctx.onPicked?.(s.heroId)}
           aria-label={`Picked ${s.name}`}
-          className={`btn btn-sm max-sm:w-9 max-sm:px-0 sm:w-full ${isBest ? "btn-primary" : "btn-secondary"}`}
+          className={`btn btn-sm max-md:w-9 max-md:px-0 md:w-full ${isBest ? "btn-primary" : "btn-secondary"}`}
         >
           <span className={`flex ${isBest ? "" : "text-radiant"}`}>
             <Icon name="check" />
           </span>
           {/* On a phone the tile is a row, so the button is the check alone; its name is in the label. */}
-          <span className="max-sm:hidden">Picked</span>
+          <span className="max-md:hidden">Picked</span>
         </button>
       )}
     </li>
@@ -436,7 +443,7 @@ function NotThisGame({
   return (
     <section
       aria-labelledby="not-this-game"
-      className="flex min-w-0 flex-col gap-3 rounded-lg border border-dashed border-line-control p-3 sm:col-span-4 xl:col-(--span) xl:row-span-5"
+      className="flex min-w-0 flex-col gap-3 rounded-lg border border-dashed border-line-control p-3 md:col-span-full xl:col-(--span) xl:row-span-5"
       style={{ "--span": `span ${Math.max(1, span)}` } as CSSProperties}
     >
       <div className="flex flex-col gap-0.5">
@@ -448,7 +455,7 @@ function NotThisGame({
         </h3>
         <p className="micro text-subtle">Your heroes below 0 in this draft</p>
       </div>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-x-4 gap-y-2">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(9.5rem,100%),1fr))] gap-x-4 gap-y-2">
         {entries.map((entry) => {
           const s = entry.suggestion;
           return (

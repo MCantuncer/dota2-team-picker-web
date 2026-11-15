@@ -98,9 +98,10 @@ export function FacedText({
     parts.push(minus(rest.slice(0, at)));
     const tail = /^[:,.)]/.exec(rest.slice(at + name.length))?.[0] ?? "";
     parts.push(
-      <span key={`${id}-${i}`} className="mx-1 inline-flex items-center gap-2 align-[-5px] whitespace-nowrap">
+      <span key={`${id}-${i}`} className="mx-1 inline-flex max-w-full items-center gap-2 align-[-5px] whitespace-nowrap">
         <Face id={id} hero={hero} isEnemy={enemies.has(id)} />
-        <span>
+        {/* In a narrow tile a long name wraps beside its face instead of running past the edge. */}
+        <span className="min-w-0 whitespace-normal">
           <span className="font-medium text-fg">{name}</span>
           {tail}
         </span>
