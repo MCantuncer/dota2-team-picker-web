@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Engine } from "@/lib/engine/score";
 import type { Snapshot } from "@/lib/engine/types";
 import { draftEdge } from "@/lib/engine/win-chance";
-import { edgeParts, edgeRange, favoredSide, pickGain, teamWinChance } from "@/lib/win";
+import { draftWinRange, edgeParts, edgeRange, favoredSide, pickGain, teamWinChance } from "@/lib/win";
 
 const hero = (id: number) => ({ id, name: `Hero ${id}`, roles: [], attackType: "Melee" as const, primaryAttr: "str" });
 /** Hero 1 wins 60% of its games, heroes 2 and 3 win half. */
@@ -76,5 +76,35 @@ describe("edgeRange", () => {
     expect(edgeRange([14.2, -23.8])).toBe(25);
     expect(edgeRange([3])).toBe(10);
     expect(edgeRange([1.2], 5)).toBe(5);
+  });
+});
+
+describe("draftWinRange", () => {
+  // Radiant edges under 0 won 45%, 0 and up won 60%.
+  const winRange: Snapshot["winRange"] = {
+    fittedAt: "2026-11-15T00:00:00Z",
+    games: 40000,
+    days: { from: "2026-10-27", to: "2026-11-14" },
+    cuts: [0],
+    bands: [
+      { games: 20000, won: 0.45, low: 0.44, high: 0.46 },
+      { games: 20000, won: 0.6, low: 0.59, high: 0.61 },
+    ],
+  };
+  const engine = new Engine({ ...snapshot(), winRange });
+
+  it("waits for all 10 heroes and a known side", () => {
+    expect(draftWinRange(engine, 5, 9, "radiant")).toBeNull();
+    expect(draftWinRange(engine, 5, 10, null)).toBeNull();
+    expect(draftWinRange(new Engine(snapshot()), 5, 10, "radiant")).toBeNull();
+  });
+
+  it("reads Radiant's band as is", () => {
+    expect(draftWinRange(engine, 5, 10, "radiant")).toEqual({ won: 0.6, low: 0.59, high: 0.61, games: 20000 });
+  });
+
+  it("on Dire, flips my edge to Radiant's and gives the other side of that band", () => {
+    // My Dire team is 5 points ahead, so Radiant is 5 behind: Radiant won 45%, Dire 55%.
+    expect(draftWinRange(engine, 5, 10, "dire")).toEqual({ won: 0.55, low: 0.54, high: 0.56, games: 20000 });
   });
 });

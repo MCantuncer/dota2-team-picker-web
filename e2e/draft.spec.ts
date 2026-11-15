@@ -193,6 +193,39 @@ test("the draft screen shows the win chance once a checked model exists", async 
   await expectAccessible(page);
 });
 
+test("the draft screen shows what teams with drafts like this won once all 10 heroes are in", async ({ page }) => {
+  // One band for every edge: Radiant won 55% to 58%, so Dire won 42% to 45%.
+  const band = { games: 4000, won: 0.565, low: 0.55, high: 0.58 };
+  await page.route(SNAPSHOT_URL, async (route) => {
+    const winRange = { fittedAt: "2026-11-15T00:00:00Z", games: 4000, days: { from: "2026-10-27", to: "2026-11-14" }, cuts: [], bands: [band] };
+    await route.fulfill({ json: { ...(await heroData()), winRange } });
+  });
+  await page.goto("/draft");
+  await page.getByRole("group", { name: "My Side" }).getByRole("button", { name: "Radiant", exact: true }).click();
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  const enemy = page.getByLabel("Enemy pick");
+  for (const hero of ["spectre", "doom", "necrophos", "naga", "shadow shaman"]) {
+    await ally.fill(hero);
+    await ally.press("Enter");
+  }
+  for (const hero of ["ursa", "clinkz", "slardar", "earth spirit"]) {
+    await enemy.fill(hero);
+    await enemy.press("Enter");
+  }
+  const card = page.getByRole("region", { name: "Who Has the Better Chance" });
+  await expect(card).toContainText("Once all 10 heroes are in and your side is set");
+
+  await enemy.fill("earthshaker");
+  await enemy.press("Enter");
+  await expect(card).toContainText("Teams With Drafts Like This Won");
+  await expect(card.getByTestId("edge-now")).toHaveText("55% to 58%");
+  await expect(card).toContainText("from 4,000 ranked games");
+  await expectAccessible(page);
+
+  await page.getByRole("group", { name: "My Side" }).getByRole("button", { name: "Dire", exact: true }).click();
+  await expect(card.getByTestId("edge-now")).toHaveText("42% to 45%");
+});
+
 test("in a party the draft is kept for the whole party", async ({ page }) => {
   await newPlayer(page, uniqueEmail("party-draft"), "Earthshaker");
   await startPartyOnDraft(page);
