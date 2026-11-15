@@ -7,7 +7,7 @@ import type { Side } from "@/lib/draft-reader/geometry";
 
 /** A rail slot's portrait is 16:9; its Lane Cut is sized as for a 54px tall frame, the slot's height on a wide screen. */
 const SLOT_CUT = laneCutStyle(54);
-const SLOT_GRID = "grid grid-cols-3 gap-x-2.5 gap-y-4 sm:grid-cols-5";
+const SLOT_GRID = "grid grid-cols-1 gap-2.5 sm:grid-cols-5 sm:gap-x-2.5 sm:gap-y-4";
 const SIDE_TEXT = { radiant: "text-radiant", dire: "text-dire" } as const;
 const SIDE_BAR = { radiant: "bg-radiant", dire: "bg-dire" } as const;
 
@@ -71,7 +71,7 @@ export function Rail({
       className={`grid min-w-0 content-start gap-4 p-5 ${className}`}
     >
       {head}
-      {/* Three to a row on a phone, so every name fits whole; five from sm up. */}
+      {/* A row per hero on a phone, so every name fits whole and five never break into 3 + 2; five across from sm up. */}
       <ul className={SLOT_GRID}>{children}</ul>
     </section>
   );
@@ -105,8 +105,11 @@ interface RailSlotProps {
 /** One picked hero on a team rail: the portrait, a bar in the team's colour, the full name and its position. */
 export function RailSlot({ name, portrait, side, by, onRemove, children }: RailSlotProps) {
   return (
-    <li className="group flex min-w-0 flex-col gap-2" title={name}>
-      <span className="relative block">
+    <li
+      className="group grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] content-start items-center gap-x-3 gap-y-1.5 sm:flex sm:flex-col sm:items-stretch sm:gap-2"
+      title={name}
+    >
+      <span className="relative row-span-3 block self-start">
         <SlotArt name={name} portrait={portrait} />
         {onRemove && (
           <button
@@ -118,8 +121,11 @@ export function RailSlot({ name, portrait, side, by, onRemove, children }: RailS
           </button>
         )}
       </span>
-      <span aria-hidden className={`h-0.5 rounded-xs ${SIDE_BAR[side]}`} />
-      <span className="micro font-semibold text-fg">{name}</span>
+      <span aria-hidden className={`h-0.5 rounded-xs max-sm:hidden ${SIDE_BAR[side]}`} />
+      <span className="micro flex items-center gap-2 font-semibold text-fg">
+        <span aria-hidden className={`h-3.5 w-0.5 rounded-xs sm:hidden ${SIDE_BAR[side]}`} />
+        {name}
+      </span>
       {children}
       {by && <span className="micro text-subtle">Entered by {by}</span>}
     </li>
@@ -130,7 +136,9 @@ export function RailSlot({ name, portrait, side, by, onRemove, children }: RailS
 export function EmptySlots({ filled }: { filled: number }) {
   return Array.from({ length: Math.max(0, TEAM_SIZE - filled) }, (_, i) => (
     <li key={`empty-${i}`} aria-hidden className="flex min-w-0 flex-col">
-      <span className="relative block aspect-video w-full">
+      {/* On a phone an open seat is a short dashed row, so five rows don't push the picks down. */}
+      <span className="h-10 rounded-lg border border-dashed border-line-control sm:hidden" />
+      <span className="relative block aspect-video w-full max-sm:hidden">
         <CutOutline width={96} height={54} />
       </span>
     </li>
