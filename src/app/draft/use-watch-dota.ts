@@ -126,7 +126,8 @@ export function useWatchDota(
       for (const slot of [...read.radiant, ...read.dire]) {
         if (slot.heroId === null) continue;
         offered.current.add(slot.heroId);
-        if (slot.learned) byLook.current.add(slot.heroId);
+        // A hero found by the hero grid has its look learned from this slot; a wrong one is forgotten too.
+        if (slot.learned || slot.byGrid) byLook.current.add(slot.heroId);
       }
       latestOnRead.current(read);
     }

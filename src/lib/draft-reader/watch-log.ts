@@ -10,7 +10,9 @@ export const LOG_ROWS = 60;
 export function logLine(read: DraftRead, name: (heroId: number) => string): string {
   const slot = (s: SlotRead) =>
     s.heroId !== null
-      ? name(s.heroId)
+      ? s.byGrid
+        ? `${name(s.heroId)} (grid)`
+        : name(s.heroId)
       : s.best && s.best.score >= 0.6
         ? `? ${name(s.best.heroId)} ${s.best.score.toFixed(2)}`
         : "-";

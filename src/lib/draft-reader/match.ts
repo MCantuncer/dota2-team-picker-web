@@ -113,6 +113,24 @@ export function colourfulness(px: Pixels, r: Rect): number {
 }
 
 /**
+ * How much redder than green and blue a rectangle is on average: the mean of red minus the mean of
+ * green and blue. Below 0 means a blue or green cast.
+ */
+export function redness(px: Pixels, r: Rect): number {
+  let sum = 0,
+    n = 0;
+  const x1 = Math.min(Math.round(r.x + r.w), px.width),
+    y1 = Math.min(Math.round(r.y + r.h), px.height);
+  for (let y = Math.max(Math.round(r.y), 0); y < y1; y += 2)
+    for (let x = Math.max(Math.round(r.x), 0); x < x1; x += 2) {
+      const i = (y * px.width + x) * 4;
+      sum += px.data[i] - (px.data[i + 1] + px.data[i + 2]) / 2;
+      n++;
+    }
+  return n ? sum / n : 0;
+}
+
+/**
  * The slot cut a few ways (slightly bigger or smaller, shifted a little), because the top bar's crop
  * differs a few pixels between heroes and screen sizes. The best of these is compared.
  */

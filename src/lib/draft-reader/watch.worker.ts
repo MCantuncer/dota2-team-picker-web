@@ -59,6 +59,10 @@ let lastPx: Pixels | null = null;
  */
 let toLearn: { request: LearnRequest; tries: number }[] = [];
 const LEARN_TRIES = 2;
+/** The slots the last read found by the hero grid, as "side slot:hero", to learn their look once steady. */
+let lastByGrid = new Set<string>();
+/** Heroes the player took out after a learned look read them: never learned from the grid again this session. */
+let forgotten = new Set<number>();
 
 scope.onmessage = ({ origin, data }) => {
   // A dedicated worker only hears from the page that started it, and those messages have an empty
@@ -75,7 +79,10 @@ scope.onmessage = ({ origin, data }) => {
     toLearn.push({ request: data.learn, tries: LEARN_TRIES });
     if (lastPx) learnFrom(lastPx);
   }
-  else if ("forget" in data && Number.isInteger(data.forget)) reader?.forget(data.forget);
+  else if ("forget" in data && Number.isInteger(data.forget)) {
+    reader?.forget(data.forget);
+    forgotten.add(data.forget);
+  }
 };
 
 /** Gap and text height of a watch log row, in pixels. */
@@ -117,6 +124,8 @@ async function watch(frames: ReadableStream<VideoFrame>) {
   started = performance.now();
   lastPx = null;
   toLearn = [];
+  lastByGrid = new Set();
+  forgotten = new Set();
   try {
     for (;;) {
       const { value: frame, done } = await stream.read();
@@ -138,6 +147,7 @@ async function watch(frames: ReadableStream<VideoFrame>) {
           const read = reader.read(px, myName);
           scope.postMessage({ read } satisfies WatchReply);
           keep(read, canvas, now);
+          learnByGrid(px, read);
           lastPx = px;
         }
       }
@@ -161,6 +171,28 @@ function learnFrom(px: Pixels) {
       if (canvas) keep(null, canvas, performance.now(), `Learned how ${names.get(heroId) ?? `#${heroId}`} looks on ${side === "radiant" ? "Radiant" : "Dire"}`);
     } else if (--item.tries > 0) toLearn.push(item);
   }
+}
+
+/**
+ * A slot found by the hero grid in two reads in a row shows art the store portrait doesn't have, such as
+ * an arcana: the reader learns that look, so it reads the hero straight away next time, even at
+ * strategy time when the grid is gone.
+ */
+function learnByGrid(px: Pixels, read: DraftRead) {
+  if (!reader) return;
+  const now = new Set<string>();
+  for (const side of ["radiant", "dire"] as const)
+    read[side].forEach((s, slot) => {
+      if (!s.byGrid || s.heroId === null) return;
+      const key = `${side}${slot}:${s.heroId}`;
+      now.add(key);
+      if (!lastByGrid.has(key) || forgotten.has(s.heroId)) return;
+      const look = reader!.learn(px, side, s.heroId);
+      if (!look) return;
+      scope.postMessage({ learned: look } satisfies WatchReply);
+      if (canvas) keep(null, canvas, performance.now(), `Learned how ${names.get(s.heroId) ?? `#${s.heroId}`} looks from the hero grid`);
+    });
+  lastByGrid = now;
 }
 
 function isLearnRequest(x: unknown): x is LearnRequest {
