@@ -5,6 +5,7 @@ import { Icon } from "@/components/icon";
 import { NextSkillShowcase, type SkillChoice } from "@/components/next-skill-showcase";
 import { SteamButton } from "@/components/steam-button";
 import { getHeroes, type Hero } from "@/lib/heroes";
+import { getProof, percent, signedPoints, type Proof } from "@/lib/proof";
 import { getUser } from "@/lib/supabase/server";
 
 /**
@@ -63,7 +64,11 @@ const RENDER_STYLE: CSSProperties = {
 };
 
 export default async function Home() {
-  const [user, heroes] = await Promise.all([getUser(), getHeroes().catch(() => [] as Hero[])]);
+  const [user, heroes, proof] = await Promise.all([
+    getUser(),
+    getHeroes().catch(() => [] as Hero[]),
+    getProof().catch(() => null),
+  ]);
   const byId = new Map(heroes.map((h) => [h.id, h]));
 
   return (
@@ -121,8 +126,36 @@ export default async function Home() {
             </div>
           ))}
         </div>
+        {proof && <ProofTeaser proof={proof} />}
       </section>
     </main>
+  );
+}
+
+/** The Proof Page's headline, with the button to it. */
+function ProofTeaser({ proof }: { proof: Proof }) {
+  const { top3, other, lift } = proof.rivals.engine;
+  if (lift === null) return null;
+  return (
+    <div className="mt-10 flex flex-wrap items-center justify-between gap-6 rounded-xl border border-line bg-surface p-5 sm:p-6">
+      <div className="flex flex-wrap items-center gap-5">
+        <span className="grid size-20 shrink-0 place-content-center rounded-full bg-accent text-center text-on-accent">
+          <span className="text-2xl leading-none font-semibold tabular-nums">{signedPoints(lift)}</span>
+          <span className="text-xs font-semibold">Points</span>
+        </span>
+        <div className="grid max-w-xl gap-1">
+          <h2 className="text-lg leading-6">Do Our Picks Win?</h2>
+          <p className="text-sm leading-[1.35rem] text-subtle">
+            Players who took one of our top 3 picks won {percent(top3.won)} of their games, against {percent(other.won)}{" "}
+            for any other hero, in {proof.games.toLocaleString("en-US")} ranked games the engine never saw.
+          </p>
+        </div>
+      </div>
+      <Link href="/proof" className="btn btn-secondary">
+        See the Proof
+        <Icon name="chevronRight" />
+      </Link>
+    </div>
   );
 }
 

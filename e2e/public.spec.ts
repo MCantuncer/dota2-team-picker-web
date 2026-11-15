@@ -50,3 +50,11 @@ test("an old email invite link opens Stacks", async ({ page }) => {
   await page.goto("/join/00000000-0000-0000-0000-000000000000");
   await expect(page).toHaveURL((url) => url.pathname === "/stacks");
 });
+
+test("the Proof Page is public and accessible, with a way to try a draft", async ({ page }) => {
+  await page.goto("/proof");
+  await expect(page).toHaveURL(/\/proof$/);
+  await expect(page.getByRole("heading", { name: "Do Our Picks Win?", level: 1 })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Try a Draft" })).toBeVisible();
+  await expectAccessible(page);
+});
