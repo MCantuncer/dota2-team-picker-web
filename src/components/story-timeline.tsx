@@ -1,8 +1,7 @@
 import Image from "next/image";
-import { FaceStack } from "./face-stack";
 import type { Chapter, Spike, Story } from "@/lib/engine/story";
 import type { ItemInfo } from "@/lib/engine/types";
-import { axisPosition, minuteText, namedHeroes, spreadMarks, timelineLabel } from "@/lib/story-axis";
+import { axisPosition, minuteText, spreadMarks, timelineLabel } from "@/lib/story-axis";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -35,8 +34,9 @@ export function raceBand(story: Story): { from: number; to: number; label: strin
 
 /**
  * The Story as a minute line (accepted C board, 2026-11-03): one column per chapter, our key items above
- * the line in green, theirs below in red, a copper mark where our team is ready to fight, and the one
- * thing to do in each chapter under it. Wider than a phone, so it scrolls sideways inside its own box.
+ * the line in green, theirs below in red, and a copper mark where our team is ready to fight. What each chapter
+ * means is in the chapter cards under it (chapter-cards.tsx). Wider than a phone, so it scrolls sideways inside
+ * its own box.
  */
 export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTimelineProps) {
   const chapters = story.chapters;
@@ -97,14 +97,6 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
             </div>
           )}
         </div>
-        <ol className="grid" style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}>
-          {chapters.map((c) => (
-            <li key={c.phase} className="flex items-start gap-2.5 border-t border-line pr-3 pt-3 text-[0.9375rem] font-medium leading-snug text-fg">
-              <FaceStack icons={namedHeroes(c.action, Object.keys(heroIcons)).flatMap((name) => heroIcons[name] ?? [])} />
-              <span className="min-w-0">{c.action}</span>
-            </li>
-          ))}
-        </ol>
       </div>
     </div>
   );

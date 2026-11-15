@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { GamePlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
+import { ChapterCards } from "./chapter-cards";
 import { keyItemLateLine } from "./lane-board";
 import { PlayerView } from "./player-view";
 import type { EnemyItem } from "./build-path";
@@ -52,9 +53,10 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const checkpoint = me?.keyItem?.lateMinute !== undefined && lateLine ? { minute: me.keyItem.lateMinute, ...askAndAnswer(lateLine) } : undefined;
   const team = (
     <>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <h3 className="label-caps">The Team</h3>
         <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} checkpoint={checkpoint} />
+        <ChapterCards story={plan.story} lanes={plan.lanes} heroName={heroName} icons={icons} abilities={abilities} items={items} />
       </div>
 
       {threats.length > 0 && <ThreatPlanPanel threats={threats} hero={(id) => ({ name: heroName(id), portrait: icons[id] })} items={items} />}
