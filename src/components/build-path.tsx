@@ -6,7 +6,8 @@ import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
 import type { ItemInfo } from "@/lib/engine/types";
 import type { ItemFork } from "@/lib/item-forks";
 import { HeroFace } from "./hero-frame";
-import { ItemAnatomy } from "./item-anatomy";
+import { Coin, ItemParts, ItemSpells, ItemStatLines } from "./item-anatomy";
+import { recipeOf } from "@/lib/item-recipe";
 import { ForkBlock } from "./item-forks";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -266,46 +267,79 @@ function ItemArt({ item, className }: { item: BuildItem; className: string }) {
   return <Image src={ITEM_CDN + item.img} alt="" width={64} height={47} className={`block rounded-md object-cover ${className}`} />;
 }
 
-/** The open item: art, name, the enemies it is for, its numbers as stat blocks, what it gives and its parts, and why it is in this game. */
+/**
+ * The open item as a Dota-style tooltip (Can 2026-11-15, "Dota like"): a header with the art, the name and the gold,
+ * a band with this game's numbers (usual and late minute, copies, the enemies it is for, why), the bonuses as
+ * "+5 Strength" lines, each spell in its box, the parts it is built from, and the If It Is Late split last.
+ */
 function Detail({ stop, rough, heroName, icons, fork, items }: Art & { stop: Stop; rough: boolean; fork?: ItemFork; items?: Record<string, ItemInfo> }) {
   const { item } = stop;
   const foes = foesOf(item);
   const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
   const late = fork?.late ?? item.lateMinute;
-  const cost = items?.[item.itemId]?.cost;
+  const info = items?.[item.itemId];
   const facts = [
     ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual", tone: "text-fg" }] : []),
     ...(stop.where === "path" && !rough && late !== undefined ? [{ value: `${late} min`, label: "Late After", tone: "text-warn" }] : []),
     ...(item.count ? [{ value: `x${item.count}`, label: "Copies", tone: "text-fg" }] : []),
-    ...(cost ? [{ value: cost.toLocaleString("en-US"), label: "Gold", tone: "text-fg" }] : []),
   ];
+  const game = facts.length > 0 || foes.length > 0 || why;
+  const parts = items && recipeOf(item.itemId, items) ? <ItemParts itemId={item.itemId} items={items} /> : null;
+  const body = info && (info.stats?.length || info.abilities?.length);
   return (
-    <div aria-live="polite" className="grid gap-5 rounded-lg bg-surface p-5 sm:grid-cols-[auto_minmax(0,1fr)]">
-      <ItemArt item={item} className="h-16 w-[5.5rem] shadow-[inset_0_0_0_1px_var(--line-strong)]" />
-      <div className="flex min-w-0 flex-col gap-5">
-        <h4 className="flex flex-wrap items-center gap-2.5 text-[1.0625rem] font-semibold text-fg">
-          {item.name}
-          {foes.length > 0 && (
-            <span className="chip h-6 gap-1.5 bg-dire-tint px-2 text-[0.8125rem] font-medium text-dire shadow-none">
-              {item.against?.length ? "For" : "Works on"} {foes.map(heroName).join(" and ")}
+    <div aria-live="polite" className="flex max-w-xl flex-col overflow-hidden rounded-xl bg-surface shadow-[inset_0_0_0_1px_var(--line-strong)]">
+      <div className="flex items-center gap-4 border-b border-line-strong bg-linear-to-b from-hover to-raised px-5 py-4">
+        <ItemArt item={item} className="h-16 w-[5.5rem] shrink-0 shadow-[0_0_0_1px_var(--line-hover)]" />
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <h4 className="text-xl font-semibold tracking-[-0.01em] text-fg">{item.name}</h4>
+          {info?.cost ? (
+            <span className="num flex items-center gap-2 text-base font-semibold text-accent-bright">
+              <Coin />
+              {info.cost.toLocaleString("en-US")}
+              <span className="sr-only"> gold</span>
             </span>
-          )}
-          {foes.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={24} isEnemy isDecorative /> : null))}
-        </h4>
-        {facts.length > 0 && (
-          <dl className="flex flex-wrap gap-7">
-            {facts.map((f) => (
-              <div key={f.label} className="flex flex-col-reverse gap-0.5">
-                <dt className="text-xs text-subtle">{f.label}</dt>
-                <dd className={`num text-[1.375rem] font-semibold leading-tight tracking-[-0.02em] ${f.tone}`}>{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        <ItemAnatomy itemId={item.itemId} items={items} />
-        {why && <p className="max-w-[70ch] text-sm text-muted">{why}</p>}
-        {fork && <ForkBlock fork={fork} />}
+          ) : null}
+        </div>
       </div>
+      {game && (
+        <div className="flex flex-col gap-2.5 border-b border-line bg-bg px-5 py-3">
+          {(facts.length > 0 || foes.length > 0) && (
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {facts.length > 0 && (
+                <dl className="contents">
+                  {facts.map((f) => (
+                    <div key={f.label} className="flex items-baseline gap-1.5">
+                      <dt className="order-last text-[0.8125rem] text-subtle">{f.label}</dt>
+                      <dd className={`num text-[0.9375rem] font-semibold ${f.tone}`}>{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {foes.length > 0 && (
+                <span className="flex items-center gap-2">
+                  <span className="chip h-6 gap-1.5 bg-dire-tint px-2 text-[0.8125rem] font-medium text-dire shadow-none">
+                    {item.against?.length ? "For" : "Works on"} {foes.map(heroName).join(" and ")}
+                  </span>
+                  {foes.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={24} isEnemy isDecorative /> : null))}
+                </span>
+              )}
+            </div>
+          )}
+          {why && <p className="text-sm leading-relaxed text-muted">{why}</p>}
+        </div>
+      )}
+      {body && (
+        <div className="flex flex-col gap-4 px-5 pt-4 [&:last-child]:pb-5">
+          <ItemStatLines item={info} />
+          <ItemSpells item={info} />
+        </div>
+      )}
+      {parts && <div className={`px-5 pb-5 ${body ? "mt-4 border-t border-line pt-4" : "pt-4"}`}>{parts}</div>}
+      {fork && (
+        <div className="mt-4 px-5 pb-5">
+          <ForkBlock fork={fork} />
+        </div>
+      )}
     </div>
   );
 }

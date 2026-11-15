@@ -1,82 +1,135 @@
 import Image from "next/image";
-import type { ItemInfo } from "@/lib/engine/types";
+import type { ItemAbility, ItemInfo } from "@/lib/engine/types";
 import { RECIPE_IMG, recipeOf } from "@/lib/item-recipe";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
-/**
- * What an item is, under its name in the Build Path detail (Can 2026-11-15, on Bracer): what it gives the hero, as
- * the shop's bonus lines with the amount first, its own spells, and the parts it is built from as icons joined by plus
- * signs, each with its price, the recipe scroll last. Nothing shows for an item the hero data does not know yet.
+/*
+ * The parts of the Build Path's item tooltip (Can 2026-11-15: "Dota like", option D on the item panel mockup), laid
+ * out the way the game's own tooltip is: the bonuses as "+5 Strength" lines, each spell in a box with its cooldown and
+ * mana cost, its text and its number lines, then the parts the item is built from with their gold.
  */
-export function ItemAnatomy({ itemId, items }: { itemId: number; items?: Record<string, ItemInfo> }) {
-  const item = items?.[itemId];
-  if (!item) return null;
-  const stats = item.stats ?? [];
-  const spells = item.abilities ?? [];
-  const recipe = recipeOf(itemId, items);
-  if (!stats.length && !spells.length && !recipe) return null;
+
+/** The gold coin next to a price. */
+export function Coin({ size = "md" }: { size?: "sm" | "md" }) {
+  return <span aria-hidden className={`shrink-0 rounded-full bg-accent shadow-[inset_0_-1px_0_var(--accent-deep)] ${size === "sm" ? "size-2" : "size-3"}`} />;
+}
+
+/** The item's bonuses, one "+5 Strength" line each: the amount bright, what it adds to muted. */
+export function ItemStatLines({ item }: { item: ItemInfo }) {
+  if (!item.stats?.length) return null;
   return (
-    <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-      {(stats.length > 0 || spells.length > 0) && (
-        <section aria-label={`What ${item.name} gives`} className="flex flex-col gap-3">
-          <h5 className="text-xs font-medium text-subtle">Gives</h5>
-          {stats.length > 0 && (
-            <ul className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2">
-              {stats.map((s) => (
-                <li key={s.label} className="col-span-2 grid grid-cols-subgrid">
-                  <span className="num text-right text-[0.9375rem] font-semibold text-fg">{s.value}</span>
-                  <span className="text-sm text-muted">{s.label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {spells.length > 0 && (
-            <ul className="flex flex-wrap gap-2">
-              {spells.map((a) => (
-                <li key={a.name} className="inline-flex items-center gap-2 rounded-md bg-raised py-1 pl-1 pr-2.5 text-sm text-fg shadow-[inset_0_0_0_1px_var(--line-strong)]">
-                  <span className={`chip h-5 shadow-none ${a.kind === "active" ? "chip-accent" : ""}`}>{a.kind === "active" ? "Active" : "Passive"}</span>
-                  {a.name}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+    <ul aria-label={`What ${item.name} gives`} className="flex flex-col gap-1 text-[0.9375rem] leading-normal">
+      {item.stats.map((s) => (
+        <li key={s.label}>
+          <span className="num font-semibold text-fg">{s.value}</span> <span className="text-muted">{s.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Clock() {
+  return (
+    <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 4.5V8l2.5 1.5" />
+    </svg>
+  );
+}
+
+function Drop() {
+  return (
+    <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <path d="M8 2s4.5 5 4.5 8a4.5 4.5 0 0 1-9 0C3.5 7 8 2 8 2z" />
+    </svg>
+  );
+}
+
+/** One spell box: "Active: Avatar" with the cooldown and mana on the right, then its text and number lines. */
+function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?: number; manaCost?: number }) {
+  const used = spell.kind === "active";
+  return (
+    <li className="flex flex-col gap-2.5 rounded-lg bg-raised px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--line-strong)]">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="mr-auto text-base font-semibold text-fg">
+          <span className={used ? "text-accent" : "text-muted"}>{used ? "Active" : "Passive"}:</span> {spell.name}
+        </span>
+        {used && cooldown !== undefined && (
+          <span className="num flex items-center gap-1.5 text-sm font-semibold text-muted">
+            <Clock />
+            {cooldown}
+            <span className="sr-only"> seconds cooldown</span>
+          </span>
+        )}
+        {used && manaCost !== undefined && (
+          <span className="num flex items-center gap-1.5 text-sm font-semibold text-muted">
+            <Drop />
+            {manaCost}
+            <span className="sr-only"> mana</span>
+          </span>
+        )}
+      </div>
+      {spell.text && <p className="text-sm leading-relaxed text-muted">{spell.text}</p>}
+      {spell.facts && spell.facts.length > 0 && (
+        <dl className="flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem]">
+          {spell.facts.map((f) => (
+            <div key={f.label} className="flex gap-1.5">
+              <dt className="text-subtle">{f.label}</dt>
+              <dd className="font-semibold text-fg">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
       )}
-      {recipe && (
-        <section aria-label={`How to build ${item.name}`} className="flex flex-col gap-3">
-          <h5 className="text-xs font-medium text-subtle">Built From</h5>
-          <ol className="flex flex-wrap items-start gap-x-2 gap-y-4">
-            {[...recipe.parts, ...(recipe.scroll > 0 ? [{ itemId: 0, name: "Recipe", img: RECIPE_IMG, cost: recipe.scroll, count: 1 }] : [])].map((part, i) => (
-              <li key={`${part.itemId}-${part.name}`} className="flex items-start gap-2">
-                {i > 0 && (
-                  <span aria-hidden className="flex h-8 items-center text-base font-medium text-subtle">
-                    +
-                  </span>
-                )}
-                <span className="flex w-16 flex-col items-center gap-1 text-center">
-                  <span className="relative">
-                    <Image src={ITEM_CDN + part.img} alt="" width={44} height={32} className="block h-8 w-11 rounded-md object-cover shadow-[inset_0_0_0_1px_var(--line-strong)]" />
-                    {part.count > 1 && (
-                      <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
-                        x{part.count}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-xs leading-tight text-muted">
-                    {part.count > 1 && <span className="sr-only">{part.count} </span>}
-                    {part.name}
-                  </span>
-                  <span className="num text-xs text-subtle">
-                    {part.cost.toLocaleString("en-US")}
-                    <span className="sr-only"> gold</span>
-                  </span>
+    </li>
+  );
+}
+
+/** The item's spells, each in its box. Only the first used spell carries the item's cooldown and mana cost. */
+export function ItemSpells({ item }: { item: ItemInfo }) {
+  if (!item.abilities?.length) return null;
+  const first = item.abilities.findIndex((a) => a.kind === "active");
+  return (
+    <ul aria-label={`${item.name} spells`} className="flex flex-col gap-2">
+      {item.abilities.map((a, i) => (
+        <SpellBox key={a.name} spell={a} cooldown={i === first ? item.cooldown : undefined} manaCost={i === first ? item.manaCost : undefined} />
+      ))}
+    </ul>
+  );
+}
+
+/** The parts the item is built from, the recipe scroll last, each with its name and gold. Nothing for a basic item. */
+export function ItemParts({ itemId, items }: { itemId: number; items: Record<string, ItemInfo> }) {
+  const item = items[itemId];
+  const recipe = recipeOf(itemId, items);
+  if (!item || !recipe) return null;
+  const parts = [...recipe.parts, ...(recipe.scroll > 0 ? [{ itemId: 0, name: "Recipe", img: RECIPE_IMG, cost: recipe.scroll, count: 1 }] : [])];
+  return (
+    <section aria-label={`How to build ${item.name}`} className="flex flex-col gap-3">
+      <h5 className="text-[0.8125rem] font-medium text-subtle">Built From</h5>
+      <ol className="flex flex-wrap gap-2.5">
+        {parts.map((part) => (
+          <li key={`${part.itemId}-${part.name}`} className="flex w-[4.75rem] flex-col items-center gap-1.5 text-center">
+            <span className="relative">
+              <Image src={ITEM_CDN + part.img} alt="" width={60} height={44} className="block h-11 w-[3.75rem] rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
+              {part.count > 1 && (
+                <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
+                  x{part.count}
                 </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-    </div>
+              )}
+            </span>
+            <span className="text-xs leading-tight text-muted">
+              {part.count > 1 && <span className="sr-only">{part.count} </span>}
+              {part.name}
+            </span>
+            <span className="num flex items-center gap-1.5 text-[0.8125rem] font-semibold text-accent-bright">
+              <Coin size="sm" />
+              {part.cost.toLocaleString("en-US")}
+              <span className="sr-only"> gold</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
