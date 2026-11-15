@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { GameDetail } from "@/lib/player-game";
 import { GameView } from "./game-view";
 
@@ -105,5 +105,36 @@ describe("GameView", () => {
     expect(screen.getByRole("link", { name: "Party Report" }).getAttribute("href")).toBe(
       "/reports/2b1c7f4e-0000-4000-8000-000000000001",
     );
+  });
+  it("shows several cards of the same kind from one game", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const deaths = (headline: string, line: string) => ({
+      kind: "deaths" as const,
+      tone: "problem" as const,
+      headline,
+      happened: [line],
+      pattern: null,
+      cost: "1,102 gold to Nyx Assassin and Legion Commander, 82 seconds dead.",
+      change: null,
+      matchIds: [8100000001],
+    });
+    render(
+      <GameView
+        game={game({
+          problems: [
+            deaths("Caught Alone 2 Times", "14:07: Nyx Assassin killed you with no fight around (1 for 0)."),
+            deaths("2 Lost Fights", "18:04: your side lost 5 for 2 (the fight started at 17:42)."),
+          ],
+        })}
+        heroes={heroes}
+      />,
+    );
+    const fix = screen.getByRole("region", { name: "To Fix" });
+    expect(fix.querySelectorAll("li article")).toHaveLength(2);
+    expect(fix.textContent).toContain("Caught Alone 2 Times");
+    expect(fix.textContent).toContain("2 Lost Fights");
+    expect(fix.textContent).not.toContain("What to Change");
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
   });
 });
