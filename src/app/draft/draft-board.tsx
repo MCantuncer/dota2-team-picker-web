@@ -1047,7 +1047,7 @@ export function DraftBoard({
         <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface px-4 py-3">
           <Icon name="users" />
           <span className="font-semibold text-fg">Watching {plannerName}&apos;s Draft</span>
-          <span className="text-sm text-muted">Their Team Plan and party rank, live. Every screen in the party shows the same numbers.</span>
+          <span className="text-sm text-muted">The Team Plan and party rank, live. Every screen in the party shows the same numbers.</span>
         </div>
       )}
 
