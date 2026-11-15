@@ -3,6 +3,7 @@ import type { GamesWins, Position, RankBracket } from "@/lib/engine/types";
 import { getHeroes } from "@/lib/heroes";
 import { toParty } from "@/lib/party";
 import { toSeatedPlayers } from "@/lib/party-seats";
+import { signedInUser } from "@/lib/supabase/claims";
 import { createClient } from "@/lib/supabase/server";
 import { topByPosition } from "@/lib/top-heroes";
 import { DraftBoard, type PartyInfo, type Player } from "./draft-board";
@@ -16,9 +17,8 @@ export const metadata: Metadata = { title: "Draft · Dota 2 Team Picker" };
  */
 export default async function DraftPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // The page is the first thing a player opens, so the sign-in check stays on this server (claims.ts).
+  const user = await signedInUser(supabase);
 
   // Portraits are decoration: if OpenDota is down the screen falls back to hero names.
   const heroesPromise = getHeroes().catch(() => []);
