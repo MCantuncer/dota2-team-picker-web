@@ -275,8 +275,32 @@ export interface ItemInfo {
   cost: number;
   /** Image path on the Steam CDN, like `/apps/dota2/images/dota_react/items/black_king_bar.png`. */
   img: string;
-  /** Item ids this item is built from; empty for basic items. */
+  /** Item ids this item is built from; empty for basic items. The recipe is what `cost` leaves after them. */
   components: number[];
+  /** What the item adds to the hero, as the shop shows it: `+50` Health, `+20%` Magic Resistance. Left out when none. */
+  stats?: ItemStat[];
+  /** The item's own spells, like Black King Bar's Avatar. Left out when none. */
+  abilities?: ItemAbility[];
+  /** Seconds before the item can be used again, and the mana it costs, when it has a spell that is used. */
+  cooldown?: number;
+  manaCost?: number;
+}
+
+export interface ItemStat {
+  /** The signed amount with its unit, like `+50` or `+20%`. */
+  value: string;
+  /** What it adds to, like `Health` or `Magic Resistance`. */
+  label: string;
+}
+
+export interface ItemAbility {
+  /** Used by the player (OpenDota's active, toggle and use) or always on. */
+  kind: "active" | "passive";
+  name: string;
+  /** What the spell does, as the shop's tooltip says it, without its number lines. */
+  text?: string;
+  /** The tooltip's number lines, like Duration `9s` or Dispel Type `Basic Dispel`. */
+  facts?: { label: string; value: string }[];
 }
 
 /** Times each item (by item id) was bought in each phase of the game: before the horn, then up to 10, 25 and after. */
