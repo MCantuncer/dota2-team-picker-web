@@ -9,6 +9,7 @@ import {
   portraitLeftPatch,
   portraitPatch,
   portraitRect,
+  redness,
   similarity,
   slotPatches,
   type Pixels,
@@ -31,6 +32,11 @@ export interface SlotRead {
   best?: { heroId: number; score: number };
   /** True when the hero was read by a look learned from your screen rather than its store portrait. */
   learned?: boolean;
+  /**
+   * True when the portrait matched no hero and the hero was found in the hero grid instead: the one hero
+   * greyed out there as picked that no top bar slot shows.
+   */
+  byGrid?: boolean;
 }
 
 export interface DraftRead {
@@ -67,6 +73,18 @@ const SLASH_SHARE = 0.8;
  */
 const LOOK_MIN_COLOUR = 25;
 const LOOK_MIN_SPREAD = 20;
+/**
+ * A picked hero's grid cell is greyed out: a flat, blue grey panel. Measured on real hero select
+ * screenshots at 720 to 1440 px high: picked cells have 7 to 11 brightness spread and -10 to -20
+ * redness, banned cells 10 to 17 spread and -6 or more redness (and their slash), every other cell 31
+ * spread or more. During strategy time the grid is gone and every cell is flat, so the grid only
+ * counts when at least half its cells show art.
+ */
+const GRID_ART_SPREAD = 20;
+const GRID_PICKED_REDNESS = -7;
+const GRID_SHOWING_SHARE = 0.5;
+/** No more heroes than this are ever picked. */
+const MAX_PICKS = 10;
 
 interface Ref {
   id: number;
@@ -120,12 +138,7 @@ export class DraftReader {
     const slots = slotRects(side, px.width, px.height).map((r) => ({ r, read: this.readRect(px, r) }));
     // The hero already reads on its own: nothing to learn.
     if (slots.some((s) => s.read.heroId === heroId)) return null;
-    const open = slots.filter(({ r, read }) => {
-      if (read.heroId !== null && !removed.has(read.heroId)) return false;
-      const colour = colourfulness(px, r);
-      // Art, not an empty panel, and locked in rather than a grey preview.
-      return colour >= LOOK_MIN_COLOUR && colour >= LOCKED_COLOUR * portrait.colour && brightnessSpread(px, r) >= LOOK_MIN_SPREAD;
-    });
+    const open = slots.filter(({ r, read }) => (read.heroId === null || removed.has(read.heroId)) && showsArt(px, r, portrait.colour));
     if (open.length !== 1) return null;
     const { r } = open[0]!;
     const look = { heroId, patch: patch(px, r), left: patch(px, leftPart(r)), colour: colourfulness(px, r) };
@@ -136,16 +149,39 @@ export class DraftReader {
   /** Reads a screenshot. `name` is your Steam name as nameToFind drew it, to find your side by. */
   read(px: Pixels, name: Ink[] | null = null): DraftRead {
     const side = (s: Side) => slotRects(s, px.width, px.height).map((r) => this.readRect(px, r));
+    const teams = { radiant: side("radiant"), dire: side("dire") };
+    const grid = this.readGrid(px);
+    if (grid.picked) this.fillFromGrid(px, teams, grid.picked);
     const picked = new Set<number>();
-    const radiant = side("radiant");
-    const dire = side("dire");
-    for (const s of [...radiant, ...dire]) if (s.heroId !== null) picked.add(s.heroId);
+    for (const s of [...teams.radiant, ...teams.dire]) if (s.heroId !== null) picked.add(s.heroId);
     return {
-      radiant,
-      dire,
-      bans: this.readBans(px).filter((id) => !picked.has(id)),
+      ...teams,
+      bans: grid.bans.filter((id) => !picked.has(id)),
       me: findMe(px, name),
     };
+  }
+
+  /**
+   * Art the store portraits don't have (an arcana, a persona, other cosmetic art) matches no hero, but
+   * the hero grid still greys out every picked hero in its usual cell. When exactly one hero is greyed
+   * out there that no slot shows, and exactly one slot shows art the reader could not name, that slot
+   * is that hero. Two of either and it never guesses.
+   */
+  private fillFromGrid(px: Pixels, teams: Record<Side, SlotRead[]>, gridPicked: number[]) {
+    const shown = new Set([...teams.radiant, ...teams.dire].map((s) => s.heroId));
+    const missing = gridPicked.filter((id) => !shown.has(id));
+    if (missing.length !== 1) return;
+    const heroId = missing[0]!;
+    const portrait = this.refs.find((r) => r.id === heroId && !r.learned);
+    if (!portrait) return;
+    const open = (["radiant", "dire"] as const).flatMap((side) =>
+      slotRects(side, px.width, px.height).flatMap((r, slot) =>
+        teams[side][slot]!.heroId === null && showsArt(px, r, portrait.colour) ? [{ side, slot }] : [],
+      ),
+    );
+    if (open.length !== 1) return;
+    const { side, slot } = open[0]!;
+    teams[side][slot] = { heroId, unsure: false, best: teams[side][slot]!.best, byGrid: true };
   }
 
   /** One top bar slot. */
@@ -185,15 +221,32 @@ export class DraftReader {
     return { heroId: null, unsure: best >= EMPTY_BELOW, best: closest };
   }
 
-  private readBans(px: Pixels): number[] {
+  /** The hero grid: banned heroes, and picked ones, or null for picked when the grid isn't showing. */
+  private readGrid(px: Pixels): { bans: number[]; picked: number[] | null } {
     const bans: number[] = [];
+    const picked: number[] = [];
+    let cells = 0,
+      art = 0;
     for (const attr of Object.keys(this.grid) as Attribute[]) {
       this.grid[attr].forEach((id, i) => {
-        if (slashShare(px, cellRect(attr, i, px.width, px.height)) >= SLASH_SHARE) bans.push(id);
+        const r = cellRect(attr, i, px.width, px.height);
+        cells++;
+        if (slashShare(px, r) >= SLASH_SHARE) return void bans.push(id);
+        // Inside the cell only, clear of its frame, level number and arrows.
+        const inner = { x: r.x + r.w * 0.1, y: r.y + r.h * 0.1, w: r.w * 0.8, h: r.h * 0.8 };
+        if (brightnessSpread(px, inner) >= GRID_ART_SPREAD) art++;
+        else if (redness(px, inner) <= GRID_PICKED_REDNESS) picked.push(id);
       });
     }
-    return bans;
+    const showing = cells > 0 && art >= GRID_SHOWING_SHARE * cells && picked.length <= MAX_PICKS;
+    return { bans, picked: showing ? picked : null };
   }
+}
+
+/** A top bar slot shows hero art: not an empty panel, and locked in rather than a grey preview. */
+function showsArt(px: Pixels, r: Rect, portraitColour: number): boolean {
+  const colour = colourfulness(px, r);
+  return colour >= LOOK_MIN_COLOUR && colour >= LOCKED_COLOUR * portraitColour && brightnessSpread(px, r) >= LOOK_MIN_SPREAD;
 }
 
 /**
