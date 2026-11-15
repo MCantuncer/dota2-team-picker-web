@@ -33,12 +33,17 @@ export default async function DraftPage() {
       { data: profile, error: profileError },
       { data: partyRows, error: partyError },
       { data: seatRows, error: seatError },
+      owned,
+      joined,
     ] = await Promise.all([
       supabase.from("favorite_positions").select("position").eq("user_id", user.id),
       supabase.from("favorite_heroes").select("position, hero_id, top_slot").eq("user_id", user.id).order("created_at"),
       supabase.from("profiles").select("rank_tier, hero_stats, steam_name").eq("id", user.id).single(),
       supabase.rpc("party_view"),
       supabase.rpc("party_seats_view"),
+      // Stacks in the same round trip as the rest: which ones count depends on the party, so the role is read too.
+      supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
+      supabase.from("team_members").select("role, teams(id, name)").eq("user_id", user.id),
     ]);
     const error = posError ?? favError ?? profileError;
     if (error) throw new Error(`Could not load your heroes: ${error.message}`);
@@ -60,11 +65,6 @@ export default async function DraftPage() {
 
     // Out of a party: Stacks the player runs (owner or Manager), to plan for. In a party: every Stack
     // they are in, for Invite from Stack, as the Party page had; the database checks each invite.
-    const memberships = supabase.from("team_members").select("teams(id, name)").eq("user_id", user.id);
-    const [owned, joined] = await Promise.all([
-      supabase.from("teams").select("id, name").eq("owner_id", user.id).order("created_at"),
-      party ? memberships : memberships.eq("role", "co_captain"),
-    ]);
     // Stacks are an extra: without them the draft and the party still work.
     if (owned.error ?? joined.error) console.error("Draft Stacks:", (owned.error ?? joined.error)!.message);
     else
@@ -72,6 +72,7 @@ export default async function DraftPage() {
         ...(owned.data ?? []),
         // One team per membership row (teams.id is the key), typed loosely by the client.
         ...(joined.data ?? [])
+          .filter((m) => party || m.role === "co_captain")
           .map((m) => m.teams as unknown as PlannableStack | null)
           .filter((t): t is PlannableStack => t !== null),
       ];

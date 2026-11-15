@@ -259,6 +259,16 @@ export function DraftBoard({
       .catch((e: Error) => setLoadError(e.message));
   }, [party?.myPosition]);
 
+  /**
+   * The cursor starts in the My team box once the board is ready, so a player who alt-tabs in can type at once. Only
+   * with a mouse (a phone would open its keyboard over the page), and never over a box the player already clicked.
+   */
+  const isReady = engine !== null;
+  useEffect(() => {
+    if (!isReady || document.activeElement !== document.body || !window.matchMedia("(pointer: fine)").matches) return;
+    allyRef.current?.focus({ preventScroll: true });
+  }, [isReady]);
+
   const search = useMemo(() => {
     if (!engine) return null;
     const picks = (id: number) => (engine.data.bracketStats[id]?.picks ?? []).reduce((s, x) => s + x, 0);
