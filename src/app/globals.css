@@ -1014,15 +1014,55 @@ body {
 /*
  * Next skill showcase: the homepage Invoker weighing Wex against Exort, then taking one (components/next-skill-showcase.tsx).
  * The one scripted moment on the site, homepage only, so it is the documented exception to the 300ms limit and to
- * "the live dot is the only loop" (docs/design-system.md, "Motion and light"). Positions are offsets from the example
- * card's top left corner, matched to the render's hands (render at -20rem top, -12.5rem left, 44rem wide).
+ * "the live dot is the only loop" (docs/design-system.md, "Motion and light"). The stage is the scene's box, right
+ * above the example card with its right edge on the card's: in the page flow when the card sits under the copy, and
+ * hung above the card when the card sits beside it. Positions inside are offsets from the card's left edge as it is on
+ * wide screens (the stage starts 2.5rem in from it), matched to the render's hands (render at -20rem top, -12.5rem
+ * left, 44rem wide). On the narrowest phones the whole stage is zoomed down a step, so it always fits the column.
  * Base styles are the decided state; the sequence lives only in the reduced-motion query below.
  */
 @layer components {
+  .ns-stage {
+    position: relative;
+    width: 22.5rem;
+    height: 20rem;
+    margin-left: auto;
+    pointer-events: none;
+  }
+  @media (width < 392px) {
+    .ns-stage {
+      zoom: 0.95;
+    }
+  }
+  @media (width < 374px) {
+    .ns-stage {
+      zoom: 0.91;
+    }
+  }
+  @media (width < 360px) {
+    .ns-stage {
+      zoom: 0.8;
+    }
+  }
+  @media (width >= 64rem) {
+    .ns-stage {
+      position: absolute;
+      right: 0;
+      bottom: 100%;
+    }
+  }
   .next-skill {
     position: absolute;
-    inset: 0;
-    pointer-events: none;
+    top: 100%;
+    left: -2.5rem;
+  }
+  .ns-render {
+    position: absolute;
+    top: -20rem;
+    left: -12.5rem;
+    z-index: -10;
+    width: 44rem;
+    max-width: none;
   }
   .ns-orb {
     position: absolute;
@@ -1438,6 +1478,14 @@ body {
     }
     .ns-panel {
       animation: ns-panel-in var(--ns-run) var(--ns-ease) var(--ns-wait) both;
+    }
+    /*
+     * Held until the scene is on screen (see the component); it then plays from the start. Last and with the stage
+     * class twice, so it beats every animation shorthand above.
+     */
+    .ns-stage.ns-stage[data-wait] *,
+    .ns-stage.ns-stage[data-wait] *::before {
+      animation-play-state: paused;
     }
   }
 }
