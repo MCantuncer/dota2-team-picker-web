@@ -431,7 +431,8 @@ Rules:
 One documented exception: the **next skill showcase** on the homepage (`.next-skill` and its `.ns-*` parts,
 `components/next-skill-showcase.tsx`). Invoker weighs Wex against Exort for about 10 seconds, one step at a time
 with slow eased fades, takes the one winning players took, and the two orbs float 4px on a slow loop throughout. It is the only scripted moment on the site, plays
-once per visit, shows on wide screens only, and follows every other rule: base styles are the decided state, and the
+once per visit, shows at every width (right above the example card, zoomed down a step on the narrowest phones), waits
+until it is mostly on screen before it starts, and follows every other rule: base styles are the decided state, and the
 whole sequence sits inside the reduced-motion query. `--orb-wex` colours the Wex glow there and nowhere else.
 
 ## Writing
