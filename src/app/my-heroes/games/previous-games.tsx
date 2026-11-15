@@ -131,10 +131,14 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
   return (
     // The whole row opens the game: the hero name's link stretches over it. That page has the OpenDota button,
     // so the list doesn't repeat one on every row.
-    <li data-tour="your-games-row" className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface">
+    // From 768px the row is a grid with fixed columns, so the note stays on the row's line and wraps in its own cell.
+    <li
+      data-tour="your-games-row"
+      className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface md:grid md:grid-cols-[0.125rem_2rem_minmax(7rem,1fr)_2.5rem_7rem_5rem_minmax(10rem,2fr)_1rem] md:gap-x-3 lg:gap-x-4"
+    >
       <span aria-hidden className={`h-8 w-0.5 rounded-full ${game.isWin ? "bg-radiant" : "bg-dire"}`} />
       {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-xs" />}
-      <div className="flex min-w-36 flex-col">
+      <div className="flex min-w-36 flex-col md:min-w-0">
         <Link
           href={`/my-heroes/games/${game.matchId}`}
           aria-label={`${heroName} ${game.isWin ? "won" : "lost"} on ${dateFormat.format(new Date(game.startedAt))}`}
@@ -155,7 +159,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
       <span className="num w-20 text-sm text-fg" title="Kills / deaths / assists">
         {kda ?? "?"}
       </span>
-      <span className="min-w-48 flex-1 text-sm">
+      <span className="min-w-48 flex-1 text-sm md:min-w-0">
         {game.note ? (
           <span className={`flex items-center gap-2 ${game.note.tone === "problem" ? "text-dire" : "text-radiant"}`}>
             <FindingIcon kind={game.note.kind} tone={game.note.tone} />
