@@ -193,7 +193,7 @@ function Stat({ icon, label, children }: { icon: ReactNode; label: string; child
   return (
     <li
       aria-label={label}
-      className="flex h-10 items-center gap-2 rounded-md bg-bg/60 px-3 text-sm text-subtle ring-1 ring-inset ring-line-strong"
+      className="flex h-10 items-center gap-2 rounded-md bg-bg/90 px-3 text-sm backdrop-blur-sm text-subtle ring-1 ring-inset ring-line-strong"
     >
       <span className="text-muted">{icon}</span>
       <span aria-hidden className="flex items-center gap-1.5">
