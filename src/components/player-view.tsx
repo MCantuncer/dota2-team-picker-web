@@ -40,7 +40,7 @@ export interface PlayerViewProps {
   headline?: string;
   /** The minute our team is ready to fight, shown on the Game Story tab itself. */
   ready?: number;
-  /** The team's part of the Game Story (the minute line, game plans, danger and fallbacks), only on that tab. */
+  /** The team's part of the Game Story (the minute line, game plans and danger heroes), only on that tab. */
   team?: ReactNode;
   /** The enemy's key items, set on each Build Path beside our items. */
   enemyItems?: EnemyItem[];
