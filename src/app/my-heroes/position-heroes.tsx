@@ -223,22 +223,23 @@ export function PositionHeroes({
               }}
               aria-current={isActive}
               title={p.name}
-              className={`group relative flex min-w-0 items-center justify-center gap-1.5 rounded-t-md px-1 py-3 transition-colors max-sm:flex-col sm:gap-3 sm:px-3 ${
+              className={`group relative flex min-w-0 items-center justify-center gap-1.5 rounded-t-md px-1 py-3 transition-colors max-lg:flex-col sm:px-3 lg:gap-3 ${
                 isActive ? "bg-accent-tint text-fg" : "text-muted hover:bg-surface hover:text-fg"
               }`}
             >
               <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-subtle/60 group-hover:text-subtle"}`}>
                 <PositionIcon position={p.n} size={32} />
               </span>
-              <span className="flex min-w-0 flex-col gap-0.5 text-left max-sm:hidden">
+              {/* Below 1024px the name sits under the icon, so "Soft Support" and "No heroes yet" fit without cutting. */}
+              <span className="flex min-w-0 flex-col gap-0.5 text-left max-lg:items-center max-lg:text-center max-sm:hidden">
                 <span className="flex items-center gap-1.5">
-                  <span className={`truncate text-sm ${isActive ? "font-semibold" : "font-medium"}`}>{p.name}</span>
+                  <span className={`whitespace-nowrap text-sm ${isActive ? "font-semibold" : "font-medium"}`}>{p.name}</span>
                   {played.has(p.n) && <span aria-label="You play this" className="size-1.5 shrink-0 rounded-full bg-radiant" />}
                   {cards.some((c) => c.position === p.n) && (
                     <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
                   )}
                 </span>
-                <span className={`num truncate text-xs ${isActive ? "text-muted" : "text-subtle"}`}>
+                <span className={`num whitespace-nowrap text-xs ${isActive ? "text-muted" : "text-subtle"}`}>
                   {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
                 </span>
               </span>
@@ -370,7 +371,8 @@ export function PositionHeroes({
                 return (
                   <li key={card.id} className="flex flex-wrap items-center gap-3">
                     {h && <Image src={h.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />}
-                    <div className="flex min-w-0 flex-1 flex-col">
+                    {/* The text keeps a readable width; on a phone the buttons move under it instead of squeezing it. */}
+                    <div className="flex min-w-0 flex-1 basis-56 flex-col">
                       <span className="text-sm font-medium text-fg">{card.question}</span>
                       <span className="text-sm text-muted">{card.reason}</span>
                     </div>
