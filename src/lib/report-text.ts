@@ -101,7 +101,7 @@ export function sourceName(key: string): string {
 
 /** The enemy hero who got furthest ahead. */
 export function enemyBestLine(e: EnemyBest, name: HeroName): string {
-  return `Their strongest hero: ${name(e.heroId)}, ${e.kills}/${e.deaths}/${e.assists} with ${amount(e.netWorth)} net worth.`;
+  return `Strongest enemy: ${name(e.heroId)}, ${e.kills}/${e.deaths}/${e.assists} with ${amount(e.netWorth)} net worth.`;
 }
 
 /** One pick against the list its player was shown. */

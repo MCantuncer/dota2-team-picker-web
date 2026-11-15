@@ -448,7 +448,6 @@ export function PositionHeroes({
           );
         })}
       </section>
-      <p className="text-xs text-subtle">Your captain still picks your position each game.</p>
     </div>
   );
 }

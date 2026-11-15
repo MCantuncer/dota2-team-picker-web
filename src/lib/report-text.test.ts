@@ -56,7 +56,7 @@ describe("report text", () => {
       "Blade mail: 11% of the damage you took.",
       "Bloodseeker blood bath: 7% of the damage you took.",
     ]);
-    expect(enemyBestLine(facts.enemyBest!, name)).toBe("Their strongest hero: Bloodseeker, 8/8/9 with 16k net worth.");
+    expect(enemyBestLine(facts.enemyBest!, name)).toBe("Strongest enemy: Bloodseeker, 8/8/9 with 16k net worth.");
     expect(draftLine({ heroId: 25, suggestionRank: 2, listSize: 8 }, name)).toBe("Lina: suggestion 2 of 8.");
     expect(draftLine({ heroId: 25, suggestionRank: null, listSize: 8 }, name)).toBe("Lina: not in the 8 suggestions.");
     expect(draftLine({ heroId: 25, suggestionRank: null, listSize: 0 }, name)).toBe("Lina: no suggestions saved for this pick.");
