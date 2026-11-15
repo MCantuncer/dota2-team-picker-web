@@ -222,7 +222,8 @@ function FindingList({ id, title, tone, findings }: { id: string; title: string;
       </h2>
       <ol className="flex flex-col gap-3">
         {findings.map((f) => (
-          <li key={f.kind}>
+          // One game can have several cards of a kind (Caught Alone and Lost Fights are both deaths).
+          <li key={`${f.kind}:${f.headline}`}>
             <FindingCard finding={f} open />
           </li>
         ))}
