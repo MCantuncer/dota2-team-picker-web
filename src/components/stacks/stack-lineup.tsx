@@ -52,7 +52,8 @@ export function StackLineup({
           </p>
           {action && <div className="ml-auto">{action}</div>}
         </div>
-        <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3.5 lg:grid-cols-5">
+        {/* Five players sit in one row from 768px; below that each is a row of its own, never 3 + 2. */}
+        <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-5 md:gap-3.5">
           {seats.map((s) => (
             <SeatCard key={s.id} seat={s} hero={hero} you={s.id === youId} />
           ))}
@@ -67,14 +68,14 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
   const top = s.heroes[0] ? hero(s.heroes[0]) : null;
   const rank = rankName(s.rankTier);
   return (
-    <li className="grid min-w-0 grid-cols-[8.5rem_1fr] overflow-hidden rounded-md bg-surface ring-1 ring-inset ring-line sm:grid-cols-1">
-      <div className="relative aspect-video overflow-hidden bg-bg max-sm:aspect-auto max-sm:h-full">
+    <li className="grid min-w-0 grid-cols-[8.5rem_1fr] overflow-hidden rounded-md bg-surface ring-1 ring-inset ring-line md:grid-cols-1">
+      <div className="relative aspect-video overflow-hidden bg-bg max-md:aspect-auto max-md:h-full">
         {top?.image ? (
           <Image
             src={top.image}
             alt=""
             fill
-            sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 9rem"
+            sizes="(min-width: 768px) 20vw, 9rem"
             unoptimized
             className="object-cover"
           />
@@ -148,7 +149,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
           )}
         </span>
         {s.heroes.length > 1 && (
-          <span className="mt-2 flex items-center gap-1.5 border-t border-line pt-2.5 max-sm:hidden">
+          <span className="mt-2 flex items-center gap-1.5 border-t border-line pt-2.5 max-md:hidden">
             {s.heroes.slice(1, 1 + ALSO).map((id) => {
               const h = hero(id);
               return h.image ? (
@@ -188,17 +189,18 @@ function Coverage({ seats }: { seats: Seat[] }) {
         </h2>
         <p className="text-sm text-subtle">Who in the Stack plays each position.</p>
       </div>
-      <ul className="grid grid-cols-1 overflow-hidden rounded-md ring-1 ring-inset ring-line sm:grid-cols-5">
+      <ul className="grid grid-cols-1 overflow-hidden rounded-md ring-1 ring-inset ring-line md:grid-cols-5">
         {[1, 2, 3, 4, 5].map((p) => {
           const who = seats.filter((s) => s.positions.includes(p));
           return (
             <li
               key={p}
-              className="flex items-center gap-2.5 border-line px-3.5 py-3 not-last:border-b sm:not-last:border-b-0 sm:not-last:border-r"
+              className="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-line px-3.5 py-3 not-last:border-b md:not-last:border-b-0 md:not-last:border-r"
             >
               <PositionIcon position={p} size={24} className={who.length ? "text-muted" : "text-warn"} />
               <span className="flex min-w-0 flex-col text-sm leading-tight">
-                <span className="font-semibold text-fg">{POSITION_NAMES[p]}</span>
+                {/* The name never wraps; the faces move under it when the cell is narrow. */}
+                <span className="font-semibold whitespace-nowrap text-fg">{POSITION_NAMES[p]}</span>
                 {!who.length && <span className="text-warn">Nobody yet</span>}
               </span>
               <span
