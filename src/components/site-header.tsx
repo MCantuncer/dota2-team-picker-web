@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { rankName } from "@/lib/rank";
 import { toParty } from "@/lib/party";
+import { signedInUser } from "@/lib/supabase/claims";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroes } from "@/lib/heroes";
 import { dueCard, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
@@ -46,9 +47,7 @@ export function SiteHeader() {
 /** Everything in the header that depends on who is signed in. */
 async function HeaderSession() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await signedInUser(supabase);
 
   if (!user) {
     return (

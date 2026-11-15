@@ -2,6 +2,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "./database.types";
+import { signedInUser } from "./claims";
 import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 
 /** Supabase client for Server Components, Server Actions and Route Handlers, signed in from the request cookies. */
@@ -21,9 +22,7 @@ export async function createClient() {
   });
 }
 
-/** The signed-in user, or null. */
+/** The signed-in user's id, or null, checked without a round trip to Supabase Auth (see claims.ts). */
 export async function getUser() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
+  return signedInUser(await createClient());
 }

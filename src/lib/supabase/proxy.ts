@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
+import { signedInUser } from "./claims";
 import { SUPABASE_KEY, SUPABASE_URL } from "./env";
 
 /** Pages that need a signed-in user. Others are open to everyone. */
@@ -25,10 +26,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // getUser() checks the token with Supabase and refreshes it if needed.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Checks the token's signature locally and refreshes it if needed (see claims.ts).
+  const user = await signedInUser(supabase);
 
   const path = request.nextUrl.pathname;
   if (!user && PRIVATE_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) {

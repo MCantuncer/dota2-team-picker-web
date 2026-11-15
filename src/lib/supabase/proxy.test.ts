@@ -2,18 +2,18 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { updateSession } from "./proxy";
 
-const getUser = vi.fn();
+const getClaims = vi.fn();
 vi.mock("@supabase/ssr", () => ({
-  createServerClient: () => ({ auth: { getUser } }),
+  createServerClient: () => ({ auth: { getClaims } }),
 }));
 
 const request = (path: string) => new NextRequest(new URL(path, "https://dota2teampicker.com"));
 
 describe("updateSession", () => {
-  beforeEach(() => getUser.mockReset());
+  beforeEach(() => getClaims.mockReset());
 
   it.each(["/profile", "/my-heroes", "/profile/settings", "/reports/2b1c7f4e-0000-4000-8000-000000000001"])("sends signed-out visitors from %s to login", async (path) => {
-    getUser.mockResolvedValue({ data: { user: null } });
+    getClaims.mockResolvedValue({ data: null, error: null });
     const res = await updateSession(request(path));
     expect(res.status).toBe(307);
     const to = new URL(res.headers.get("location")!);
@@ -22,20 +22,26 @@ describe("updateSession", () => {
   });
 
   it("lets signed-out visitors open public pages", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
+    getClaims.mockResolvedValue({ data: null, error: null });
     const res = await updateSession(request("/"));
     expect(res.headers.get("location")).toBeNull();
   });
 
   it("does not treat lookalike paths as private", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
+    getClaims.mockResolvedValue({ data: null, error: null });
     const res = await updateSession(request("/profiles-public"));
     expect(res.headers.get("location")).toBeNull();
   });
 
   it("lets signed-in users through", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    getClaims.mockResolvedValue({ data: { claims: { sub: "u1" } }, error: null });
     const res = await updateSession(request("/profile"));
     expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("treats a token it cannot check as signed out", async () => {
+    getClaims.mockResolvedValue({ data: { claims: { sub: "u1" } }, error: new Error("Invalid JWT signature") });
+    const res = await updateSession(request("/profile"));
+    expect(res.status).toBe(307);
   });
 });
