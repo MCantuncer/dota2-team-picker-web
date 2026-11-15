@@ -15,6 +15,11 @@ describe("logLine", () => {
     expect(logLine(read, name)).toBe("Radiant: Crystal Maiden, -  |  Dire: Lion, ? Lich 0.71");
   });
 
+  it("marks a hero found by the hero grid", () => {
+    const read: DraftRead = { radiant: [{ heroId: 26, unsure: false, byGrid: true }], dire: [], bans: [] };
+    expect(logLine(read, name)).toBe("Radiant: Lion (grid)  |  Dire: ");
+  });
+
   it("says where it found you, and how", () => {
     const read: DraftRead = { radiant: [], dire: [], bans: [], me: { side: "dire", slot: 2, by: "both" } };
     expect(logLine(read, name)).toBe("Radiant:   |  Dire:   |  You: Dire 3 (by name and glow)");

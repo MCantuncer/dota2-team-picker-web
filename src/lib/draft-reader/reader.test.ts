@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellRect, slotRects, type Rect } from "./geometry";
+import { cellRect, slotRects, type Attribute, type Rect } from "./geometry";
 import type { Pixels } from "./match";
 import { DraftReader, slashShare } from "./reader";
 
@@ -209,6 +209,83 @@ describe("DraftReader.learn", () => {
         px.data.set([grey, grey, grey], i);
       }
     expect(new DraftReader(heroes).learn(px, "radiant", 26)).toBeNull();
+  });
+});
+
+describe("DraftReader reading picks from the hero grid", () => {
+  const persona = portrait(17);
+  const cells: [Attribute, number][] = [
+    ["str", 0],
+    ["str", 1],
+    ["agi", 0],
+    ["int", 0],
+    ["int", 1],
+  ];
+  /** A hero select screen with every grid cell showing art: busy light and dark stripes. */
+  function selectScreen(): Pixels {
+    const px = screen();
+    for (const [attr, i] of cells) {
+      const r = cellRect(attr, i, W, H);
+      for (let y = r.y; y < r.y + r.h; y++)
+        for (let x = r.x; x < r.x + r.w; x++) px.data.set(Math.floor((x + y) / 4) % 2 ? [200, 170, 120] : [30, 40, 50], (y * W + x) * 4);
+    }
+    return px;
+  }
+  /** Greys a hero's grid cell out the way Dota does once the hero is picked: a flat blue grey panel. */
+  function greyOut(px: Pixels, attr: Attribute, i: number) {
+    const r = cellRect(attr, i, W, H);
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) px.data.set([42, 56, 68], (y * W + x) * 4);
+  }
+
+  it("names art no store portrait has, such as an arcana, by the one picked hero no slot shows", () => {
+    const px = selectScreen();
+    drawSlot(px, slotRects("radiant", W, H)[2], heroes[2].portrait);
+    greyOut(px, "int", 0);
+    drawSlot(px, slotRects("dire", W, H)[1], persona);
+    greyOut(px, "int", 1);
+    const read = new DraftReader(heroes).read(px);
+    expect(read.radiant[2]).toMatchObject({ heroId: 5, unsure: false });
+    expect(read.radiant[2].byGrid).toBeUndefined();
+    expect(read.dire[1]).toMatchObject({ heroId: 26, unsure: false, byGrid: true });
+    expect(read.bans).toEqual([]);
+  });
+
+  it("never guesses between two unnamed slots or two unexplained picks", () => {
+    const px = selectScreen();
+    drawSlot(px, slotRects("dire", W, H)[1], persona);
+    greyOut(px, "int", 1);
+    greyOut(px, "str", 1);
+    expect(new DraftReader(heroes).read(px).dire[1].heroId).toBeNull();
+    const two = selectScreen();
+    drawSlot(two, slotRects("dire", W, H)[1], persona);
+    // Other art no portrait has: yellow and blue diagonal stripes.
+    const stripes = { data: new Uint8ClampedArray(256 * 144 * 4), width: 256, height: 144 };
+    for (let i = 0; i < 256 * 144; i++)
+      stripes.data.set(Math.floor(((i % 256) + 2 * Math.floor(i / 256)) / 20) % 2 ? [230, 200, 40, 255] : [20, 40, 120, 255], i * 4);
+    drawSlot(two, slotRects("radiant", W, H)[0], stripes);
+    greyOut(two, "int", 1);
+    const read = new DraftReader(heroes).read(two);
+    expect([...read.radiant, ...read.dire].every((s) => s.heroId === null)).toBe(true);
+  });
+
+  it("leaves the grid alone when it isn't showing, as at strategy time", () => {
+    const px = screen();
+    drawSlot(px, slotRects("dire", W, H)[1], persona);
+    expect(new DraftReader(heroes).read(px).dire[1].heroId).toBeNull();
+  });
+
+  it("does not take a grey preview for the picked hero", () => {
+    const px = selectScreen();
+    const r = slotRects("radiant", W, H)[3];
+    drawSlot(px, r, persona);
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const i = (y * W + x) * 4;
+        const grey = 0.3 * px.data[i] + 0.59 * px.data[i + 1] + 0.11 * px.data[i + 2];
+        px.data.set([grey, grey, grey], i);
+      }
+    greyOut(px, "int", 1);
+    expect(new DraftReader(heroes).read(px).radiant[3].heroId).toBeNull();
   });
 });
 
