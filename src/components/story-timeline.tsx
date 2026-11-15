@@ -52,7 +52,8 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
   return (
     // On phones the box scrolls sideways, so it takes keyboard focus to scroll with the arrow keys.
     <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Story timeline">
-      <div className="min-w-[57.5rem]">
+      {/* 12% of the axis is the gap between marks: at 62rem that holds a hero and an item side by side. */}
+      <div className="min-w-[62rem]">
         <div className={`relative ${checkpoint ? "h-[19rem]" : "h-60"}`} role="group" aria-label={`${timelineLabel(story)}${band ? ` ${band.label}.` : ""}${checkpoint ? ` ${checkpoint.question}` : ""}`}>
           {band && (
             <div
@@ -84,7 +85,10 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
           {story.ready !== undefined && (
             <div className="absolute top-28 h-8 w-0.5 bg-accent" style={{ left: `${at(story.ready)}%` }}>
               {/* Near the end of the axis the label sits left of the mark so it stays inside. */}
-              <span className={`absolute top-1.5 whitespace-nowrap text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-2" : "left-2"}`}>
+              {/* The label sits on the axis line, so it gets the page colour behind it: the line never runs through it. */}
+              <span
+                className={`absolute top-1 whitespace-nowrap rounded-xs bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-1.5" : "left-1.5"}`}
+              >
                 {band?.fight ? band.label : "Ready to fight"}
               </span>
             </div>
