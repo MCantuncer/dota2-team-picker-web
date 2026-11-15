@@ -308,21 +308,43 @@ export function RunningLine({ running }: { running: Proof["running"] }) {
   );
 }
 
-/** One tile: a label on top, our gain and its margin under it. */
-function LiftTile({ label, lift, isAccent }: { label: ReactNode; lift: Lift; isAccent?: boolean }) {
+/**
+ * One tile: a label on top, our gain and its give or take under it. `isRowWhenNarrow` lays it out as a row (label
+ * left, numbers right) below 52rem, so a list of five never leaves one tile alone on a narrow screen.
+ */
+function LiftTile({
+  label,
+  lift,
+  isAccent,
+  isRowWhenNarrow = false,
+}: {
+  label: ReactNode;
+  lift: Lift;
+  isAccent?: boolean;
+  isRowWhenNarrow?: boolean;
+}) {
+  const row = isRowWhenNarrow;
   return (
-    <div className="grid content-start justify-items-start gap-2 rounded-lg border border-line-strong bg-raised p-4">
-      {label}
+    <div
+      className={`grid content-start gap-2 rounded-lg border border-line-strong bg-raised p-3 ${
+        row
+          ? "grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 min-[52rem]:grid-cols-1 min-[52rem]:justify-items-start"
+          : "justify-items-start"
+      }`}
+    >
+      <span className={row ? "row-span-2 min-[52rem]:row-span-1" : undefined}>{label}</span>
       {lift.lift === null || lift.margin === null ? (
         <span className="text-sm text-subtle">Too few picks</span>
       ) : (
         <>
           <span
-            className={`text-[1.625rem] leading-none font-semibold tabular-nums ${isAccent ? "text-accent" : "text-fg"}`}
+            className={`text-[1.625rem] leading-none font-semibold tabular-nums ${isAccent ? "text-accent" : "text-fg"} ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}
           >
             {signedPoints(lift.lift)}
           </span>
-          <span className="text-sm text-subtle">Give or take {(lift.margin * 100).toFixed(1)}</span>
+          <span className={`text-sm text-subtle ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}>
+            Give or take {(lift.margin * 100).toFixed(1)}
+          </span>
         </>
       )}
     </div>
@@ -333,7 +355,7 @@ function LiftTile({ label, lift, isAccent }: { label: ReactNode; lift: Lift; isA
 export function RankRoleTiles({ byRank, byRole }: { byRank: Proof["byRank"]; byRole: Proof["byRole"] }) {
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Object.entries(RANK_GROUP_MEDALS).map(([group, medals]) =>
           byRank[group] ? (
             <LiftTile
@@ -351,14 +373,22 @@ export function RankRoleTiles({ byRank, byRole }: { byRank: Proof["byRank"]; byR
           ) : null,
         )}
       </div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
+      {/* All five roles share one row from a mid-size screen up, with the icon over the name so the tiles stay narrow;
+          below that each role is a row, so no tile is ever left alone. */}
+      <div className="grid gap-3 min-[52rem]:grid-cols-5">
         {[1, 2, 3, 4, 5].map((p) =>
           byRole[p] ? (
             <LiftTile
               key={p}
+              isRowWhenNarrow
               lift={byRole[p]}
               label={
-                <PositionLabel position={p} size={22} className="gap-2 font-semibold" iconClassName="text-accent" />
+                <PositionLabel
+                  position={p}
+                  size={20}
+                  className="font-semibold min-[52rem]:flex-col min-[52rem]:items-start min-[52rem]:gap-2"
+                  iconClassName="shrink-0 text-accent"
+                />
               }
             />
           ) : null,
@@ -368,39 +398,75 @@ export function RankRoleTiles({ byRank, byRole }: { byRank: Proof["byRank"]; byR
   );
 }
 
-/** One row per win range band: the range we show for the favoured side, and how often that side really won later. */
+/** The side a ladder row is seen from, as a small square in that side's colour. */
+function SideMark({ side }: { side: LadderRow["side"] }) {
+  return <span className={`size-3 shrink-0 rounded-xs ${side === "Radiant" ? "bg-radiant" : "bg-dire"}`} />;
+}
+
+/**
+ * One row per win range band on a shared percent scale: the shaded box is the range we show for the favoured side,
+ * the dot how often that side really won in newer games. The side is a coloured square; the numbers are on the scale,
+ * and each row's sentence is for screen readers and the hover tooltip.
+ */
 export function Ladder({ rows }: { rows: LadderRow[] }) {
   const [lo, hi] = scaleFor(
     rows.flatMap((r) => [r.low * 100, r.high * 100, r.won * 100]),
     50,
     60,
-    10,
+    5,
   );
+  const ticks = ticksOf(lo, hi, 5);
+  const sentence = (r: LadderRow) =>
+    `${r.side}: we showed ${Math.round(r.low * 100)}% to ${Math.round(r.high * 100)}%, ` +
+    `and that side won ${percent(r.won)} of ${r.games.toLocaleString("en-US")} newer games`;
   return (
-    <div className="grid gap-4">
-      {rows.map((r) => (
-        <div
-          key={`${r.side}${r.low}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 sm:grid-cols-[12rem_1fr_4.5rem]"
-        >
-          <span className="grid">
-            <span className="font-semibold tabular-nums">
-              We Showed {Math.round(r.low * 100)}% to {Math.round(r.high * 100)}%
-            </span>
-            <span className="text-sm text-subtle">
-              <span className={r.side === "Radiant" ? "text-radiant" : "text-dire"}>{r.side}</span>,{" "}
-              {r.games.toLocaleString("en-US")} newer games
-            </span>
-          </span>
-          <div className="col-span-2 row-start-2 sm:col-span-1 sm:row-start-auto">
-            <Track value={r.won * 100} low={r.low * 100} high={r.high * 100} lo={lo} hi={hi} isMain />
+    <div className="grid gap-5">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-2 text-sm text-muted sm:flex sm:flex-wrap sm:items-center">
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-6 rounded-full bg-accent opacity-35" />
+          We Showed
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="size-3.5 rounded-full bg-accent" />
+          They Won
+        </span>
+        <span className="flex items-center gap-2">
+          <SideMark side="Radiant" />
+          Radiant
+        </span>
+        <span className="flex items-center gap-2">
+          <SideMark side="Dire" />
+          Dire
+        </span>
+      </div>
+      <div className="grid gap-1">
+        <div className="relative">
+          {/* Grid lines at every 5%, behind the rows, starting after the side squares. */}
+          <div aria-hidden className="absolute inset-y-0 right-0 left-6">
+            {ticks.map((t) => (
+              <span
+                key={t}
+                className={`absolute inset-y-0 w-px ${t === 50 ? "bg-line-hover" : "bg-line"}`}
+                style={{ left: at(t, lo, hi) }}
+              />
+            ))}
           </div>
-          <span className="text-right text-lg font-semibold tabular-nums">{percent(r.won)}</span>
+          <ul className="relative grid gap-1.5">
+            {rows.map((r) => (
+              <li key={`${r.side}${r.low}`} title={sentence(r)} className="flex items-center gap-3">
+                <SideMark side={r.side} />
+                <span className="sr-only">{sentence(r)}</span>
+                <div className="min-w-0 flex-1">
+                  <Track value={r.won * 100} low={r.low * 100} high={r.high * 100} lo={lo} hi={hi} isMain />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-      ))}
-      <p className="text-sm text-subtle">
-        The shaded part is the range we show, the dot how often that side really won in newer games.
-      </p>
+        <div className="pl-6">
+          <Scale lo={lo} hi={hi} ticks={ticks} format={(t) => `${t}%`} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -431,9 +497,9 @@ const STEPS: { icon: IconName; title: string; text: (p: Proof) => string }[] = [
 /** The method in four steps. */
 export function FourSteps({ proof }: { proof: Proof }) {
   return (
-    <ol className="grid grid-cols-1 gap-3 min-[26rem]:grid-cols-2">
+    <ol className="grid grid-cols-1 gap-3 min-[26rem]:grid-cols-2 lg:grid-cols-4">
       {STEPS.map((s) => (
-        <li key={s.title} className="grid content-start gap-2.5 rounded-lg border border-line-strong bg-raised p-4">
+        <li key={s.title} className="grid content-start gap-2.5 rounded-lg border border-line-strong bg-raised p-3">
           <span className="text-accent [&_svg]:size-7">
             <Icon name={s.icon} />
           </span>
@@ -448,13 +514,13 @@ export function FourSteps({ proof }: { proof: Proof }) {
 /** Real games where the player took our first choice, newest first, losses included. */
 export function GameRows({ examples, heroes }: { examples: ProofExample[]; heroes: Map<number, Hero> }) {
   return (
-    <ul className="grid gap-3">
+    <ul className="grid gap-3 lg:grid-cols-2">
       {examples.map((g) => {
         const hero = heroes.get(g.heroId);
         return (
           <li
             key={`${g.matchId}-${g.heroId}`}
-            className="grid grid-cols-[7rem_1fr] items-center gap-x-4 gap-y-3 rounded-lg border border-line-strong bg-raised p-3 [grid-template-areas:'art_name'_'art_result'_'meta_meta'] sm:grid-cols-[10rem_1fr_auto] sm:gap-y-1.5 sm:[grid-template-areas:'art_name_result'_'art_meta_result']"
+            className="grid grid-cols-[7rem_1fr] items-center gap-x-4 gap-y-3 rounded-lg border border-line-strong bg-raised p-3 [grid-template-areas:'art_name'_'art_result'_'meta_meta'] sm:grid-cols-[10rem_1fr_auto] sm:gap-y-1.5 sm:[grid-template-areas:'art_name_result'_'art_meta_meta']"
           >
             {hero ? (
               <span className="lane-cut aspect-video w-full [grid-area:art]" style={laneCutStyle(90)}>
@@ -464,16 +530,13 @@ export function GameRows({ examples, heroes }: { examples: ProofExample[]; heroe
               <span className="aspect-video w-full rounded-md border border-dashed border-line-hover [grid-area:art]" />
             )}
             <span className="self-end text-xl font-semibold [grid-area:name]">{hero?.name ?? "Unknown Hero"}</span>
-            <div className="grid min-w-0 gap-1.5 self-start [grid-area:meta]">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-                <PositionLabel position={g.position} size={20} className="gap-2" />
-                {g.rankTier ? <RankMedal rankTier={g.rankTier} size={40} /> : null}
-                <span>{ROUND_NAMES[g.round]}</span>
-                <span>{shortDay(new Date(g.startTime * 1000).toISOString().slice(0, 10))}</span>
-              </div>
-              <span className="text-sm text-subtle">Our first choice at that moment</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 self-start text-sm text-muted [grid-area:meta]">
+              <PositionLabel position={g.position} size={20} className="gap-2" />
+              {g.rankTier ? <RankMedal rankTier={g.rankTier} size={40} /> : null}
+              <span>{ROUND_NAMES[g.round]}</span>
+              <span>{shortDay(new Date(g.startTime * 1000).toISOString().slice(0, 10))}</span>
             </div>
-            <div className="flex items-center gap-2 self-start [grid-area:result] sm:self-center">
+            <div className="flex items-center gap-2 self-start [grid-area:result] sm:self-end">
               <span
                 className={`rounded-md px-3 py-1 text-base font-semibold ${g.won ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"}`}
               >
