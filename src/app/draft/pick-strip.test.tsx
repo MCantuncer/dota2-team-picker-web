@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Suggestion } from "@/lib/engine/types";
 import type { Verdict } from "@/lib/engine/verdict";
 import type { PickEntry } from "./my-picks";
-import { PickStrip, strengthOf } from "./pick-strip";
+import { narrowColumns, PickStrip, strengthOf } from "./pick-strip";
 
 const CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
 const NAMES: Record<number, string> = {
@@ -389,5 +389,12 @@ describe("PickStrip", () => {
   it("shows the notices under the head", () => {
     strip({ notices: [<p key="n">No Mid Heroes Yet</p>] });
     expect(screen.getByText("No Mid Heroes Yet")).toBeInTheDocument();
+  });
+});
+
+describe("narrowColumns", () => {
+  it("keeps up to five tiles in one row and splits more into two even rows", () => {
+    expect([1, 2, 3, 4, 5].map(narrowColumns)).toEqual([1, 2, 3, 4, 5]);
+    expect([6, 7, 8, 9].map(narrowColumns)).toEqual([3, 4, 4, 5]);
   });
 });
