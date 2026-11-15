@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextSkillShowcase, type SkillChoice } from "./next-skill-showcase";
 
 const choice = (wex: number, exort: number): SkillChoice => ({
@@ -28,5 +28,36 @@ describe("NextSkillShowcase", () => {
     expect(container.querySelector(".ns-orb-wex")?.classList).toContain("ns-picked");
     expect(container.querySelector(".ns-row.ns-picked")?.textContent).toBe("Wex60%");
     expect(container.querySelector(".ns-leader")).toBeNull();
+  });
+
+  describe("on a screen where it starts below the fold", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("holds still until it is on screen, then plays from the start", () => {
+      let report: (ratio: number) => void = () => {};
+      const disconnect = vi.fn();
+      vi.stubGlobal(
+        "IntersectionObserver",
+        class {
+          constructor(cb: (entries: { intersectionRatio: number }[]) => void) {
+            report = (ratio) => cb([{ intersectionRatio: ratio }]);
+          }
+          observe() {}
+          disconnect = disconnect;
+        },
+      );
+      const rewind = { currentTime: 4200 as number | null };
+      const { container } = render(<NextSkillShowcase choice={choice(3, 15)} />);
+      const stage = container.querySelector<HTMLElement>(".ns-stage")!;
+      stage.getAnimations = () => [rewind as unknown as Animation];
+
+      act(() => report(0.1));
+      expect(stage.dataset.wait).toBe("");
+
+      act(() => report(0.8));
+      expect(stage.dataset.wait).toBeUndefined();
+      expect(rewind.currentTime).toBe(0);
+      expect(disconnect).toHaveBeenCalled();
+    });
   });
 });

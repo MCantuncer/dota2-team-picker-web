@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { Icon } from "@/components/icon";
 import { NextSkillShowcase, type SkillChoice } from "@/components/next-skill-showcase";
 import { SteamButton } from "@/components/steam-button";
@@ -56,13 +55,6 @@ const POINTS = [
   },
 ];
 
-/** The one hero render on the page: graded down and faded at the edges so the copy stays in front. */
-const RENDER_STYLE: CSSProperties = {
-  filter: "grayscale(.55) sepia(.25) brightness(.55)",
-  maskImage: "radial-gradient(closest-side at 50% 45%, #000 50%, transparent 100%)",
-  WebkitMaskImage: "radial-gradient(closest-side at 50% 45%, #000 50%, transparent 100%)",
-};
-
 export default async function Home() {
   const [user, heroes, proof] = await Promise.all([
     getUser(),
@@ -100,18 +92,8 @@ export default async function Home() {
             </div>
           )}
         </div>
-        {/* On wide screens the render is anchored to the card, not the window, so Invoker stays behind it at any width. */}
-        <div className="lg:relative lg:mt-64">
-          <Image
-            src="/art/invoker.webp"
-            alt=""
-            aria-hidden
-            width={1100}
-            height={1100}
-            priority
-            style={RENDER_STYLE}
-            className="pointer-events-none absolute -right-24 top-4 -z-10 w-[min(44rem,90vw)] opacity-60 lg:-top-80 lg:right-auto lg:-left-50 lg:w-176 lg:max-w-none lg:opacity-100"
-          />
+        {/* The Invoker scene sits right above the example card at every width. */}
+        <div className="relative lg:mt-64">
           <NextSkillShowcase choice={SKILL} />
           <DraftPreview byId={byId} />
         </div>
@@ -162,11 +144,11 @@ function ProofTeaser({ proof }: { proof: Proof }) {
 /** The product in one picture: a real engine result for a draft in progress. */
 function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const hero = (id: number) => byId.get(id);
-  const names = (ids: number[]) => ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and ");
+  const names = (ids: number[]) => keepWhole(ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and "));
   return (
     <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong">
       <figcaption className="text-sm text-subtle">
-        Example: you play mid with {names(EXAMPLE.allies)}, they have {names(EXAMPLE.enemies)}
+        Example: you play mid with {names(EXAMPLE.allies)}, the enemy has {names(EXAMPLE.enemies)}
       </figcaption>
       <ol className="mt-2">
         {EXAMPLE.suggestions.slice(0, 4).map((s, i) => {
@@ -179,8 +161,8 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
                 <span className="h-9 w-16 rounded-xs bg-raised" />
               )}
               <span className="min-w-0">
-                <span className="block truncate font-medium text-fg">{h?.name ?? `Hero ${s.id}`}</span>
-                <span className="block truncate text-xs text-subtle">{s.reason}</span>
+                <span className="block font-medium text-fg">{h?.name ?? `Hero ${s.id}`}</span>
+                <span className="mt-0.5 block text-xs leading-4 text-subtle">{keepWhole(s.reason)}</span>
               </span>
               <span className={`num text-right ${i === 0 ? "text-accent" : "text-fg"}`}>{s.score.toFixed(1)}</span>
             </li>
@@ -188,5 +170,18 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
         })}
       </ol>
     </figure>
+  );
+}
+
+/** Text whose hyphenated words (hero names such as Anti-Mage) never break across lines. */
+function keepWhole(text: string) {
+  return text.split(/(\S+-\S+)/).map((part, i) =>
+    i % 2 ? (
+      <span key={i} className="whitespace-nowrap">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
   );
 }
