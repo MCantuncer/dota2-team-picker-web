@@ -80,6 +80,14 @@ test("the ? button walks the page one control at a time and remembers it was ope
   await expect(page.getByRole("button", { name: "Page Tour" }).locator(".tour-dot")).toHaveCount(0);
 });
 
+test("starts the page with the cursor in the My team box, but not on a phone where it would open the keyboard", async ({ page, isMobile }) => {
+  await page.goto("/draft");
+  const ally = page.getByLabel("My team pick, e.g. cm5");
+  await expect(ally).toBeVisible();
+  if (isMobile) await expect(ally).not.toBeFocused();
+  else await expect(ally).toBeFocused();
+});
+
 test("on Dire the Enemy team comes first, like the Radiant and Dire order in Dota", async ({ page }) => {
   await page.goto("/draft");
   await expect(page.getByLabel("My team pick, e.g. cm5")).toBeVisible();
