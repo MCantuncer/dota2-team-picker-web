@@ -80,7 +80,7 @@ export function LaneBoard({ lanes, player, heroName, icons, onClock = false }: A
           {pair && <PairBar pair={pair} heroName={heroName} />}
           <div className="flex max-w-[62ch] flex-col gap-3">
             <p className="text-[0.9375rem] text-fg">{lane.text}</p>
-            <p className="text-[0.9375rem] text-fg">{player.job}</p>
+            {player.job && <p className="text-[0.9375rem] text-fg">{player.job}</p>}
             {fallbacks.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <h4 className="text-sm font-medium text-muted">If It Goes Wrong</h4>

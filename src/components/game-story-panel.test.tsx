@@ -20,18 +20,18 @@ const plan: GamePlan = {
   winCondition: "No single style: play around your strongest heroes.",
   lanes: [
     { name: "Safe lane", ours: [1], theirs: [9], edge: -2, verdict: "hard", text: "Hard lane against Hero 9: farm safely." },
-    { name: "Mid", ours: [2], theirs: [7], edge: 0.2, verdict: "even", text: "Even lane against Hero 7: the better last hits win it." },
+    { name: "Mid", ours: [2], theirs: [7], edge: 0.2, verdict: "even", text: "Even lane against Hero 7." },
   ],
   ourCombos: [],
   fears: [],
-  danger: ["Hero 8: Black King Bar at 21 min. Lock them down first in every fight."],
+  danger: ["Hero 8: Black King Bar at 21 min. Strong against Hero 1."],
   roadmap: [],
   players: [
     {
       heroId: 1,
       position: 1,
-      job: "Farm and carry the late game.",
-      fallbacks: ["Lane lost? Leave the lane at 5 to 6 min for the jungle."],
+      job: "Your timing is Black King Bar at 17 min.",
+      fallbacks: [],
       enemies: [
         { heroId: 9, inLane: true, laneSure: false, threat: "Tank who soaks your damage", answers: [], tip: "Don't focus them" },
         { heroId: 8, inLane: false, laneSure: true, threat: "Stuns and disables", answers: [116], spell: { key: "lion_voodoo", name: "Hex", line: "No spells, no items", kind: "magic" } },
@@ -55,14 +55,13 @@ const plan: GamePlan = {
     {
       heroId: 2,
       position: 2,
-      job: "Win your lane.",
+      job: "Your timing is Magic Wand at 8 min.",
       fallbacks: [],
       enemies: [],
       threatRows: [],
       build: { timings: "around", start: [], lane: [], core: [item(36, "Magic Wand", 8)], situational: [] },
     },
   ],
-  teamFallbacks: ["Behind at 20? Defend high ground until Hero 1 has Black King Bar."],
   story: {
     headline: "Fight from 14 min, before Hero 9 has Battle Fury at 18.",
     ready: 17,
@@ -85,7 +84,7 @@ const renderPanel = (myPosition?: number) =>
   render(<GameStoryPanel plan={plan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={["Can", null]} myPosition={myPosition} />);
 
 describe("GameStoryPanel", () => {
-  it("tells the story under Game Story: headline, chapters, danger heroes and the team's fallbacks", async () => {
+  it("tells the story under Game Story: headline, chapters and danger heroes", async () => {
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
@@ -93,7 +92,7 @@ describe("GameStoryPanel", () => {
     expect(within(story).getByText("Fight from 14 min, before Hero 9 has Battle Fury at 18.")).toBeInTheDocument();
     expect(within(story).getByText(/Group up and take towers/)).toBeInTheDocument();
     expect(within(story).getByText(/Black King Bar at 21 min/)).toBeInTheDocument();
-    expect(within(story).getByText(/Behind at 20\?/)).toBeInTheDocument();
+    expect(within(story).queryByText(/Behind at 20\?/)).toBeNull();
   });
 
   it("puts the game plan against an enemy dangerous core in place of his danger line", async () => {
@@ -237,14 +236,13 @@ describe("GameStoryPanel", () => {
     expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveFocus();
   });
 
-  it("shows the lane, the job and the fallbacks under Game Story", async () => {
+  it("shows the lane and the player's line under Game Story", async () => {
     const user = userEvent.setup();
     renderPanel(1);
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
     expect(screen.getByText("Lane: Hard")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Lane map: Safe Lane hard (yours), Mid even." })).toBeInTheDocument();
-    expect(screen.getByText("Farm and carry the late game.")).toBeInTheDocument();
-    expect(screen.getByText(/Lane lost\?/)).toBeInTheDocument();
+    expect(screen.getByText("Your timing is Black King Bar at 17 min.")).toBeInTheDocument();
   });
 
   it("shows the skill plan under Skills and Talents, or says there is none", async () => {
@@ -275,11 +273,14 @@ describe("the game clock", () => {
     ...plan,
     players: plan.players.map((p) =>
       p.position === 1
-        ? { ...p, keyItem: { itemId: 116, name: "Black King Bar", lateMinute: 20 }, fallbacks: [...p.fallbacks, "No Black King Bar by 20 min? Farm behind your towers."], fallbackSituations: ["laneLost", "keyItemLate"] }
+        ? {
+            ...p,
+            keyItem: { itemId: 116, name: "Black King Bar", lateMinute: 20 },
+            fallbacks: ["No Black King Bar by 20 min? 31 of 48 high-rank wins without it bought Manta Style next, around 19 min."],
+            fallbackSituations: ["keyItemLate"],
+          }
         : p,
     ),
-    teamFallbackSituations: ["behindAt20", "aheadAt20"],
-    teamFallbacks: ["Behind at 20? Defend high ground.", "Ahead at 20? Take Roshan."],
     story: { ...plan.story, race: { ready: 17, theirs: { hero: "Hero 9", item: "Battle Fury", minute: 18 } } },
   };
 
@@ -289,20 +290,19 @@ describe("the game clock", () => {
     expect(raceBand({ ...clockPlan.story, race: undefined })).toBeUndefined();
   });
 
-  it("flags the viewer's key item minute with its fallback, and splits the team's plan at 20 into Ahead and Behind", async () => {
+  it("flags the viewer's key item minute with its measured fallback, and gives the team no hand-written plan at 20", async () => {
     const user = userEvent.setup();
     render(<GameStoryPanel plan={clockPlan} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} myPosition={1} />);
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
     expect(screen.getByRole("img", { name: /Fight Here, 17 to 18\. No Black King Bar by 20 min\?$/ })).toBeInTheDocument();
-    expect(screen.getByText("Farm behind your towers.")).toBeInTheDocument();
-    const fork = within(screen.getByRole("heading", { name: "At 20 Min" }).parentElement!).getAllByRole("listitem");
-    expect(fork.map((li) => li.textContent)).toEqual(["Ahead at 20?Take Roshan.", "Behind at 20?Defend high ground."]);
+    expect(screen.getByText("31 of 48 high-rank wins without it bought Manta Style next, around 19 min.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "At 20 Min" })).toBeNull();
     expect(screen.queryByText("If the Game Goes Wrong")).toBeNull();
   });
 
   it("splits a line into its question and answer", () => {
-    expect(askAndAnswer("Behind at 20? Defend towers.")).toEqual({ question: "Behind at 20?", answer: "Defend towers." });
-    expect(askAndAnswer("Defend towers.")).toEqual({ question: "", answer: "Defend towers." });
+    expect(askAndAnswer("No Blink Dagger by 20 min? 31 of 48 bought Witch Blade.")).toEqual({ question: "No Blink Dagger by 20 min?", answer: "31 of 48 bought Witch Blade." });
+    expect(askAndAnswer("31 of 48 bought Witch Blade.")).toEqual({ question: "", answer: "31 of 48 bought Witch Blade." });
   });
 });
 

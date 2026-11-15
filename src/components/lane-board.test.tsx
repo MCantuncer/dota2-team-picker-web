@@ -10,7 +10,7 @@ const mid: LanePlan = {
   theirs: [11],
   edge: -2,
   verdict: "hard",
-  text: "Hard lane against Hero 11: farm safely.",
+  text: "Hard lane against Hero 11.",
   pairs: [{ hero: 13, enemy: 11, games: 1251, won: 275, drawn: 313, lost: 663, weight: 0.97 }],
 };
 const safe: LanePlan = {
@@ -19,13 +19,23 @@ const safe: LanePlan = {
   theirs: [2, 14],
   edge: 2,
   verdict: "win",
-  text: "Won lane.",
+  text: "Winning lane.",
   pairs: [
     { hero: 8, enemy: 2, games: 900, won: 400, drawn: 200, lost: 300, weight: 0.4, allRanks: true },
     { hero: 8, enemy: 14, games: 800, won: 300, drawn: 200, lost: 300, weight: 0.9, allRanks: true },
   ],
 };
-const player = (heroId: number, position: Position): PlayerPlan => ({ heroId, position, job: "Win your lane.", fallbacks: ["Lane lost? Stop contesting runes."], enemies: [], threatRows: [], build: null });
+const LATE = "No Blink Dagger by 20 min? 31 of 48 high-rank wins without it bought Witch Blade next, around 18 min.";
+const player = (heroId: number, position: Position): PlayerPlan => ({
+  heroId,
+  position,
+  job: "Your timing is Blink Dagger at 19 min.",
+  fallbacks: [LATE],
+  fallbackSituations: ["keyItemLate"],
+  enemies: [],
+  threatRows: [],
+  build: null,
+});
 const board = (heroId: number, position: Position) =>
   render(<LaneBoard lanes={[safe, mid]} player={player(heroId, position)} heroName={(id) => `Hero ${id}`} icons={{}} />);
 
@@ -57,26 +67,27 @@ describe("LaneBoard", () => {
     expect(screen.getByRole("img", { name: "Lane map: Safe Lane won (yours), Mid hard." })).toBeInTheDocument();
   });
 
-  it("keeps the lane line, the job and the fallbacks", () => {
+  it("keeps the lane line, the player's line and the measured fallback", () => {
     board(13, 2);
     const lanes = screen.getByRole("region", { name: "Lanes" });
-    expect(within(lanes).getByText("Hard lane against Hero 11: farm safely.")).toBeInTheDocument();
-    expect(within(lanes).getByText("Win your lane.")).toBeInTheDocument();
-    expect(within(lanes).getByText("Lane lost? Stop contesting runes.")).toBeInTheDocument();
+    expect(within(lanes).getByText("Hard lane against Hero 11.")).toBeInTheDocument();
+    expect(within(lanes).getByText("Your timing is Blink Dagger at 19 min.")).toBeInTheDocument();
+    expect(within(lanes).getByText(LATE)).toBeInTheDocument();
+  });
+
+  it("shows no empty line when nothing is known about the player", () => {
+    const { container } = render(<LaneBoard lanes={[mid]} player={{ ...player(13, 2), job: "", fallbacks: [], fallbackSituations: undefined }} heroName={(id) => `Hero ${id}`} icons={{}} />);
+    expect([...container.querySelectorAll("p")].filter((p) => p.textContent === "")).toEqual([]);
+    expect(screen.queryByText("If It Goes Wrong")).toBeNull();
   });
 
   it("leaves the late key item line to the Game Clock for the viewer, and keeps it for a teammate", () => {
-    const late: PlayerPlan = {
-      ...player(13, 2),
-      fallbacks: ["Lane lost? Stop contesting runes.", "No Blink Dagger by 20 min? Farm the safe jungle."],
-      fallbackSituations: ["laneLost", "keyItemLate"],
-      keyItem: { itemId: 1, name: "Blink Dagger", lateMinute: 20 },
-    };
+    const late: PlayerPlan = { ...player(13, 2), keyItem: { itemId: 1, name: "Blink Dagger", lateMinute: 20 } };
     const { rerender } = render(<LaneBoard lanes={[mid]} player={late} heroName={(id) => `Hero ${id}`} icons={{}} onClock />);
-    expect(screen.getByText("Lane lost? Stop contesting runes.")).toBeInTheDocument();
     expect(screen.queryByText(/No Blink Dagger by 20 min/)).toBeNull();
+    expect(screen.queryByText("If It Goes Wrong")).toBeNull();
     rerender(<LaneBoard lanes={[mid]} player={late} heroName={(id) => `Hero ${id}`} icons={{}} />);
-    expect(screen.getByText("No Blink Dagger by 20 min? Farm the safe jungle.")).toBeInTheDocument();
+    expect(screen.getByText(LATE)).toBeInTheDocument();
   });
 
   it("shows no bar without lane results", () => {
@@ -88,7 +99,7 @@ describe("LaneBoard", () => {
 
 describe("keyItemLateLine", () => {
   it("finds the key item's late line by its situation, only when the key item has a late minute", () => {
-    const p: PlayerPlan = { ...player(8, 1), fallbacks: ["A", "B"], fallbackSituations: ["laneLost", "keyItemLate"], keyItem: { itemId: 1, name: "Battle Fury", lateMinute: 16 } };
+    const p: PlayerPlan = { ...player(8, 1), fallbacks: ["B"], fallbackSituations: ["keyItemLate"], keyItem: { itemId: 1, name: "Battle Fury", lateMinute: 16 } };
     expect(keyItemLateLine(p)).toBe("B");
     expect(keyItemLateLine({ ...p, keyItem: { itemId: 1, name: "Battle Fury" } })).toBeUndefined();
     expect(keyItemLateLine({ ...p, fallbackSituations: undefined })).toBeUndefined();
