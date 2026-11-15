@@ -1,4 +1,5 @@
 import type { PlayerPlan } from "@/lib/engine/game-plan";
+import type { ItemInfo } from "@/lib/engine/types";
 import type { ItemFork } from "@/lib/item-forks";
 import { BuildPath, type EnemyItem } from "./build-path";
 import { WhoHurtsYou } from "./who-hurts-you";
@@ -20,12 +21,13 @@ export function PlayerItems({
   laneNote,
   forks = [],
   enemyItems = [],
-}: Art & { player: PlayerPlan; laneNote?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[] }) {
+  items,
+}: Art & { player: PlayerPlan; laneNote?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[]; items?: Record<string, ItemInfo> }) {
   const build = player.build;
   if (!build) return <p className="text-sm text-muted">No item data for this hero yet.</p>;
   return (
     <div className="flex min-w-0 flex-col gap-12">
-      <BuildPath build={build} heroName={heroName} icons={icons} note={laneNote} forks={forks} enemyItems={enemyItems} />
+      <BuildPath build={build} heroName={heroName} icons={icons} note={laneNote} forks={forks} enemyItems={enemyItems} items={items} />
       <WhoHurtsYou player={player} heroName={heroName} icons={icons} />
     </div>
   );

@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import type { BuildItem, ItemBuild } from "@/lib/engine/item-build";
+import type { ItemInfo } from "@/lib/engine/types";
 import type { ItemFork } from "@/lib/item-forks";
 import { HeroFace } from "./hero-frame";
+import { ItemAnatomy } from "./item-anatomy";
 import { ForkBlock } from "./item-forks";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -60,8 +62,9 @@ export function sentence(text: string): string {
 /**
  * The Build Path (Can's go on the Your Game mockup, 2026-11-12): the start and lane kits as item tiles, then the
  * core items in buy order on one line, each with its minute big and its late minute under it. Items bought for
- * this draft carry the enemy's face. A tile opens its detail right under itself: the numbers as stat blocks and at
- * most two sentences on why. The draft's first answer item is open to start, else the first core item.
+ * this draft carry the enemy's face. A tile opens its detail right under itself: the numbers as stat blocks, what the
+ * item gives and how it is built (from `items`), and at most two sentences on why. The draft's first answer item is
+ * open to start, else the first core item.
  */
 export function BuildPath({
   build,
@@ -70,7 +73,8 @@ export function BuildPath({
   note,
   forks = [],
   enemyItems = [],
-}: Art & { build: ItemBuild; note?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[] }) {
+  items,
+}: Art & { build: ItemBuild; note?: string; forks?: ItemFork[]; enemyItems?: EnemyItem[]; items?: Record<string, ItemInfo> }) {
   const rough = build.timings === "around";
   const path = pathItems(build);
   // Our items and the enemy's on one line in minute order, ours first on a tie; rough minutes can't be set beside theirs.
@@ -90,7 +94,7 @@ export function BuildPath({
     stops.find((s) => s.key === picked) ?? stops.find((s) => s.where === "path" && s.item.reason) ?? stops.find((s) => s.where === "path") ?? stops[0];
   // The other boots go once, under the core boots (the first core item bought in the lane phase).
   const boots = build.core.find((i) => i.phase === "lane");
-  const detail = open && <Detail stop={open} rough={rough} heroName={heroName} icons={icons} fork={open.where === "path" ? forkOf(open.item) : undefined} />;
+  const detail = open && <Detail stop={open} rough={rough} heroName={heroName} icons={icons} fork={open.where === "path" ? forkOf(open.item) : undefined} items={items} />;
   const tile = (stop: Stop) => ({
     pressed: open?.key === stop.key,
     onClick: () => setPicked(stop.key),
@@ -262,21 +266,23 @@ function ItemArt({ item, className }: { item: BuildItem; className: string }) {
   return <Image src={ITEM_CDN + item.img} alt="" width={64} height={47} className={`block rounded-md object-cover ${className}`} />;
 }
 
-/** The open item: art, name, the enemies it is for, its numbers as stat blocks, and why it is in this game. */
-function Detail({ stop, rough, heroName, icons, fork }: Art & { stop: Stop; rough: boolean; fork?: ItemFork }) {
+/** The open item: art, name, the enemies it is for, its numbers as stat blocks, what it gives and its parts, and why it is in this game. */
+function Detail({ stop, rough, heroName, icons, fork, items }: Art & { stop: Stop; rough: boolean; fork?: ItemFork; items?: Record<string, ItemInfo> }) {
   const { item } = stop;
   const foes = foesOf(item);
   const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
   const late = fork?.late ?? item.lateMinute;
+  const cost = items?.[item.itemId]?.cost;
   const facts = [
     ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual", tone: "text-fg" }] : []),
     ...(stop.where === "path" && !rough && late !== undefined ? [{ value: `${late} min`, label: "Late After", tone: "text-warn" }] : []),
     ...(item.count ? [{ value: `x${item.count}`, label: "Copies", tone: "text-fg" }] : []),
+    ...(cost ? [{ value: cost.toLocaleString("en-US"), label: "Gold", tone: "text-fg" }] : []),
   ];
   return (
     <div aria-live="polite" className="grid gap-5 rounded-lg bg-surface p-5 sm:grid-cols-[auto_minmax(0,1fr)]">
       <ItemArt item={item} className="h-16 w-[5.5rem] shadow-[inset_0_0_0_1px_var(--line-strong)]" />
-      <div className="flex min-w-0 flex-col gap-3.5">
+      <div className="flex min-w-0 flex-col gap-5">
         <h4 className="flex flex-wrap items-center gap-2.5 text-[1.0625rem] font-semibold text-fg">
           {item.name}
           {foes.length > 0 && (
@@ -296,6 +302,7 @@ function Detail({ stop, rough, heroName, icons, fork }: Art & { stop: Stop; roug
             ))}
           </dl>
         )}
+        <ItemAnatomy itemId={item.itemId} items={items} />
         {why && <p className="max-w-[70ch] text-sm text-muted">{why}</p>}
         {fork && <ForkBlock fork={fork} />}
       </div>
