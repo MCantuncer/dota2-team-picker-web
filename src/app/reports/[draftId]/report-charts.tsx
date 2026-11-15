@@ -43,7 +43,7 @@ const LANE_PATH: Record<LaneName, string> = {
 };
 
 /** The lane as a small minimap with its path lit, like Dota's lane picker. Decorative: the lane's name sits beside it. */
-export function LaneIcon({ lane, size = 32 }: { lane: LaneName; size?: number }) {
+export function LaneIcon({ lane, size = 40 }: { lane: LaneName; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
       <rect x="0.5" y="0.5" width="23" height="23" rx="4.5" fill="var(--raised)" stroke="var(--line-strong)" />
@@ -85,9 +85,11 @@ export function LaneChart({ lanes, art, name }: { lanes: LaneResult[]; art: Repo
           return (
             <li key={l.lane} className="col-span-2 grid grid-cols-subgrid items-center gap-y-2.5 sm:col-span-3">
               <span className="sr-only">{laneLine(l, name)}</span>
-              <span aria-hidden="true" className="grid grid-cols-[2rem_3.5rem_auto] items-center gap-x-2.5">
-                <LaneIcon lane={l.lane} />
-                <span className="text-sm font-semibold text-fg">{LANE_LABEL[l.lane]}</span>
+              {/* The lane's icon is its name (Can, 2026-11-16): set apart from the faces by a divider and more room. */}
+              <span aria-hidden="true" className="flex items-center gap-4">
+                <span title={LANE_LABEL[l.lane]} className="flex border-r border-line-strong pr-4">
+                  <LaneIcon lane={l.lane} />
+                </span>
                 <span className="flex gap-1.5">
                   {l.ourHeroes.map((id) => (
                     <Face key={id} heroId={id} art={art} name={name} />
