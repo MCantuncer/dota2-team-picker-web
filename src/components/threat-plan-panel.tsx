@@ -5,6 +5,7 @@ import type { StairStep } from "@/lib/engine/threat";
 import type { Snapshot } from "@/lib/engine/types";
 import { HeroArt, HeroFace, HeroStage, LaneMark, type HeroArtPlacement } from "./hero-frame";
 import { Icon, type IconName } from "./icon";
+import { ItemBand, ItemButton } from "./item-card";
 import { ThreatTiles } from "./threat-tiles";
 
 /*
@@ -243,7 +244,22 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                 <p>
                   His most bought big item,{" "}
                   <span className="inline-flex items-center gap-1.5 align-middle font-semibold text-fg">
-                    {item?.img && <Image src={ITEM_CDN + item.img} alt="" width={28} height={20} className="h-5 w-7 rounded-xs object-cover" />}
+                    {item?.img && (
+                      <ItemButton
+                        card={{
+                          itemId: pace.itemId,
+                          band: (
+                            <ItemBand
+                              facts={[{ value: `${pace.minute} min`, label: "Usual", tone: "text-dire" }]}
+                              chip={{ text: `Enemy ${him.name}`, enemy: true, faces: [{ name: him.name, portrait: him.portrait }] }}
+                            />
+                          ),
+                        }}
+                        className="rounded-xs"
+                      >
+                        <Image src={ITEM_CDN + item.img} alt="" width={28} height={20} className="block h-5 w-7 rounded-xs object-cover" />
+                      </ItemButton>
+                    )}
                     {item?.name ?? "his big item"}
                   </span>
                   , is usually done at {pace.minute} minutes. In games where it was done by {pace.minute - 2} he won{" "}

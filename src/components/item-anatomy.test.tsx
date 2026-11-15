@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { ItemInfo } from "@/lib/engine/types";
 import { ItemParts, ItemSpells, ItemStatLines } from "./item-anatomy";
+import { ItemCardProvider } from "./item-card";
 import { PlayerItems } from "./player-items";
 
 const info = (key: string, name: string, cost: number, extra: Partial<ItemInfo> = {}): ItemInfo => ({ key, name, cost, img: `/items/${key}.png`, components: [], ...extra });
@@ -63,7 +64,7 @@ describe("item tooltip parts", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("opens in the Build Path detail with the item's gold", async () => {
+  it("opens in the item's card with its gold, and a part opens its own card with a way back", async () => {
     const player: PlayerPlan = {
       heroId: 36,
       position: 2,
@@ -73,9 +74,19 @@ describe("item tooltip parts", () => {
       threatRows: [],
       build: { timings: "rank", start: [], lane: [{ itemId: 73, name: "Bracer", img: "/items/bracer.png", minute: 2 }], core: [], situational: [] },
     };
-    render(<PlayerItems player={player} heroName={(id) => `Hero ${id}`} icons={{}} items={items} />);
-    await userEvent.click(screen.getByRole("button", { name: "Bracer" }));
-    expect(screen.getByText("505")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "How to build Bracer" })).toBeInTheDocument();
+    const user = userEvent.setup();
+    render(
+      <ItemCardProvider items={items}>
+        <PlayerItems player={player} heroName={(id) => `Hero ${id}`} icons={{}} />
+      </ItemCardProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "Bracer" }));
+    const card = screen.getByRole("dialog", { name: "Bracer" });
+    expect(within(card).getByText("505")).toBeInTheDocument();
+    expect(within(card).getByRole("region", { name: "How to build Bracer" })).toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Open Circlet" }));
+    expect(screen.getByRole("dialog", { name: "Circlet" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back to Bracer" }));
+    expect(screen.getByRole("dialog", { name: "Bracer" })).toBeInTheDocument();
   });
 });
