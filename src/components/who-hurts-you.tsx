@@ -4,6 +4,7 @@ import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { BuildItem, Threat } from "@/lib/engine/item-build";
 import { sentence } from "./build-path";
 import { HeroArt, HeroFace, HeroStage, type HeroArtPlacement } from "./hero-frame";
+import { ItemBand, ItemButton } from "./item-card";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 const ABILITY_CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/abilities/";
@@ -122,11 +123,18 @@ function Tile({ row, note, answer, heroName, icons }: Art & { row: ThreatRow; no
  */
 function TileAnswer({ row, answer, heroName, icons }: Art & { row: ThreatRow; answer?: BuildItem }) {
   const art = row.tipArt;
+  const foes = row.enemies.map((e) => e.heroId);
+  const chip = { text: `For ${foes.map(heroName).join(" and ")}`, enemy: true, faces: foes.map((id) => ({ name: heroName(id), portrait: icons[id] })) };
   return (
     <div className="col-span-2 flex items-center gap-3.5 border-t border-line pt-3 sm:col-span-1 sm:mx-5 sm:mt-5 sm:self-start sm:pb-5 sm:pt-4">
       {answer ? (
         <>
-          <Image src={ITEM_CDN + answer.img} alt="" width={55} height={40} className="h-10 w-[3.4375rem] shrink-0 rounded-md object-cover" />
+          <ItemButton
+            card={{ itemId: answer.itemId, name: answer.name, img: answer.img, band: <ItemBand facts={[{ value: `${answer.minute} min`, label: "Usual" }]} chip={chip} /> }}
+            className="shrink-0"
+          >
+            <Image src={ITEM_CDN + answer.img} alt="" width={55} height={40} className="block h-10 w-[3.4375rem] rounded-md object-cover" />
+          </ItemButton>
           <p className="text-sm leading-relaxed text-fg">
             Buy <b className="font-semibold">{answer.name}</b>
             <span className="text-muted">, around {answer.minute} min.</span>
@@ -141,7 +149,11 @@ function TileAnswer({ row, answer, heroName, icons }: Art & { row: ThreatRow; an
               )}
             </span>
           )}
-          {art && "item" in art && <Image src={ITEM_CDN + art.img} alt="" width={55} height={40} className="h-10 w-[3.4375rem] shrink-0 rounded-md object-cover" />}
+          {art && "item" in art && (
+            <ItemButton card={{ itemId: art.item, img: art.img, band: <ItemBand chip={chip} /> }} className="shrink-0">
+              <Image src={ITEM_CDN + art.img} alt="" width={55} height={40} className="block h-10 w-[3.4375rem] rounded-md object-cover" />
+            </ItemButton>
+          )}
           {art && "spell" in art && <Image src={`${ABILITY_CDN}${art.spell}.png`} alt="" width={40} height={40} className="size-10 shrink-0 rounded-md" />}
           <p className="text-sm leading-relaxed text-fg">{row.tip ? sentence(row.tip) : "Play your game."}</p>
         </>

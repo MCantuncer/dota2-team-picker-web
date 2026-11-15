@@ -7,6 +7,7 @@ import { PlayerView } from "./player-view";
 import type { EnemyItem } from "./build-path";
 import { itemArt, StoryTimeline } from "./story-timeline";
 import { ThreatPlanPanel } from "./threat-plan-panel";
+import { ItemCardProvider } from "./item-card";
 import type { DraftThreat } from "@/lib/engine/threat-plan";
 
 export interface GameStoryPanelProps {
@@ -81,29 +82,32 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
     </>
   );
   return (
-    <section aria-label="Your Game" className="flex flex-col gap-6 border-t border-line pt-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="section-title">Your Game</h2>
-        {action}
-      </div>
+    // Every item icon in here opens its card next to itself (item-card.tsx).
+    <ItemCardProvider items={items}>
+      <section aria-label="Your Game" className="flex flex-col gap-6 border-t border-line pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="section-title">Your Game</h2>
+          {action}
+        </div>
 
-      <PlayerView
-        players={plan.players}
-        heroName={heroName}
-        icons={icons}
-        playerNames={playerNames}
-        myPosition={myPosition}
-        laneOf={laneOf}
-        lanes={plan.lanes}
-        abilities={abilities}
-        skillBuilds={skillBuilds}
-        items={items}
-        headline={plan.story.headline}
-        ready={plan.story.ready}
-        team={team}
-        enemyItems={enemyItems}
-      />
-    </section>
+        <PlayerView
+          players={plan.players}
+          heroName={heroName}
+          icons={icons}
+          playerNames={playerNames}
+          myPosition={myPosition}
+          laneOf={laneOf}
+          lanes={plan.lanes}
+          abilities={abilities}
+          skillBuilds={skillBuilds}
+          items={items}
+          headline={plan.story.headline}
+          ready={plan.story.ready}
+          team={team}
+          enemyItems={enemyItems}
+        />
+      </section>
+    </ItemCardProvider>
   );
 }
 

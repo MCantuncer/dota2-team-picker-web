@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { Chapter, Spike, Story } from "@/lib/engine/story";
 import type { ItemInfo } from "@/lib/engine/types";
 import { axisPosition, minuteText, spreadMarks, timelineLabel } from "@/lib/story-axis";
+import { ItemBand, ItemButton } from "./item-card";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -52,7 +53,7 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
     // On phones the box scrolls sideways, so it takes keyboard focus to scroll with the arrow keys.
     <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Story timeline">
       <div className="min-w-[57.5rem]">
-        <div className={`relative ${checkpoint ? "h-[19rem]" : "h-60"}`} role="img" aria-label={`${timelineLabel(story)}${band ? ` ${band.label}.` : ""}${checkpoint ? ` ${checkpoint.question}` : ""}`}>
+        <div className={`relative ${checkpoint ? "h-[19rem]" : "h-60"}`} role="group" aria-label={`${timelineLabel(story)}${band ? ` ${band.label}.` : ""}${checkpoint ? ` ${checkpoint.question}` : ""}`}>
           {band && (
             <div
               className={`absolute top-[7.25rem] h-6 rounded-xs border-x ${band.fight ? "border-accent/60 bg-accent/15" : "border-dire/50 bg-dire/10"}`}
@@ -109,9 +110,26 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
       style={{ left: `${left}%` }}
     >
       <div className="mb-1 flex items-center gap-1">
-        {/* The axis is one image with its own label, so its art carries no names of its own. */}
+        {/* The axis has its own label, so its art carries no names of its own; the item opens its card. */}
         {heroIcon && <Image src={heroIcon} alt="" width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />}
-        {itemImg && <Image src={ITEM_CDN + itemImg} alt="" width={44} height={32} className="h-8 w-11 rounded-xs object-cover" />}
+        {itemImg && (
+          <ItemButton
+            label={`${side === "us" ? "" : "Enemy "}${spike.hero}: ${spike.item}`}
+            card={{
+              name: spike.item,
+              img: itemImg,
+              band: (
+                <ItemBand
+                  facts={[{ value: `${spike.around ? "~" : ""}${spike.minute} min`, label: "Usual", tone: side === "us" ? "text-radiant" : "text-dire" }]}
+                  chip={{ text: side === "us" ? spike.hero : `Enemy ${spike.hero}`, enemy: side === "them", faces: [{ name: spike.hero, portrait: heroIcon }] }}
+                />
+              ),
+            }}
+            className="rounded-xs"
+          >
+            <Image src={ITEM_CDN + itemImg} alt="" width={44} height={32} className="block h-8 w-11 rounded-xs object-cover" />
+          </ItemButton>
+        )}
       </div>
       <span className={`num text-sm font-semibold leading-tight ${side === "us" ? "text-radiant" : "text-dire"}`}>
         {minuteText(spike)}
