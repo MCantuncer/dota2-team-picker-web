@@ -160,8 +160,11 @@ function PlayerSection({
   // Cells in list order with the outsider last. From 1024px two share a row; a closed card fills its cell to line up
   // with the card beside it, unless that one is open, so the closed one keeps its compact height.
   const cells = [...list.map((s) => s.heroId), ...(c.outsider ? [c.outsider.pick.heroId] : [])];
+  // An odd count would leave the last card alone on its row, so the first (the best) takes the whole row instead.
+  const isWideFirst = cells.length % 2 === 1;
   const isFullAt = (i: number) => {
-    const start = i - (i % 2);
+    if (isWideFirst && i === 0) return true;
+    const start = isWideFirst ? i - ((i - 1) % 2) : i - (i % 2);
     return !openIds.has(cells[start]!) && !(cells[start + 1] !== undefined && openIds.has(cells[start + 1]!));
   };
   const moves = useRankMoves(
@@ -254,8 +257,8 @@ function PlayerSection({
       <div className="grid gap-4 pl-7 md:pl-10 lg:grid-cols-2">
         <ol aria-label={`Suggested heroes for ${name}`} className="contents">
           {list.map((s, i) => (
-            <li key={s.heroId} className={`relative min-w-0 ${PICK_NODE}`}>
-              <LaneGutter cell={i} last={last} isWideFirst={false} node={nodeOf(i)} />
+            <li key={s.heroId} className={`relative min-w-0 ${PICK_NODE} ${isWideFirst && i === 0 ? "lg:col-span-2" : ""}`}>
+              <LaneGutter cell={i} last={last} isWideFirst={isWideFirst} node={nodeOf(i)} />
               <PickCard
                 entry={{
                   suggestion: s,
@@ -281,7 +284,7 @@ function PlayerSection({
         {c.outsider && (
           <ol aria-label={`Hero from outside ${isMine ? "your" : `${name}'s`} pool`} className="contents">
             <li className={`relative min-w-0 ${OUTSIDER_NODE}`}>
-              <LaneGutter cell={list.length} last={last} isWideFirst={false} node={<ForkNode />} />
+              <LaneGutter cell={list.length} last={last} isWideFirst={isWideFirst} node={<ForkNode />} />
               <PickCard
                 entry={{ suggestion: c.outsider.pick, gain: gainOf?.(c.outsider.pick.heroId) ?? null }}
                 rank={null}
