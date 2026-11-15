@@ -102,19 +102,20 @@ export function BuildPath({
         <Kit title="Lane" label="Lane items, in buy order" stops={stops.filter((s) => s.where === "lane")} cardOf={cardOf} heroName={heroName} icons={icons} />
       </div>
 
+      {/* The row needs 5rem a stop: nine stops fit at 768px. Below that the path runs down the page. */}
       {path.length > 0 && (
         <div role="region" aria-label="Core items" tabIndex={0} className="-mx-2 overflow-x-auto px-2 pb-1 pt-2 focus-visible:outline-2 focus-visible:outline-accent">
           <ol
             aria-label={columns.some((c) => c.theirs) ? "Core items in buy order, with the enemy's key items" : "Core items, in buy order"}
             style={{ "--n": columns.length } as CSSProperties}
-            className="relative flex flex-col gap-3.5 before:absolute before:inset-y-4 before:left-8 before:w-0.5 before:rounded-xs before:bg-line-hover sm:grid sm:min-w-[calc(var(--n)*6.75rem)] sm:grid-cols-[repeat(var(--n),minmax(6.75rem,1fr))] sm:gap-0 sm:before:hidden"
+            className="relative flex flex-col gap-3.5 before:absolute before:inset-y-4 before:left-8 before:w-0.5 before:rounded-xs before:bg-line-hover md:grid md:min-w-[calc(var(--n)*5rem)] md:grid-cols-[repeat(var(--n),minmax(5rem,1fr))] md:gap-0 md:before:hidden"
           >
             {columns.flatMap((column, index) => {
               const at = { gridColumnStart: index + 1 } as CSSProperties;
               if (!column.ours) {
                 const e = column.theirs!; // A column holds ours or theirs.
                 return [
-                  <li key={`line-${index}`} aria-hidden style={at} className="relative hidden items-end justify-center sm:row-start-1 sm:flex sm:after:absolute sm:after:inset-x-0 sm:after:bottom-[0.3125rem] sm:after:h-0.5 sm:after:bg-line-hover">
+                  <li key={`line-${index}`} aria-hidden style={at} className="relative hidden items-end justify-center md:row-start-1 md:flex md:after:absolute md:after:inset-x-0 md:after:bottom-[0.3125rem] md:after:h-0.5 md:after:bg-line-hover">
                     <span className="relative z-10 size-3 rounded-full bg-dire shadow-[0_0_0_3px_var(--bg)]" />
                   </li>,
                   <EnemyStop key={`theirs-${index}`} enemy={e} style={at} />,
@@ -129,15 +130,15 @@ export function BuildPath({
                 <li
                   key={stop.key}
                   style={at}
-                  className="relative grid grid-cols-[4rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 sm:row-start-1 sm:flex sm:flex-col sm:items-center sm:gap-1.5 sm:px-1 sm:text-center sm:after:absolute sm:after:inset-x-0 sm:after:bottom-[0.3125rem] sm:after:h-0.5 sm:after:bg-line-hover"
+                  className="relative grid grid-cols-[4rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 md:row-start-1 md:flex md:flex-col md:items-center md:gap-1.5 md:px-1 md:text-center md:after:absolute md:after:inset-x-0 md:after:bottom-[0.3125rem] md:after:h-0.5 md:after:bg-line-hover"
                 >
-                  <span className="num col-start-2 row-span-2 row-start-1 text-xl font-semibold leading-none tracking-[-0.02em] text-fg sm:order-1 sm:text-[1.375rem]">
+                  <span className="num col-start-2 row-span-2 row-start-1 text-xl font-semibold leading-none tracking-[-0.02em] text-fg md:order-1 md:text-[1.375rem]">
                     {rough ? "~" : ""}
                     {item.minute}
                   </span>
-                  <ItemTile item={item} card={cardOf(stop)} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 sm:order-2" />
-                  <span className="col-start-3 row-start-1 self-end text-[0.8125rem] font-medium leading-tight text-fg sm:order-3 sm:min-h-[2.125rem] sm:self-auto">{item.name}</span>
-                  <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight sm:order-4 sm:mb-2 sm:min-h-[1.125rem] sm:items-center sm:self-auto">
+                  <ItemTile item={item} card={cardOf(stop)} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 md:order-2" />
+                  <span className="col-start-3 row-start-1 self-end text-[0.8125rem] font-medium leading-tight text-fg md:order-3 md:min-h-[2.125rem] md:self-auto">{item.name}</span>
+                  <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight md:order-4 md:mb-2 md:min-h-[1.125rem] md:items-center md:self-auto">
                     {!rough && late !== undefined && <span className="text-warn">Late After {late}</span>}
                     {fork && (
                       <span className="text-subtle">
@@ -153,7 +154,7 @@ export function BuildPath({
                       </span>
                     )}
                   </span>
-                  <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 shrink-0 rounded-full sm:mt-auto bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] sm:block" />
+                  <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 shrink-0 rounded-full md:mt-auto bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] md:block" />
                 </li>,
               ];
             })}
@@ -266,7 +267,7 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
   return (
     <li
       style={style}
-      className="relative ml-4 grid grid-cols-[3rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 sm:row-start-2 sm:ml-0 sm:flex sm:flex-col sm:items-center sm:gap-1 sm:px-1 sm:pt-3 sm:text-center"
+      className="relative ml-4 grid grid-cols-[3rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 md:row-start-2 md:ml-0 md:flex md:flex-col md:items-center md:gap-1 md:px-1 md:pt-3 md:text-center"
     >
       <ItemButton
         label={`Enemy ${enemy.hero}: ${enemy.item}`}
@@ -280,7 +281,7 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
             />
           ),
         }}
-        className="col-start-1 w-fit sm:order-1"
+        className="col-start-1 w-fit md:order-1"
       >
         {enemy.img ? (
           <Image src={ITEM_CDN + enemy.img} alt="" width={44} height={32} className="block h-8 w-11 rounded-md object-cover" />
@@ -293,11 +294,11 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
           </span>
         )}
       </ItemButton>
-      <span className="num col-start-2 text-base font-semibold text-dire sm:order-2">
+      <span className="num col-start-2 text-base font-semibold text-dire md:order-2">
         {enemy.around ? "~" : ""}
         {enemy.minute}
       </span>
-      <span className="col-start-3 text-xs leading-tight text-muted sm:order-3">
+      <span className="col-start-3 text-xs leading-tight text-muted md:order-3">
         <span className="sr-only">Enemy </span>
         {enemy.hero}: {enemy.item}
       </span>
