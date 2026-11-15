@@ -1,6 +1,11 @@
+import type { Side } from "@/lib/draft-reader/geometry";
 import type { Engine } from "@/lib/engine/score";
 import type { RankBracket } from "@/lib/engine/types";
 import { draftEdge, winChance } from "@/lib/engine/win-chance";
+import { type WinRange, winRange } from "@/lib/engine/win-range";
+
+/** Heroes in a full draft, both teams. */
+const FULL_DRAFT = 10;
 
 /**
  * My team's chance (0-1) to win with the heroes picked so far, or null when the snapshot has no
@@ -49,4 +54,15 @@ export function favoredSide(edge: number, chance: number | null): "ours" | "thei
 /** The points at each end of an edge bar: the largest value rounded up to 5, and never under `least`. */
 export function edgeRange(values: number[], least = 10): number {
   return Math.max(least, Math.ceil(Math.max(...values.map(Math.abs)) / 5) * 5);
+}
+
+/**
+ * What teams with a draft like mine really won, once all 10 heroes are in and my side is known: the band of fair
+ * public games my draft edge falls in, from my side. `edge` is my team's draft edge over the enemy, so on Dire
+ * Radiant's edge is the other way round. Null before then, or while the snapshot has no checked range.
+ */
+export function draftWinRange(engine: Engine, edge: number, picked: number, side: Side | null): WinRange | null {
+  if (picked < FULL_DRAFT || side === null) return null;
+  const radiant = side === "radiant";
+  return winRange(engine.data.winRange, radiant ? edge : -edge, radiant);
 }

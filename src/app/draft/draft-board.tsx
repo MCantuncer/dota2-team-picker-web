@@ -19,7 +19,7 @@ import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
 import { useMatchupGames } from "@/lib/use-matchup-games";
 import { HeroSearch } from "@/lib/hero-search";
-import { edgeParts, pickGain, teamWinChance } from "@/lib/win";
+import { draftWinRange, edgeParts, pickGain, teamWinChance } from "@/lib/win";
 import { draftEdge } from "@/lib/engine/win-chance";
 import { verdicts } from "@/lib/engine/verdict";
 import {
@@ -901,6 +901,7 @@ export function DraftBoard({
     parts: edgeParts(engine, ours, enemies, bracket),
     chance: teamWinChance(engine, ours, enemies, bracket),
   });
+  const oddsNow = oddsOf(allyIds);
 
   // A phone that follows a PC (the PC reads Dota, or put heroes on this board) shows the picks before the board: the
   // PC fills the board, the phone is for the answer. A phone the heroes are typed on keeps the boxes on top.
@@ -1229,10 +1230,12 @@ export function DraftBoard({
       )}
 
       <BetterChance
-        now={oddsOf(allyIds)}
+        now={oddsNow}
         plan={teamPlan ? oddsOf(teamPlan.slots.map((slot) => slot.heroId)) : null}
         picked={allyIds.length + enemies.length}
         side={mySide ?? "radiant"}
+        range={draftWinRange(engine, oddsNow.edge, allyIds.length + enemies.length, mySide)}
+        rangeLater={engine.data.winRange !== undefined}
       />
 
       {gamePlan && resolved.some((a) => a.isGuess) && (

@@ -1,6 +1,7 @@
 import { Icon, type IconName } from "@/components/icon";
 import { LaneMark } from "@/components/hero-frame";
 import type { Side } from "@/lib/draft-reader/geometry";
+import type { WinRange } from "@/lib/engine/win-range";
 import { type EdgeParts, edgeRange, favoredSide } from "@/lib/win";
 
 /** One side of the draft as the band reads it: its edge in points, the edge's parts, and a checked win chance. */
@@ -20,11 +21,22 @@ interface BetterChanceProps {
   picked: number;
   /** My team's side, which colours its half of the bar. On Dire the bar is mirrored, as in game: Radiant on the left. */
   side: Side;
+  /** What teams with a draft like this won, once all 10 heroes are in and the side is known; it becomes the big number. */
+  range?: WinRange | null;
+  /** True when the snapshot has a checked win range, so the card can say when it will show. */
+  rangeLater?: boolean;
 }
 
 /** A signed score with one decimal and a real minus sign. */
 const signed = (n: number) => `${n < 0 ? "−" : "+"}${Math.abs(n).toFixed(1)}`;
 const clamp = (n: number) => Math.max(-1, Math.min(1, n));
+const percent = (share: number) => `${Math.round(share * 100)}%`;
+
+/** A win range in whole percents, or one number when both ends round the same. */
+export function rangeText(range: WinRange): string {
+  const [low, high] = [percent(range.low), percent(range.high)];
+  return low === high ? `About ${percent(range.won)}` : `${low} to ${high}`;
+}
 
 const PARTS: [keyof EdgeParts, string, IconName][] = [
   ["rates", "Win Rates", "trend"],
@@ -36,17 +48,22 @@ const PARTS: [keyof EdgeParts, string, IconName][] = [
  * Who Has the Better Chance: a tug of war between Radiant (left) and Dire (right), so my team sits on its own side as in
  * game and on the rest of the Draft page; with no side chosen, my team is on the left. The solid marker is the draft
  * now, the dashed one where the Team Plan's five would put it. Until the win model passes its check it shows the
- * draft edge in points and says so; with a checked model it shows the win chance. Beside it, the edge's three parts.
- * Hidden until a hero is picked on either side.
+ * draft edge in points and says so; with a checked model it shows the win chance. Once all 10 heroes are in and the
+ * side is known, the big number is what teams with drafts like this won, and the bar shows that range as a box around
+ * the dot; the Team Plan is left out then, as the draft is done. Beside it, the edge's three parts. Hidden until a
+ * hero is picked on either side.
  */
-export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
+export function BetterChance({ now, plan: planIn, picked, side, range = null, rangeLater = false }: BetterChanceProps) {
   if (picked === 0) return null;
+  const plan = range ? null : planIn;
   const hasChance = now.chance !== null;
+  const inPercent = hasChance || range !== null;
   const show = (o: DraftOdds) => (o.chance !== null ? `${(o.chance * 100).toFixed(1)}%` : signed(o.edge));
-  const range = edgeRange([now.edge, plan?.edge ?? 0]);
+  const points = edgeRange([now.edge, plan?.edge ?? 0]);
   // How far the bar leans to my team, from −1 (all the enemy's) to 1 (all mine).
-  const lean = (o: DraftOdds) => clamp(o.chance !== null ? (o.chance - 0.5) * 2 : o.edge / range);
-  const favored = favoredSide(now.edge, now.chance);
+  const shareLean = (share: number) => clamp((share - 0.5) * 2);
+  const lean = (o: DraftOdds) => (o.chance !== null ? shareLean(o.chance) : clamp(o.edge / points));
+  const favored = range ? favoredSide(now.edge, range.won) : favoredSide(now.edge, now.chance);
   const ours = side === "radiant" ? "radiant" : "dire";
   const theirs = side === "radiant" ? "dire" : "radiant";
   // On Dire my team is on the right, so a lean toward my team moves right instead of left.
@@ -59,12 +76,15 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
   const dot = { radiant: "bg-radiant", dire: "bg-dire" };
   const leader = favored === "ours" ? ours : favored === "theirs" ? theirs : null;
   const verdict = favored === "ours" ? "Your Team Favored" : favored === "theirs" ? "Enemy Favored" : "Even Draft";
-  const leanNow = lean(now);
+  const leanNow = range ? shareLean(range.won) : lean(now);
   // Where the bar ends up on screen, from −1 (left end) to 1 (right end).
   const xNow = toward(leanNow);
   const label = (team: Side) => (team === ours ? "Your Team" : "Enemy");
   const partRange = edgeRange([...Object.values(now.parts), ...Object.values(plan?.parts ?? {})], 5);
-  const end = hasChance ? "100%" : `+${range}`;
+  const end = inPercent ? "100%" : `+${points}`;
+  const at = (l: number) => 50 + toward(l) * 50;
+  const [rangeLow, rangeHigh] = range ? [at(shareLean(range.low)), at(shareLean(range.high))] : [0, 0];
+  const nowText = range ? `teams with drafts like this won ${rangeText(range)}` : `${show(now)} now`;
 
   return (
     <section
@@ -82,33 +102,48 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
           </span>
         </div>
 
-        <div className="flex items-end justify-between gap-6">
-          <span className="flex flex-col gap-0.5">
-            <span className="micro text-subtle">
-              {hasChance ? "Your Win Chance" : "Draft Edge Now"}, {picked} {picked === 1 ? "Pick" : "Picks"} In
+        {range ? (
+          <span className="flex flex-col gap-1">
+            <span className="micro text-subtle">Teams With Drafts Like This Won</span>
+            <span
+              data-testid="edge-now"
+              className={`text-4xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
+            >
+              {rangeText(range)}
             </span>
-            <span className="flex items-baseline gap-2">
-              <span
-                data-testid="edge-now"
-                className={`text-4xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
-              >
-                {show(now)}
-              </span>
-              {!hasChance && <span className="text-sm text-muted">Points</span>}
+            <span className="text-sm text-muted tabular-nums">
+              Draft edge {signed(now.edge)} points, from {range.games.toLocaleString("en-US")} ranked games
             </span>
           </span>
-          {plan && (
-            <span className="flex flex-col items-end gap-0.5 text-right">
-              <span className="micro text-subtle">With the Plan</span>
-              <span
-                data-testid="edge-plan"
-                className="text-2xl leading-10 font-semibold tracking-tight text-muted tabular-nums"
-              >
-                {show(plan)}
+        ) : (
+          <div className="flex items-end justify-between gap-6">
+            <span className="flex flex-col gap-0.5">
+              <span className="micro text-subtle">
+                {hasChance ? "Your Win Chance" : "Draft Edge Now"}, {picked} {picked === 1 ? "Pick" : "Picks"} In
+              </span>
+              <span className="flex items-baseline gap-2">
+                <span
+                  data-testid="edge-now"
+                  className={`text-4xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
+                >
+                  {show(now)}
+                </span>
+                {!hasChance && <span className="text-sm text-muted">Points</span>}
               </span>
             </span>
-          )}
-        </div>
+            {plan && (
+              <span className="flex flex-col items-end gap-0.5 text-right">
+                <span className="micro text-subtle">With the Plan</span>
+                <span
+                  data-testid="edge-plan"
+                  className="text-2xl leading-10 font-semibold tracking-tight text-muted tabular-nums"
+                >
+                  {show(plan)}
+                </span>
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <div className="micro flex items-center justify-between font-semibold">
@@ -123,7 +158,7 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
           </div>
           <div
             role="img"
-            aria-label={`${verdict}: ${show(now)} now${plan ? `, ${show(plan)} with the plan` : ""}`}
+            aria-label={`${verdict}: ${nowText}${plan ? `, ${show(plan)} with the plan` : ""}`}
             className="relative flex h-3 rounded-xs"
           >
             <span className={`h-full flex-1 rounded-l-xs ${tint[left]}`} />
@@ -144,19 +179,35 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
               <span
                 title="With the Plan"
                 className="absolute top-1/2 size-3.5 -translate-1/2 rounded-full border-2 border-dashed border-fg/70 bg-surface"
-                style={{ left: `${50 + toward(lean(plan)) * 50}%` }}
+                style={{ left: `${at(lean(plan))}%` }}
+              />
+            )}
+            {range && (
+              <span
+                data-testid="chance-range"
+                className="absolute -top-1.5 -bottom-1.5 rounded-sm bg-fg/20 ring-1 ring-fg/55 ring-inset"
+                style={{
+                  left: `${Math.min(rangeLow, rangeHigh)}%`,
+                  width: `${Math.max(Math.abs(rangeHigh - rangeLow), 1.2)}%`,
+                }}
               />
             )}
             <span
               title="Now"
               data-testid="chance-now"
               className="absolute top-1/2 size-4 -translate-1/2 rounded-full bg-fg ring-3 ring-surface"
-              style={{ left: `${50 + xNow * 50}%` }}
+              style={{ left: `${at(leanNow)}%` }}
             />
           </div>
           <div className="micro flex items-center justify-between text-subtle tabular-nums">
             <span>{end}</span>
             <span className="flex items-center gap-4">
+              {range && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-4.5 rounded-xs bg-fg/20 ring-1 ring-fg/55 ring-inset" />
+                  Range
+                </span>
+              )}
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded-full bg-fg" />
                 Now
@@ -174,7 +225,7 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-5 border-t border-line p-5 md:p-6 lg:border-t-0 lg:border-l">
-        <h3 className="text-sm font-semibold text-fg">{hasChance ? "What Moves It" : "What Makes the Edge"}</h3>
+        <h3 className="text-sm font-semibold text-fg">{inPercent ? "What Moves It" : "What Makes the Edge"}</h3>
         <ul className="grid grid-cols-3 gap-x-5 gap-y-4">
           {PARTS.map(([key, label, icon]) => {
             const part = now.parts[key];
@@ -203,9 +254,11 @@ export function BetterChance({ now, plan, picked, side }: BetterChanceProps) {
             );
           })}
         </ul>
-        {!hasChance && (
+        {!inPercent && (
           <p className="micro mt-auto text-subtle">
-            A win percentage appears once the win model passes its check on recent games.
+            {rangeLater
+              ? "Once all 10 heroes are in and your side is set, this shows what teams with drafts like this won."
+              : "A win percentage appears once the win model passes its check on recent games."}
           </p>
         )}
       </div>
