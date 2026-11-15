@@ -195,16 +195,16 @@ function Coverage({ seats }: { seats: Seat[] }) {
           return (
             <li
               key={p}
-              className="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-line px-3.5 py-3 not-last:border-b md:not-last:border-b-0 md:not-last:border-r"
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 border-line px-3.5 py-3 not-last:border-b md:not-last:border-b-0 md:not-last:border-r md:max-xl:grid-cols-[auto_minmax(0,1fr)]"
             >
               <PositionIcon position={p} size={24} className={who.length ? "text-muted" : "text-warn"} />
               <span className="flex min-w-0 flex-col text-sm leading-tight">
-                {/* The name never wraps; the faces move under it when the cell is narrow. */}
+                {/* The name never wraps; below 1280px the faces sit under it in every cell, so the five cells match. */}
                 <span className="font-semibold whitespace-nowrap text-fg">{POSITION_NAMES[p]}</span>
                 {!who.length && <span className="text-warn">Nobody yet</span>}
               </span>
               <span
-                className="ml-auto flex"
+                className="ml-auto flex md:max-xl:col-span-2 md:max-xl:ml-0"
                 aria-label={who.length ? `Played by ${who.map((s) => s.name).join(", ")}` : undefined}
               >
                 {who.map((s, i) => (
