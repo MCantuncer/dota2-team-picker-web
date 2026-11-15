@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Hero } from "@/lib/heroes";
 import { sampleProof } from "../../../test/fixtures/proof";
-import { GameRows, LaneFrame, RankRoleTiles, RivalRows, RunningLine, scaleFor } from "./proof-parts";
+import { GameRows, Ladder, LaneFrame, RankRoleTiles, RivalRows, RunningLine, scaleFor } from "./proof-parts";
 
 describe("scaleFor", () => {
   it("covers every value in whole steps, never narrower than the default", () => {
@@ -65,5 +65,23 @@ describe("Proof Page parts", () => {
     expect(screen.getByText("Won")).toBeInTheDocument();
     expect(screen.getByText("Last Round")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Match 9091082013 on OpenDota" })).toBeInTheDocument();
+  });
+
+  it("draws the win chance check as a chart: one row per band with its sentence for screen readers, no row labels", () => {
+    render(
+      <Ladder
+        rows={[
+          { side: "Dire", low: 0.53, high: 0.56, won: 0.576, games: 1430 },
+          { side: "Radiant", low: 0.6, high: 0.63, won: 0.656, games: 1377 },
+        ]}
+      />,
+    );
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("Dire: we showed 53% to 56%, and that side won 57.6% of 1,430 newer games");
+    expect(rows[1]).toHaveAttribute("title", expect.stringContaining("Radiant: we showed 60% to 63%"));
+    expect(screen.getByText("We Showed")).toBeInTheDocument();
+    expect(screen.getByText("They Won")).toBeInTheDocument();
+    expect(screen.queryByText(/^We Showed \d/)).not.toBeInTheDocument();
   });
 });

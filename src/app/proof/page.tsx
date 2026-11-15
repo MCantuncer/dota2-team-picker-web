@@ -88,19 +88,18 @@ export default async function ProofPage() {
         <RankRoleTiles byRank={proof.byRank} byRole={proof.byRole} />
       </Panel>
 
-      <div className={`grid gap-4 ${ladder.length ? "lg:grid-cols-2" : ""}`}>
-        {ladder.length > 0 && (
-          <Panel title="Win Chance Check">
-            <Ladder rows={ladder} />
-          </Panel>
-        )}
-        <Panel title="How We Test">
-          <FourSteps proof={proof} />
+      {ladder.length > 0 && (
+        <Panel title="Win Chance Check">
+          <Ladder rows={ladder} />
         </Panel>
-      </div>
+      )}
+
+      <Panel title="How We Test">
+        <FourSteps proof={proof} />
+      </Panel>
 
       {proof.examples.length > 0 && byId.size > 0 && (
-        <Panel title="Real Games">
+        <Panel title="Real Games with Our First Choice">
           <GameRows examples={proof.examples} heroes={byId} />
         </Panel>
       )}
