@@ -411,23 +411,33 @@ export async function seedReportFeedback(email: string, draftId: string) {
 /**
  * Stands in for the browser's share prompt: a canvas showing a hero select screenshot plays the Dota
  * window for Watch Dota. The default shows nine picks and the bans; "draft-strategy-ten-picked.png" is
- * strategy time, the first moment the enemy's last pick shows.
+ * strategy time, the first moment the enemy's last pick shows. With `later`, the window shows that
+ * frame once the test calls window.nextDotaFrame().
  */
-export async function fakeDotaWindow(page: Page, fixture = "draft-nine-picked.png") {
-  const screenshot = readFileSync(join(__dirname, "fixtures", fixture)).toString("base64");
-  await page.addInitScript((base64) => {
-    navigator.mediaDevices.getDisplayMedia = async () => {
-      const image = new Image();
-      image.src = `data:image/png;base64,${base64}`;
-      await image.decode();
-      const canvas = document.createElement("canvas");
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const ctx = canvas.getContext("2d")!;
-      setInterval(() => ctx.drawImage(image, 0, 0), 100);
-      return canvas.captureStream(5);
-    };
-  }, screenshot);
+export async function fakeDotaWindow(page: Page, fixture = "draft-nine-picked.png", later?: string) {
+  const base64 = (name: string) => readFileSync(join(__dirname, "fixtures", name)).toString("base64");
+  await page.addInitScript(
+    ([first, next]) => {
+      navigator.mediaDevices.getDisplayMedia = async () => {
+        const load = async (data: string) => {
+          const image = new Image();
+          image.src = `data:image/png;base64,${data}`;
+          await image.decode();
+          return image;
+        };
+        let image = await load(first!);
+        // The window moves on to the `later` frame when the test calls window.nextDotaFrame().
+        if (next) (window as unknown as { nextDotaFrame: () => Promise<void> }).nextDotaFrame = async () => void (image = await load(next));
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext("2d")!;
+        setInterval(() => ctx.drawImage(image, 0, 0, canvas.width, canvas.height), 100);
+        return canvas.captureStream(5);
+      };
+    },
+    [base64(fixture), later ? base64(later) : null] as const,
+  );
 }
 
 /**

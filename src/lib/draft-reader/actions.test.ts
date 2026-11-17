@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LiveReads, readActions } from "./actions";
+import { LiveReads, readActions, screenSide } from "./actions";
 import type { DraftRead } from "./reader";
 
 const slot = (heroId: number | null) => ({ heroId, unsure: false });
@@ -110,5 +110,19 @@ describe("LiveReads, your side", () => {
     expect(live.next({ ...read, me: null }, new Set()).me).toBeNull();
     expect(live.next(at("radiant", 0), new Set()).me).toBeNull();
     expect(live.next(at("radiant", 0), new Set()).me?.side).toBe("radiant");
+  });
+});
+
+describe("screenSide", () => {
+  it("takes the side the screen found while no side is known, or no hero is picked yet", () => {
+    expect(screenSide("radiant", null, 0)).toBe("radiant");
+    expect(screenSide("dire", null, 6)).toBe("dire");
+    // A side left from the last game, before this one's picks.
+    expect(screenSide("radiant", "dire", 0)).toBe("radiant");
+  });
+
+  it("keeps the side once picks are in, so a later frame (loading screen, the game) can't flip it", () => {
+    expect(screenSide("dire", "radiant", 10)).toBe("radiant");
+    expect(screenSide("radiant", "dire", 1)).toBe("dire");
   });
 });
