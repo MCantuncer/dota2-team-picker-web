@@ -6,6 +6,7 @@ import type { DraftEntry } from "@/lib/draft";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { nameToFind } from "@/lib/draft-reader/draw-name";
 import { loadReader, pixelsOf } from "@/lib/draft-reader/load";
+import { screenSide } from "@/lib/draft-reader/actions";
 import { readLooks } from "@/lib/draft-reader/looks-storage";
 import type { Ink } from "@/lib/draft-reader/name";
 import type { DraftRead, DraftReader } from "@/lib/draft-reader/reader";
@@ -73,14 +74,13 @@ export function useDotaScreen({
   const reader = useRef<Promise<DraftReader> | null>(null);
   const myName = useRef<Ink[] | null | undefined>(undefined);
 
-  /** Your side for this read: found on the screen, unless you set it by hand. */
+  /** Your side for this read: found on the screen until picks are in, unless you set it by hand. */
   const sideFor = (read: DraftRead): Side | null => {
     if (sideBy === "hand" || !read.me) return side;
-    if (read.me.side !== side || sideBy !== "screen") {
-      onSideChange(read.me.side);
-      setSideBy("screen");
-    }
-    return read.me.side;
+    const mine = screenSide(read.me.side, side, draft.filter((e) => e.kind !== "ban").length);
+    if (mine !== side) onSideChange(mine);
+    if (mine === read.me.side && sideBy !== "screen") setSideBy("screen");
+    return mine;
   };
 
   const watch = useWatchDota(heroes, portraits, draft, side, steamName, (read) => {

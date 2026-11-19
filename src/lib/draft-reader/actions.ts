@@ -7,6 +7,16 @@ import type { DraftRead } from "./reader";
 const meKey = (me: SideRead) => `${me.side}${me.slot}`;
 
 /**
+ * Your side for one read, when the screen found your slot on `found`. The screen sets the side while
+ * the draft has no picks yet, or while no side is known. Once picks are in, they were placed by that
+ * side, so a later read can't change it: after the draft Watch Dota still sees the loading screen and
+ * the game, where something under the top bar can look like your name's glow on the other side.
+ */
+export function screenSide(found: Side, current: Side | null, picks: number): Side {
+  return current === null || picks === 0 ? found : current;
+}
+
+/**
  * The draft changes a screenshot read adds: your side's heroes to your team, the other side's to
  * the enemy, then the bans. Heroes already in the draft are left alone, so typed positions stay.
  * When the read found your own slot and you have no hero yet, pass your position: the hero in your
