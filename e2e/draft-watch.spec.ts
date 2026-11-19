@@ -79,6 +79,26 @@ test("Watch Dota finds your side from your Steam name, and a side set by hand wi
   await expect(page.getByText("Found ct'x on Dire")).toHaveCount(0);
 });
 
+test("Watch Dota keeps your side once picks are in, though a later frame shows you on the other side", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
+  test.setTimeout(60_000);
+  const email = `watch-side-stays-${Date.now()}@example.com`;
+  await newPlayer(page, email, "Watcher");
+  await linkSteam(email, "ct'x");
+  // The draft shows "ct'x" on Radiant; after it, a frame that looks like Dire (as the loading screen or the game can).
+  await fakeDotaWindow(page, "draft-strategy-ten-picked.png", "draft-strategy-dire.png");
+  await page.goto("/draft");
+  await page.getByRole("button", { name: "Watch Dota" }).click();
+  await expect(page.getByText("Found ct'x on Radiant")).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("region", { name: "Enemy" }).getByText("Lich")).toBeVisible({ timeout: 15_000 });
+
+  await page.evaluate(() => (window as unknown as { nextDotaFrame: () => Promise<void> }).nextDotaFrame());
+  await page.waitForTimeout(3_000);
+  const side = page.getByRole("group", { name: "My Side" });
+  await expect(side.getByRole("button", { name: "Radiant", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Found ct'x on Radiant")).toBeVisible();
+});
+
 test("Watch Dota asks whether a hero it put in My team is your pick", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "Phones can't share a window");
   test.setTimeout(60_000);
