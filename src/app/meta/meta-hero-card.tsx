@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { PositionLabel } from "@/components/position-label";
 import { RankMedal } from "@/components/rank-medal";
-import { change, dayLabel, RANK_GROUPS, signed, type HeroRate, type MetaDay, type RankSlice } from "@/lib/meta";
+import { change, dayLabel, RANK_GROUPS, signed, type HeroRate, type MetaDay, type MetaExtras, type RankSlice } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
+import { BuildPanel, MatchupsPanel, type ItemArt } from "./meta-hero-extras";
 
 function Stat({ label, value, delta, note, since }: { label: string; value: string; delta?: number | null; note?: string; since?: string }) {
   return (
@@ -120,6 +121,12 @@ export function HeroCard({
   days,
   slice,
   oldPatch,
+  patch,
+  extras,
+  role,
+  art,
+  heroes,
+  onSelect,
 }: {
   hero: MetaHero;
   rate: HeroRate;
@@ -127,6 +134,12 @@ export function HeroCard({
   days: MetaDay[];
   slice: RankSlice;
   oldPatch: string;
+  patch: string;
+  extras?: MetaExtras;
+  role: number;
+  art: ItemArt;
+  heroes: Map<number, MetaHero>;
+  onSelect: (id: number) => void;
 }) {
   const group = RANK_GROUPS.find((g) => g.slice === slice);
   return (
@@ -170,6 +183,12 @@ export function HeroCard({
         <h3 className="font-semibold text-fg">Win Rate by Rank</h3>
         <RankRows byRank={byRank} />
       </div>
+      {extras && (
+        <>
+          <BuildPanel key={`${hero.id}-${role}`} hero={hero} extras={extras} role={role} art={art} patch={patch} />
+          <MatchupsPanel hero={hero} extras={extras} heroes={heroes} onSelect={onSelect} />
+        </>
+      )}
     </section>
   );
 }
