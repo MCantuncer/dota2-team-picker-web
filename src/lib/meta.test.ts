@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroups, buildPath, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
+import { buildGroups, buildPath, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -181,5 +181,36 @@ describe("buildPath", () => {
     const path = buildPath({ games: 100, items: [[116, 30], [1, 80]], neutral: [] }, items);
     expect(path.core.map((c) => c.id)).toEqual([116, 1]);
     expect(path.early).toEqual([]);
+  });
+});
+
+describe("roleItems", () => {
+  const items = { 1: { cost: 4000 }, 2: { cost: 500 }, 3: { cost: 2500 }, 4: { cost: 300 } } as unknown as MetaExtras["items"];
+  const extras = (builds: MetaExtras["builds"]): MetaExtras => ({ buildGames: 0, builds, newItems: [{ id: 4, games: 9, heroes: [] }], matchups: {}, items });
+  it("adds up the role's heroes and keeps core and new items", () => {
+    const out = roleItems(
+      extras({
+        10: { 2: { games: 60, items: [[1, 30], [2, 50], [4, 6]], neutral: [] } },
+        11: { 2: { games: 40, items: [[1, 10], [3, 20]], neutral: [] }, 1: { games: 90, items: [[3, 90]], neutral: [] } },
+        12: { 3: { games: 50, items: [[1, 50]], neutral: [] } },
+      }),
+      [10, 11, 12],
+      2,
+    );
+    expect(out.games).toBe(100);
+    expect(out.items).toEqual([
+      { id: 1, share: 40, isNew: false },
+      { id: 3, share: 20, isNew: false },
+      { id: 4, share: 6, isNew: true },
+    ]);
+  });
+  it("is empty with too few games", () => {
+    expect(roleItems(extras({ 10: { 2: { games: 60, items: [[1, 30]], neutral: [] } } }), [10], 2).items).toEqual([]);
+  });
+  it("shows six when there are six to eleven", () => {
+    const list: [number, number][] = [1, 3, 5, 6, 7, 8, 9, 10].map((id) => [id, 20]);
+    const all = Object.fromEntries(list.map(([id]) => [id, { cost: 3000 }])) as unknown as MetaExtras["items"];
+    const out = roleItems({ ...extras({ 10: { 2: { games: 100, items: list, neutral: [] } } }), items: all }, [10], 2);
+    expect(out.items).toHaveLength(6);
   });
 });

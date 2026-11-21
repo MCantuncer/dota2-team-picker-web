@@ -336,7 +336,7 @@ function CardKey() {
   );
 }
 
-function SectionHead({ title, note, children }: { title: string; note: string; children?: React.ReactNode }) {
+export function SectionHead({ title, note, children }: { title: string; note: string; children?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
       <div className="grid max-w-3xl gap-1">
