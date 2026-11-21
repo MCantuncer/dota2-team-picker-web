@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroups, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, signed, sliceGames, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
+import { buildGroups, buildPath, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -118,5 +118,68 @@ describe("buildGroups and extrasItemIds", () => {
 
   it("lists every item the extras show, neutral items too", () => {
     expect(extrasItemIds(EXTRAS).sort((a, b) => a - b)).toEqual([1, 36, 63, 116, 947, 1942]);
+  });
+});
+
+describe("isExtras with patch notes and buy minutes", () => {
+  it("accepts notes and minutes, and refuses a bad note", () => {
+    const notes = { 32: { changes: 2, lines: [{ ability: "Hero", text: "Base Agility increased from 18 to 19", tone: 1 }] } };
+    expect(isExtras({ ...EXTRAS, patchNotes: notes })).toBe(true);
+    expect(isExtras({ ...EXTRAS, patchNotes: { 32: { changes: 1, lines: [{ ability: "Hero", text: "x", tone: 2 }] } } })).toBe(false);
+    expect(isExtras({ ...EXTRAS, builds: { 32: { 2: { games: 50, items: [[1, 40]], neutral: [], buyGames: 12, minutes: [[1, 14]], early: [[36, 9]] } } } })).toBe(true);
+  });
+});
+
+describe("roleLeaders", () => {
+  const rate = (id: number, win: number, games: number, baseWin: number | null): HeroRate => ({
+    id,
+    games,
+    pick: games / 1000,
+    win,
+    basePick: baseWin === null ? null : games / 1000,
+    baseWin,
+    days: [win],
+    roles: [],
+  });
+  it("ranks a role's heroes by wins above even, winners first, and finds risers behind them", () => {
+    const meta = { ...META, roles: {} as Record<string, number[]> };
+    const rates: HeroRate[] = [];
+    // Heroes 1 to 10 play mid; hero 11 plays mid in 35% of games but carry more, so it is not a mid.
+    for (let id = 1; id <= 10; id++) {
+      meta.roles[id] = [10, 80, 5, 5, 0];
+      rates.push(rate(id, 47 + id, 10_000, 50));
+    }
+    meta.roles[11] = [60, 35, 5, 0, 0];
+    rates.push(rate(11, 60, 50_000, 50));
+    // Hero 12 loses but rose 6 points; hero 13 is too rare in the role.
+    meta.roles[12] = [0, 90, 10, 0, 0];
+    rates.push(rate(12, 48, 10_000, 42));
+    meta.roles[13] = [0, 90, 10, 0, 0];
+    rates.push(rate(13, 58, MIN_GAMES, 50));
+    const out = roleLeaders(meta, rates, 2);
+    expect(out.pool.map((h) => h.rate.id)).not.toContain(11);
+    expect(out.pool.map((h) => h.rate.id)).not.toContain(13);
+    expect(out.leaders.map((h) => h.rate.id)).toEqual([10, 9, 8, 7, 6, 5]);
+    expect(out.leaders[0]!.extraWins).toBe(560);
+    // Risers not in the top six: those winning at least 49% first.
+    expect(out.dark.map((h) => h.rate.id)).toEqual([4, 12]);
+  });
+});
+
+describe("buildPath", () => {
+  const items = { 1: { cost: 2250 }, 63: { cost: 1400 }, 116: { cost: 4050 }, 36: { cost: 450 } } as unknown as MetaExtras["items"];
+  it("puts core items in the order bought and keeps early items as shares of parsed games", () => {
+    const path = buildPath({ games: 100, items: [[1, 80], [116, 30], [63, 90], [36, 50]], neutral: [], buyGames: 20, minutes: [[1, 14], [116, 9]], early: [[36, 10]] }, items);
+    expect(path.core.map((c) => [c.id, c.minute])).toEqual([
+      [116, 9],
+      [1, 14],
+    ]);
+    expect(path.early).toEqual([{ id: 36, share: 50 }]);
+  });
+
+  it("orders core by share without minutes", () => {
+    const path = buildPath({ games: 100, items: [[116, 30], [1, 80]], neutral: [] }, items);
+    expect(path.core.map((c) => c.id)).toEqual([116, 1]);
+    expect(path.early).toEqual([]);
   });
 });

@@ -49,6 +49,19 @@ export interface HeroBuild {
   games: number;
   items: [number, number][];
   neutral: [number, number][];
+  /** Games with buy minutes; the two fields below are missing until there are enough. */
+  buyGames?: number;
+  /** The usual minute each item in `items` is first bought: [item id, minute]. */
+  minutes?: [number, number][];
+  /** Cheap items bought in the first minutes: [item id, games of buyGames], most first. */
+  early?: [number, number][];
+}
+
+/** A patch line: the ability's name ("Hero" for base stats, "Talent"), the text, and 1 buff, -1 nerf, 0 unclear. */
+export interface PatchLine {
+  ability: string;
+  text: string;
+  tone: 1 | 0 | -1;
 }
 
 /** An enemy as [hero id, win rate against it in percent, games]. */
@@ -64,6 +77,8 @@ export interface MetaExtras {
   matchups: Record<string, { best: Matchup[]; worst: Matchup[] }>;
   /** Shop data of the items above, for item cards. Neutral items have none. */
   items: Record<string, ItemInfo>;
+  /** Per hero id: its biggest changes in the patch and how many it had; missing in older files. */
+  patchNotes?: Record<string, { lines: PatchLine[]; changes: number }>;
 }
 
 /** Games a position needs before the backend lists its build. */
@@ -81,7 +96,16 @@ const isDay = (x: unknown): x is MetaDay =>
   Object.values(x.heroes).every((h) => isNumbers(h) && h.length === 10);
 
 const isPairs = (x: unknown, size: number) => Array.isArray(x) && x.every((p) => isNumbers(p) && p.length === size);
-const isBuild = (x: unknown): x is HeroBuild => isRecord(x) && typeof x.games === "number" && isPairs(x.items, 2) && isPairs(x.neutral, 2);
+const isBuild = (x: unknown): x is HeroBuild =>
+  isRecord(x) &&
+  typeof x.games === "number" &&
+  isPairs(x.items, 2) &&
+  isPairs(x.neutral, 2) &&
+  (x.minutes === undefined || isPairs(x.minutes, 2)) &&
+  (x.early === undefined || isPairs(x.early, 2));
+const isLine = (x: unknown) => isRecord(x) && typeof x.ability === "string" && typeof x.text === "string" && [1, 0, -1].includes(x.tone as number);
+const isNotes = (x: unknown) =>
+  isRecord(x) && Object.values(x).every((n) => isRecord(n) && typeof n.changes === "number" && Array.isArray(n.lines) && n.lines.every(isLine));
 
 /** True when the extras have the shape the page reads; the page then shows the rest without them. */
 export function isExtras(x: unknown): x is MetaExtras {
@@ -94,7 +118,8 @@ export function isExtras(x: unknown): x is MetaExtras {
     x.newItems.every((n) => isRecord(n) && typeof n.id === "number" && typeof n.games === "number" && isPairs(n.heroes, 2)) &&
     isRecord(x.matchups) &&
     Object.values(x.matchups).every((m) => isRecord(m) && isPairs(m.best, 3) && isPairs(m.worst, 3)) &&
-    isRecord(x.items)
+    isRecord(x.items) &&
+    (x.patchNotes === undefined || isNotes(x.patchNotes))
   );
 }
 
@@ -258,7 +283,67 @@ export function buildGroups(build: HeroBuild): { name: string; items: { id: numb
 export function extrasItemIds(extras: MetaExtras): number[] {
   const ids = new Set<number>(extras.newItems.map((n) => n.id));
   for (const byPosition of Object.values(extras.builds)) {
-    for (const b of Object.values(byPosition)) for (const [id] of [...b.items, ...b.neutral]) ids.add(id);
+    for (const b of Object.values(byPosition)) for (const [id] of [...b.items, ...b.neutral, ...(b.early ?? [])]) ids.add(id);
   }
   return [...ids];
+}
+
+/** A hero counts for a role from this share of its games there, if the role is its main one or holds ROLE_FIRM of them. */
+export const ROLE_MIN = 30;
+export const ROLE_FIRM = 40;
+export const LEADERS = 6;
+export const DARK_HORSES = 4;
+/** Dark horses with at least this win rate come first. */
+const DARK_HORSE_WIN = 49;
+
+/** A hero of a role: its numbers, its share of games in the role, and its wins above even there. */
+export interface RoleHero {
+  rate: HeroRate;
+  share: number;
+  /** Games in the role times how far the win rate is over 50%: the wins it adds over a coin flip. */
+  extraWins: number;
+}
+
+/**
+ * A role's heroes, its six leaders (the most wins above even, those over 50% first) and four dark horses (the
+ * biggest risers since the patch before that are not leaders, those winning at least DARK_HORSE_WIN first).
+ */
+export function roleLeaders(meta: MetaFile, rates: HeroRate[], role: number): { pool: RoleHero[]; leaders: RoleHero[]; dark: RoleHero[] } {
+  const pool: RoleHero[] = [];
+  for (const rate of rates) {
+    const shares = meta.roles[rate.id] ?? [];
+    const share = shares[role - 1] ?? 0;
+    const roleGames = (rate.games * share) / 100;
+    if (share < ROLE_MIN || roleGames < MIN_GAMES || (share < ROLE_FIRM && share < Math.max(...shares))) continue;
+    pool.push({ rate, share, extraWins: (roleGames * (rate.win - 50)) / 100 });
+  }
+  pool.sort((a, b) => b.extraWins - a.extraWins || a.rate.id - b.rate.id);
+  const leaders = [...pool.filter((h) => h.rate.win >= 50), ...pool.filter((h) => h.rate.win < 50)].slice(0, LEADERS);
+  const risers = pool
+    .filter((h) => !leaders.includes(h) && (change(h.rate, "win") ?? 0) > 0)
+    .sort((a, b) => (change(b.rate, "win") ?? 0) - (change(a.rate, "win") ?? 0));
+  const dark = [...risers.filter((h) => h.rate.win >= DARK_HORSE_WIN), ...risers.filter((h) => h.rate.win < DARK_HORSE_WIN)].slice(0, DARK_HORSES);
+  return { pool, leaders, dark };
+}
+
+/** Core items cost at least this; cheaper ones are early items. */
+export const CORE_COST = 2000;
+/** Core items end at least this share of games, in percent. */
+export const CORE_SHARE = 12;
+export const CORE_ITEMS = 6;
+
+/**
+ * A build as a path: early items (cheap ones bought in the first minutes, once there are buy minutes), then core
+ * items (from CORE_COST, in at least CORE_SHARE of games) in the order they are bought when minutes are known,
+ * else by share. Shares are in percent.
+ */
+export function buildPath(build: HeroBuild, items: Record<string, ItemInfo>) {
+  const minutes = new Map(build.minutes ?? []);
+  const core = build.items
+    .filter(([id, games]) => (items[id]?.cost ?? 0) >= CORE_COST && (games / build.games) * 100 >= CORE_SHARE)
+    .slice(0, CORE_ITEMS)
+    .map(([id, games]) => ({ id, share: (games / build.games) * 100, minute: minutes.get(id) ?? null }));
+  if (minutes.size) core.sort((a, b) => (a.minute ?? Infinity) - (b.minute ?? Infinity) || b.share - a.share);
+  const early = (build.early ?? []).map(([id, games]) => ({ id, share: (games / (build.buyGames || 1)) * 100 }));
+  return { early, core };
 }
