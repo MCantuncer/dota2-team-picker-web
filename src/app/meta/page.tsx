@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getHeroes, type Hero } from "@/lib/heroes";
-import { getMeta, patchDay, sliceGames } from "@/lib/meta";
+import { ItemCardProvider } from "@/components/item-card";
+import { getItems } from "@/lib/items";
+import { extrasItemIds, getMeta, patchDay, sliceGames } from "@/lib/meta";
 import { MetaBoard } from "./meta-board";
 
 export const metadata: Metadata = {
@@ -24,6 +26,14 @@ export default async function MetaPage() {
   ]);
 
   const day = meta ? patchDay(meta, new Date()) : 0;
+  // Names and pictures of the items the extras show; the item list is cached for a day.
+  const items = meta?.extras ? await getItems().catch(() => new Map()) : new Map();
+  const art = Object.fromEntries(
+    (meta?.extras ? extrasItemIds(meta.extras) : []).flatMap((id) => {
+      const it = items.get(id);
+      return it ? [[String(id), { name: it.name, image: it.image }]] : [];
+    }),
+  );
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_auto]">
@@ -47,7 +57,9 @@ export default async function MetaPage() {
         )}
       </div>
       {meta && heroes.length > 0 ? (
-        <MetaBoard meta={meta} heroes={heroes.map(({ id, name, image, icon }) => ({ id, name, image, icon }))} />
+        <ItemCardProvider items={meta.extras?.items}>
+          <MetaBoard meta={meta} heroes={heroes.map(({ id, name, image, icon }) => ({ id, name, image, icon }))} art={art} />
+        </ItemCardProvider>
       ) : (
         <p className="max-w-2xl text-muted">The numbers for this patch are being counted. Check back in a few hours.</p>
       )}
