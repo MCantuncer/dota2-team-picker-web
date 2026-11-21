@@ -90,7 +90,7 @@ describe("reasonLines", () => {
 
 describe("verdictLine", () => {
   it("leads with the points and names the list's first under it", () => {
-    const behind = { heroId: 106, kind: "behind" as const, text: "5.8 points behind: 2.9 worse against Shadow Fiend.", note: null };
+    const behind = { heroId: 106, kind: "behind" as const, text: "5.8 points behind: 2.9 worse against Shadow Fiend.", note: null, record: null };
     expect(verdictLine(behind, "Invoker", HEROES)).toEqual({
       lead: "5.8 points",
       text: "behind Invoker: 2.9 worse against Shadow Fiend",
@@ -101,9 +101,10 @@ describe("verdictLine", () => {
       kind: "clear" as const,
       text: "5.8 points ahead of Ember Spirit, more than the 2.9 the data could be off by.",
       note: null,
+      record: null,
     };
     expect(verdictLine(clear, undefined, HEROES)).toMatchObject({ lead: "5.8 points", heroes: [106] });
-    const level = { heroId: 106, kind: "behind" as const, text: "Level with Invoker.", note: null };
+    const level = { heroId: 106, kind: "behind" as const, text: "Level with Invoker.", note: null, record: null };
     expect(verdictLine(level, "Invoker", HEROES)).toEqual({ lead: "", text: "Level with Invoker", heroes: [74] });
   });
 });
