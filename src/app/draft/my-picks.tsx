@@ -7,7 +7,7 @@ import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/draft";
 import { ordinal } from "@/lib/engine/reasons";
 import type { Position, Suggestion } from "@/lib/engine/types";
-import { VERDICT_Z, type Verdict } from "@/lib/engine/verdict";
+import { VERDICT_Z, type RecordLine, type Verdict, type VerdictRecord } from "@/lib/engine/verdict";
 import type { PickRisk } from "@/lib/pick-explain";
 import {
   namedHeroes,
@@ -295,17 +295,76 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
   );
 }
 
-/** The verdict against the list's first, number first, then the player's record note when there is one. */
+/** The verdict against the list's first, number first, then the player's record as bars when it favors this hero. */
 function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; leader?: string; ctx: PickCtx; isQuiet?: boolean }) {
   const line = verdictLine(verdict, leader, ctx.heroes);
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-3">
       <p className={isQuiet ? "text-sm leading-6 text-muted" : "text-[0.9375rem] leading-6 text-fg"}>
         {line.lead && <span className="font-semibold text-fg tabular-nums">{line.lead}</span>}{" "}
         <FacedText text={line.text} heroes={line.heroes} hero={ctx.hero} enemies={ctx.enemies} />
       </p>
-      {verdict.note && <p className="text-sm leading-6 text-radiant">{verdict.note}</p>}
+      {verdict.record && <RecordBars record={verdict.record} ctx={ctx} />}
     </div>
+  );
+}
+
+/**
+ * Record Bars (Can, 2026-11-21): the player's record on this hero and on the list's first, on the Score Parts bar
+ * grammar: face, name, a win-rate bar, the rate and the games. A record under 10 games says so and draws no rate,
+ * so 0 of 2 never reads as a real 0%.
+ */
+function RecordBars({ record, ctx }: { record: VerdictRecord; ctx: PickCtx }) {
+  const title = ctx.owner ? `${ctx.owner}'s Record` : "Your Record";
+  return (
+    <section aria-label={title} className="@container flex flex-col gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <span className="micro text-subtle">{title}</span>
+        {record.goodToo && (
+          <span className="micro inline-flex h-6 items-center gap-1.5 rounded-md bg-radiant-tint px-2 font-semibold text-radiant">
+            <Icon name="check" />A Good Pick Too
+          </span>
+        )}
+      </div>
+      <ul className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 @lg:grid-cols-[auto_minmax(4rem,1fr)_auto] @lg:gap-y-2.5">
+        <RecordRow line={record.mine} ctx={ctx} isMine />
+        <RecordRow line={record.leader} ctx={ctx} />
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * One hero's record: face and name, the win-rate bar, then the rate and the games. In a narrow card the bar and the
+ * numbers take a line under the name, so a hero name never has to wrap, shrink or share its room.
+ */
+function RecordRow({ line, ctx, isMine = false }: { line: RecordLine; ctx: PickCtx; isMine?: boolean }) {
+  const rate = line.games ? Math.round((line.wins / line.games) * 100) : 0;
+  return (
+    <li className="col-span-full grid grid-cols-subgrid items-center gap-y-1.5">
+      <span className="col-span-full flex min-w-0 items-center gap-2.5 @lg:col-span-1">
+        <Face id={line.heroId} hero={ctx.hero} size={28} />
+        <span className={`text-sm whitespace-nowrap ${isMine ? "font-semibold text-fg" : "text-muted"}`}>{ctx.hero(line.heroId).name}</span>
+      </span>
+      <span className="relative h-1.5 rounded-xs bg-raised" aria-hidden>
+        {!line.tooFew && (
+          <span
+            className={`absolute inset-y-0 left-0 rounded-xs ${isMine ? "bg-radiant" : "bg-line-control"}`}
+            style={{ width: `${rate}%` }}
+          />
+        )}
+      </span>
+      <span className="flex items-baseline justify-end gap-2 text-sm whitespace-nowrap tabular-nums">
+        {!line.tooFew && <span className={`font-semibold ${isMine ? "text-radiant" : "text-muted"}`}>{rate}%</span>}
+        <span className="text-subtle">
+          {!line.games
+            ? "No games yet"
+            : line.tooFew
+              ? `${line.games} ${line.games === 1 ? "game" : "games"}, too few`
+              : `${line.wins} won of ${line.games}`}
+        </span>
+      </span>
+    </li>
   );
 }
 
