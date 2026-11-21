@@ -59,6 +59,18 @@ describe("LaneTactics", () => {
     expect(screen.getByRole("img", { name: /stops at the first creep/ })).toBeInTheDocument();
   });
 
+  it("draws the last hit target as its own row under the rules", () => {
+    const target: LaneTactic = {
+      ...tactic("lastHits", "Last Hit Target: 49 by the End of Lane", 0),
+      visual: { kind: "lastHits", target: 49, usual: 52, enemy: 55 },
+    };
+    render(<LaneTactics pairs={[{ ...lina, tactics: [...lina.tactics, target] }]} heroName={name} icons={{}} />);
+    expect(screen.getByText("Last Hit Target: 49 by the End of Lane")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Against This Enemy 49, Your Usual 52, Enemy Gets 55" })).toBeInTheDocument();
+    // Still three cards and one tip: the target takes no rule's place.
+    expect(screen.getByText("Hit Hero 25 After Dragon Slave")).toBeInTheDocument();
+  });
+
   it("draws nothing without tactics", () => {
     const { container } = render(<LaneTactics pairs={[]} heroName={name} icons={{}} />);
     expect(container).toBeEmptyDOMElement();

@@ -47,8 +47,11 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTac
   const [enemy, setEnemy] = useState(pairs[0]?.enemy);
   const pair = pairs.find((p) => p.enemy === enemy) ?? pairs[0];
   if (!pair) return null;
-  const cards = pair.tactics.slice(0, CARDS);
-  const tips = pair.tactics.slice(CARDS);
+  // The last hit target is the lane's scoreboard, drawn as its own row under the rules.
+  const rules = pair.tactics.filter((t) => t.rule !== "lastHits");
+  const target = pair.tactics.find((t) => t.rule === "lastHits");
+  const cards = rules.slice(0, CARDS);
+  const tips = rules.slice(CARDS);
   return (
     <section aria-labelledby="lane-tactics-title" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
@@ -102,7 +105,48 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTac
           ))}
         </div>
       )}
+      {target && <LastHitTarget tactic={target} />}
     </section>
+  );
+}
+
+/** The last hit target: this pair's average lane last hits on a scale with the hero's usual and the enemy's. */
+function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
+  const visual = tactic.visual?.kind === "lastHits" ? tactic.visual : undefined;
+  if (!visual) return null;
+  const marks = [
+    { key: "target", value: visual.target, label: "Against This Enemy", color: "var(--radiant)" },
+    { key: "usual", value: visual.usual, label: "Your Usual", color: "var(--fg)" },
+    ...(visual.enemy !== undefined ? [{ key: "enemy", value: visual.enemy, label: "Enemy Gets", color: "var(--dire)" }] : []),
+  ];
+  const lo = Math.floor((Math.min(...marks.map((m) => m.value)) - 10) / 10) * 10;
+  const hi = Math.ceil((Math.max(...marks.map((m) => m.value)) + 10) / 10) * 10;
+  const at = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
+  return (
+    <article className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] sm:items-center sm:gap-x-7">
+      <div className="flex min-w-0 items-start gap-3.5">
+        <span className="num flex size-10 shrink-0 items-center justify-center rounded-lg bg-radiant-tint text-base font-semibold text-radiant">{visual.target}</span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h5 className="text-[0.9375rem] font-semibold text-fg">{tactic.title}</h5>
+          <TacticText tactic={tactic} />
+        </div>
+      </div>
+      <figure className="flex flex-col gap-2.5">
+        <div role="img" aria-label={marks.map((m) => `${m.label} ${m.value}`).join(", ")} className="relative h-2.5 rounded-full bg-line-strong">
+          {marks.map((m) => (
+            <i key={m.key} className="absolute -top-[5px] block h-5 w-[3px] -translate-x-1/2 rounded-sm" style={{ left: at(m.value), background: m.color }} />
+          ))}
+        </div>
+        <figcaption className="flex flex-col gap-1 text-[0.8125rem] text-muted sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-4">
+          {marks.map((m) => (
+            <span key={m.key} className="flex items-center gap-2">
+              <i className="block size-2.5 rounded-full" style={{ background: m.color }} />
+              {m.label} <span className="num text-fg">{m.value}</span>
+            </span>
+          ))}
+        </figcaption>
+      </figure>
+    </article>
   );
 }
 
@@ -166,6 +210,8 @@ function TacticPicture({ visual, heroName, icons }: Art & { visual: TacticVisual
       return <SplitSketch {...visual} />;
     case "lineUp":
       return <LineSketch {...visual} />;
+    case "lastHits":
+      return null;
     case "timing":
       return <TimingBars rows={visual.rows} heroName={heroName} icons={icons} />;
   }
