@@ -2,46 +2,40 @@ import Image from "next/image";
 import { change, signed, type HeroRate, type Measure } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 
-/** A shared scale for both dots of every row: 2 point win rate ticks, or 5 point pick rate ticks from 0. */
-function scaleOf(rows: HeroRate[], measure: Measure): { lo: number; hi: number; ticks: number[] } {
-  const values = rows.flatMap((h) => (measure === "win" ? [h.win, h.baseWin ?? h.win] : [h.pick, h.basePick ?? h.pick]));
-  const step = measure === "win" ? 2 : 5;
-  const lo = measure === "win" ? Math.floor(Math.min(...values) / step) * step : 0;
-  const hi = Math.max(lo + step, Math.ceil(Math.max(...values) / step) * step);
-  const ticks: number[] = [];
-  for (let t = lo; t <= hi; t += step) ticks.push(t);
-  return { lo, hi, ticks };
+/** The scale both panels share: whole points either side of zero, an even number at least 4. */
+export function moverScale(rows: HeroRate[], measure: Measure): number {
+  const most = Math.max(0, ...rows.map((h) => Math.abs(change(h, measure) ?? 0)));
+  return Math.max(4, Math.ceil(most / 2) * 2);
 }
 
 /**
- * Who moved most since the patch before: a hollow dot for the old patch and a filled one for this patch on one
- * scale with ticks, the line between them in the move's colour, and the change in points at the end.
+ * Who moved most since the patch before: each change as a bar left or right of zero on one scale with ticks,
+ * the rate before and now under the name, and the change in points at the end.
  */
 export function MoverRows({
   rows,
   measure,
   rising,
   heroes,
-  oldPatch,
-  newPatch,
+  max,
+  onSelect,
 }: {
   rows: HeroRate[];
   measure: Measure;
   rising: boolean;
   heroes: Map<number, MetaHero>;
-  oldPatch: string;
-  newPatch: string;
+  /** Points at each end of the scale (see moverScale). */
+  max: number;
+  onSelect: (id: number) => void;
 }) {
   if (rows.length === 0) return <p className="text-muted">No hero moved this way yet.</p>;
-  const { lo, hi, ticks } = scaleOf(rows, measure);
-  const at = (v: number) => ((v - lo) / (hi - lo)) * 100;
-  const labels = ticks.filter((_, i) => ticks.length <= 6 || i % 2 === 0);
-  const color = rising ? "bg-radiant" : "bg-dire";
-  const grid = "grid grid-cols-[4rem_minmax(0,1fr)_3.5rem] items-center gap-x-3.5 gap-y-1 sm:grid-cols-[5rem_minmax(8rem,10rem)_minmax(0,1fr)_4rem]";
+  const at = (v: number) => 50 + (Math.max(-max, Math.min(max, v)) / max) * 50;
+  const ticks = [-max, -max / 2, 0, max / 2, max];
+  const grid = "grid grid-cols-[4rem_minmax(0,1fr)_3.5rem] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[4.5rem_minmax(7rem,1fr)_minmax(0,1.3fr)_3.5rem]";
 
   return (
     <div className="grid gap-3">
-      <ul className="grid gap-3">
+      <ul className="grid gap-2.5">
         {rows.map((h) => {
           const hero = heroes.get(h.id);
           const now = measure === "win" ? h.win : h.pick;
@@ -49,56 +43,42 @@ export function MoverRows({
           const delta = change(h, measure) ?? 0;
           if (!hero) return null;
           return (
-            <li key={h.id} className={grid}>
-              <Image src={hero.image} alt="" width={80} height={45} className="aspect-video w-full rounded-md object-cover" />
-              <span className="font-semibold leading-tight text-fg">{hero.name}</span>
-              <span
-                role="img"
-                aria-label={`${hero.name}: ${before.toFixed(1)}% in ${oldPatch}, ${now.toFixed(1)}% in ${newPatch}`}
-                className="relative h-6 max-sm:col-span-3 max-sm:row-start-2"
-              >
-                <span className="absolute inset-x-0 top-[11px] h-0.5 bg-line-strong" />
-                {ticks.map((t) => (
-                  <span key={t} className="absolute inset-y-1 w-px bg-line-hover" style={{ left: `${at(t)}%` }} />
-                ))}
-                <span
-                  className={`absolute top-2.5 h-1 rounded-full opacity-50 ${color}`}
-                  style={{ left: `${Math.min(at(before), at(now))}%`, width: `${Math.abs(at(now) - at(before))}%` }}
-                />
-                <span
-                  className="absolute top-[5px] size-3.5 -translate-x-1/2 rounded-full bg-bg ring-2 ring-inset ring-line-control"
-                  style={{ left: `${at(before)}%` }}
-                />
-                <span className={`absolute top-[5px] size-3.5 -translate-x-1/2 rounded-full ${color}`} style={{ left: `${at(now)}%` }} />
-              </span>
-              <span className={`num text-right text-base max-sm:col-start-3 max-sm:row-start-1 ${rising ? "text-radiant" : "text-dire"}`}>
-                {signed(delta)}
-              </span>
+            <li key={h.id}>
+              <button type="button" onClick={() => onSelect(h.id)} aria-label={`${hero.name}: ${before.toFixed(1)}% to ${now.toFixed(1)}%, ${signed(delta)} points. Open ${hero.name}`} className={`${grid} w-full rounded-lg p-1 text-left hover:bg-hover`}>
+                <Image src={hero.image} alt="" width={80} height={45} className="aspect-video w-full rounded-md object-cover" />
+                <span className="grid leading-tight">
+                  <span className="text-[0.9375rem] text-fg">{hero.name}</span>
+                  <span className="text-[0.8125rem] tabular-nums text-subtle">
+                    {before.toFixed(1)}% to {now.toFixed(1)}%
+                  </span>
+                </span>
+                <span aria-hidden className="relative h-3.5 max-sm:col-span-3 max-sm:row-start-2">
+                  <span className="absolute inset-x-0 top-1.5 h-0.5 bg-line-strong" />
+                  {ticks.map((t) => (
+                    <span key={t} className="absolute -inset-y-0.5 w-px bg-line-hover" style={{ left: `${at(t)}%` }} />
+                  ))}
+                  <span
+                    className={`absolute top-px h-3 rounded-[3px] ${rising ? "bg-radiant" : "bg-dire"}`}
+                    style={{ left: `${Math.min(at(0), at(delta))}%`, width: `${Math.abs(at(delta) - at(0))}%` }}
+                  />
+                </span>
+                <span className={`num text-right text-base max-sm:col-start-3 max-sm:row-start-1 ${rising ? "text-radiant" : "text-dire"}`}>{signed(delta)}</span>
+              </button>
             </li>
           );
         })}
       </ul>
-      <div className={grid} aria-hidden>
+      <div className={`${grid} px-1`} aria-hidden>
         <span className="max-sm:hidden" />
         <span className="max-sm:hidden" />
-        <span className="relative h-4 text-xs text-subtle max-sm:col-span-3">
-          {labels.map((t) => (
-            <span key={t} className="num absolute -translate-x-1/2 text-xs font-normal" style={{ left: `${at(t)}%` }}>
-              {t}%
+        <span className="relative h-4 max-sm:col-span-3">
+          {ticks.map((t) => (
+            <span key={t} className="absolute -translate-x-1/2 text-xs tabular-nums text-subtle" style={{ left: `${at(t)}%` }}>
+              {t === 0 ? "0" : signed(t).replace(".0", "")}
             </span>
           ))}
         </span>
       </div>
-      <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-subtle" aria-hidden>
-        <span className="inline-flex items-center gap-2">
-          <span className="size-2.5 rounded-full bg-bg ring-2 ring-inset ring-line-control" />
-          {oldPatch}
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className={`size-2.5 rounded-full ${color}`} />
-          {newPatch}
-        </span>
-      </p>
     </div>
   );
 }
