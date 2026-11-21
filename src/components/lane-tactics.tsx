@@ -19,6 +19,22 @@ const CARDS = 3;
 /** Card grid columns by how many cards there are, so two cards never leave a third column empty. */
 const CARD_COLUMNS: Record<number, string> = { 1: "", 2: "lg:grid-cols-2", 3: "xl:grid-cols-3" };
 const TIP_COLUMNS: Record<number, string> = { 1: "", 2: "md:grid-cols-2", 3: "lg:grid-cols-3" };
+/** Enemy switch rows that always come out even: two by two on a phone, then all in one row when they fit. */
+const SWITCH_COLUMNS: Record<number, string> = {
+  2: "grid-cols-2 sm:flex",
+  3: "w-full grid-cols-2 sm:grid-cols-3",
+  4: "w-full grid-cols-2 lg:grid-cols-4",
+  5: "w-full grid-cols-2 sm:grid-cols-5",
+  6: "w-full grid-cols-2 sm:grid-cols-3 xl:grid-cols-6",
+};
+
+interface LaneTacticsProps extends Art {
+  pairs: PairTactics[];
+  /** A short number after each enemy's name on the switch, like a lane win rate. */
+  note?: (enemy: number) => string | undefined;
+  /** The heading's level, so it fits the page's outline: 4 under the Game Story's Lanes, 3 in a Meta panel. */
+  level?: 3 | 4;
+}
 
 /**
  * Lane Tactics (Can's go on the Lane Tactics mockup, 2026-11-22): how the player plays this lane against the enemy
@@ -26,7 +42,8 @@ const TIP_COLUMNS: Record<number, string> = { 1: "", 2: "md:grid-cols-2", 3: "lg
  * range ruler, trade budget, lane sketch or timing bar), the rest as quieter tips. With two enemy laners, a switch
  * picks which one the tactics are against, the likelier one first.
  */
-export function LaneTactics({ pairs, heroName, icons }: Art & { pairs: PairTactics[] }) {
+export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTacticsProps) {
+  const Heading = level === 3 ? "h3" : "h4";
   const [enemy, setEnemy] = useState(pairs[0]?.enemy);
   const pair = pairs.find((p) => p.enemy === enemy) ?? pairs[0];
   if (!pair) return null;
@@ -36,27 +53,31 @@ export function LaneTactics({ pairs, heroName, icons }: Art & { pairs: PairTacti
     <section aria-labelledby="lane-tactics-title" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-          <h4 id="lane-tactics-title" className="text-lg font-semibold tracking-[-0.01em] text-fg">
+          <Heading id="lane-tactics-title" className="text-lg font-semibold tracking-[-0.01em] text-fg">
             Lane Tactics
-          </h4>
+          </Heading>
           <span className="text-sm text-muted">Against {heroName(pair.enemy)}, most important first</span>
         </div>
         {pairs.length > 1 && (
-          <div role="group" aria-label="Enemy laner" className="flex flex-wrap gap-2">
-            {pairs.map((p) => {
+          <div role="group" aria-label="Enemy laner" className={`grid gap-2 ${SWITCH_COLUMNS[pairs.length] ?? SWITCH_COLUMNS[6]}`}>
+            {pairs.map((p, i) => {
               const on = p.enemy === pair.enemy;
+              const alone = i === pairs.length - 1 && pairs.length % 2 === 1;
               return (
                 <button
                   key={p.enemy}
                   type="button"
                   aria-pressed={on}
                   onClick={() => setEnemy(p.enemy)}
-                  className={`flex h-10 items-center gap-2.5 rounded-lg border py-1 pl-1 pr-3 text-sm transition-colors ${
+                  className={`flex min-h-10 min-w-0 items-center gap-2.5 rounded-lg border py-1 pl-1 pr-3 text-sm transition-colors ${alone ? "max-sm:col-span-2" : ""} ${
                     on ? "border-accent-deep bg-accent-tint text-accent-bright" : "border-line-strong bg-raised text-muted hover:bg-hover hover:text-fg"
                   }`}
                 >
                   {icons[p.enemy] && <HeroFace portrait={icons[p.enemy]!} name={heroName(p.enemy)} size={30} isEnemy isDecorative />}
-                  {heroName(p.enemy)}
+                  <span className="flex min-w-0 flex-col items-start text-left leading-tight">
+                    {heroName(p.enemy)}
+                    {note?.(p.enemy) && <span className="num text-xs text-subtle">{note(p.enemy)}</span>}
+                  </span>
                 </button>
               );
             })}
