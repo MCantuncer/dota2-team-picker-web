@@ -347,3 +347,34 @@ export function buildPath(build: HeroBuild, items: Record<string, ItemInfo>) {
   const early = (build.early ?? []).map(([id, games]) => ({ id, share: (games / (build.buyGames || 1)) * 100 }));
   return { early, core };
 }
+
+/** A role's items show from this many games of its heroes with builds, and at least this share of them, in percent. */
+export const ROLE_ITEM_GAMES = 100;
+export const ROLE_ITEM_SHARE = 5;
+export const ROLE_ITEMS = 12;
+
+/**
+ * What a role builds: the share of the role's games, over every hero in `heroes` with a build in the role, that
+ * ended with each core item (CORE_COST and up) or item new in this patch, most first. Twelve or six items, so the
+ * tiles fill whole rows of six, three and two; empty under ROLE_ITEM_GAMES games.
+ */
+export function roleItems(extras: MetaExtras, heroes: number[], role: number): { games: number; items: { id: number; share: number; isNew: boolean }[] } {
+  const fresh = new Set(extras.newItems.map((n) => n.id));
+  const counts = new Map<number, number>();
+  let games = 0;
+  for (const hero of heroes) {
+    const build = extras.builds[hero]?.[role];
+    if (!build) continue;
+    games += build.games;
+    for (const [id, n] of build.items) {
+      if ((extras.items[id]?.cost ?? 0) >= CORE_COST || fresh.has(id)) counts.set(id, (counts.get(id) ?? 0) + n);
+    }
+  }
+  if (games < ROLE_ITEM_GAMES) return { games, items: [] };
+  const items = [...counts]
+    .map(([id, n]) => ({ id, share: (n / games) * 100, isNew: fresh.has(id) }))
+    .filter((i) => i.share >= ROLE_ITEM_SHARE)
+    .sort((a, b) => b.share - a.share || a.id - b.id);
+  const shown = items.length >= ROLE_ITEMS ? ROLE_ITEMS : items.length >= 6 ? 6 : items.length;
+  return { games, items: items.slice(0, shown) };
+}
