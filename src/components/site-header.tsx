@@ -90,6 +90,7 @@ async function HeaderSession() {
   const nav: NavItem[] = [
     { href: "/draft", label: "Draft", icon: "swords" },
     { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
+    { href: "/meta", label: "Meta", icon: "chart" },
     { href: "/stacks", label: "Stacks", icon: "layers", badge: (stackInvites?.length ?? 0) + (joinRequests ?? 0) },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
