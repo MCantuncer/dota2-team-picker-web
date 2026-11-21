@@ -1,4 +1,5 @@
 import { SUPABASE_URL } from "@/lib/supabase/env";
+import type { ItemInfo } from "@/lib/engine/types";
 
 /**
  * The Meta page numbers, built by the backend's refresh (services/engine/src/data/meta.ts) into meta.json in the
@@ -39,7 +40,34 @@ export interface MetaFile {
   base: MetaDay[];
   /** Per hero id: share of its games per position 1 to 5, in percent. */
   roles: Record<string, number[]>;
+  /** The hero card extras; missing until the backend has built them. */
+  extras?: MetaExtras;
 }
+
+/** A hero's games in a position, and how many of them ended with each item: [item id, games], most first. */
+export interface HeroBuild {
+  games: number;
+  items: [number, number][];
+  neutral: [number, number][];
+}
+
+/** An enemy as [hero id, win rate against it in percent, games]. */
+export type Matchup = [number, number, number];
+
+export interface MetaExtras {
+  /** Saved ranked games of this patch with end-of-game items. */
+  buildGames: number;
+  /** Per hero id, per position "1" to "5" and "0" for every position. */
+  builds: Record<string, Record<string, HeroBuild>>;
+  /** Items new in this patch: games that ended with each, and its heroes as [hero id, games]. */
+  newItems: { id: number; games: number; heroes: [number, number][] }[];
+  matchups: Record<string, { best: Matchup[]; worst: Matchup[] }>;
+  /** Shop data of the items above, for item cards. Neutral items have none. */
+  items: Record<string, ItemInfo>;
+}
+
+/** Games a position needs before the backend lists its build. */
+export const MIN_BUILD_GAMES = 40;
 
 const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null && !Array.isArray(x);
 const isNumbers = (x: unknown): x is number[] => Array.isArray(x) && x.every((n) => typeof n === "number" && Number.isFinite(n));
@@ -51,6 +79,24 @@ const isDay = (x: unknown): x is MetaDay =>
   x.games.length === 5 &&
   isRecord(x.heroes) &&
   Object.values(x.heroes).every((h) => isNumbers(h) && h.length === 10);
+
+const isPairs = (x: unknown, size: number) => Array.isArray(x) && x.every((p) => isNumbers(p) && p.length === size);
+const isBuild = (x: unknown): x is HeroBuild => isRecord(x) && typeof x.games === "number" && isPairs(x.items, 2) && isPairs(x.neutral, 2);
+
+/** True when the extras have the shape the page reads; the page then shows the rest without them. */
+export function isExtras(x: unknown): x is MetaExtras {
+  return (
+    isRecord(x) &&
+    typeof x.buildGames === "number" &&
+    isRecord(x.builds) &&
+    Object.values(x.builds).every((b) => isRecord(b) && Object.values(b).every(isBuild)) &&
+    Array.isArray(x.newItems) &&
+    x.newItems.every((n) => isRecord(n) && typeof n.id === "number" && typeof n.games === "number" && isPairs(n.heroes, 2)) &&
+    isRecord(x.matchups) &&
+    Object.values(x.matchups).every((m) => isRecord(m) && isPairs(m.best, 3) && isPairs(m.worst, 3)) &&
+    isRecord(x.items)
+  );
+}
 
 /** True when `x` has the shape the page reads; anything else is not shown. */
 export function isMeta(x: unknown): x is MetaFile {
@@ -78,6 +124,10 @@ export async function getMeta(): Promise<MetaFile | null> {
   if (!isMeta(body)) {
     console.error("Meta numbers have an unexpected shape");
     return null;
+  }
+  if (body.extras !== undefined && !isExtras(body.extras)) {
+    console.error("Meta extras have an unexpected shape");
+    delete body.extras;
   }
   return body;
 }
@@ -186,4 +236,29 @@ export function previousPatch(name: string): string | null {
   const m = /^(\d+)\.(\d{2})$/.exec(name);
   if (!m || m[2] === "00") return null;
   return `${m[1]}.${String(Number(m[2]) - 1).padStart(2, "0")}`;
+}
+
+/** Build rows by how often games end with them: in most games, in many, and in some. Shares are in percent. */
+export const BUILD_GROUPS = [
+  { name: "Core", min: 50 },
+  { name: "Common", min: 20 },
+  { name: "Situational", min: 0 },
+] as const;
+
+/** A build's items as shares of its games, in BUILD_GROUPS; groups with no items are left out. */
+export function buildGroups(build: HeroBuild): { name: string; items: { id: number; share: number }[] }[] {
+  const items = build.items.map(([id, games]) => ({ id, share: (games / build.games) * 100 }));
+  return BUILD_GROUPS.map((g, i) => ({
+    name: g.name,
+    items: items.filter((it) => it.share >= g.min && (i === 0 || it.share < BUILD_GROUPS[i - 1]!.min)),
+  })).filter((g) => g.items.length > 0);
+}
+
+/** Every item id the extras show, neutral items included, for loading their names and pictures. */
+export function extrasItemIds(extras: MetaExtras): number[] {
+  const ids = new Set<number>(extras.newItems.map((n) => n.id));
+  for (const byPosition of Object.values(extras.builds)) {
+    for (const b of Object.values(byPosition)) for (const [id] of [...b.items, ...b.neutral]) ids.add(id);
+  }
+  return [...ids];
 }
