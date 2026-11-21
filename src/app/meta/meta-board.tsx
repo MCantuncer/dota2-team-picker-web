@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PositionIcon } from "@/components/position-icon";
 import { RankMedal } from "@/components/rank-medal";
 import { POSITION_NAMES } from "@/lib/draft";
 import { heroRates, movers, previousPatch, RANK_GROUPS, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
+import { HeroCard } from "./meta-hero-card";
+import { HeroList } from "./meta-list";
 import { MapBoards, PickWinMap } from "./meta-map";
 import { MoverRows } from "./meta-movers";
 
@@ -53,6 +55,21 @@ export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[]
     [meta, slice, role, byId],
   );
   const moved = movers(rates, measure, MOVERS);
+  // The hero card opens on the best win rate among heroes picked in at least 1% of games, until one is picked.
+  const [picked, setPicked] = useState<number | null>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const fallback = [...rates].filter((r) => r.pick >= 1).sort((a, b) => b.win - a.win)[0] ?? rates[0];
+  const rate = rates.find((r) => r.id === picked) ?? fallback;
+  const selected = rate?.id ?? null;
+  const byRank = useMemo(
+    () => RANK_GROUPS.map((g) => (selected === null ? undefined : heroRates(meta, g.slice).find((r) => r.id === selected))),
+    [meta, selected],
+  );
+  const select = (id: number) => {
+    setPicked(id);
+    // Bring the card into view when it is off screen, as on the map or a long list.
+    requestAnimationFrame(() => card.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+  };
   const oldPatch = previousPatch(meta.patch.name) ?? "Before";
   const games = sliceGames(meta, slice);
   const group = RANK_GROUPS.find((g) => g.slice === slice);
@@ -114,10 +131,10 @@ export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[]
         ) : (
           <>
             <div className="max-sm:hidden">
-              <PickWinMap rates={rates} heroes={byId} />
+              <PickWinMap rates={rates} heroes={byId} selected={selected} onSelect={select} />
             </div>
             <div className="sm:hidden">
-              <MapBoards rates={rates} heroes={byId} />
+              <MapBoards rates={rates} heroes={byId} selected={selected} onSelect={select} />
             </div>
           </>
         )}
@@ -131,6 +148,38 @@ export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[]
           <MoverRows rows={moved.down} measure={measure} rising={false} heroes={byId} oldPatch={oldPatch} newPatch={meta.patch.name} />
         </Panel>
       </div>
+
+      {rates.length > 0 && (
+        <Panel title="Every Hero" note={`${mapNote}. Pick one to see its numbers.`} actions={<ListKey />}>
+          <HeroList rates={rates} heroes={byId} selected={selected} onSelect={select} />
+        </Panel>
+      )}
+
+      {rate && byId.get(rate.id) && (
+        <div ref={card} className="scroll-mt-24">
+          <HeroCard hero={byId.get(rate.id)!} rate={rate} byRank={byRank} days={meta.days} slice={slice} oldPatch={oldPatch} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** What the day line in each row shows. */
+function ListKey() {
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-subtle" aria-hidden>
+      <span className="flex items-center gap-2">
+        <svg width={28} height={8}>
+          <line x1={0} x2={28} y1={4} y2={4} className="stroke-line-control" strokeDasharray="3 3" strokeWidth={1.5} />
+        </svg>
+        Win Rate Before
+      </span>
+      <span className="flex items-center gap-2">
+        <svg width={28} height={8}>
+          <line x1={0} x2={28} y1={4} y2={4} className="stroke-accent" strokeWidth={2} />
+        </svg>
+        Win Rate by Day
+      </span>
     </div>
   );
 }
