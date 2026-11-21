@@ -14,6 +14,7 @@ import { SteamButton } from "@/components/steam-button";
 import { heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
+import { patchNotice } from "@/lib/patch-notice";
 import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
@@ -45,6 +46,7 @@ import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { EmptyPoolNotice } from "./empty-pool-notice";
+import { NewPatchNotice } from "./new-patch-notice";
 import { SuperTeamPanel } from "./super-team";
 import { TeamPlanLane } from "./team-plan";
 import { PerPlayerLane } from "./per-player-view";
@@ -268,6 +270,9 @@ export function DraftBoard({
     if (!isReady || document.activeElement !== document.body || !window.matchMedia("(pointer: fine)").matches) return;
     allyRef.current?.focus({ preventScroll: true });
   }, [isReady]);
+
+  // The data only changes when the page loads it, so the day is the day of the load.
+  const newPatch = useMemo(() => (engine ? patchNotice(engine.data, new Date()) : null), [engine]);
 
   const search = useMemo(() => {
     if (!engine) return null;
@@ -1023,6 +1028,7 @@ export function DraftBoard({
           )}
         </div>
         {screen.status}
+        {newPatch && <NewPatchNotice notice={newPatch} />}
       </div>
 
       {!party && phone && solo.synced && solo.ready && (
