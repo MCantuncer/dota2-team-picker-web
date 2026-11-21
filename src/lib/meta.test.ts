@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { change, dayLabel, heroRates, isMeta, MIN_GAMES, movers, patchDay, previousPatch, signed, sliceGames, type MetaDay, type MetaFile } from "./meta";
+import { buildGroups, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, signed, sliceGames, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -85,5 +85,38 @@ describe("labels", () => {
     expect(signed(4.34)).toBe("+4.3");
     expect(signed(-2.06)).toBe("−2.1");
     expect(signed(0.01)).toBe("0.0");
+  });
+});
+
+const EXTRAS: MetaExtras = {
+  buildGames: 300,
+  builds: { 32: { 0: { games: 100, items: [[1, 80], [63, 50], [36, 30], [116, 6]], neutral: [[947, 20]] } } },
+  newItems: [{ id: 1942, games: 12, heroes: [[32, 8]] }],
+  matchups: { 32: { best: [[17, 60.7, 3039]], worst: [[94, 42.4, 1108]] } },
+  items: {},
+};
+
+describe("isExtras", () => {
+  it("accepts the published shape and refuses others", () => {
+    expect(isExtras(EXTRAS)).toBe(true);
+    expect(isExtras({ ...EXTRAS, builds: { 32: { 0: { games: 1, items: [[1]], neutral: [] } } } })).toBe(false);
+    expect(isExtras({ ...EXTRAS, matchups: { 32: { best: [[17, 60.7]], worst: [] } } })).toBe(false);
+    expect(isExtras({ ...EXTRAS, items: undefined })).toBe(false);
+  });
+});
+
+describe("buildGroups and extrasItemIds", () => {
+  it("splits a build into core, common and situational items by share", () => {
+    const groups = buildGroups(EXTRAS.builds[32]![0]!);
+    expect(groups.map((g) => [g.name, g.items.map((i) => i.id)])).toEqual([
+      ["Core", [1, 63]],
+      ["Common", [36]],
+      ["Situational", [116]],
+    ]);
+    expect(groups[0]!.items[0]!.share).toBe(80);
+  });
+
+  it("lists every item the extras show, neutral items too", () => {
+    expect(extrasItemIds(EXTRAS).sort((a, b) => a - b)).toEqual([1, 36, 63, 116, 947, 1942]);
   });
 });

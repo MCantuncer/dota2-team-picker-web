@@ -6,6 +6,7 @@ import { RankMedal } from "@/components/rank-medal";
 import { POSITION_NAMES } from "@/lib/draft";
 import { heroRates, movers, previousPatch, RANK_GROUPS, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
 import { HeroCard } from "./meta-hero-card";
+import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
 import { MapBoards, PickWinMap } from "./meta-map";
 import { MoverRows } from "./meta-movers";
@@ -45,7 +46,7 @@ function Choice({ pressed, onClick, label, children }: { pressed: boolean; onCli
 }
 
 /** The Meta page's filters and charts. Everything below the header follows the rank and role filters. */
-export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[] }) {
+export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaHero[]; art: ItemArt }) {
   const [slice, setSlice] = useState<RankSlice>(0);
   const [role, setRole] = useState(0);
   const [measure, setMeasure] = useState<Measure>("win");
@@ -149,6 +150,15 @@ export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[]
         </Panel>
       </div>
 
+      {meta.extras && meta.extras.newItems.length > 0 && (
+        <Panel
+          title={`New Items in ${meta.patch.name}`}
+          note={`Games of this patch that ended with each, and the heroes holding it most. Every rank and role, ${meta.extras.buildGames.toLocaleString("en-US")} games so far.`}
+        >
+          <NewItems extras={meta.extras} art={art} heroes={byId} onSelect={select} />
+        </Panel>
+      )}
+
       {rates.length > 0 && (
         <Panel title="Every Hero" note={`${mapNote}. Pick one to see its numbers.`} actions={<ListKey />}>
           <HeroList rates={rates} heroes={byId} selected={selected} onSelect={select} />
@@ -157,7 +167,20 @@ export function MetaBoard({ meta, heroes }: { meta: MetaFile; heroes: MetaHero[]
 
       {rate && byId.get(rate.id) && (
         <div ref={card} className="scroll-mt-24">
-          <HeroCard hero={byId.get(rate.id)!} rate={rate} byRank={byRank} days={meta.days} slice={slice} oldPatch={oldPatch} />
+          <HeroCard
+            hero={byId.get(rate.id)!}
+            rate={rate}
+            byRank={byRank}
+            days={meta.days}
+            slice={slice}
+            oldPatch={oldPatch}
+            patch={meta.patch.name}
+            extras={meta.extras}
+            role={role}
+            art={art}
+            heroes={byId}
+            onSelect={select}
+          />
         </div>
       )}
     </div>
