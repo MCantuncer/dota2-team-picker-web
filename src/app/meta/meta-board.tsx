@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { PositionIcon } from "@/components/position-icon";
 import { RankMedal } from "@/components/rank-medal";
 import { POSITION_NAMES } from "@/lib/draft";
-import { heroRates, movers, previousPatch, RANK_GROUPS, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
+import { heroRates, movers, previousPatch, RANK_GROUPS, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
 import { HeroCard } from "./meta-hero-card";
 import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
 import { MapBoards, PickWinMap } from "./meta-map";
 import { MoverRows } from "./meta-movers";
+import { RoleLeaders, RoleTabs } from "./meta-role-leaders";
 
 /** What the Meta page needs of a hero. */
 export interface MetaHero {
@@ -56,6 +56,10 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
     [meta, slice, role, byId],
   );
   const moved = movers(rates, measure, MOVERS);
+  // The role's leaders are read from every hero at this rank, since a hero's main role can be under ROLE_SHARE elsewhere.
+  const all = useMemo(() => heroRates(meta, slice).filter((r) => byId.has(r.id)), [meta, slice, byId]);
+  const lead = useMemo(() => (role ? roleLeaders(meta, all, role) : null), [meta, all, role]);
+  const highs = useMemo(() => new Map(heroRates(meta, 4).map((r) => [r.id, r])), [meta]);
   // The hero card opens on the best win rate among heroes picked in at least 1% of games, until one is picked.
   const [picked, setPicked] = useState<number | null>(null);
   const card = useRef<HTMLDivElement>(null);
@@ -95,36 +99,41 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
 
   return (
     <div className="grid gap-8">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-subtle">Rank</span>
-          <div className="seg h-auto" role="group" aria-label="Rank">
-            <Choice pressed={slice === 0} onClick={() => setSlice(0)}>
-              All Ranks
-            </Choice>
-            {RANK_GROUPS.map((g) => (
-              <Choice key={g.slice} pressed={slice === g.slice} onClick={() => setSlice(g.slice)} label={g.name}>
-                <RankMedal rankTier={g.medal * 10} size={28} />
-                <span className="hidden xl:inline">{g.name}</span>
+      <div className="grid gap-3.5">
+        <RoleTabs role={role} onChange={setRole} />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-subtle">Rank</span>
+            <div className="seg h-auto" role="group" aria-label="Rank">
+              <Choice pressed={slice === 0} onClick={() => setSlice(0)}>
+                All Ranks
               </Choice>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-subtle">Role</span>
-          <div className="seg h-auto" role="group" aria-label="Role">
-            <Choice pressed={role === 0} onClick={() => setRole(0)}>
-              All Roles
-            </Choice>
-            {POSITION_NAMES.map((name, i) => (
-              <Choice key={name} pressed={role === i + 1} onClick={() => setRole(i + 1)} label={name}>
-                <PositionIcon position={i + 1} size={20} />
-                <span className="hidden md:inline">{name}</span>
-              </Choice>
-            ))}
+              {RANK_GROUPS.map((g) => (
+                <Choice key={g.slice} pressed={slice === g.slice} onClick={() => setSlice(g.slice)} label={g.name}>
+                  <RankMedal rankTier={g.medal * 10} size={28} />
+                  <span className="hidden xl:inline">{g.name}</span>
+                </Choice>
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
+      {lead && (
+        <RoleLeaders
+          role={role}
+          pool={lead.pool.length}
+          leaders={lead.leaders}
+          dark={lead.dark}
+          highs={highs}
+          days={meta.days}
+          oldPatch={oldPatch}
+          extras={meta.extras}
+          art={art}
+          heroes={byId}
+          onSelect={select}
+        />
+      )}
 
       <Panel title="Meta Map" note={mapNote}>
         {rates.length === 0 ? (
