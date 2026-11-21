@@ -25,7 +25,17 @@ function winAxis(rates: HeroRate[]): { lo: number; hi: number; ticks: number[] }
  * Every hero on one chart: pick rate across on a square root scale (most heroes sit under 10%), win rate up, with
  * the 50% line dashed and the halves washed green and red. Faces are buttons with their numbers as the label.
  */
-export function PickWinMap({ rates, heroes }: { rates: HeroRate[]; heroes: Map<number, MetaHero> }) {
+export function PickWinMap({
+  rates,
+  heroes,
+  selected,
+  onSelect,
+}: {
+  rates: HeroRate[];
+  heroes: Map<number, MetaHero>;
+  selected: number | null;
+  onSelect: (id: number) => void;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const { lo, hi, ticks } = winAxis(rates);
   const pickMax = Math.max(1, ...rates.map((r) => r.pick)) * 1.08;
@@ -78,11 +88,13 @@ export function PickWinMap({ rates, heroes }: { rates: HeroRate[]; heroes: Map<n
             key={r.id}
             type="button"
             aria-label={`${hero.name}: picked in ${r.pick.toFixed(1)}% of games, wins ${r.win.toFixed(1)}%`}
+            aria-pressed={selected === r.id}
+            onClick={() => onSelect(r.id)}
             onMouseEnter={() => setHover(r.id)}
             onMouseLeave={() => setHover(null)}
             onFocus={() => setHover(r.id)}
             onBlur={() => setHover(null)}
-            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-md ring-2 ring-bg transition-transform duration-[var(--dur-fast)] hover:z-10 hover:scale-125 hover:ring-accent focus-visible:z-10 focus-visible:scale-125 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-md ring-2 ring-bg transition-transform duration-[var(--dur-fast)] hover:z-10 hover:scale-125 hover:ring-accent aria-pressed:z-10 aria-pressed:ring-accent focus-visible:z-10 focus-visible:scale-125 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
             style={{ left: `${(x(r.pick) / W) * 100}%`, top: `${(y(r.win) / H) * 100}%`, width: FACE, height: FACE }}
           >
             <Image src={hero.icon} alt="" width={FACE} height={FACE} className="size-full rounded-md" />
@@ -118,7 +130,19 @@ function Change({ value }: { value: number | null }) {
 }
 
 /** The map's four corners as boards, for phones: split at 50% win rate and the middle hero's pick rate. */
-export function MapBoards({ rates, heroes, perBoard = 12 }: { rates: HeroRate[]; heroes: Map<number, MetaHero>; perBoard?: number }) {
+export function MapBoards({
+  rates,
+  heroes,
+  selected,
+  onSelect,
+  perBoard = 12,
+}: {
+  rates: HeroRate[];
+  heroes: Map<number, MetaHero>;
+  selected: number | null;
+  onSelect: (id: number) => void;
+  perBoard?: number;
+}) {
   const picks = rates.map((r) => r.pick).sort((a, b) => a - b);
   const mid = picks[Math.floor(picks.length / 2)] ?? 0;
   const boards: { title: string; up: boolean; list: HeroRate[] }[] = [
@@ -142,14 +166,15 @@ export function MapBoards({ rates, heroes, perBoard = 12 }: { rates: HeroRate[];
               const hero = heroes.get(r.id);
               return hero ? (
                 <li key={r.id}>
-                  <Image
-                    src={hero.icon}
-                    alt={`${hero.name}, ${r.win.toFixed(1)}%`}
-                    title={`${hero.name} ${r.win.toFixed(1)}%`}
-                    width={44}
-                    height={44}
-                    className="aspect-square w-full rounded-md"
-                  />
+                  <button
+                    type="button"
+                    aria-label={`${hero.name}, wins ${r.win.toFixed(1)}%`}
+                    aria-pressed={selected === r.id}
+                    onClick={() => onSelect(r.id)}
+                    className="block w-full rounded-md ring-2 ring-transparent aria-pressed:ring-accent"
+                  >
+                    <Image src={hero.icon} alt="" width={44} height={44} className="aspect-square w-full rounded-md" />
+                  </button>
                 </li>
               ) : null;
             })}
