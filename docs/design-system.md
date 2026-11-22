@@ -301,6 +301,21 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - Phone: the path turns into a vertical list (tile, minute, name and late minute) on a vertical line, enemy items
   as indented rows. The path scrolls sideways on narrow desktops (a labelled, focusable region).
 
+## At the Horn
+
+First 10 Minutes' item and skill block (`components/first-ten-minutes.tsx`, Can 2026-11-22):
+
+- **Two loadout cards**, ours and the enemy laner's, side by side from `lg`, stacked below. Each card has a 3px team
+  bar on top (Radiant ours, Dire theirs), a 32px face with the name and the You chip or "Enemy", then the same rows:
+  Start, In Lane, First Core. The cards share their rows (`grid-rows-subgrid`), so Start sits next to Start.
+- Items are the Kits' 64x47 tiles in up to six columns (the inventory), shrinking to fit on phones, with the copy
+  count badge and the 20px enemy face on items this draft changed. First Core is one tile with its name and the
+  minute big (Dire red on the enemy card); "None by 10 min" when the enemy has none by the end of the lane.
+- A changed item is explained on the card's last line: the enemy face, "Changed for this draft." and the reason.
+- A card alone (no enemy item data) spans the width and turns its rows into three columns from `lg`.
+- **First Skills** is one band under the cards: seven 44px ability icons with their level, and the high-rank wins
+  count on the right. No ring on the ultimate.
+
 ## Item Card
 
 Every item icon on the game plan opens one card right next to itself (`components/item-card.tsx`, Can 2026-11-15:

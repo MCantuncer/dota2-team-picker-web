@@ -81,7 +81,8 @@ describe("FirstTenMinutes", () => {
     expect(screen.getByText(/lanes of Hero 13 against Hero 11/)).toHaveTextContent("1,251 lanes of Hero 13 against Hero 11");
     expect(screen.getByText("Lane results at your rank")).toBeInTheDocument();
     // The enemy laner's role is named for the enemy, never "Pos 2".
-    expect(screen.getByText("Enemy")).toBeInTheDocument();
+    expect(screen.getAllByText("Enemy")).toHaveLength(2);
+    expect(screen.queryByText(/Pos 2/)).toBeNull();
   });
 
   it("shows how to play the lane, the last hit target under By 10 Minutes, and the other lanes", () => {
@@ -94,11 +95,25 @@ describe("FirstTenMinutes", () => {
     expect(screen.getByText("Won")).toBeInTheDocument();
   });
 
-  it("lists what the enemy laner buys, the first core item with its minute", () => {
+  it("puts the enemy laner's items on a card with the same rows as ours, the first core item with its minute", () => {
     draw(13, 2);
-    expect(screen.getByRole("heading", { name: "Hero 11 Buys" })).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Hero 11 In Lane" })).toHaveTextContent("9 min");
-    expect(screen.getByText("9 min")).toBeInTheDocument();
+    const theirs = screen.getByRole("region", { name: "Hero 11 Items" });
+    expect(within(theirs).getByRole("list", { name: "Hero 11 Start" }).children).toHaveLength(1);
+    expect(within(theirs).getByRole("list", { name: "Hero 11 In Lane" }).children).toHaveLength(1);
+    expect(within(theirs).getByText("Power Treads")).toBeInTheDocument();
+    expect(within(theirs).getByText("9").parentElement).toHaveTextContent("9 min");
+  });
+
+  it("says when the enemy laner has no core item by the end of the lane", () => {
+    render(
+      <FirstTenMinutes
+        lanes={[{ ...mid, enemyItems: [{ hero: 11, items: mid.enemyItems![0]!.items.filter((i) => i.phase !== "first") }] }]}
+        player={player(13, 2)}
+        heroName={(id) => `Hero ${id}`}
+        icons={{}}
+      />,
+    );
+    expect(within(screen.getByRole("region", { name: "Hero 11 Items" })).getByText("None by 10 min")).toBeInTheDocument();
   });
 
   it("marks items this draft changed and says why", () => {
@@ -113,10 +128,11 @@ describe("FirstTenMinutes", () => {
       situational: [],
     };
     draw(13, 2, build);
-    expect(screen.getByText("Changed for this draft")).toBeInTheDocument();
-    expect(screen.getByText("Hero 11 casts often.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Buy in Lane" })).toBeInTheDocument();
-    expect(screen.getByText("19 min")).toBeInTheDocument();
+    const ours = screen.getByRole("region", { name: "Your Items" });
+    expect(within(ours).getByText("Changed for this draft.").parentElement).toHaveTextContent("Changed for this draft. Hero 11 casts often.");
+    expect(within(ours).getByRole("list", { name: "Hero 13 In Lane" }).children).toHaveLength(1);
+    expect(within(ours).getByText("Blink Dagger")).toBeInTheDocument();
+    expect(within(ours).getByText("19").parentElement).toHaveTextContent("19 min");
   });
 
   it("with two enemy laners, starts on the likelier one and switches to the other", () => {
