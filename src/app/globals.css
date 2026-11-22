@@ -973,6 +973,15 @@ body {
     .sweep-bar {
       animation: sweep 1.4s ease-in-out infinite;
     }
+    /* A page opening from the header: shown only if it takes longer than a blink. */
+    @keyframes pending-in {
+      from {
+        opacity: 0;
+      }
+    }
+    .pending-sweep {
+      animation: pending-in var(--dur-base) var(--motion-out) 150ms backwards;
+    }
     @keyframes enter {
       from {
         opacity: 0;

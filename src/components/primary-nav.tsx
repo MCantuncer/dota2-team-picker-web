@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "./icon";
+import { NavPending } from "./nav-pending";
 
 export interface NavItem {
   href: string;
@@ -55,6 +56,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
                 <span className="hidden lg:inline">{item.label}</span>
                 <span className="sr-only lg:hidden">{item.label}</span>
                 <NavBadge count={item.badge} />
+                {!active && <NavPending bar />}
               </Link>
               {active && <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 bg-accent" />}
             </li>
