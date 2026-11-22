@@ -3,7 +3,7 @@ import type { GamePlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
 import { ChapterCards } from "./chapter-cards";
 import { keyItemLateLine } from "./lane-board";
-import { PlayerView } from "./player-view";
+import { PlayerView, type SimilarDraft } from "./player-view";
 import type { EnemyItem } from "./build-path";
 import { itemArt, StoryTimeline } from "./story-timeline";
 import { ThreatPlanPanel } from "./threat-plan-panel";
@@ -30,6 +30,8 @@ export interface GameStoryPanelProps {
   skillBuilds?: Snapshot["skillBuilds"];
   /** Game plans against the dangerous enemy cores, most dangerous first; each takes his line in Danger Heroes. */
   threats?: DraftThreat[];
+  /** The finished draft, for each hero's Similar Games answer. */
+  similar?: SimilarDraft;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface GameStoryPanelProps {
  * line with both teams' key items, the game plans against the enemies who decide it, and the danger heroes. It
  * is on that tab alone, so the other tabs do not repeat it.
  */
-export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, skillBuilds, threats = [] }: GameStoryPanelProps) {
+export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, skillBuilds, threats = [], similar }: GameStoryPanelProps) {
   // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
   const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
   const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
@@ -108,6 +110,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           race={story.race}
           team={team}
           enemyItems={enemyItems}
+          similar={similar}
         />
       </section>
     </ItemCardProvider>

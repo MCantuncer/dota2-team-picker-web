@@ -132,6 +132,15 @@ export const TOURS: Record<TourId, TourStep[]> = {
         </>
       ),
     },
+    {
+      target: "your-game-similar",
+      title: "Similar Games",
+      tip: () => (
+        <>
+          High-rank games of this hero against these enemies, and what won them. <Kbd>M</Kbd> opens it.
+        </>
+      ),
+    },
   ],
   "my-heroes": [
     {

@@ -1292,6 +1292,7 @@ export function DraftBoard({
           })}
           myPosition={myPosition}
           threats={threats ?? []}
+          similar={{ picks: picksByPosition, enemies, enemyPositions }}
         />
       )}
 

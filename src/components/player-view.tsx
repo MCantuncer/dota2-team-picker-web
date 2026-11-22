@@ -8,7 +8,11 @@ import { PlayerLine } from "./lane-board";
 import { PositionLabel } from "./position-label";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Story } from "@/lib/engine/story";
-import type { Snapshot } from "@/lib/engine/types";
+import type { EnemyPositions, Snapshot } from "@/lib/engine/types";
+import { similarSummary } from "@/lib/engine/similar-games";
+import { similarRequest } from "@/lib/similar-games";
+import { useSimilarGames } from "@/lib/use-similar-games";
+import { SimilarGamesAnswer, SimilarPreview, similarPreviewText, type SimilarView } from "./similar-games-answer";
 import { itemForks } from "@/lib/item-forks";
 import type { EnemyItem } from "./build-path";
 import { PlayerItems } from "./player-items";
@@ -20,9 +24,22 @@ const LANE_NOTES: Record<LaneVerdict, string> = {
   hard: "A hard lane: buy to survive it",
 };
 
-const VIEWS = ["Item Build", "Game Story", "Skills and Talents"] as const;
+const VIEWS = ["Item Build", "Game Story", "Skills and Talents", "Similar Games"] as const;
 type View = (typeof VIEWS)[number];
-const SHORTCUTS: Record<View, string> = { "Item Build": "I", "Game Story": "G", "Skills and Talents": "S" };
+const SHORTCUTS: Record<View, string> = { "Item Build": "I", "Game Story": "G", "Skills and Talents": "S", "Similar Games": "M" };
+
+/** The enemy position each of ours faces in lane: their offlaner against our carry, mid against mid, support against support. */
+const FACING: Record<number, number> = { 1: 3, 2: 2, 3: 1, 4: 5, 5: 4 };
+
+/** The finished draft, for Similar Games. */
+export interface SimilarDraft {
+  /** Our heroes by position (index 0 = pos 1). */
+  picks: (number | null)[];
+  /** The enemies in draft order. */
+  enemies: number[];
+  /** Enemy positions the viewer or the reader set; guesses are left out. */
+  enemyPositions: EnemyPositions;
+}
 
 export interface PlayerViewProps {
   players: PlayerPlan[];
@@ -48,12 +65,19 @@ export interface PlayerViewProps {
   team?: ReactNode;
   /** The enemy's key items, set on each Build Path beside our items. */
   enemyItems?: EnemyItem[];
+  /** The finished draft, for the Similar Games answer; without it the tab isn't shown. */
+  similar?: SimilarDraft;
 }
 
 /** The Page Tour step that lights each view's tab (see components/tours.tsx). */
-const VIEW_TOURS: Record<View, string> = { "Item Build": "your-game-items", "Game Story": "your-game-story", "Skills and Talents": "your-game-skills" };
+const VIEW_TOURS: Record<View, string> = {
+  "Item Build": "your-game-items",
+  "Game Story": "your-game-story",
+  "Skills and Talents": "your-game-skills",
+  "Similar Games": "your-game-similar",
+};
 /** The keys that open each view while focus is inside Your Game (so typing anywhere else is never taken). */
-const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "Skills and Talents" };
+const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "Skills and Talents", m: "Similar Games" };
 
 /**
  * Your Game: each of our players as a seat, the viewer's own hero first and open, so the page starts with their items
@@ -61,7 +85,7 @@ const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "
  * Your Game mockup, 2026-11-12): the next items, the lane and the ready minute, the first skills. Each view holds
  * only its own part; the team's story is on Game Story alone, so no tab repeats it.
  */
-export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, race, team, enemyItems }: PlayerViewProps) {
+export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, race, team, enemyItems, similar }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
   // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
@@ -70,7 +94,26 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
   const id = useId();
   const chosen = picked && picked.for === myPosition ? picked.position : undefined;
   const player = ordered.find((p) => p.position === chosen) ?? ordered[0];
+  const similarState = useSimilarGames(player && similar ? similarRequest(similar.picks, similar.enemies, player.heroId) : null);
   if (!player) return null;
+  const laneEnemy = similar?.enemies.find((e) => similar.enemyPositions[e] === FACING[player.position]) ?? null;
+  const similarView: SimilarView | null =
+    similar && similarState
+      ? {
+          state: similarState,
+          summary:
+            similarState.kind === "ready"
+              ? similarSummary(similarState.answer, {
+                  position: player.position,
+                  enemies: similar.enemies,
+                  allies: similar.picks.filter((h): h is number => h !== null && h !== player.heroId),
+                  laneEnemy,
+                  items: items ?? {},
+                })
+              : null,
+        }
+      : null;
+  const views = VIEWS.filter((v) => v !== "Similar Games" || similar);
   const lane = laneOf(player.heroId);
   const playerTab = (position: number) => `${id}-player-${position}`;
   const viewTab = (v: View) => `${id}-view-${v.replace(/ /g, "")}`;
@@ -81,13 +124,14 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
     "Item Build": { node: <ItemsPreview player={player} />, text: itemsPreviewText(player) },
     "Game Story": { node: <StoryPreview ready={ready} race={race} enemyPortrait={raceEnemy === undefined ? undefined : icons[raceEnemy]} />, text: storyPreviewText(ready, race) },
     "Skills and Talents": { node: <SkillsPreview levels={levels} />, text: skillsPreviewText(levels) },
+    "Similar Games": { node: <SimilarPreview view={similarView} />, text: similarPreviewText(similarView) },
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
     const el = e.target as HTMLElement;
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el.isContentEditable) return;
     const to = VIEW_KEYS[e.key.toLowerCase()];
-    if (!to) return;
+    if (!to || !views.includes(to)) return;
     e.preventDefault();
     setView(to);
     document.getElementById(viewTab(to))?.focus();
@@ -133,10 +177,10 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
         {lanes && <FirstTenMinutes key={player.position} lanes={lanes} player={player} heroName={heroName} icons={icons} abilities={abilities?.[player.heroId]} />}
         <Tabs
           label={`${heroName(player.heroId)} view`}
-          items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel`, label: v, describedBy: `${viewTab(v)}-preview`, shortcut: SHORTCUTS[v], tour: VIEW_TOURS[v] }))}
+          items={views.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel`, label: v, describedBy: `${viewTab(v)}-preview`, shortcut: SHORTCUTS[v], tour: VIEW_TOURS[v] }))}
           selected={view}
           onSelect={(key) => setView(key as View)} // The keys are VIEWS.
-          className="grid grid-cols-3 gap-2 sm:gap-3"
+          className={`grid gap-2 sm:gap-3 ${views.length === 4 ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"}`}
           buttonClassName="rounded-xl"
           render={(key, selected) => {
             const v = key as View; // The keys are VIEWS.
@@ -188,6 +232,17 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
             ) : (
               <p className="text-sm text-muted">No skill data for this hero yet.</p>
             ))}
+          {view === "Similar Games" && similar && (
+            <SimilarGamesAnswer
+              view={similarView}
+              position={player.position}
+              heroName={heroName}
+              icons={icons}
+              items={items}
+              laneEnemy={laneEnemy}
+              draftKey={[...similar.picks, ...[...similar.enemies].sort((a, b) => a - b)].join(",")}
+            />
+          )}
         </div>
       </div>
     </div>
