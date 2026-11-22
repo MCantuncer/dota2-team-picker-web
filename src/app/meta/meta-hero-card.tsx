@@ -4,6 +4,7 @@ import { RankMedal } from "@/components/rank-medal";
 import { change, dayLabel, RANK_GROUPS, signed, type HeroRate, type MetaDay, type MetaExtras, type RankSlice } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 import { BuildPanel, MatchupsPanel, type ItemArt } from "./meta-hero-extras";
+import { MetaLaneTactics } from "./meta-lane-tactics";
 
 function Stat({ label, value, delta, note, since }: { label: string; value: string; delta?: number | null; note?: string; since?: string }) {
   return (
@@ -189,6 +190,7 @@ export function HeroCard({
           <MatchupsPanel hero={hero} extras={extras} heroes={heroes} onSelect={onSelect} />
         </>
       )}
+      <MetaLaneTactics hero={hero} role={role} roles={rate.roles} heroes={heroes} />
     </section>
   );
 }
