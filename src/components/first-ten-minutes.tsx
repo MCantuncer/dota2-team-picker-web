@@ -20,16 +20,13 @@ const TALENT_ICON = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/do
 /** How many levels First Skills shows: the levels a laner reaches in the first 10 minutes. */
 const LANE_LEVELS = 7;
 
-/** Tile columns by how many tiles there are, so a row never ends with one tile alone. */
-const TILE_COLUMNS: Record<number, string> = { 4: "sm:grid-cols-2 xl:grid-cols-4", 3: "md:grid-cols-3", 2: "sm:grid-cols-2", 1: "" };
-
 interface Art {
   heroName: (id: number) => string;
   /** Wide hero portraits (16:9) by hero id. */
   icons: Record<number, string>;
 }
 
-type Item = Pick<BuildItem, "itemId" | "name" | "img" | "minute" | "count" | "phase" | "draft">;
+type Item = Pick<BuildItem, "itemId" | "name" | "img" | "minute" | "count" | "phase" | "draft" | "reason" | "against">;
 
 /**
  * First 10 Minutes (Can 2026-11-22, option B on the First 10 Minutes mockup): the lane on its own, above the rest of
@@ -104,7 +101,7 @@ export function FirstTenMinutes({ lanes, player, heroName, icons, abilities }: A
         )}
       </div>
 
-      <AtTheHorn player={player} abilities={abilities} enemyItems={enemyItems} heroName={heroName} />
+      <AtTheHorn player={player} abilities={abilities} enemyItems={enemyItems} heroName={heroName} icons={icons} />
 
       {tactics.length > 0 && <LaneTactics key={enemy} pairs={tactics} heroName={heroName} icons={icons} title="How to Play the Lane" withTarget={false} />}
 
@@ -120,147 +117,211 @@ export function FirstTenMinutes({ lanes, player, heroName, icons, abilities }: A
 /** Start and lane items (boots too), whose minutes are rough on their own; core items have real minutes. */
 const rough = (item: Item) => item.phase === "start" || item.phase === "lane";
 
-/** At the Horn: what to start with, the first skills, what to buy in lane, and what the enemy laner buys. */
-function AtTheHorn({ player, abilities, enemyItems, heroName }: { player: PlayerPlan; abilities?: HeroAbilities; enemyItems?: EnemyLaneItems; heroName: (id: number) => string }) {
-  const build = player.build;
-  const levels = firstLevels(player, abilities, LANE_LEVELS);
-  const changed = build ? [...build.start, ...build.lane].filter((i) => i.draft) : [];
-  const startDraft = build?.start.filter((i) => i.draft) ?? [];
-  const reason = startDraft.find((i) => i.reason)?.reason;
-  const firstCore = build?.core[0];
-  const agreement = player.skills?.agreement;
-  const tiles = [
-    build?.start.length ? (
-      <Tile key="start" title="Start With">
-        <Items label="Start With" items={build.start} />
-        {startDraft.length > 0 && reason && <p className="text-[0.8125rem] text-muted">{sentence(reason)}</p>}
-      </Tile>
-    ) : null,
-    levels.length ? (
-      <Tile key="skills" title="First Skills">
-        <ol aria-label="First skill levels" className="grid max-w-72 grid-cols-7 gap-1">
-          {levels.map((l) => {
-            const ult = l.art !== "talent" && abilities?.abilities.find((a) => a.key === l.art)?.ultimate;
-            return (
-              <li key={l.level} className="flex flex-col items-center gap-1" title={`Level ${l.level}: ${l.name}`}>
-                {l.art === "talent" ? (
-                  <span className="flex aspect-square w-full max-w-[2.125rem] items-center justify-center rounded-md bg-bg">
-                    <Image src={TALENT_ICON} alt={l.name} width={18} height={19} unoptimized className="size-[1.125rem]" />
-                  </span>
-                ) : (
-                  <Image
-                    src={`${ABILITY_CDN}${l.art}.png`}
-                    alt={l.name}
-                    width={34}
-                    height={34}
-                    className={`aspect-square w-full max-w-[2.125rem] rounded-md ${ult ? "shadow-[0_0_0_2px_var(--accent)]" : ""}`}
-                  />
-                )}
-                <span className="num text-xs text-muted">{l.level}</span>
-              </li>
-            );
-          })}
-        </ol>
-        {agreement && (
-          <p className="text-[0.8125rem] text-muted">
-            <b className="num font-semibold text-fg">{agreement.wins.toLocaleString("en-US")}</b> of <span className="num">{agreement.of.toLocaleString("en-US")}</span> high-rank wins
-            this patch used this order.
-          </p>
-        )}
-      </Tile>
-    ) : null,
-    build && (build.lane.length || firstCore) ? (
-      <Tile key="lane" title="Buy in Lane">
-        <Items label="Buy in Lane" items={build.lane} after={firstCore} />
-      </Tile>
-    ) : null,
-    enemyItems?.items.length ? (
-      <Tile key="enemy" title={`${heroName(enemyItems.hero)} Buys`}>
-        <EnemyRows items={enemyItems} heroName={heroName} />
-      </Tile>
-    ) : null,
-  ].filter((t) => t !== null);
-  if (!tiles.length) return null;
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <h4 className="text-lg font-semibold tracking-[-0.01em] text-fg">At the Horn</h4>
-        {changed.length > 0 && (
-          <span className="flex items-center gap-2 text-xs text-muted">
-            <i aria-hidden className="inline-block size-2.5 rounded-[0.1875rem] shadow-[0_0_0_2px_var(--accent)]" />
-            Changed for this draft
-          </span>
-        )}
-      </div>
-      <div className={`grid gap-4 ${TILE_COLUMNS[tiles.length] ?? TILE_COLUMNS[4]}`}>{tiles}</div>
-    </div>
-  );
+/** One side of At the Horn: a laner's start items, lane items and first core item. */
+interface Loadout {
+  hero: number;
+  enemy: boolean;
+  start: Item[];
+  lane: Item[];
+  /** The first core item and its minute: ours from the build, the enemy's only when bought by the end of the lane. */
+  core?: Item;
 }
 
-function Tile({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * At the Horn (Can 2026-11-22, "looks really bad" on four loose tiles): the player's loadout and the enemy laner's
+ * side by side as two cards with the same rows (Start, In Lane, First Core), so each row reads across, then the
+ * first skill levels as one band under both.
+ */
+function AtTheHorn({ player, abilities, enemyItems, heroName, icons }: Art & { player: PlayerPlan; abilities?: HeroAbilities; enemyItems?: EnemyLaneItems }) {
+  const build = player.build;
+  const levels = firstLevels(player, abilities, LANE_LEVELS);
+  const ours: Loadout | null =
+    build && (build.start.length || build.lane.length || build.core[0])
+      ? { hero: player.heroId, enemy: false, start: build.start, lane: build.lane, core: build.core[0] }
+      : null;
+  const theirs: Loadout | null = enemyItems?.items.length
+    ? {
+        hero: enemyItems.hero,
+        enemy: true,
+        start: enemyItems.items.filter((i) => i.phase === "start"),
+        lane: enemyItems.items.filter((i) => i.phase !== "start" && rough(i)),
+        core: enemyItems.items.find((i) => !rough(i)),
+      }
+    : null;
+  const cards = [ours, theirs].filter((c): c is Loadout => c !== null);
+  if (!cards.length && !levels.length) return null;
+  const changed = build ? [...build.start, ...build.lane].filter((i) => i.draft) : [];
+  // Two cards share their rows; a fifth row holds the "Changed for this draft" line when ours has one.
+  const span = changed.some((i) => i.reason) ? "lg:row-span-5" : "lg:row-span-4";
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-line-strong bg-raised p-4">
-      <h5 className="text-sm font-medium text-muted">{title}</h5>
-      {children}
+    <div className="flex flex-col gap-4">
+      <h4 className="text-lg font-semibold tracking-[-0.01em] text-fg">At the Horn</h4>
+      {cards.length > 0 && (
+        <div className={`grid gap-4 ${cards.length > 1 ? "lg:grid-cols-2" : ""}`}>
+          {cards.map((c) => (
+            <LoadoutCard key={c.enemy ? "enemy" : "ours"} loadout={c} changed={c.enemy ? [] : changed} span={cards.length > 1 ? span : undefined} heroName={heroName} icons={icons} />
+          ))}
+        </div>
+      )}
+      {levels.length > 0 && <FirstSkills levels={levels} agreement={player.skills?.agreement} />}
     </div>
   );
 }
 
 /**
- * Items in buy order with no minutes (one lane item's average minute alone can make a path no one could pay for, see
- * build-path.ts usualLane), then the first core item faded with its minute: the item the lane leads to.
+ * A laner's card: the hero on a team colour bar, then Start, In Lane and First Core. Two cards side by side share their
+ * rows (subgrid), so Start sits next to Start however many items wrap. Items this draft changed carry the face of
+ * the enemy they are for, and the card's last line says why.
  */
-function Items({ label, items, after, enemy = false }: { label: string; items: Item[]; after?: Item; enemy?: boolean }) {
+function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadout: Loadout; changed: Item[]; span?: string }) {
+  const { hero, enemy, start, lane, core } = loadout;
+  const name = heroName(hero);
+  const why = changed.map((i) => i.reason).find(Boolean);
+  const foe = changed.map((i) => i.against?.[0]).find((id) => id !== undefined);
   return (
-    <ul aria-label={label} className="flex flex-wrap items-start gap-1.5">
-      {items.map((item, i) => (
-        <li key={`${item.itemId}-${i}`}>
-          <ItemIcon item={item} enemy={enemy} />
-        </li>
-      ))}
-      {after && (
-        <li className="flex flex-col items-center gap-1 opacity-60">
-          <ItemIcon item={after} enemy={enemy} />
-          <span className="num text-xs text-muted">{after.minute} min</span>
-        </li>
+    <section
+      aria-label={enemy ? `${name} Items` : "Your Items"}
+      className={`relative grid min-w-0 content-start gap-5 overflow-hidden rounded-xl border border-line-strong bg-raised p-5 pt-6 ${
+        span ? `${span} lg:grid-rows-subgrid` : "lg:grid-cols-[auto_auto_minmax(0,1fr)] lg:gap-x-12"
+      }`}
+    >
+      <i aria-hidden className={`absolute inset-x-0 top-0 h-[3px] ${enemy ? "bg-dire" : "bg-radiant"}`} />
+      <div className="col-span-full flex min-w-0 items-center gap-3">
+        {icons[hero] && <HeroFace portrait={icons[hero]} name={name} size={32} isEnemy={enemy} isDecorative />}
+        <b className="text-base font-semibold text-fg">{name}</b>
+        {enemy ? (
+          <span className="text-[0.8125rem] text-muted">Enemy</span>
+        ) : (
+          <span className="rounded-full bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>
+        )}
+      </div>
+      <Row label="Start" across={!span}>
+        <Items label={`${name} Start`} items={start} enemy={enemy} heroName={heroName} icons={icons} />
+      </Row>
+      <Row label="In Lane" across={!span}>
+        <Items label={`${name} In Lane`} items={lane} enemy={enemy} heroName={heroName} icons={icons} />
+      </Row>
+      <Row label="First Core" across={!span}>
+        {core ? (
+          <div className="flex items-center gap-4">
+            <ItemIcon item={core} enemy={enemy} heroName={heroName} icons={icons} />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm text-fg">{core.name}</span>
+              <span className={`text-[0.8125rem] ${enemy ? "text-dire" : "text-muted"}`}>
+                <b className={`num text-lg font-semibold ${enemy ? "" : "text-fg"}`}>{core.minute}</b> min
+              </span>
+            </span>
+          </div>
+        ) : (
+          <span className="text-sm text-subtle sm:pt-3">{enemy ? "None by 10 min" : "No core item yet"}</span>
+        )}
+      </Row>
+      {why && (
+        <p className="col-span-full flex items-center gap-2.5 border-t border-line pt-4 text-[0.8125rem] text-muted">
+          {foe !== undefined && icons[foe] ? (
+            <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
+          ) : (
+            <i aria-hidden className="inline-block size-2.5 shrink-0 rounded-[0.1875rem] shadow-[0_0_0_2px_var(--accent)]" />
+          )}
+          <span>
+            <b className="font-medium text-fg">Changed for this draft.</b> {sentence(why)}
+          </span>
+        </p>
       )}
-    </ul>
+    </section>
   );
 }
 
-/** The enemy laner's items as two rows, the start and then what they buy in lane, so a long list never wraps loose. */
-function EnemyRows({ items: { hero, items }, heroName }: { items: EnemyLaneItems; heroName: (id: number) => string }) {
-  const rows = [
-    { label: "Start", items: items.filter((i) => i.phase === "start") },
-    { label: "In Lane", items: items.filter((i) => i.phase !== "start" && rough(i)), after: items.find((i) => !rough(i)) },
-  ].filter((r) => r.items.length || r.after);
+/** A labelled row of a card; `across` (a card alone, full width) turns the rows into columns on wide screens. */
+function Row({ label, across, children }: { label: string; across: boolean; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2.5">
-      {rows.map((r) => (
-        <div key={r.label} className="flex flex-col gap-1.5">
-          <span className="text-xs text-subtle">{r.label}</span>
-          <Items label={`${heroName(hero)} ${r.label}`} items={r.items} after={r.after} enemy />
-        </div>
-      ))}
+    <div
+      className={`grid min-w-0 content-start gap-2.5 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:items-start sm:gap-4 ${across ? "lg:grid-cols-1 lg:gap-2.5" : ""}`}
+    >
+      <span className={`text-[0.8125rem] text-muted sm:pt-3 ${across ? "lg:pt-0" : ""}`}>{label}</span>
+      {children}
     </div>
   );
 }
 
-function ItemIcon({ item, enemy }: { item: Item; enemy: boolean }) {
-  const label = item.count ? `${item.count} ${item.name}` : item.name;
+/** Items in buy order, as big tiles in up to six columns, the way the inventory reads. */
+function Items({ label, items, enemy, heroName, icons }: Art & { label: string; items: Item[]; enemy: boolean }) {
+  if (!items.length) return <span className="text-sm text-subtle sm:pt-3">None</span>;
   return (
-    <ItemButton card={{ itemId: item.itemId, name: item.name, img: item.img }} label={label} className="block">
+    <ul aria-label={label} className="grid grid-cols-[repeat(6,minmax(0,4rem))] gap-2">
+      {items.map((item, i) => (
+        <li key={`${item.itemId}-${i}`} className="min-w-0">
+          <ItemIcon item={item} enemy={enemy} heroName={heroName} icons={icons} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** An item tile that opens its card: the art, a copy count, and on ours the face of the enemy this draft buys it for. */
+function ItemIcon({ item, enemy, heroName, icons }: Art & { item: Item; enemy: boolean }) {
+  const foes = enemy ? [] : (item.against ?? []);
+  const name = item.count ? `${item.count} ${item.name}` : item.name;
+  const label = foes.length ? `${name}, for ${foes.map(heroName).join(" and ")}` : name;
+  const foe = foes[0];
+  const marked = item.draft && !enemy && (foe === undefined || !icons[foe]);
+  return (
+    <ItemButton card={{ itemId: item.itemId, name: item.name, img: item.img }} label={label} className="relative block w-full max-w-16">
       {(open) => (
-        <span
-          className={`relative block h-[1.875rem] w-10 overflow-hidden rounded-md bg-bg ${
-            open || (item.draft && !enemy) ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"
-          }`}
-        >
-          <Image src={ITEM_CDN + item.img} alt="" width={40} height={30} className="block size-full object-cover" />
-          {item.count && <span className="num absolute bottom-0 right-0.5 text-[0.6875rem] font-semibold text-fg [text-shadow:0_0_3px_#000,0_0_3px_#000]">{item.count}</span>}
-        </span>
+        <>
+          <span
+            className={`relative block aspect-[64/47] w-16 max-w-full overflow-hidden rounded-md bg-bg ${
+              open || marked ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"
+            }`}
+          >
+            <Image src={ITEM_CDN + item.img} alt="" width={64} height={47} className="block size-full object-cover" />
+          </span>
+          {item.count && (
+            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+          )}
+          {foe !== undefined && icons[foe] && (
+            <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--raised)]">
+              <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
+            </span>
+          )}
+        </>
       )}
     </ItemButton>
+  );
+}
+
+/** The first skill levels as one band: the ability art big with its level, and how many high-rank wins used the order. */
+function FirstSkills({ levels, agreement }: { levels: ReturnType<typeof firstLevels>; agreement?: { wins: number; of: number } }) {
+  return (
+    <div className="grid items-center gap-x-8 gap-y-4 rounded-xl border border-line-strong bg-raised p-5 lg:grid-cols-[auto_auto_minmax(0,1fr)]">
+      <h5 className="text-sm font-medium text-muted">First Skills</h5>
+      <ol aria-label="First skill levels" className="grid grid-cols-[repeat(7,minmax(0,2.75rem))] gap-2.5">
+        {levels.map((l) => (
+          <li key={l.level} className="flex min-w-0 flex-col items-center gap-1.5" title={`Level ${l.level}: ${l.name}`}>
+            {l.art === "talent" ? (
+              <span className="flex aspect-square w-full items-center justify-center rounded-md bg-bg">
+                <Image src={TALENT_ICON} alt={l.name} width={22} height={23} unoptimized className="size-[1.375rem]" />
+              </span>
+            ) : (
+              <Image
+                src={`${ABILITY_CDN}${l.art}.png`}
+                alt={l.name}
+                width={44}
+                height={44}
+                className="aspect-square w-full rounded-md"
+              />
+            )}
+            <span className="num text-xs text-muted">{l.level}</span>
+          </li>
+        ))}
+      </ol>
+      {agreement && (
+        <p className="text-[0.8125rem] text-muted lg:justify-self-end lg:text-right">
+          <b className="num text-lg font-semibold text-fg">{agreement.wins.toLocaleString("en-US")}</b> of <span className="num">{agreement.of.toLocaleString("en-US")}</span>{" "}
+          high-rank wins this patch used this order
+        </p>
+      )}
+    </div>
   );
 }
 
