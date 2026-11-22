@@ -1,6 +1,7 @@
-import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
+import type { LanePlan, LaneVerdict, PairTactics, PlayerPlan } from "@/lib/engine/game-plan";
 import type { PairLane } from "@/lib/engine/lane-odds";
 import { HeroArt, HeroFace, HeroStage, type HeroArtPlacement } from "./hero-frame";
+import { LaneTactics } from "./lane-tactics";
 import { PositionLabel } from "./position-label";
 
 interface Art {
@@ -57,6 +58,7 @@ export function LaneBoard({ lanes, player, heroName, icons, onClock = false }: A
   const clockLine = onClock ? keyItemLateLine(player) : undefined;
   const fallbacks = player.fallbacks.filter((line) => line !== clockLine);
   const pair = playerPair(lane, player.heroId);
+  const tactics = playerTactics(lane, player.heroId);
   const enemy = pair?.enemy ?? lane.theirs[0];
   const enemyPosition = enemy !== undefined && lane.theirs.length === ENEMY_POSITIONS[lane.name]?.length ? ENEMY_POSITIONS[lane.name]![lane.theirs.indexOf(enemy)] : undefined;
   return (
@@ -94,8 +96,15 @@ export function LaneBoard({ lanes, player, heroName, icons, onClock = false }: A
           </div>
         </div>
       </div>
+      {tactics.length > 0 && <LaneTactics pairs={tactics} heroName={heroName} icons={icons} />}
     </section>
   );
+}
+
+/** The player's lane tactics against each enemy laner, the enemy they meet most first (the pair weights). */
+export function playerTactics(lane: LanePlan, heroId: number): PairTactics[] {
+  const weight = (enemy: number) => lane.pairs?.find((p) => p.hero === heroId && p.enemy === enemy)?.weight ?? 0;
+  return (lane.tactics ?? []).filter((t) => t.hero === heroId && t.tactics.length > 0).sort((a, b) => weight(b.enemy) - weight(a.enemy));
 }
 
 /** The three lanes on the logo's map, as a picture with its verdicts said in its name. */
