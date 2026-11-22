@@ -70,12 +70,15 @@ const isLane = (v: unknown): v is SimilarLane | null =>
   v === null || (typeof v === "string" && LANES.has(v));
 const isPairs = (
   v: unknown,
+  first: (x: unknown) => boolean,
   second: (x: unknown) => boolean,
 ): v is [number, number][] =>
   Array.isArray(v) &&
   v.every(
-    (p) => Array.isArray(p) && p.length === 2 && isInt(p[0]) && second(p[1]),
+    (p) => Array.isArray(p) && p.length === 2 && first(p[0]) && second(p[1]),
   );
+/** Seconds from the horn: starting items are bought before it, so a buy can be up to a few minutes negative. */
+const isSecond = (v: unknown): v is number => isInt(v, -600);
 
 function isSeat(v: unknown): v is SimilarSeat {
   const s = v as Partial<SimilarSeat> | null;
@@ -101,8 +104,8 @@ function isGame(v: unknown): v is SimilarGame {
     (g.lastHits10 === null || isInt(g.lastHits10)) &&
     isPosition(g.position) &&
     isLane(g.lane) &&
-    isPairs(g.buys, isInt) &&
-    isPairs(g.deathsAt, (x) => x === null || isHero(x)) &&
+    isPairs(g.buys, (x) => isInt(x, 1), isSecond) &&
+    isPairs(g.deathsAt, isSecond, (x) => x === null || isHero(x)) &&
     Array.isArray(g.allies) &&
     g.allies.length === 5 &&
     g.allies.every(isSeat) &&

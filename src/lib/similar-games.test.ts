@@ -68,6 +68,7 @@ describe("readSimilarAnswer", () => {
     expect(readSimilarAnswer(off({ position: 6 }))).toBeNull();
     expect(readSimilarAnswer(off({ lane: "top" }))).toBeNull();
     expect(readSimilarAnswer(off({ buys: [[717]] }))).toBeNull();
+    expect(readSimilarAnswer(off({ buys: [[717, -700]] }))).toBeNull();
     expect(readSimilarAnswer(off({ deathsAt: [[349, 0]] }))).toBeNull();
     expect(
       readSimilarAnswer(off({ enemies: GAME.enemies.slice(1) })),
