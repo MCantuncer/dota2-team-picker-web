@@ -3,7 +3,8 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { firstLevels, ItemsPreview, itemsPreviewText, SkillsPreview, skillsPreviewText, StoryPreview, storyPreviewText } from "./answer-previews";
 import { HeroFace } from "./hero-frame";
-import { LaneBoard } from "./lane-board";
+import { FirstTenMinutes } from "./first-ten-minutes";
+import { PlayerLine } from "./lane-board";
 import { PositionLabel } from "./position-label";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
 import type { Snapshot } from "@/lib/engine/types";
@@ -29,7 +30,7 @@ export interface PlayerViewProps {
   playerNames: (string | null)[];
   myPosition?: number;
   laneOf: (heroId: number) => LanePlan | undefined;
-  /** Every lane of the plan, for the Game Story's lane map. */
+  /** Every lane of the plan, for First 10 Minutes. */
   lanes?: LanePlan[];
   abilities?: Snapshot["heroAbilities"];
   /** Skill build slices, for the item paths in a core item's detail (If It Is Late). */
@@ -124,6 +125,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
         }}
       />
       <div id={`${id}-player-panel`} role="tabpanel" aria-labelledby={playerTab(player.position)} className="flex flex-col gap-6">
+        {lanes && <FirstTenMinutes key={player.position} lanes={lanes} player={player} heroName={heroName} icons={icons} abilities={abilities?.[player.heroId]} />}
         <Tabs
           label={`${heroName(player.heroId)} view`}
           items={VIEWS.map((v) => ({ key: v, id: viewTab(v), controls: `${id}-view-panel`, label: v, describedBy: `${viewTab(v)}-preview`, shortcut: SHORTCUTS[v], tour: VIEW_TOURS[v] }))}
@@ -171,7 +173,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           {view === "Game Story" && (
             <div className="flex flex-col gap-10">
               {headline && <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{headline}</p>}
-              {lanes && <LaneBoard lanes={lanes} player={player} heroName={heroName} icons={icons} onClock={player.position === myPosition} />}
+              <PlayerLine player={player} onClock={player.position === myPosition} />
               {team}
             </div>
           )}
