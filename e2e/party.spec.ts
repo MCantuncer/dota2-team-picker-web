@@ -80,7 +80,7 @@ test("a player asks the draft captain for the role and gets it on Yes", async ({
   await expect(page.getByRole("combobox", { name: /^Rank/ })).toBeDisabled();
   await expect(page.getByRole("list", { name: "Seats", exact: true }).getByRole("listitem").filter({ hasText: "Ali" })).toContainText("Draft Captain");
   await expect(page.getByPlaceholder("My team pick, e.g. cm5")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "New draft" })).toBeHidden();
+  await expect(page.getByRole("main").getByRole("button", { name: "New draft" })).toBeHidden();
   await expectAccessible(page);
   await aliContext.close();
 });

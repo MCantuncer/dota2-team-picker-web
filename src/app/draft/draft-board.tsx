@@ -11,7 +11,7 @@ import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { Kbd } from "@/components/kbd";
 import { SteamButton } from "@/components/steam-button";
-import { heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
+import { heroesOf, NEW_DRAFT_EVENT, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { patchNotice } from "@/lib/patch-notice";
@@ -466,9 +466,10 @@ export function DraftBoard({
       forgetSoloBoardKey();
     }
   };
-  // New Draft in the header opens /draft?new=1: once the board has loaded, it starts over like the board's own New
-  // Draft (the whole party's draft in a party, unless someone else is Draft Captain), then the address goes back to
-  // /draft so a reload keeps the new board. Draft in the menu opens the board as it was.
+  // New Draft in the header (new-draft-button.tsx): on this page it starts over in place, like the board's own New
+  // Draft (the whole party's draft in a party, unless someone else is Draft Captain). From another page the draft is
+  // cleared before Draft opens; only if that failed does it open /draft?new=1, and the board starts over once it has
+  // loaded, then the address goes back to /draft so a reload keeps the new board. Draft in the menu opens it as it was.
   const newAsked = useSearchParams().has("new");
   const boardLoaded = party ? shared.loaded : solo.ready;
   const startOverIfUsed = useRef(() => {});
@@ -477,6 +478,11 @@ export function DraftBoard({
       if (!locked && (draft.length || mySide)) startOver();
     };
   });
+  useEffect(() => {
+    const onNew = () => startOverIfUsed.current();
+    window.addEventListener(NEW_DRAFT_EVENT, onNew);
+    return () => window.removeEventListener(NEW_DRAFT_EVENT, onNew);
+  }, []);
   useEffect(() => {
     if (!newAsked || !boardLoaded) return;
     // After this tick, so a board still being read from this browser can't come back over the new one.

@@ -246,7 +246,7 @@ test("in a party the draft is kept for the whole party", async ({ page }) => {
   await ally.fill("pudge");
   await ally.press("Enter");
   await expect(team.getByText("Pudge")).toBeVisible();
-  await page.getByRole("button", { name: "New draft" }).click();
+  await page.getByRole("main").getByRole("button", { name: "New draft" }).click();
   await expect(team.getByText("Pudge")).toHaveCount(0);
 });
 
