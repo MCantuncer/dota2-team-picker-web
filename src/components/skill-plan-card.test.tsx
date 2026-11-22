@@ -169,6 +169,15 @@ describe("SkillPlanCard", () => {
     expect(screen.getByRole("button", { name: /^Level 15/ })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("labels each tier with its level in the game's tree, even when players take it a level later", () => {
+    const late = { ...plan.talents[0]!, level: 11 }; // Set above.
+    render(<SkillPlanCard plan={{ ...plan, talents: [late, { ...plan.talents[1]!, level: 16 }] }} />);
+    const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
+    expect(tiers.map((t) => /Level (\d+)/.exec(t.textContent ?? "")?.[1])).toEqual(["15", "10"]);
+    expect(screen.getByRole("button", { name: /^Level 10: / })).toBeInTheDocument();
+    expect(screen.getByText("Why +15 Damage at 10:")).toBeInTheDocument();
+  });
+
   it("puts the odds under the other talent when the games only lean to it", () => {
     const leaning = { ...plan.talents[0]!, pick: 10, result: "leaning" as const }; // Set above.
     render(<SkillPlanCard plan={{ ...plan, talents: [leaning] }} />);
