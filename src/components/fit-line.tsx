@@ -7,10 +7,22 @@ const STEP_PX = 0.5;
 
 /**
  * Text kept on one line by shrinking its font from `max` down to `min` pixels, so a long talent name fits its column
- * without making the column wider. When even `min` doesn't fit (a phone), it goes back to `max` and wraps instead,
- * so nothing is cut. Refits when the column's width changes.
+ * without making the column wider. When even `min` doesn't fit (a phone), it wraps instead at `wrap` pixels (`max`
+ * unless given), so nothing is cut. Refits when the column's width changes.
  */
-export function FitLine({ children, className = "", max, min }: { children: ReactNode; className?: string; max: number; min: number }) {
+export function FitLine({
+  children,
+  className = "",
+  max,
+  min,
+  wrap = max,
+}: {
+  children: ReactNode;
+  className?: string;
+  max: number;
+  min: number;
+  wrap?: number;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -25,7 +37,7 @@ export function FitLine({ children, className = "", max, min }: { children: Reac
         el.style.fontSize = `${size}px`;
       }
       if (!fits()) {
-        el.style.fontSize = `${max}px`;
+        el.style.fontSize = `${wrap}px`;
         el.style.whiteSpace = "normal";
       }
     };
@@ -35,7 +47,7 @@ export function FitLine({ children, className = "", max, min }: { children: Reac
     const observer = new ResizeObserver(fit);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [children, max, min]);
+  }, [children, max, min, wrap]);
   return (
     <span ref={ref} className={`block w-full overflow-hidden ${className}`} style={{ fontSize: max }}>
       {children}
