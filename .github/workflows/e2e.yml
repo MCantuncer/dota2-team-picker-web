@@ -34,6 +34,8 @@ jobs:
       NEXT_PUBLIC_POOL_CARDS: "on"
       # So is the game check-in after a draft.
       NEXT_PUBLIC_GAME_CHECKIN: "on"
+      # Use the hero and item lists shipped with the site, so the tests never wait on OpenDota being up.
+      OPENDOTA_CONSTANTS: bundled
     steps:
       - uses: actions/checkout@v7
       # The database schema lives in the backend repo. Test against the newest backend commit whose database

@@ -1,4 +1,5 @@
 import "server-only";
+import { getOpenDotaConstants } from "@/lib/opendota-constants";
 
 export interface Hero {
   id: number;
@@ -21,11 +22,10 @@ interface HeroConstant {
 
 const CDN = "https://cdn.cloudflare.steamstatic.com";
 
-/** All heroes, from OpenDota's hero list. Fetched at most once a day. */
+/** All heroes, from OpenDota's hero list (or the site's copy of it while OpenDota is down). Fetched at most once a day. */
 export async function getHeroes(): Promise<Hero[]> {
-  const res = await fetch("https://api.opendota.com/api/constants/heroes", { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error(`Could not load heroes: HTTP ${res.status}`);
-  const data = (await res.json()) as Record<string, HeroConstant>;
+  // OpenDota's list has this shape; the copy keeps only these fields.
+  const data = (await getOpenDotaConstants("heroes")) as Record<string, HeroConstant>;
   return Object.values(data)
     .map((h) => ({
       id: h.id,

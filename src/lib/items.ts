@@ -1,4 +1,5 @@
 import "server-only";
+import { getOpenDotaConstants } from "@/lib/opendota-constants";
 
 /** A shop item, for showing it by name and picture. */
 export interface Item {
@@ -15,11 +16,10 @@ interface ItemConstant {
 
 const CDN = "https://cdn.cloudflare.steamstatic.com";
 
-/** Shop items by id, from OpenDota's item list. Fetched at most once a day. */
+/** Shop items by id, from OpenDota's item list (or the site's copy of it while OpenDota is down). Fetched at most once a day. */
 export async function getItems(): Promise<Map<number, Item>> {
-  const res = await fetch("https://api.opendota.com/api/constants/items", { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error(`Could not load items: HTTP ${res.status}`);
-  const data = (await res.json()) as Record<string, ItemConstant>;
+  // OpenDota's list has this shape; entries without a name or picture are skipped below.
+  const data = (await getOpenDotaConstants("items")) as Record<string, ItemConstant>;
   const items = new Map<number, Item>();
   for (const item of Object.values(data)) {
     if (typeof item.id !== "number" || !item.dname || !item.img) continue;
