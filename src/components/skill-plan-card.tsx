@@ -3,9 +3,20 @@
 import Image from "next/image";
 import { useId, useState } from "react";
 import type { SkillLive, SkillPlan, TalentTier } from "@/lib/engine/skill-plan";
-import type { HeroAbilities } from "@/lib/engine/types";
+import { TALENT_LEVELS, type HeroAbilities } from "@/lib/engine/types";
+import { FitLine } from "./fit-line";
 import { HeroRender } from "./hero-render";
 import { ABILITY_CDN, AgreementMeter, MaxOrder, maxOrder, SkillTrack, TALENT_ICON } from "./skill-track";
+
+/**
+ * The level a tier sits at in the game's talent tree: always 10, 15, 20 or 25. `tier.level` is when players usually
+ * take it, which places the talent on the skill track and can be a level later.
+ */
+export const treeLevel = (tier: TalentTier) => TALENT_LEVELS[tier.tier] ?? tier.level;
+
+/** A talent name's font size in pixels, and the smallest a long name shrinks to so it stays on one line. */
+const NAME_MAX_PX = 15;
+const NAME_MIN_PX = 11;
 
 /** Below this gap between the two shares (in points), players are split on a tier rather than agreeing. */
 const SPLIT_POINTS = 15;
@@ -131,7 +142,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
                 <button
                   type="button"
                   aria-pressed={on}
-                  aria-label={`Level ${tier.level}: ${left?.name} or ${right?.name}${pickName(tier) ? `, take ${pickName(tier)}` : ""}${tier.odds ? `, ${tier.odds}` : ""}`}
+                  aria-label={`Level ${treeLevel(tier)}: ${left?.name} or ${right?.name}${pickName(tier) ? `, take ${pickName(tier)}` : ""}${tier.odds ? `, ${tier.odds}` : ""}`}
                   aria-controls={`${id}-why`}
                   onClick={() => setOpen(tier.tier)}
                   className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)] items-center gap-3 px-2 py-3 text-left transition-colors sm:gap-5 ${
@@ -145,7 +156,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
                     }`}
                   >
                     <span className="sr-only">Level </span>
-                    {tier.level}
+                    {treeLevel(tier)}
                   </span>
                   {right && <Option option={right} tier={tier} align="left" />}
                   {split(tier) && <span className="chip col-span-full justify-self-center px-2 text-xs">Players Split</span>}
@@ -157,7 +168,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
         {shown && (
           <p id={`${id}-why`} aria-live="polite" className="text-sm text-fg/85">
             <span className="font-medium text-fg">
-              {pickName(shown) ? `Why ${pickName(shown)} at ${shown.level}:` : `Level ${shown.level}:`}
+              {pickName(shown) ? `Why ${pickName(shown)} at ${treeLevel(shown)}:` : `Level ${treeLevel(shown)}:`}
             </span>{" "}
             {shown.reason}
           </p>
@@ -201,16 +212,10 @@ function Option({ option, tier, align }: { option: { id: number; name: string };
   const share = optionShare(option, tier);
   return (
     <span className={`flex min-w-0 flex-col gap-1 ${align === "right" ? "items-end text-right" : "items-start"}`}>
-      <span
-        className={
-          picked
-            ? "text-[0.9375rem] font-semibold text-fg"
-            : "text-[0.9375rem] text-muted"
-        }
-      >
+      <FitLine max={NAME_MAX_PX} min={NAME_MIN_PX} className={picked ? "font-semibold text-fg" : "text-muted"}>
         {option.name}
         {picked && <span className="sr-only"> (take this)</span>}
-      </span>
+      </FitLine>
       {share !== undefined && (
         <span className={`flex w-full items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
           <span aria-hidden className={`flex h-1.5 w-full max-w-40 overflow-hidden rounded-xs bg-raised ${align === "right" ? "justify-end" : ""}`}>
