@@ -65,8 +65,11 @@ test("Draft in the header keeps the board, New Draft in the header clears it", a
   await expectFilled(page);
 
   // New Draft on Draft: the board empties at once, before the server answers, with no side, and stays empty.
+  const startedOver = page.waitForResponse("**/rest/v1/rpc/new_solo_draft");
   await header(page).getByRole("button", { name: "New Draft" }).click();
   await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toHaveCount(0, { timeout: 1000 });
+  // A reload before the server has the new draft would cancel it, so wait for the answer first.
+  await startedOver;
   await expectClean(page);
   await expect(page).toHaveURL(/\/draft$/);
   await expect(page.getByRole("heading", { name: /^My Team .*Dire$/ })).toHaveCount(0);
@@ -100,8 +103,13 @@ test("in a party, New Draft in the header starts the party's next draft", async 
   await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toBeVisible();
 
   // On Draft: the board starts over in place, at once.
+  const ended = page.waitForResponse("**/rest/v1/rpc/end_party_draft");
+  const reopened = page.waitForResponse("**/rest/v1/rpc/start_party_draft");
   await header(page).getByRole("button", { name: "New Draft" }).click();
   await expect(page.getByRole("region", { name: "My team" }).getByText("Crystal Maiden")).toHaveCount(0, { timeout: 1000 });
+  // The next pick goes into the new draft, once the server has it.
+  await ended;
+  await reopened;
   await expect(page).toHaveURL(/\/draft$/);
 
   // From another page: cleared before Draft opens.
