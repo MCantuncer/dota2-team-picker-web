@@ -162,6 +162,8 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
 
   return {
     ready: draftId !== null,
+    /** The open draft's entries have come in, so an empty board really is empty. */
+    loaded: draftId !== null && loaded.draftId === draftId,
     /** The party's open draft. */
     draftId,
     draft,

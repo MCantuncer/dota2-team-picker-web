@@ -3,7 +3,7 @@
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroFace } from "@/components/hero-frame";
 import { HeroInput } from "@/components/hero-input";
@@ -458,12 +458,34 @@ export function DraftBoard({
     setScreenAllies([]);
     setNotMine(new Set());
     setOwnSlotFound(false);
-    if (party) void shared.newDraft();
-    else {
+    if (party) {
+      setPartySide(null);
+      void shared.newDraft();
+    } else {
       void solo.startOver();
       forgetSoloBoardKey();
     }
   };
+  // New Draft in the header opens /draft?new=1: once the board has loaded, it starts over like the board's own New
+  // Draft (the whole party's draft in a party, unless someone else is Draft Captain), then the address goes back to
+  // /draft so a reload keeps the new board. Draft in the menu opens the board as it was.
+  const newAsked = useSearchParams().has("new");
+  const boardLoaded = party ? shared.loaded : solo.ready;
+  const startOverIfUsed = useRef(() => {});
+  useEffect(() => {
+    startOverIfUsed.current = () => {
+      if (!locked && (draft.length || mySide)) startOver();
+    };
+  });
+  useEffect(() => {
+    if (!newAsked || !boardLoaded) return;
+    // After this tick, so a board still being read from this browser can't come back over the new one.
+    const timer = setTimeout(() => {
+      startOverIfUsed.current();
+      router.replace("/draft", { scroll: false });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [newAsked, boardLoaded, router]);
   /** Who entered a hero in the party draft. */
   const enteredBy = (heroId: number) => {
     const actor = party ? shared.actors.get(heroId) : undefined;
