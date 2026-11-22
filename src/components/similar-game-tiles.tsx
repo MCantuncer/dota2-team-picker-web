@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { useRef, useState } from "react";
 import { finishedBuys, type SimilarGame, type SimilarSeat } from "@/lib/engine/similar-games";
 import type { ItemInfo } from "@/lib/engine/types";
 import { HeroFace } from "./hero-frame";
+import { Icon } from "./icon";
 import { ItemButton } from "./item-card";
+import { GamePopup } from "./similar-game-popup";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 /** Finished items a tile shows, in buy order. */
@@ -44,6 +47,8 @@ export function ClosestGames({ games, hero, enemies, allies, heroName, icons, it
 
 function GameTile({ game: g, hero, enemies, allies, heroName, icons, items }: Omit<ClosestGamesProps, "games"> & { game: SimilarGame }) {
   const bought = items ? finishedBuys(g, items).slice(0, TILE_ITEMS) : [];
+  const [open, setOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
   return (
     <article
       aria-label={`${g.won ? "Won" : "Lost"}, ${minutes(g.duration)} min, ${g.kills} kills, ${g.deaths} deaths, ${g.assists} assists`}
@@ -93,23 +98,44 @@ function GameTile({ game: g, hero, enemies, allies, heroName, icons, items }: Om
           })}
         </span>
       )}
+      <button ref={button} type="button" className="btn btn-sm btn-ghost mt-auto self-start" onClick={() => setOpen(true)}>
+        Open Game
+        <Icon name="chevronRight" />
+      </button>
+      {open && (
+        <GamePopup
+          game={g}
+          hero={hero}
+          enemies={enemies}
+          allies={allies}
+          heroName={heroName}
+          icons={icons}
+          items={items}
+          onClose={() => {
+            setOpen(false);
+            button.current?.focus();
+          }}
+        />
+      )}
     </article>
   );
 }
 
 /** A team's faces: heroes of this draft in full, the others greyed. */
-function Faces({
+export function Faces({
   seats,
   lit,
   isEnemy = false,
   heroName,
   icons,
+  size = 28,
 }: {
   seats: SimilarSeat[];
   lit: number[];
   isEnemy?: boolean;
   heroName: (id: number) => string;
   icons: Record<number, string>;
+  size?: number;
 }) {
   return (
     <span className="flex flex-wrap gap-1.5">
@@ -119,7 +145,7 @@ function Faces({
             key={s.hero}
             portrait={icons[s.hero]!}
             name={heroName(s.hero)}
-            size={28}
+            size={size}
             isEnemy={isEnemy}
             isDim={!lit.includes(s.hero)}
           />
