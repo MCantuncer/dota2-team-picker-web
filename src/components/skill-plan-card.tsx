@@ -26,19 +26,30 @@ export interface SkillRow {
 }
 
 /**
+ * The levels this game's talents go at, beside that level's ability (a talent doesn't use the level's skill point):
+ * each tier with a pick, at the level players usually take it, within the shown levels.
+ */
+export function talentLevels(plan: SkillPlan): number[] {
+  const shown = plan.levels?.length ?? 0;
+  return plan.talents.flatMap((t) => (t.pick !== null && t.level <= shown ? [t.level] : []));
+}
+
+/**
  * The level by level order as the game's own skill build grid: one row per ability in hotkey order, then the
  * attribute bonus when it takes points, then one row for the talents (Can 2026-11-04 asked for the in-game
- * layout). An id that isn't an ability or talent of the hero is the attribute bonus.
+ * layout). An id that isn't an ability or talent of the hero is the attribute bonus. Talents come from the tree's
+ * levels; an older order (or a hero with a point every level) that still holds talent ids on their own levels keeps
+ * those.
  */
 export function skillRows(plan: SkillPlan, abilities?: HeroAbilities): SkillRow[] {
   if (!plan.levels) return [];
   const isTalent = (id: number) => plan.talents.some((t) => t.options.some((o) => o.id === id));
   const byId = new Map<number, number[]>();
-  const talents: number[] = [];
+  const inLevels: number[] = [];
   const attributes: number[] = [];
   plan.levels.forEach((id, i) => {
     if (id === 0) return;
-    if (isTalent(id)) talents.push(i + 1);
+    if (isTalent(id)) inLevels.push(i + 1);
     else if (!plan.names[id]) attributes.push(i + 1);
     else byId.set(id, [...(byId.get(id) ?? []), i + 1]);
   });
@@ -54,6 +65,7 @@ export function skillRows(plan: SkillPlan, abilities?: HeroAbilities): SkillRow[
       levels: byId.get(id) ?? [],
     }));
   if (attributes.length) rows.push({ id: -1, name: "Attributes", kind: "attributes", levels: attributes });
+  const talents = inLevels.length ? inLevels : talentLevels(plan);
   rows.push({ id: -2, name: "Talents", kind: "talents", levels: talents });
   return rows;
 }
