@@ -25,6 +25,8 @@ review. The PR template has the checklist.
   `Show an error when the lineup fails to save`.
 - Update your branch by rebasing onto `main`, not by merging `main` into it.
 - Don't mix a refactor or reformat with a behaviour change; put them in separate commits or PRs.
+- Every commit is authored and committed under the repo owner's own identity, with no `Co-authored-by` line for a
+  tool. The Commit authors check fails a PR that has one, because a squash merge would credit it as a contributor.
 - A change that needs a backend change links the backend PR, and says which one merges first.
 
 ## Code
