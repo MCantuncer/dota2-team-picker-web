@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { NavPending } from "./nav-pending";
 import { isActive, NavBadge, type NavItem } from "./primary-nav";
 import { RankMedal } from "./rank-medal";
 
@@ -190,6 +191,7 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
               >
                 {item.label}
                 <NavBadge count={item.badge} />
+                <NavPending />
               </Link>
             ))}
           </div>
@@ -198,6 +200,7 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
         <div className="border-t border-line py-1">
           <Link href="/profile" role="menuitem" tabIndex={-1} className={`${itemClass} text-fg`}>
             Profile
+            <NavPending />
           </Link>
         </div>
 
@@ -216,6 +219,7 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
                 className={`${itemClass} text-fg aria-[current=page]:text-accent`}
               >
                 {page.label}
+                <NavPending />
               </Link>
             ))}
           </div>

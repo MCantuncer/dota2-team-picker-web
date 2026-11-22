@@ -10,6 +10,7 @@ import { type DueCheckIn, gameCheckInEnabled, toDueCheckIn } from "@/lib/game-ch
 import { AccountMenu } from "./account-menu";
 import { ActivityMark } from "./activity-mark";
 import { LogoMark } from "./logo";
+import { HeaderOpening } from "./nav-pending";
 import { NewDraftButton } from "./new-draft-button";
 import { CaptainPrompt } from "./captain-prompt";
 import { CheckInPrompt } from "./check-in-prompt";
@@ -40,6 +41,7 @@ export function SiteHeader() {
           <HeaderSession />
         </Suspense>
       </div>
+      <HeaderOpening />
     </header>
   );
 }
