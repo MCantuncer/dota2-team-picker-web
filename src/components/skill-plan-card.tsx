@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useId, useState } from "react";
 import type { SkillLive, SkillPlan, TalentTier } from "@/lib/engine/skill-plan";
 import { TALENT_LEVELS, type HeroAbilities } from "@/lib/engine/types";
+import { FitLine } from "./fit-line";
 import { HeroRender } from "./hero-render";
 import { ABILITY_CDN, AgreementMeter, MaxOrder, maxOrder, SkillTrack, TALENT_ICON } from "./skill-track";
 
@@ -12,6 +13,10 @@ import { ABILITY_CDN, AgreementMeter, MaxOrder, maxOrder, SkillTrack, TALENT_ICO
  * take it, which places the talent on the skill track and can be a level later.
  */
 export const treeLevel = (tier: TalentTier) => TALENT_LEVELS[tier.tier] ?? tier.level;
+
+/** A talent name's font size in pixels, and the smallest a long name shrinks to so it stays on one line. */
+const NAME_MAX_PX = 15;
+const NAME_MIN_PX = 11;
 
 /** Below this gap between the two shares (in points), players are split on a tier rather than agreeing. */
 const SPLIT_POINTS = 15;
@@ -207,16 +212,10 @@ function Option({ option, tier, align }: { option: { id: number; name: string };
   const share = optionShare(option, tier);
   return (
     <span className={`flex min-w-0 flex-col gap-1 ${align === "right" ? "items-end text-right" : "items-start"}`}>
-      <span
-        className={
-          picked
-            ? "text-[0.9375rem] font-semibold text-fg"
-            : "text-[0.9375rem] text-muted"
-        }
-      >
+      <FitLine max={NAME_MAX_PX} min={NAME_MIN_PX} className={picked ? "font-semibold text-fg" : "text-muted"}>
         {option.name}
         {picked && <span className="sr-only"> (take this)</span>}
-      </span>
+      </FitLine>
       {share !== undefined && (
         <span className={`flex w-full items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
           <span aria-hidden className={`flex h-1.5 w-full max-w-40 overflow-hidden rounded-xs bg-raised ${align === "right" ? "justify-end" : ""}`}>
