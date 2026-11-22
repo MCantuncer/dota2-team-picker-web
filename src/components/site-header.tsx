@@ -113,7 +113,8 @@ async function HeaderSession() {
       <PrimaryNav items={nav} />
       <div className="ml-auto flex items-center gap-3">
         <PartyChip size={party ? party.members.length : null} />
-        <Link href="/draft" className="btn btn-primary btn-sm hidden md:inline-flex">
+        {/* Draft opens the board as it was; New Draft clears it (draft-board.tsx reads ?new). */}
+        <Link href="/draft?new=1" className="btn btn-primary btn-sm hidden md:inline-flex">
           <Icon name="plus" />
           New Draft
         </Link>
