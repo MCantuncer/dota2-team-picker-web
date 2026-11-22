@@ -239,6 +239,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
               heroName={heroName}
               icons={icons}
               items={items}
+              allies={similar.picks.filter((h): h is number => h !== null && h !== player.heroId)}
               laneEnemy={laneEnemy}
               draftKey={[...similar.picks, ...[...similar.enemies].sort((a, b) => a - b)].join(",")}
             />

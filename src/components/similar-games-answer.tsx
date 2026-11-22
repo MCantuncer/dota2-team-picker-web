@@ -8,6 +8,7 @@ import { POSITION_NAMES } from "@/lib/draft";
 import type { SimilarState } from "@/lib/use-similar-games";
 import { HeroFace } from "./hero-frame";
 import { ItemButton } from "./item-card";
+import { ClosestGames } from "./similar-game-tiles";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -56,6 +57,8 @@ export interface SimilarGamesAnswerProps {
   heroName: (id: number) => string;
   icons: Record<number, string>;
   items?: Record<string, ItemInfo>;
+  /** Our other four heroes. */
+  allies: number[];
   /** This draft's enemy in the hero's lane, when the enemy positions are known. */
   laneEnemy: number | null;
   /** Keys the ticks to this draft, so a new draft starts with none. */
@@ -67,7 +70,7 @@ export interface SimilarGamesAnswerProps {
  * of these enemies. The record and each enemy's count, the usual build, and What Won: targets a fair test found,
  * to tick during the game.
  */
-export function SimilarGamesAnswer({ view, position, heroName, icons, items, laneEnemy, draftKey }: SimilarGamesAnswerProps) {
+export function SimilarGamesAnswer({ view, position, heroName, icons, items, allies, laneEnemy, draftKey }: SimilarGamesAnswerProps) {
   const state = view?.state;
   if (!view || !state || state.kind === "loading") return <p className="text-sm text-muted">Looking up similar games…</p>;
   if (state.kind === "sign-in")
@@ -96,6 +99,15 @@ export function SimilarGamesAnswer({ view, position, heroName, icons, items, lan
     <div className="flex flex-col gap-8">
       <Record summary={s} name={name} role={role} heroName={heroName} icons={icons} items={items} laneEnemy={laneEnemy} />
       <WhatWon summary={s} items={items} storageKey={`similar-ticks:${draftKey}:${s.hero}`} />
+      <ClosestGames
+        games={s.closest}
+        hero={s.hero}
+        enemies={s.enemies.map((e) => e.hero)}
+        allies={allies}
+        heroName={heroName}
+        icons={icons}
+        items={items}
+      />
     </div>
   );
 }

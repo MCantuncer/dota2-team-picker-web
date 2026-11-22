@@ -39,7 +39,16 @@ const ready = (s: SimilarSummary | null, pending = false): SimilarView => ({
 function show(view: SimilarView | null) {
   return render(
     <ItemCardProvider items={ITEMS}>
-      <SimilarGamesAnswer view={view} position={2} heroName={heroName} icons={{}} items={ITEMS} laneEnemy={11} draftKey="d1" />
+      <SimilarGamesAnswer
+        view={view}
+        position={2}
+        heroName={heroName}
+        icons={{}}
+        items={ITEMS}
+        allies={[8, 128, 129, 5]}
+        laneEnemy={11}
+        draftKey="d1"
+      />
     </ItemCardProvider>,
   );
 }
@@ -95,6 +104,7 @@ describe("SimilarGamesAnswer", () => {
         heroName={heroName}
         icons={{}}
         items={ITEMS}
+        allies={[8, 128, 129, 5]}
         laneEnemy={null}
         draftKey="d1"
       />,
@@ -107,7 +117,18 @@ describe("SimilarGamesAnswer", () => {
     const { rerender } = show(null);
     expect(screen.getByText("Looking up similar games…")).toBeTruthy();
     const again = (view: SimilarView) =>
-      rerender(<SimilarGamesAnswer view={view} position={2} heroName={heroName} icons={{}} items={ITEMS} laneEnemy={11} draftKey="d1" />);
+      rerender(
+        <SimilarGamesAnswer
+          view={view}
+          position={2}
+          heroName={heroName}
+          icons={{}}
+          items={ITEMS}
+          allies={[8, 128, 129, 5]}
+          laneEnemy={11}
+          draftKey="d1"
+        />,
+      );
     again({ state: { kind: "unavailable", reason: "limit" }, summary: null });
     expect(screen.getByText("Too many lookups for now. Try again in a while.")).toBeTruthy();
     again(ready(null, true));
