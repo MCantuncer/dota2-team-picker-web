@@ -299,8 +299,17 @@ export function useSoloBoard(userId: string | null) {
       writeLocal(DRAFT_KEY, []);
       return;
     }
+    // The board empties now, not after the server answers, so the old picks don't linger.
+    const was = latestDraftId.current;
+    latest.current = [];
+    setRows([]);
+    setPending([]);
     const { data, error } = await supabase.rpc("new_solo_draft");
-    if (error) return setError(`Couldn't start over: ${error.message}`);
+    if (error) {
+      setError(`Couldn't start over: ${error.message}`);
+      if (was) void loadRows(was);
+      return;
+    }
     switchTo(data);
     setReady(true);
   };
