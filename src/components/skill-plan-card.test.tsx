@@ -105,6 +105,34 @@ describe("SkillPlanCard", () => {
     ]);
   });
 
+  it("marks the talent beside the level's ability when the order holds abilities only", async () => {
+    const user = userEvent.setup();
+    // Sven: Storm Hammer at 10 with the level 10 talent beside it, God's Strength at 12.
+    const order = { ...plan, levels: [1, 2, 1, 2, 1, 3, 1, 2, 2, 1, 2, 3] };
+    const abilities = {
+      abilities: [
+        { id: 1, key: "sven_storm_bolt", name: "Storm Hammer", slot: 1, maxLevel: 4, ultimate: false },
+        { id: 2, key: "sven_great_cleave", name: "Great Cleave", slot: 2, maxLevel: 4, ultimate: false },
+        { id: 3, key: "sven_gods_strength", name: "God's Strength", slot: 6, maxLevel: 3, ultimate: true },
+      ],
+      talents: [],
+    };
+    render(<SkillPlanCard plan={{ ...order, names: { ...plan.names, 3: "God's Strength" } }} abilities={abilities} />);
+    const max = within(screen.getByRole("list", { name: "Max order" })).getAllByRole("listitem").map((li) => li.textContent);
+    expect(max.at(-1)).toBe("God's Strength6, 12");
+    const track = within(screen.getByRole("region", { name: "Skill order by level" })).getAllByRole("listitem");
+    expect(track.slice(9).map((li) => li.getAttribute("aria-label"))).toEqual([
+      "Level 10: Storm Hammer and +15 Damage",
+      "Level 11: Great Cleave",
+      "Level 12: God's Strength",
+    ]);
+    expect(within(track[9]!).getByTitle("+15 Damage")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Grid" }));
+    const rows = within(screen.getByRole("table", { name: "Skill order" })).getAllByRole("rowheader").map((th) => th.textContent);
+    // The level 15 tier has no pick, so only level 10 is marked.
+    expect(rows.at(-1)).toBe("Talents, levels 10");
+  });
+
   it("draws how many games took each talent, and says when players split", () => {
     const shared = { ...plan, talents: [{ ...plan.talents[0]!, usualShare: 0.55, usualGames: 110 }, { ...plan.talents[1]!, usualShare: undefined }] };
     render(<SkillPlanCard plan={shared} />);

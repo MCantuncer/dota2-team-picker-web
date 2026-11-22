@@ -71,34 +71,64 @@ export function MaxOrder({ steps }: { steps: MaxStep[] }) {
   );
 }
 
+/** The talent mark, small in the corner of an ability's icon when the level's talent goes beside it. */
+function TalentBadge({ name }: { name: string }) {
+  return (
+    <span
+      title={name}
+      className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-md bg-accent-tint shadow-[inset_0_0_0_1px_var(--accent-deep)] ring-2 ring-bg"
+    >
+      <Image src={TALENT_ICON} alt="" width={14} height={15} unoptimized className="size-3.5" />
+    </span>
+  );
+}
+
 /**
- * The skill order level by level as art: the level's number over the icon of the ability, the talent mark or the
- * attribute bonus that takes its point, or an empty No Point cell. Scrolls sideways on narrow screens.
+ * The skill order level by level as art: the level's number over the icon of the ability or attribute bonus that
+ * takes its point, with the talent mark in the corner where the level's talent goes beside it (a talent doesn't use
+ * the point). A level with only a talent shows the mark; one with neither is an empty No Point cell. Scrolls
+ * sideways on narrow screens.
  */
 export function SkillTrack({ plan, rows }: { plan: SkillPlan; rows: SkillRow[] }) {
   if (!plan.levels) return null;
-  const at = (level: number) => rows.find((r) => r.levels.includes(level));
+  const at = (level: number) => rows.find((r) => r.kind !== "talents" && r.levels.includes(level));
+  const talentAt = (level: number) => rows.some((r) => r.kind === "talents" && r.levels.includes(level));
+  // The talent's name: its id on the level in an older order, else this game's pick for the tier at that level.
+  const talentName = (level: number) => {
+    const id = plan.levels?.[level - 1] ?? 0;
+    const own = plan.talents.flatMap((t) => t.options).find((o) => o.id === id);
+    const tier = plan.talents.find((t) => t.level === level);
+    return own?.name ?? tier?.options.find((o) => o.id === tier.pick)?.name ?? "Talent";
+  };
   return (
     <div role="region" aria-label="Skill order by level" tabIndex={0} className="-mx-1 overflow-x-auto px-1 pb-1 pt-1 focus-visible:outline-2 focus-visible:outline-accent">
       <ol className="grid min-w-[52rem] gap-1.5" style={{ gridTemplateColumns: `repeat(${plan.levels.length}, minmax(2.75rem, 1fr))` }}>
         {plan.levels.map((_, i) => {
           const level = i + 1;
           const row = at(level);
-          const name = row ? (row.kind === "talents" ? plan.names[plan.levels![i]!] ?? "Talent" : row.name) : "No point";
+          const talent = talentAt(level) ? talentName(level) : null;
+          const name = [row?.name, talent].filter(Boolean).join(" and ") || "No point";
           return (
             <li key={level} className="flex flex-col items-center gap-1.5" aria-label={`Level ${level}: ${name}`}>
               <span className="num text-xs text-subtle">{level}</span>
               {!row ? (
-                <span title="No Point" className="flex size-10 items-center justify-center rounded-md border border-dashed border-line-control text-subtle" />
-              ) : row.kind === "talents" ? (
-                <span title={name} className="flex size-10 items-center justify-center rounded-md bg-accent-tint shadow-[inset_0_0_0_1px_var(--accent-deep)]">
-                  <Image src={TALENT_ICON} alt="" width={24} height={25} unoptimized className="size-6" />
-                </span>
-              ) : row.key ? (
-                <Image src={`${ABILITY_CDN}${row.key}.png`} alt="" title={name} width={40} height={40} className="size-10 rounded-md" />
+                talent ? (
+                  <span title={talent} className="flex size-10 items-center justify-center rounded-md bg-accent-tint shadow-[inset_0_0_0_1px_var(--accent-deep)]">
+                    <Image src={TALENT_ICON} alt="" width={24} height={25} unoptimized className="size-6" />
+                  </span>
+                ) : (
+                  <span title="No Point" className="flex size-10 items-center justify-center rounded-md border border-dashed border-line-control text-subtle" />
+                )
               ) : (
-                <span title={name} className="flex size-10 items-center justify-center rounded-md bg-raised text-muted">
-                  +
+                <span className="relative">
+                  {row.key ? (
+                    <Image src={`${ABILITY_CDN}${row.key}.png`} alt="" title={row.name} width={40} height={40} className="size-10 rounded-md" />
+                  ) : (
+                    <span title={row.name} className="flex size-10 items-center justify-center rounded-md bg-raised text-muted">
+                      +
+                    </span>
+                  )}
+                  {talent && <TalentBadge name={talent} />}
                 </span>
               )}
             </li>
