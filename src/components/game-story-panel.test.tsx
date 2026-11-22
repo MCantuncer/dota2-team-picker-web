@@ -245,12 +245,13 @@ describe("GameStoryPanel", () => {
     expect(screen.getByRole("tab", { name: /Hero 2/ })).toHaveFocus();
   });
 
-  it("shows the lane and the player's line under Game Story", async () => {
+  it("shows the lane above the tabs as First 10 Minutes, and the player's line under Game Story", async () => {
     const user = userEvent.setup();
     renderPanel(1);
+    const lane = screen.getByRole("region", { name: "First 10 Minutes" });
+    expect(within(lane).getByText("Lane: Hard")).toBeInTheDocument();
+    expect(within(lane).getByText("Mid")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
-    expect(screen.getByText("Lane: Hard")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Lane map: Safe Lane hard (yours), Mid even." })).toBeInTheDocument();
     expect(screen.getByText("Your timing is Black King Bar at 17 min.")).toBeInTheDocument();
   });
 

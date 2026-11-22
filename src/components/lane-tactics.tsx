@@ -32,8 +32,12 @@ interface LaneTacticsProps extends Art {
   pairs: PairTactics[];
   /** A short number after each enemy's name on the switch, like a lane win rate. */
   note?: (enemy: number) => string | undefined;
-  /** The heading's level, so it fits the page's outline: 4 under the Game Story's Lanes, 3 in a Meta panel. */
+  /** The heading's level, so it fits the page's outline: 4 under First 10 Minutes, 3 in a Meta panel. */
   level?: 3 | 4;
+  /** The heading's words. */
+  title?: string;
+  /** Whether the last hit target is drawn under the rules; First 10 Minutes draws it under By 10 Minutes instead. */
+  withTarget?: boolean;
 }
 
 /**
@@ -42,7 +46,7 @@ interface LaneTacticsProps extends Art {
  * range ruler, trade budget, lane sketch or timing bar), the rest as quieter tips. With two enemy laners, a switch
  * picks which one the tactics are against, the likelier one first.
  */
-export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTacticsProps) {
+export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "Lane Tactics", withTarget = true }: LaneTacticsProps) {
   const Heading = level === 3 ? "h3" : "h4";
   const [enemy, setEnemy] = useState(pairs[0]?.enemy);
   const pair = pairs.find((p) => p.enemy === enemy) ?? pairs[0];
@@ -57,7 +61,7 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTac
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
           <Heading id="lane-tactics-title" className="text-lg font-semibold tracking-[-0.01em] text-fg">
-            Lane Tactics
+            {title}
           </Heading>
           <span className="text-sm text-muted">Against {heroName(pair.enemy)}, most important first</span>
         </div>
@@ -105,13 +109,13 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4 }: LaneTac
           ))}
         </div>
       )}
-      {target && <LastHitTarget tactic={target} />}
+      {withTarget && target && <LastHitTarget tactic={target} />}
     </section>
   );
 }
 
 /** The last hit target: this pair's average lane last hits on a scale with the hero's usual and the enemy's. */
-function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
+export function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
   const visual = tactic.visual?.kind === "lastHits" ? tactic.visual : undefined;
   if (!visual) return null;
   const marks = [
