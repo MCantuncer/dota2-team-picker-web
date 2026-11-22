@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Chapter } from "@/lib/engine/story";
-import { MIN_GAP, axisPosition, minuteText, namedHeroes, spreadMarks, timelineLabel } from "./story-axis";
+import { MIN_GAP, afterLane, axisPosition, minuteText, namedHeroes, spreadMarks, timelineLabel } from "./story-axis";
 
 const chapter = (from: number, to: number | null): Chapter => ({ phase: `${from}`, from, to, ours: [], theirs: [], action: "", text: "" });
 const FOUR = [chapter(0, 10), chapter(10, 20), chapter(20, 30), chapter(30, null)];
@@ -50,5 +50,15 @@ describe("timeline text", () => {
     expect(minuteText({ minute: 17, around: true })).toBe("~17");
     const story = { headline: "", ready: 24, chapters: [{ ...chapter(10, 20), theirs: [{ hero: "Lifestealer", item: "Radiance", minute: 17, around: true }] }] };
     expect(timelineLabel(story)).toBe("Item timings: their Lifestealer Radiance around 17, ready to fight at 24.");
+  });
+});
+
+describe("afterLane", () => {
+  it("leaves the lane chapter out and keeps the rest of the story", () => {
+    const story = { headline: "Fight from 15 min.", ready: 15, chapters: [chapter(0, 10), chapter(10, 20), chapter(30, null)] };
+    const after = afterLane(story);
+    expect(after.chapters.map((c) => c.from)).toEqual([10, 30]);
+    expect(after.ready).toBe(15);
+    expect(story.chapters).toHaveLength(3);
   });
 });

@@ -9,6 +9,7 @@ import { itemArt, StoryTimeline } from "./story-timeline";
 import { ThreatPlanPanel } from "./threat-plan-panel";
 import { ItemCardProvider } from "./item-card";
 import type { DraftThreat } from "@/lib/engine/threat-plan";
+import { afterLane } from "@/lib/story-axis";
 
 export interface GameStoryPanelProps {
   plan: GamePlan;
@@ -45,6 +46,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   const enemyItems: EnemyItem[] = plan.story.chapters
     .flatMap((c) => c.theirs)
     .map((s) => ({ hero: s.hero, heroIcon: heroIcons[s.hero], item: s.item, img: itemImg(s.item), minute: s.minute, around: s.around }));
+  const story = afterLane(plan.story);
   const laneOf = (heroId: number) => plan.lanes.find((l) => l.ours.includes(heroId));
   // Each danger line starts with its hero's name ("Faceless Void: ..."); the plan replaces his.
   const danger = plan.danger.filter((line) => !threats.some((t) => line.startsWith(`${heroName(t.hero)}:`)));
@@ -56,8 +58,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
     <>
       <div className="flex flex-col gap-4">
         <h3 className="label-caps">The Team</h3>
-        <StoryTimeline story={plan.story} heroIcons={heroIcons} items={items} checkpoint={checkpoint} />
-        <ChapterCards story={plan.story} lanes={plan.lanes} heroName={heroName} icons={icons} abilities={abilities} items={items} />
+        <StoryTimeline story={story} heroIcons={heroIcons} items={items} checkpoint={checkpoint} />
+        <ChapterCards story={story} lanes={plan.lanes} heroName={heroName} icons={icons} abilities={abilities} items={items} />
       </div>
 
       {threats.length > 0 && <ThreatPlanPanel threats={threats} hero={(id) => ({ name: heroName(id), portrait: icons[id] })} items={items} />}
@@ -102,7 +104,8 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
           skillBuilds={skillBuilds}
           items={items}
           headline={plan.story.headline}
-          ready={plan.story.ready}
+          ready={story.ready}
+          race={story.race}
           team={team}
           enemyItems={enemyItems}
         />
