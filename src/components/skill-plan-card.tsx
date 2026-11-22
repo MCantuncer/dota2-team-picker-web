@@ -7,6 +7,7 @@ import { TALENT_LEVELS, type HeroAbilities } from "@/lib/engine/types";
 import { FitLine } from "./fit-line";
 import { HeroRender } from "./hero-render";
 import { ABILITY_CDN, AgreementMeter, MaxOrder, maxOrder, SkillTrack, TALENT_ICON } from "./skill-track";
+import { splitTalent, talentIcon, type TalentIcon } from "./talent-icon";
 
 /**
  * The level a tier sits at in the game's talent tree: always 10, 15, 20 or 25. `tier.level` is when players usually
@@ -17,6 +18,8 @@ export const treeLevel = (tier: TalentTier) => TALENT_LEVELS[tier.tier] ?? tier.
 /** A talent name's font size in pixels, and the smallest a long name shrinks to so it stays on one line. */
 const NAME_MAX_PX = 15;
 const NAME_MIN_PX = 11;
+/** The size a name that can't fit one line even at NAME_MIN_PX wraps at (a phone's narrow tiles). */
+const NAME_WRAP_PX = 13;
 
 /** Below this gap between the two shares (in points), players are split on a tier rather than agreeing. */
 const SPLIT_POINTS = 15;
@@ -81,13 +84,19 @@ export function skillRows(plan: SkillPlan, abilities?: HeroAbilities): SkillRow[
   return rows;
 }
 
-/** The tier whose reason shows first: the highest one this game changes, else the top of the tree. */
+/**
+ * Whether a tier has a reason of its own to show: this game's enemies decided it. The usual pick's share and a new
+ * pair already show in the tree, so those tiers have no sentence under it.
+ */
+export const explained = (tier: TalentTier) => tier.result !== "general" && tier.result !== "no-data";
+
+/** The tier whose reason shows first: the highest one this game changes, else the highest one explained. */
 const firstTier = (tiers: TalentTier[]) =>
-  [...tiers].reverse().find((t) => t.result === "recommended")?.tier ?? tiers.at(-1)?.tier;
+  [...tiers].reverse().find((t) => t.result === "recommended")?.tier ?? [...tiers].reverse().find(explained)?.tier;
 
 /**
  * Skills and Talents for one player (approved C board and mockup v5): the skill order as the game's skill
- * build grid, and the whole talent tree in game layout, level 25 on top, with this game's pick underlined.
+ * build grid, and the whole talent tree in game layout, level 25 on top, each talent with the icon of what it buffs and this game's pick lit.
  * Picking a level shows why. `portrait` gives the hero's render beside them.
  */
 export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; abilities?: HeroAbilities; portrait?: string }) {
@@ -95,7 +104,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
   const tiers = [...plan.talents].reverse();
   const [open, setOpen] = useState(() => firstTier(plan.talents));
   const [view, setView] = useState<"track" | "grid">("track");
-  const shown = tiers.find((t) => t.tier === open) ?? tiers[0];
+  const shown = tiers.find((t) => t.tier === open);
   const pickName = (tier: TalentTier) => tier.options.find((o) => o.id === tier.pick)?.name;
   const id = useId();
   return (
@@ -126,46 +135,52 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
         {plan.levels && (view === "track" ? <SkillTrack plan={plan} rows={rows} /> : <SkillGrid rows={rows} levels={plan.levels.length} />)}
       </section>
 
-      <section aria-labelledby={`${id}-talents`} className="flex flex-col gap-4 max-w-[46rem]">
-        <div className="flex flex-col gap-1">
+      <section aria-labelledby={`${id}-talents`} className="flex max-w-[54rem] flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <h3 id={`${id}-talents`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
             Talents
           </h3>
-          <p className="text-sm text-muted">The lit side is the pick. Bars show the share of recent high-rank games that took each talent. Choose a level to see why.</p>
+          <TreeLegend newPairs={tiers.some((t) => t.newPair)} />
         </div>
-        <ol aria-label="Talent tree" className="flex flex-col border-t border-line">
+        <ol aria-label="Talent tree" className="relative flex flex-col gap-3">
+          {/* The tree's trunk, behind the level circles. */}
+          <span aria-hidden className="absolute inset-y-8 left-1/2 w-0.5 -translate-x-1/2 bg-line-strong" />
           {tiers.map((tier) => {
             const [left, right] = tier.options;
-            const on = tier.tier === shown?.tier;
+            const label = `Level ${treeLevel(tier)}: ${left?.name} or ${right?.name}${pickName(tier) ? `, take ${pickName(tier)}` : ""}${tier.odds ? `, ${tier.odds}` : ""}`;
+            const body = (
+              <>
+                {left && <Option option={left} tier={tier} align="right" abilities={abilities} />}
+                <LevelNode tier={tier} on={explained(tier) && tier.tier === shown?.tier} />
+                {right && <Option option={right} tier={tier} align="left" abilities={abilities} />}
+                {split(tier) && <span className="chip relative col-span-full justify-self-center bg-bg px-2 text-xs">Players Split</span>}
+              </>
+            );
+            const grid = "grid w-full grid-cols-[minmax(0,1fr)_3.25rem_minmax(0,1fr)] items-stretch gap-y-2 text-left sm:grid-cols-[minmax(0,1fr)_4rem_minmax(0,1fr)]";
             return (
-              <li key={tier.tier} className="border-b border-line">
-                <button
-                  type="button"
-                  aria-pressed={on}
-                  aria-label={`Level ${treeLevel(tier)}: ${left?.name} or ${right?.name}${pickName(tier) ? `, take ${pickName(tier)}` : ""}${tier.odds ? `, ${tier.odds}` : ""}`}
-                  aria-controls={`${id}-why`}
-                  onClick={() => setOpen(tier.tier)}
-                  className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)] items-center gap-3 px-2 py-3 text-left transition-colors sm:gap-5 ${
-                    on ? "bg-raised/60" : "hover:bg-raised/30"
-                  } focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent`}
-                >
-                  {left && <Option option={left} tier={tier} align="right" />}
-                  <span
-                    className={`num flex size-11 items-center justify-center justify-self-center rounded-full border text-lg ${
-                      on ? "border-accent text-accent" : "border-line text-accent/85"
-                    }`}
+              <li key={tier.tier} className="relative">
+                {explained(tier) ? (
+                  // A tier this game's enemies decide opens its reason below.
+                  <button
+                    type="button"
+                    aria-pressed={tier.tier === shown?.tier}
+                    aria-label={label}
+                    aria-controls={`${id}-why`}
+                    onClick={() => setOpen(tier.tier)}
+                    className={`${grid} cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
                   >
-                    <span className="sr-only">Level </span>
-                    {treeLevel(tier)}
-                  </span>
-                  {right && <Option option={right} tier={tier} align="left" />}
-                  {split(tier) && <span className="chip col-span-full justify-self-center px-2 text-xs">Players Split</span>}
-                </button>
+                    {body}
+                  </button>
+                ) : (
+                  <div role="group" aria-label={label} className={grid}>
+                    {body}
+                  </div>
+                )}
               </li>
             );
           })}
         </ol>
-        {shown && (
+        {shown && explained(shown) && (
           <p id={`${id}-why`} aria-live="polite" className="text-sm text-fg/85">
             <span className="font-medium text-fg">
               {pickName(shown) ? `Why ${pickName(shown)} at ${treeLevel(shown)}:` : `Level ${treeLevel(shown)}:`}
@@ -185,10 +200,10 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
  * talent that isn't the usual one; the usual one says so. Never raw wins and losses (Can 2026-11-02).
  */
 function subLine(option: { id: number }, tier: TalentTier): string | undefined {
-  const picked = option.id === tier.pick;
   const usual = option.id === tier.usual;
   if (tier.odds && !usual && tier.usual !== null) return tier.odds;
-  if (usual && tier.result === "general") return picked ? "Usual Pick" : undefined;
+  // In general the lit tile is the usual pick, so it needs no words.
+  if (usual && tier.result === "general") return undefined;
   if (usual && tier.result === "no-clear-difference") return "No Clear Difference";
   if (usual && tier.result === "too-few-games") return "Too Few Games";
   if (usual) return "Usual Pick";
@@ -206,25 +221,126 @@ export function split(tier: TalentTier): boolean {
   return tier.usualShare !== undefined && Math.abs(tier.usualShare * 200 - 100) < SPLIT_POINTS;
 }
 
-function Option({ option, tier, align }: { option: { id: number; name: string }; tier: TalentTier; align: "left" | "right" }) {
+/** Thousands as "66k", for the games under the usual pick. */
+const games = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+
+/** The thin green arrow on a talent's icon: the talent makes that skill or stat stronger. */
+function BuffArrow({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 12 12" className={`text-radiant ${className}`}>
+      <path d="M6 10.5V2M2.5 5.5L6 2l3.5 3.5" stroke="currentColor" strokeWidth={1.75} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** What the tree's marks mean: the arrow, the lit tile and (when a tier is new) the New tag. */
+function TreeLegend({ newPairs }: { newPairs: boolean }) {
+  return (
+    <ul aria-label="Talent tree key" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-subtle">
+      <li className="flex items-center gap-1.5">
+        <BuffArrow className="size-3.5" />
+        Buffs This Skill
+      </li>
+      <li className="flex items-center gap-1.5">
+        <span aria-hidden className="size-3 rounded-[3px] border border-accent-deep bg-accent-tint" />
+        Take This
+      </li>
+      {newPairs && (
+        <li className="flex items-center gap-1.5">
+          <span aria-hidden className="size-3 rounded-[3px] border border-dashed border-line-hover" />
+          New This Patch
+        </li>
+      )}
+    </ul>
+  );
+}
+
+/** A level's circle on the trunk, with a copper line to the lit side; dashed while the tier has no picks. */
+function LevelNode({ tier, on }: { tier: TalentTier; on: boolean }) {
+  const side = tier.pick === null ? null : tier.options[0]?.id === tier.pick ? "left" : "right";
+  return (
+    <span className="relative flex items-center self-stretch">
+      <span aria-hidden className={`h-0.5 flex-1 ${side === "left" ? "bg-accent" : ""}`} />
+      <span
+        className={`num flex size-10 shrink-0 items-center justify-center rounded-full border-2 bg-bg text-[0.9375rem] font-semibold sm:size-11 ${
+          tier.pick === null ? "border-dashed border-line-hover text-muted" : side ? "border-accent text-accent" : "border-line-strong text-fg"
+        } ${on ? "bg-accent-tint" : ""}`}
+      >
+        <span className="sr-only">Level </span>
+        {treeLevel(tier)}
+      </span>
+      <span aria-hidden className={`h-0.5 flex-1 ${side === "right" ? "bg-accent" : ""}`} />
+    </span>
+  );
+}
+
+/** The icon of what a talent buffs, with the thin green arrow on its corner. */
+function TalentBadge({ icon }: { icon: TalentIcon }) {
+  return (
+    <span className="relative size-9 shrink-0 sm:size-10" title={icon.label ? `Buffs ${icon.label}` : undefined}>
+      {icon.kind === "skill" ? (
+        <Image src={icon.src} alt="" width={40} height={40} className="size-full rounded-md" />
+      ) : (
+        <span className="flex size-full items-center justify-center rounded-md border border-line-strong bg-raised">
+          <Image src={icon.src} alt="" width={26} height={26} unoptimized className={icon.kind === "innate" ? "size-full rounded-md" : "size-[1.375rem] opacity-90 sm:size-6"} />
+        </span>
+      )}
+      <BuffArrow className="absolute -right-1.5 -top-1.5 size-3.5 drop-shadow-[0_0_1.5px_var(--bg)]" />
+    </span>
+  );
+}
+
+function Option({
+  option,
+  tier,
+  align,
+  abilities,
+}: {
+  option: { id: number; name: string };
+  tier: TalentTier;
+  align: "left" | "right";
+  abilities?: HeroAbilities;
+}) {
   const picked = option.id === tier.pick;
   const line = subLine(option, tier);
   const share = optionShare(option, tier);
+  const icon = talentIcon(option.name, abilities);
+  const { value, rest } = splitTalent(option.name);
+  const end = align === "right";
   return (
-    <span className={`flex min-w-0 flex-col gap-1 ${align === "right" ? "items-end text-right" : "items-start"}`}>
-      <FitLine max={NAME_MAX_PX} min={NAME_MIN_PX} className={picked ? "font-semibold text-fg" : "text-muted"}>
-        {option.name}
-        {picked && <span className="sr-only"> (take this)</span>}
-      </FitLine>
-      {share !== undefined && (
-        <span className={`flex w-full items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-          <span aria-hidden className={`flex h-1.5 w-full max-w-40 overflow-hidden rounded-xs bg-raised ${align === "right" ? "justify-end" : ""}`}>
-            <i className={`block h-full ${picked ? "bg-accent" : "bg-line-control"}`} style={{ width: `${Math.round(share * 100)}%` }} />
+    <span
+      className={`relative flex h-full min-w-0 flex-col gap-2.5 rounded-xl border p-3 sm:flex-row sm:items-center sm:gap-3 ${
+        end ? "items-end text-right sm:flex-row-reverse" : "items-start"
+      } ${picked ? "border-accent-deep bg-accent-tint" : "border-line bg-surface"}`}
+    >
+      <TalentBadge icon={icon} />
+      <span className="flex w-full min-w-0 flex-1 flex-col gap-2">
+        {/* The game's own words, so the talent is easy to find in the game; long ones shrink to stay on one line. */}
+        <FitLine max={NAME_MAX_PX} min={NAME_MIN_PX} wrap={NAME_WRAP_PX} className={`leading-snug ${picked ? "text-fg" : "text-muted"}`}>
+          {value && <span className="font-semibold text-fg">{value} </span>}
+          {rest}
+          {icon.label && icon.kind !== "stat" && <span className="sr-only"> (buffs {icon.label})</span>}
+          {picked && <span className="sr-only"> (take this)</span>}
+        </FitLine>
+        {share !== undefined ? (
+          <span className={`flex w-full items-center gap-2 ${end ? "flex-row-reverse" : ""}`}>
+            <span aria-hidden className={`flex h-1.5 min-w-8 flex-1 overflow-hidden rounded-xs bg-hover ${end ? "justify-end" : ""}`}>
+              <i className={`block h-full rounded-xs ${picked ? "bg-accent" : "bg-line-control"}`} style={{ width: `${Math.round(share * 100)}%` }} />
+            </span>
+            <span className={`num text-sm ${picked ? "text-accent" : "text-muted"}`}>{Math.round(share * 100)}%</span>
+            {option.id === tier.usual && tier.usualGames !== undefined && (
+              <span className="hidden text-xs whitespace-nowrap text-subtle sm:inline">{games(tier.usualGames)} Games</span>
+            )}
           </span>
-          <span className={`num text-xs ${picked ? "text-fg" : "text-subtle"}`}>{Math.round(share * 100)}%</span>
-        </span>
-      )}
-      {line && <span className={`num text-xs ${picked ? "text-accent" : "text-subtle"}`}>{line}</span>}
+        ) : (
+          tier.result === "no-data" && (
+            <span className={`micro inline-flex h-6 items-center rounded-md border border-dashed border-line-hover px-2 text-subtle ${end ? "self-end" : "self-start"}`}>
+              {tier.newPair ? "New" : "No Picks Yet"}
+            </span>
+          )
+        )}
+        {line && <span className={`num text-xs ${picked ? "text-accent" : "text-subtle"}`}>{line}</span>}
+      </span>
     </span>
   );
 }

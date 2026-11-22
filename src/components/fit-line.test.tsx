@@ -31,4 +31,14 @@ describe("FitLine", () => {
     render(<FitLine max={15} min={11}>+25% Counterspell Reflected Spell Debuff Duration</FitLine>);
     expect(screen.getByText(/Counterspell/)).toHaveStyle({ fontSize: "15px", whiteSpace: "normal" });
   });
+
+  it("wraps at the given size when one is given", () => {
+    layout(135);
+    render(
+      <FitLine max={15} min={11} wrap={13}>
+        +25% Counterspell Reflected Spell Debuff Duration
+      </FitLine>,
+    );
+    expect(screen.getByText(/Counterspell/)).toHaveStyle({ fontSize: "13px", whiteSpace: "normal" });
+  });
 });
