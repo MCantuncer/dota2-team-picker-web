@@ -10,8 +10,8 @@ const heroName = (id: number) => NAMES[id] ?? `Hero ${id}`;
 const icons = Object.fromEntries(Object.keys(NAMES).map((id) => [Number(id), `/heroes/${id}.png`]));
 
 const lanes: LanePlan[] = [
-  { name: "Safe lane", ours: [8, 5], theirs: [2], edge: 1, verdict: "win", text: "", keyPair: { hero: 5, enemy: 2, games: 18079, won: 7593, drawn: 4339, lost: 6147 } },
-  { name: "Mid", ours: [13], theirs: [11], edge: -2, verdict: "hard", text: "", keyPair: { hero: 13, enemy: 11, games: 1320, won: 251, drawn: 343, lost: 726, allRanks: true } },
+  { name: "Safe lane", ours: [8, 5], theirs: [2], edge: 1, verdict: "win", text: "" },
+  { name: "Mid", ours: [13], theirs: [11], edge: -2, verdict: "hard", text: "" },
   { name: "Off lane", ours: [129, 128], theirs: [12], edge: 0, verdict: "even", text: "" },
 ];
 const jugg = { hero: "Juggernaut", item: "Battle Fury", minute: 15 };
@@ -35,20 +35,14 @@ const abilities = {
 };
 
 describe("ChapterCards", () => {
-  it("draws one card per chapter: every lane with its real lane results, the combo and the fight window, and Roshan", () => {
+  it("draws one card per chapter after the lane: the combo and the fight window, and Roshan", () => {
     render(<ChapterCards story={story} lanes={lanes} heroName={heroName} icons={icons} abilities={abilities} />);
     const cards = within(screen.getByRole("list", { name: "Chapters" })).getAllByRole("article");
-    expect(cards.map((c) => c.getAttribute("aria-label"))).toEqual(["Lanes, 0 to 10 min", "First Fight, 10 to 20 min", "Roshan, 20 to 30 min"]);
+    // The lanes are the First 10 Minutes section's, above the tabs.
+    expect(cards.map((c) => c.getAttribute("aria-label"))).toEqual(["First Fight, 10 to 20 min", "Roshan, 20 to 30 min"]);
+    expect(screen.queryByText("Won")).toBeNull();
 
-    const [laneCard, fight, roshan] = cards as [HTMLElement, HTMLElement, HTMLElement];
-    expect(within(laneCard).getByText("Won")).toBeInTheDocument();
-    expect(within(laneCard).getByText("42% won")).toBeInTheDocument();
-    expect(within(laneCard).getByText("34% lost")).toBeInTheDocument();
-    expect(laneCard).toHaveTextContent("18,079 lanes, Crystal Maiden against Axe");
-    expect(laneCard).toHaveTextContent("1,320 lanes, Puck against Shadow Fiend, all ranks");
-    // A lane with no lane results says so instead of a bar.
-    expect(within(laneCard).getByText("No lane results for these heroes yet")).toBeInTheDocument();
-
+    const [fight, roshan] = cards as [HTMLElement, HTMLElement];
     expect(fight).toHaveTextContent("Arena of Blood with Mortimer Kisses inside");
     expect(fight).toHaveTextContent("Your team is ready at 15. Phantom Lancer's Manta Style comes at 19.");
     expect(fight.innerHTML).toContain("mars_arena_of_blood");

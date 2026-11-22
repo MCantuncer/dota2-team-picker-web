@@ -146,13 +146,29 @@ describe("GameStoryPanel", () => {
     expect(screen.queryByText("The Team")).toBeNull();
   });
 
+  it("starts the team's game clock at 10 minutes, after the lane", async () => {
+    const user = userEvent.setup();
+    renderPanel(1);
+    await user.click(screen.getByRole("tab", { name: "Game Story" }));
+    expect(screen.queryByText("0 to 10 min")).toBeNull();
+    expect(screen.getAllByText("10 to 20 min").length).toBeGreaterThan(0);
+  });
+
   it("shows each tab's answer on the tab itself, and names it for screen readers", () => {
     renderPanel(1);
     const views = within(screen.getByRole("tablist", { name: "Hero 1 view" })).getAllByRole("tab");
     expect(views.map((t) => t.getAttribute("aria-label"))).toEqual(["Item Build", "Game Story", "Skills and Talents"]);
     expect(views[0]).toHaveAccessibleDescription("Next: Phase Boots at 9 min, Black King Bar at 17 min.");
-    expect(views[1]).toHaveAccessibleDescription("Hard Lane against Hero 9. Your team is ready at 17 min.");
+    expect(views[1]).toHaveAccessibleDescription("Your team is ready at 17 min.");
     expect(views[0]).toHaveAttribute("aria-keyshortcuts", "I");
+  });
+
+  it("names the enemy item our ready minute races on the Game Story tab", () => {
+    const raced = { ...plan, story: { ...plan.story, race: { ready: 17, theirs: { hero: "Hero 9", item: "Battle Fury", minute: 18, around: true } } } };
+    render(<GameStoryPanel plan={raced} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={[]} myPosition={1} />);
+    const views = within(screen.getByRole("tablist", { name: "Hero 1 view" })).getAllByRole("tab");
+    expect(views[1]).toHaveAccessibleDescription("Your team is ready at 17 min. Enemy Hero 9's Battle Fury comes around 18 min.");
+    expect(views[1]).toHaveTextContent("Battle Fury ~18");
   });
 
   it("opens a view with its key while focus is inside Your Game, and never while typing elsewhere", async () => {

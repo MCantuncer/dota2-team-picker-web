@@ -69,3 +69,14 @@ export function timelineLabel(story: Story): string {
   const ready = story.ready !== undefined ? `, ready to fight at ${story.ready}` : "";
   return `Item timings: ${spikes.join(", ") || "none"}${ready}.`;
 }
+
+/** The minute the lane ends: the Draft page's First 10 Minutes section tells the game before it. */
+export const LANE_END = 10;
+
+/**
+ * The story after the lane (Can, 2026-11-22: "separate first 10 minutes from the game"): the lane chapter is left
+ * out, so the game clock and its cards start at 10 minutes. The plan shared as text keeps it.
+ */
+export function afterLane(story: Story): Story {
+  return { ...story, chapters: story.chapters.filter((c) => c.from >= LANE_END) };
+}

@@ -7,6 +7,7 @@ import { FirstTenMinutes } from "./first-ten-minutes";
 import { PlayerLine } from "./lane-board";
 import { PositionLabel } from "./position-label";
 import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
+import type { Story } from "@/lib/engine/story";
 import type { Snapshot } from "@/lib/engine/types";
 import { itemForks } from "@/lib/item-forks";
 import type { EnemyItem } from "./build-path";
@@ -41,6 +42,8 @@ export interface PlayerViewProps {
   headline?: string;
   /** The minute our team is ready to fight, shown on the Game Story tab itself. */
   ready?: number;
+  /** The enemy key item our ready minute races, shown under it on the Game Story tab. */
+  race?: Story["race"];
   /** The team's part of the Game Story (the minute line, game plans and danger heroes), only on that tab. */
   team?: ReactNode;
   /** The enemy's key items, set on each Build Path beside our items. */
@@ -58,7 +61,7 @@ const VIEW_KEYS: Record<string, View> = { i: "Item Build", g: "Game Story", s: "
  * Your Game mockup, 2026-11-12): the next items, the lane and the ready minute, the first skills. Each view holds
  * only its own part; the team's story is on Game Story alone, so no tab repeats it.
  */
-export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, team, enemyItems }: PlayerViewProps) {
+export function PlayerView({ players, heroName, icons, playerNames, myPosition, laneOf, lanes, abilities, skillBuilds, items, headline, ready, race, team, enemyItems }: PlayerViewProps) {
   const ordered = [...players].sort((a, b) => Number(b.position === myPosition) - Number(a.position === myPosition));
   // The viewer's hero is open until they pick another tab. The viewer's position can arrive after the
   // first render (the draft screen reads it from storage), so a pick is kept per viewer position.
@@ -72,9 +75,11 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
   const playerTab = (position: number) => `${id}-player-${position}`;
   const viewTab = (v: View) => `${id}-view-${v.replace(/ /g, "")}`;
   const levels = firstLevels(player, abilities?.[player.heroId]);
+  // The Story names heroes, so the raced enemy's art is found by name among this draft's enemies.
+  const raceEnemy = race && lanes?.flatMap((l) => l.theirs).find((id) => heroName(id) === race.theirs.hero);
   const previews: Record<View, { node: ReactNode; text: string }> = {
     "Item Build": { node: <ItemsPreview player={player} />, text: itemsPreviewText(player) },
-    "Game Story": { node: <StoryPreview lane={lane} ready={ready} icons={icons} heroName={heroName} />, text: storyPreviewText(lane, ready, heroName) },
+    "Game Story": { node: <StoryPreview ready={ready} race={race} enemyPortrait={raceEnemy === undefined ? undefined : icons[raceEnemy]} />, text: storyPreviewText(ready, race) },
     "Skills and Talents": { node: <SkillsPreview levels={levels} />, text: skillsPreviewText(levels) },
   };
   const onKeyDown = (e: KeyboardEvent) => {

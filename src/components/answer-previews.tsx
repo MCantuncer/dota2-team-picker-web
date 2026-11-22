@@ -1,6 +1,8 @@
 import Image from "next/image";
-import type { LanePlan, LaneVerdict, PlayerPlan } from "@/lib/engine/game-plan";
+import type { PlayerPlan } from "@/lib/engine/game-plan";
+import type { Story } from "@/lib/engine/story";
 import type { HeroAbilities } from "@/lib/engine/types";
+import { minuteText } from "@/lib/story-axis";
 import { HeroFace } from "./hero-frame";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
@@ -10,12 +12,6 @@ const TALENT_ICON = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/do
 /** How many core items the Item Build tab shows on itself, and how many levels the Skills tab does. */
 export const PREVIEW_ITEMS = 4;
 export const PREVIEW_LEVELS = 6;
-
-const VERDICT_CHIPS: Record<LaneVerdict, { label: string; className: string }> = {
-  win: { label: "Won Lane", className: "bg-radiant-tint text-radiant" },
-  even: { label: "Even Lane", className: "bg-raised text-muted" },
-  hard: { label: "Hard Lane", className: "bg-dire-tint text-dire" },
-};
 
 /** A sentence for screen readers: what the tab shows on itself. */
 export function itemsPreviewText(player: PlayerPlan): string {
@@ -45,30 +41,31 @@ export function ItemsPreview({ player }: { player: PlayerPlan }) {
   );
 }
 
-/** The Game Story tab's answer: the lane's verdict against its enemy faces, and the minute the team is ready. */
-export function StoryPreview({ lane, ready, icons, heroName }: { lane?: LanePlan; ready?: number; icons: Record<number, string>; heroName: (id: number) => string }) {
-  const chip = lane ? VERDICT_CHIPS[lane.verdict] : undefined;
+/**
+ * The Game Story tab's answer: the minute our team is ready, and the enemy item that minute races. The lane is the
+ * First 10 Minutes section's, above the tabs (Can, 2026-11-22), so it is not repeated here.
+ */
+export function StoryPreview({ ready, race, enemyPortrait }: { ready?: number; race?: Story["race"]; enemyPortrait?: string }) {
+  if (ready === undefined) return <span className="text-sm text-muted">No item minutes yet</span>;
   return (
     <span className="flex flex-col items-start gap-2">
-      {lane && chip && (
-        <span className="flex flex-wrap items-center gap-2">
-          <span className={`chip h-6 px-2.5 text-[0.8125rem] font-medium shadow-none ${chip.className}`}>{chip.label}</span>
-          {lane.theirs.map((id) =>
-            icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={24} isEnemy isDecorative /> : null,
-          )}
+      <span className="chip chip-accent h-6 px-2.5 text-[0.8125rem] font-medium">Ready at {ready} Min</span>
+      {race && (
+        <span className="flex items-center gap-2 text-[0.8125rem] text-muted">
+          {enemyPortrait && <HeroFace portrait={enemyPortrait} name={race.theirs.hero} size={24} isEnemy isDecorative />}
+          <span>
+            {race.theirs.item} <span className="num">{minuteText(race.theirs)}</span>
+          </span>
         </span>
       )}
-      {ready !== undefined && <span className="chip chip-accent h-6 px-2.5 text-[0.8125rem] font-medium">Ready at {ready} Min</span>}
     </span>
   );
 }
 
-export function storyPreviewText(lane: LanePlan | undefined, ready: number | undefined, heroName: (id: number) => string): string {
-  const parts = [
-    lane ? `${VERDICT_CHIPS[lane.verdict].label}${lane.theirs.length ? ` against ${lane.theirs.map(heroName).join(" and ")}` : ""}.` : "",
-    ready !== undefined ? `Your team is ready at ${ready} min.` : "",
-  ];
-  return parts.filter(Boolean).join(" ") || "The game told minute by minute.";
+export function storyPreviewText(ready: number | undefined, race: Story["race"]): string {
+  if (ready === undefined) return "No item minutes for this draft yet.";
+  const theirs = race?.theirs;
+  return [`Your team is ready at ${ready} min.`, theirs ? `Enemy ${theirs.hero}'s ${theirs.item} comes ${theirs.around ? "around" : "at"} ${theirs.minute} min.` : ""].filter(Boolean).join(" ");
 }
 
 interface LevelArt {
