@@ -14,6 +14,9 @@ export interface DraftAction {
   position?: Position | null;
 }
 
+/** Sent on the window by the header's New Draft while Draft is open: the board starts over in place. */
+export const NEW_DRAFT_EVENT = "new-draft";
+
 export const TEAM_SIZE = 5;
 export const MAX_BANS = 24;
 

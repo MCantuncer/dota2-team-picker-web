@@ -105,6 +105,34 @@ describe("SkillPlanCard", () => {
     ]);
   });
 
+  it("marks the talent beside the level's ability when the order holds abilities only", async () => {
+    const user = userEvent.setup();
+    // Sven: Storm Hammer at 10 with the level 10 talent beside it, God's Strength at 12.
+    const order = { ...plan, levels: [1, 2, 1, 2, 1, 3, 1, 2, 2, 1, 2, 3] };
+    const abilities = {
+      abilities: [
+        { id: 1, key: "sven_storm_bolt", name: "Storm Hammer", slot: 1, maxLevel: 4, ultimate: false },
+        { id: 2, key: "sven_great_cleave", name: "Great Cleave", slot: 2, maxLevel: 4, ultimate: false },
+        { id: 3, key: "sven_gods_strength", name: "God's Strength", slot: 6, maxLevel: 3, ultimate: true },
+      ],
+      talents: [],
+    };
+    render(<SkillPlanCard plan={{ ...order, names: { ...plan.names, 3: "God's Strength" } }} abilities={abilities} />);
+    const max = within(screen.getByRole("list", { name: "Max order" })).getAllByRole("listitem").map((li) => li.textContent);
+    expect(max.at(-1)).toBe("God's Strength6, 12");
+    const track = within(screen.getByRole("region", { name: "Skill order by level" })).getAllByRole("listitem");
+    expect(track.slice(9).map((li) => li.getAttribute("aria-label"))).toEqual([
+      "Level 10: Storm Hammer and +15 Damage",
+      "Level 11: Great Cleave",
+      "Level 12: God's Strength",
+    ]);
+    expect(within(track[9]!).getByTitle("+15 Damage")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Grid" }));
+    const rows = within(screen.getByRole("table", { name: "Skill order" })).getAllByRole("rowheader").map((th) => th.textContent);
+    // The level 15 tier has no pick, so only level 10 is marked.
+    expect(rows.at(-1)).toBe("Talents, levels 10");
+  });
+
   it("draws how many games took each talent, and says when players split", () => {
     const shared = { ...plan, talents: [{ ...plan.talents[0]!, usualShare: 0.55, usualGames: 110 }, { ...plan.talents[1]!, usualShare: undefined }] };
     render(<SkillPlanCard plan={shared} />);
@@ -124,7 +152,9 @@ describe("SkillPlanCard", () => {
   it("puts level 25 on top, lights this game's talent and gives the odds, never raw wins and losses", () => {
     render(<SkillPlanCard plan={plan} />);
     const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
-    expect(within(tiers[0]!).getByRole("button").textContent).toBe("+20% CleaveLevel 15+8 Strength"); // Two tiers.
+    // No picks at 15 and nothing this game decides there: a plain row, not a button. Two tiers.
+    expect(within(tiers[0]!).queryByRole("button")).toBeNull();
+    expect(tiers[0]!.textContent).toBe("+20% CleaveNo Picks YetLevel 15+8 StrengthNo Picks Yet");
     expect(within(tiers[1]!).getByRole("button", { name: "Level 10: +2 Mana Regen or +15 Damage, take +15 Damage, 5.6x the odds · 130 games" })).toBeInTheDocument();
     expect(tiers[1]!.textContent).toBe("+2 Mana RegenUsual PickLevel 10+15 Damage (take this)5.6x the odds · 130 games");
     expect(tiers[1]!.textContent).not.toMatch(/\d+ won|lost/); // Two tiers above.
@@ -133,12 +163,63 @@ describe("SkillPlanCard", () => {
     expect(screen.queryByText(/Loading|Sign in/)).toBeNull();
   });
 
-  it("shows why for the tier this game changes, and for any level picked", async () => {
-    render(<SkillPlanCard plan={plan} />);
+  it("shows why for the tiers this game's enemies decide, and only those", async () => {
+    const odds = { ...plan.talents[1]!, tier: 2, level: 20, pick: 12, usual: 12, result: "no-clear-difference" as const, reason: "No clear difference against these heroes." };
+    render(<SkillPlanCard plan={{ ...plan, talents: [...plan.talents, odds] }} />);
     expect(screen.getByText("Why +15 Damage at 10:").parentElement).toHaveTextContent(plan.talents[0]!.reason); // Set above.
-    await userEvent.click(screen.getByRole("button", { name: /^Level 15/ }));
-    expect(screen.getByText("Level 15:").parentElement).toHaveTextContent("No talent picks recorded for level 15");
-    expect(screen.getByRole("button", { name: /^Level 15/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /^Level 15/ })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: /^Level 20/ }));
+    expect(screen.getByText("Why +20% Cleave at 20:").parentElement).toHaveTextContent("No clear difference against these heroes.");
+    expect(screen.getByRole("button", { name: /^Level 20/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("puts no sentence under a tree of usual picks: the lit tile and its share say it", () => {
+    const usual = { ...plan.talents[0]!, pick: 10, result: "general" as const, odds: undefined, usualShare: 0.83, usualGames: 65928 };
+    render(<SkillPlanCard plan={{ ...plan, talents: [usual], note: undefined }} />);
+    const tier = within(screen.getByRole("list", { name: "Talent tree" })).getByRole("listitem");
+    expect(tier.textContent).toBe("+2 Mana Regen (take this)83%66k GamesLevel 10+15 Damage17%");
+    expect(screen.queryByRole("button", { name: /^Level 10/ })).toBeNull();
+    expect(screen.queryByText(/^Why /)).toBeNull();
+  });
+
+  it("marks a pair the patch changed as New, and keys the tree's marks", () => {
+    const changed = { ...plan.talents[1]!, newPair: true as const };
+    render(<SkillPlanCard plan={{ ...plan, talents: [plan.talents[0]!, changed] }} />);
+    expect(screen.getAllByText("New")).toHaveLength(2);
+    const key = within(screen.getByRole("list", { name: "Talent tree key" })).getAllByRole("listitem").map((li) => li.textContent);
+    expect(key).toEqual(["Buffs This Skill", "Take This", "New This Patch"]);
+  });
+
+  it("shows the icon of what each talent buffs: a skill, an innate ability or a stat", () => {
+    const sven = {
+      abilities: [{ id: 1, key: "sven_storm_bolt", name: "Storm Hammer", slot: 1, maxLevel: 4, ultimate: false }],
+      talents: [],
+      innate: ["Vanquisher"],
+    };
+    const tier = {
+      ...plan.talents[1]!,
+      options: [
+        { id: 12, name: "+1s Storm Hammer Stun" },
+        { id: 13, name: "+8 Strength" },
+      ],
+    };
+    const innate = { ...plan.talents[0]!, options: [{ id: 10, name: "+5% Vanquisher Damage" }, plan.talents[0]!.options[1]!] };
+    const { container } = render(<SkillPlanCard plan={{ ...plan, talents: [innate, tier] }} abilities={sven} />);
+    const srcs = [...container.querySelectorAll('ol[aria-label="Talent tree"] img')].map((img) => decodeURIComponent(img.getAttribute("src") ?? ""));
+    expect(srcs[0]).toContain("abilities/sven_storm_bolt.png");
+    expect(srcs[1]).toContain("icons/hero_strength.png");
+    expect(srcs[2]).toContain("icons/innate_icon.png");
+    expect(srcs[3]).toContain("heroes/stats/icon_damage.png");
+    expect(screen.getByText("(buffs Storm Hammer)", { exact: false })).toBeInTheDocument();
+  });
+
+  it("labels each tier with its level in the game's tree, even when players take it a level later", () => {
+    const late = { ...plan.talents[0]!, level: 11 }; // Set above.
+    render(<SkillPlanCard plan={{ ...plan, talents: [late, { ...plan.talents[1]!, level: 16 }] }} />);
+    const tiers = within(screen.getByRole("list", { name: "Talent tree" })).getAllByRole("listitem");
+    expect(tiers.map((t) => /Level (\d+)/.exec(t.textContent ?? "")?.[1])).toEqual(["15", "10"]);
+    expect(screen.getByRole("button", { name: /^Level 10: / })).toBeInTheDocument();
+    expect(screen.getByText("Why +15 Damage at 10:")).toBeInTheDocument();
   });
 
   it("puts the odds under the other talent when the games only lean to it", () => {

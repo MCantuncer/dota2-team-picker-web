@@ -26,7 +26,7 @@ const story: Story = {
   chapters: [
     { phase: "0 to 10 min", from: 0, to: 10, ours: [], theirs: [], action: "Juggernaut and Crystal Maiden win the safe lane.", focus: "lanes", text: "" },
     { phase: "10 to 20 min", from: 10, to: 20, ours: [jugg, mars, puck], theirs: [], action: "Open fights with Arena of Blood with Mortimer Kisses inside.", focus: "combo", text: "" },
-    { phase: "20 to 30 min", from: 20, to: 30, ours: [], theirs: [], action: "Roshan from 20 min, once three key items are in.", focus: "roshan", text: "" },
+    { phase: "20 to 30 min", from: 20, to: 30, ours: [], theirs: [], action: "Roshan at 20 min or later, with three key items in.", focus: "roshan", text: "" },
   ],
 };
 const abilities = {
@@ -54,8 +54,8 @@ describe("ChapterCards", () => {
     expect(fight.innerHTML).toContain("mars_arena_of_blood");
     expect(fight.innerHTML).toContain("snapfire_mortimer_kisses");
 
-    expect(roshan).toHaveTextContent("From 20 Min");
-    expect(roshan).toHaveTextContent("Your three key items are in by 19");
+    expect(roshan).toHaveTextContent("20 Min or Later");
+    expect(roshan).toHaveTextContent("Three key items done by 19");
     expect(within(roshan).getAllByRole("listitem")).toHaveLength(3);
   });
 

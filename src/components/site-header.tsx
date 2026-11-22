@@ -9,8 +9,8 @@ import { dueCard, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { type DueCheckIn, gameCheckInEnabled, toDueCheckIn } from "@/lib/game-check-in";
 import { AccountMenu } from "./account-menu";
 import { ActivityMark } from "./activity-mark";
-import { Icon } from "./icon";
 import { LogoMark } from "./logo";
+import { NewDraftButton } from "./new-draft-button";
 import { CaptainPrompt } from "./captain-prompt";
 import { CheckInPrompt } from "./check-in-prompt";
 import { HeroPoolCard } from "./hero-pool-card";
@@ -90,6 +90,7 @@ async function HeaderSession() {
   const nav: NavItem[] = [
     { href: "/draft", label: "Draft", icon: "swords" },
     { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
+    { href: "/meta", label: "Meta", icon: "chart" },
     { href: "/stacks", label: "Stacks", icon: "layers", badge: (stackInvites?.length ?? 0) + (joinRequests ?? 0) },
     { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
   ];
@@ -112,10 +113,8 @@ async function HeaderSession() {
       <PrimaryNav items={nav} />
       <div className="ml-auto flex items-center gap-3">
         <PartyChip size={party ? party.members.length : null} />
-        <Link href="/draft" className="btn btn-primary btn-sm hidden md:inline-flex">
-          <Icon name="plus" />
-          New Draft
-        </Link>
+        {/* Draft opens the board as it was; New Draft clears it first. */}
+        <NewDraftButton />
         <span aria-hidden className="hidden h-6 w-px bg-line md:block" />
         <AccountMenu account={account} nav={nav} admin={profile?.user_type === "admin"} />
       </div>

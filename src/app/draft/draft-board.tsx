@@ -3,7 +3,7 @@
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GameStoryPanel } from "@/components/game-story-panel";
 import { HeroFace } from "@/components/hero-frame";
 import { HeroInput } from "@/components/hero-input";
@@ -11,9 +11,10 @@ import { readActions } from "@/lib/draft-reader/actions";
 import type { Side } from "@/lib/draft-reader/geometry";
 import { Kbd } from "@/components/kbd";
 import { SteamButton } from "@/components/steam-button";
-import { heroesOf, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
+import { heroesOf, NEW_DRAFT_EVENT, POSITION_NAMES, TEAM_SIZE, type DraftAction, type DraftEntry } from "@/lib/draft";
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
+import { patchNotice } from "@/lib/patch-notice";
 import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
@@ -45,6 +46,7 @@ import { positionActions, resolveAllyPositions } from "@/lib/ally-positions";
 import { AfterGame } from "./after-game";
 import { Announcer, picksSentence } from "./announcer";
 import { EmptyPoolNotice } from "./empty-pool-notice";
+import { NewPatchNotice } from "./new-patch-notice";
 import { SuperTeamPanel } from "./super-team";
 import { TeamPlanLane } from "./team-plan";
 import { PerPlayerLane } from "./per-player-view";
@@ -269,6 +271,9 @@ export function DraftBoard({
     allyRef.current?.focus({ preventScroll: true });
   }, [isReady]);
 
+  // The data only changes when the page loads it, so the day is the day of the load.
+  const newPatch = useMemo(() => (engine ? patchNotice(engine.data, new Date()) : null), [engine]);
+
   const search = useMemo(() => {
     if (!engine) return null;
     const picks = (id: number) => (engine.data.bracketStats[id]?.picks ?? []).reduce((s, x) => s + x, 0);
@@ -453,12 +458,40 @@ export function DraftBoard({
     setScreenAllies([]);
     setNotMine(new Set());
     setOwnSlotFound(false);
-    if (party) void shared.newDraft();
-    else {
+    if (party) {
+      setPartySide(null);
+      void shared.newDraft();
+    } else {
       void solo.startOver();
       forgetSoloBoardKey();
     }
   };
+  // New Draft in the header (new-draft-button.tsx): on this page it starts over in place, like the board's own New
+  // Draft (the whole party's draft in a party, unless someone else is Draft Captain). From another page the draft is
+  // cleared before Draft opens; only if that failed does it open /draft?new=1, and the board starts over once it has
+  // loaded, then the address goes back to /draft so a reload keeps the new board. Draft in the menu opens it as it was.
+  const newAsked = useSearchParams().has("new");
+  const boardLoaded = party ? shared.loaded : solo.ready;
+  const startOverIfUsed = useRef(() => {});
+  useEffect(() => {
+    startOverIfUsed.current = () => {
+      if (!locked && (draft.length || mySide)) startOver();
+    };
+  });
+  useEffect(() => {
+    const onNew = () => startOverIfUsed.current();
+    window.addEventListener(NEW_DRAFT_EVENT, onNew);
+    return () => window.removeEventListener(NEW_DRAFT_EVENT, onNew);
+  }, []);
+  useEffect(() => {
+    if (!newAsked || !boardLoaded) return;
+    // After this tick, so a board still being read from this browser can't come back over the new one.
+    const timer = setTimeout(() => {
+      startOverIfUsed.current();
+      router.replace("/draft", { scroll: false });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [newAsked, boardLoaded, router]);
   /** Who entered a hero in the party draft. */
   const enteredBy = (heroId: number) => {
     const actor = party ? shared.actors.get(heroId) : undefined;
@@ -1023,6 +1056,7 @@ export function DraftBoard({
           )}
         </div>
         {screen.status}
+        {newPatch && <NewPatchNotice notice={newPatch} />}
       </div>
 
       {!party && phone && solo.synced && solo.ready && (

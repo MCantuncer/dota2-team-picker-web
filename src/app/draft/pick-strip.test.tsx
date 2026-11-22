@@ -44,8 +44,9 @@ const clear: Verdict = {
   kind: "clear",
   text: "5.8 points ahead of Ember Spirit, more than the 2.9 the data could be off by.",
   note: null,
+  record: null,
 };
-const behind: Verdict = { heroId: 106, kind: "behind", text: "5.8 points behind: 2.9 worse against Shadow Fiend.", note: null };
+const behind: Verdict = { heroId: 106, kind: "behind", text: "5.8 points behind: 2.9 worse against Shadow Fiend.", note: null, record: null };
 
 const picks: PickEntry[] = [
   {
@@ -163,6 +164,27 @@ describe("PickStrip", () => {
     expect(card).toHaveTextContent("−6.7 if they pick Juggernaut, a hard counter still open");
   });
 
+  it("draws the player's record as Record Bars: rates and games, Good Pick Too, and too few games without a rate", async () => {
+    const better: Verdict = {
+      ...behind,
+      note: "You win more on Ember Spirit (45% of 64 games) than on Invoker (0% of 2). A good pick too.",
+      record: {
+        mine: { heroId: 106, games: 64, wins: 29, tooFew: false },
+        leader: { heroId: 74, games: 2, wins: 0, tooFew: true },
+        goodToo: true,
+      },
+    };
+    strip({ picks: [picks[0]!, { ...picks[1]!, verdict: better }] });
+    await userEvent.click(within(tile("Ember Spirit")).getByRole("button", { name: /^Ember Spirit,/ }));
+    const bars = within(screen.getByRole("article", { name: "Ember Spirit" })).getByRole("region", { name: "Your Record" });
+    expect(within(bars).getByText("A Good Pick Too")).toBeInTheDocument();
+    const [mine, theirs] = within(bars).getAllByRole("listitem");
+    expect(mine).toHaveTextContent("Ember Spirit45%29 won of 64");
+    expect(theirs).toHaveTextContent("Invoker2 games, too few");
+    expect(theirs).not.toHaveTextContent("0%");
+    expect(screen.queryByText(/You win more on/)).toBeNull();
+  });
+
   it("labels the first tile Best only when no hero for the position scores higher, else Your Best", () => {
     const { unmount } = strip();
     expect(within(tile("Invoker")).getAllByText("Best").length).toBeGreaterThan(0);
@@ -176,7 +198,7 @@ describe("PickStrip", () => {
   });
 
   it("drops Clear from the open card's label when the gap is within the error", () => {
-    const close: Verdict = { heroId: 74, kind: "best", text: "0.4 points ahead of Ember Spirit, the next best.", note: null };
+    const close: Verdict = { heroId: 74, kind: "best", text: "0.4 points ahead of Ember Spirit, the next best.", note: null, record: null };
     const { unmount } = strip({ picks: [{ ...picks[0]!, verdict: close }, picks[1]!] });
     expect(screen.getByRole("article", { name: "Invoker" })).toHaveTextContent("Best Pick Right Now");
     unmount();

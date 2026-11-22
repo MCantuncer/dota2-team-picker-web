@@ -155,13 +155,21 @@ export function usePartyDraft(partyId: string | null, userId: string | null) {
 
   const newDraft = async () => {
     if (!draftId) return;
+    // The board empties now, not after the server answers, so the old picks don't linger.
+    setLoaded({ draftId: null, rows: [] });
+    setPending([]);
     const { error } = await supabase.rpc("end_party_draft", { draft: draftId });
-    if (error) return setError(error.code === CAPTAIN_ONLY ? CAPTAIN_ONLY_TEXT : `Draft not ended: ${error.message}`);
+    if (error) {
+      setError(error.code === CAPTAIN_ONLY ? CAPTAIN_ONLY_TEXT : `Draft not ended: ${error.message}`);
+      return load(draftId);
+    }
     await open();
   };
 
   return {
     ready: draftId !== null,
+    /** The open draft's entries have come in, so an empty board really is empty. */
+    loaded: draftId !== null && loaded.draftId === draftId,
     /** The party's open draft. */
     draftId,
     draft,

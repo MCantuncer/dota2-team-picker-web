@@ -31,8 +31,11 @@ const log = mode === "--schema-commit" ? () => {} : (line) => console.log(line);
 
 // Fetch backend main with its history (git checks every object against its hash).
 const gitDir = await mkdtemp(join(tmpdir(), "backend-"));
+// No background maintenance after the fetch: a detached commit-graph write races the folder's removal at the end
+// (ENOTEMPTY on objects/info/commit-graphs, seen in CI on 2026-11-22).
+const NO_MAINTENANCE = ["-c", "maintenance.auto=false", "-c", "gc.auto=0", "-c", "fetch.writeCommitGraph=false"];
 const git = async (args, input) => {
-  const child = run("git", ["--git-dir", gitDir, ...args], { maxBuffer: 64 * 1024 * 1024 });
+  const child = run("git", [...NO_MAINTENANCE, "--git-dir", gitDir, ...args], { maxBuffer: 64 * 1024 * 1024 });
   if (input !== undefined) child.child.stdin.end(input);
   return (await child).stdout;
 };

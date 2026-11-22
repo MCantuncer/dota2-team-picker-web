@@ -255,8 +255,9 @@ function RoshanReady({
       <div className="flex items-center gap-4">
         <Image src={CDN + AEGIS} alt="" width={66} height={48} className="h-12 w-[4.125rem] rounded-md object-cover" />
         <div className="flex flex-col gap-0.5">
-          <b className="text-xl font-semibold tracking-[-0.01em] text-fg">From {roshan.minute} Min</b>
-          {last && <span className="text-sm text-muted">Your three key items are in by {last.minute}</span>}
+          {/* "From 20 Min" read as one moment (Can, 2026-11-22): the window opens at that minute and stays open. */}
+          <b className="text-xl font-semibold tracking-[-0.01em] text-fg">{roshan.minute} Min or Later</b>
+          {last && <span className="text-sm text-muted">Three key items done by&nbsp;{last.minute}</span>}
         </div>
       </div>
       <ul className="flex flex-col gap-2.5 border-t border-line pt-4">

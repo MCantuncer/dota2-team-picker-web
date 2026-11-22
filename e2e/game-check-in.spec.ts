@@ -107,7 +107,7 @@ test("a new board asks about the last game in the corner, and the answer is save
   await expect(page.getByRole("region", { name: "Game Over" })).toBeVisible();
 
   // A new board: the full check-in goes, and the corner card asks instead, out of the board's order.
-  await page.getByRole("button", { name: "New Draft" }).click();
+  await page.getByRole("main").getByRole("button", { name: "New Draft" }).click();
   await expect(page.getByRole("region", { name: "Game Over" })).toHaveCount(0);
   const card = page.getByRole("region", { name: "How Did It Go?" });
   await expect(card).toBeVisible();
