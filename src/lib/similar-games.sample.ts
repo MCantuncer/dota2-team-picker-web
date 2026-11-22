@@ -20,7 +20,10 @@ export const GAME: SimilarGame = {
   assists: 9,
   networth: 24150,
   lastHits10: 37,
-  buys: [[717, 223]],
+  buys: [
+    [44, -89],
+    [717, 223],
+  ],
   deathsAt: [
     [349, 2],
     [1500, null],
