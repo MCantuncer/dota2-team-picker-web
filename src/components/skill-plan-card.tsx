@@ -15,9 +15,12 @@ import { splitTalent, talentIcon, type TalentIcon } from "./talent-icon";
  */
 export const treeLevel = (tier: TalentTier) => TALENT_LEVELS[tier.tier] ?? tier.level;
 
-/** A talent name's font size in pixels, and the smallest a long name shrinks to so it stays on one line. */
+/**
+ * A talent name's font size in pixels, and the smallest a long name shrinks to so it stays on one line. The tree
+ * keeps its width (Can 2026-11-22), so the longest names in the game (Alchemist's Corrosive Weaponry one) go to 9px.
+ */
 const NAME_MAX_PX = 15;
-const NAME_MIN_PX = 11;
+const NAME_MIN_PX = 9;
 /** The size a name that can't fit one line even at NAME_MIN_PX wraps at (a phone's narrow tiles). */
 const NAME_WRAP_PX = 13;
 
@@ -135,7 +138,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
         {plan.levels && (view === "track" ? <SkillTrack plan={plan} rows={rows} /> : <SkillGrid rows={rows} levels={plan.levels.length} />)}
       </section>
 
-      <section aria-labelledby={`${id}-talents`} className="flex max-w-[54rem] flex-col gap-5">
+      <section aria-labelledby={`${id}-talents`} className="flex max-w-[46rem] flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <h3 id={`${id}-talents`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
             Talents
