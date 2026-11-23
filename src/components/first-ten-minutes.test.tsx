@@ -100,7 +100,6 @@ describe("FirstTenMinutes", () => {
     const theirs = screen.getByRole("region", { name: "Hero 11 Items" });
     expect(within(theirs).getByRole("list", { name: "Hero 11 Start" }).children).toHaveLength(1);
     expect(within(theirs).getByRole("list", { name: "Hero 11 In Lane" }).children).toHaveLength(1);
-    expect(within(theirs).getByText("Power Treads")).toBeInTheDocument();
     expect(within(theirs).getByText("9").parentElement).toHaveTextContent("9 min");
   });
 
@@ -131,7 +130,6 @@ describe("FirstTenMinutes", () => {
     const ours = screen.getByRole("region", { name: "Your Items" });
     expect(within(ours).getByText("Changed for this draft.").parentElement).toHaveTextContent("Changed for this draft. Hero 11 casts often.");
     expect(within(ours).getByRole("list", { name: "Hero 13 In Lane" }).children).toHaveLength(1);
-    expect(within(ours).getByText("Blink Dagger")).toBeInTheDocument();
     expect(within(ours).getByText("19").parentElement).toHaveTextContent("19 min");
   });
 

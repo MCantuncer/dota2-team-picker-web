@@ -307,13 +307,14 @@ First 10 Minutes' item and skill block (`components/first-ten-minutes.tsx`, Can 
 
 - **Two loadout cards**, ours and the enemy laner's, side by side from `lg`, stacked below. Each card has a 3px team
   bar on top (Radiant ours, Dire theirs), a 32px face with the name and the You chip or "Enemy", then the same rows:
-  Start, In Lane, First Core. The cards share their rows (`grid-rows-subgrid`), so Start sits next to Start.
+  Start (shop bag), In Lane (three lanes), First Core (target). Each row's title is a copper glyph in a 28px dark
+  tile and the name in `fg` medium, never a bare grey label. The cards share their rows (`grid-rows-subgrid`), so Start sits next to Start.
 - Items are the Kits' 64x47 tiles in up to six columns (the inventory), shrinking to fit on phones, with the copy
-  count badge and the 20px enemy face on items this draft changed. First Core is one tile with its name and the
-  minute big (Dire red on the enemy card); "None by 10 min" when the enemy has none by the end of the lane.
+  count badge and the 20px enemy face on items this draft changed. First Core is one tile and the minute big, no name
+  (the tile says it; Dire red on the enemy card); "None by 10 min" when the enemy has none by the end of the lane.
 - A changed item is explained on the card's last line: the enemy face, "Changed for this draft." and the reason.
 - A card alone (no enemy item data) spans the width and turns its rows into three columns from `lg`.
-- **First Skills** is one band under the cards: seven 44px ability icons with their level, and the high-rank wins
+- **First Skills** is one band under the cards, titled the same way (level up glyph): seven 44px ability icons with their level, and the high-rank wins
   count on the right. No ring on the ultimate.
 
 ## Item Card

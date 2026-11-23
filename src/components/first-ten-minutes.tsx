@@ -182,7 +182,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
     <section
       aria-label={enemy ? `${name} Items` : "Your Items"}
       className={`relative grid min-w-0 content-start gap-5 overflow-hidden rounded-xl border border-line-strong bg-raised p-5 pt-6 ${
-        span ? `${span} lg:grid-rows-subgrid` : "lg:grid-cols-[auto_auto_minmax(0,1fr)] lg:gap-x-12"
+        span ? `${span} lg:grid-rows-subgrid` : "lg:grid-cols-[repeat(3,max-content)] lg:gap-x-16"
       }`}
     >
       <i aria-hidden className={`absolute inset-x-0 top-0 h-[3px] ${enemy ? "bg-dire" : "bg-radiant"}`} />
@@ -195,25 +195,22 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
           <span className="rounded-full bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>
         )}
       </div>
-      <Row label="Start" across={!span}>
-        <Items label={`${name} Start`} items={start} enemy={enemy} heroName={heroName} icons={icons} />
+      <Row label="Start" icon="bag">
+        <Items label={`${name} Start`} items={start} enemy={enemy} fit={!span} heroName={heroName} icons={icons} />
       </Row>
-      <Row label="In Lane" across={!span}>
-        <Items label={`${name} In Lane`} items={lane} enemy={enemy} heroName={heroName} icons={icons} />
+      <Row label="In Lane" icon="lanes">
+        <Items label={`${name} In Lane`} items={lane} enemy={enemy} fit={!span} heroName={heroName} icons={icons} />
       </Row>
-      <Row label="First Core" across={!span}>
+      <Row label="First Core" icon="target">
         {core ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             <ItemIcon item={core} enemy={enemy} heroName={heroName} icons={icons} />
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-sm text-fg">{core.name}</span>
-              <span className={`text-[0.8125rem] ${enemy ? "text-dire" : "text-muted"}`}>
-                <b className={`num text-lg font-semibold ${enemy ? "" : "text-fg"}`}>{core.minute}</b> min
-              </span>
+            <span className={`text-sm ${enemy ? "text-dire" : "text-muted"}`}>
+              <b className={`num text-[1.375rem] font-semibold tracking-[-0.02em] ${enemy ? "" : "text-fg"}`}>{core.minute}</b> min
             </span>
           </div>
         ) : (
-          <span className="text-sm text-subtle sm:pt-3">{enemy ? "None by 10 min" : "No core item yet"}</span>
+          <span className="flex h-[2.9375rem] items-center text-sm text-subtle">{enemy ? "None by 10 min" : "No core item yet"}</span>
         )}
       </Row>
       {why && (
@@ -232,25 +229,71 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
   );
 }
 
-/** A labelled row of a card; `across` (a card alone, full width) turns the rows into columns on wide screens. */
-function Row({ label, across, children }: { label: string; across: boolean; children: ReactNode }) {
+/** A row of a card under its own small heading: a copper glyph in a dark tile, then the row's name. */
+function Row({ label, icon, children }: { label: string; icon: keyof typeof ROW_GLYPHS; children: ReactNode }) {
   return (
-    <div
-      className={`grid min-w-0 content-start gap-2.5 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:items-start sm:gap-4 ${across ? "lg:grid-cols-1 lg:gap-2.5" : ""}`}
-    >
-      <span className={`text-[0.8125rem] text-muted sm:pt-3 ${across ? "lg:pt-0" : ""}`}>{label}</span>
+    <div className="flex min-w-0 flex-col gap-3">
+      <RowTitle label={label} icon={icon} />
       {children}
     </div>
   );
 }
 
-/** Items in buy order, as big tiles in up to six columns, the way the inventory reads. */
-function Items({ label, items, enemy, heroName, icons }: Art & { label: string; items: Item[]; enemy: boolean }) {
-  if (!items.length) return <span className="text-sm text-subtle sm:pt-3">None</span>;
+function RowTitle({ label, icon }: { label: string; icon: keyof typeof ROW_GLYPHS }) {
   return (
-    <ul aria-label={label} className="grid grid-cols-[repeat(6,minmax(0,4rem))] gap-2">
+    <span className="flex items-center gap-2.5 text-sm font-medium text-fg">
+      <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-md bg-bg text-accent shadow-[inset_0_0_0_1px_var(--line-strong)]">
+        <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+          {ROW_GLYPHS[icon]}
+        </svg>
+      </span>
+      {label}
+    </span>
+  );
+}
+
+/** The row glyphs: the shop bag for the start, the three lanes for the lane, a target for the first core item, level ups for skills. */
+const ROW_GLYPHS = {
+  bag: (
+    <>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  lanes: (
+    <>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="4" />
+      <path d="M6.5 17.5v-11h11" opacity="0.5" />
+      <path d="M6.5 17.5h11v-11" opacity="0.5" />
+      <path d="m6.5 17.5 11-11" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  levels: (
+    <>
+      <path d="m17 11-5-5-5 5" />
+      <path d="m17 18-5-5-5 5" />
+    </>
+  ),
+};
+
+/**
+ * Items in buy order, as big tiles in up to six columns, the way the inventory reads. `fit` (a card alone, its rows
+ * as columns) sizes the list to its items on wide screens, so no empty columns push the next row away.
+ */
+function Items({ label, items, enemy, fit, heroName, icons }: Art & { label: string; items: Item[]; enemy: boolean; fit: boolean }) {
+  if (!items.length) return <span className="flex h-[2.9375rem] items-center text-sm text-subtle">None</span>;
+  return (
+    <ul aria-label={label} className={`grid grid-cols-[repeat(6,minmax(0,4rem))] gap-2 ${fit ? "lg:flex lg:flex-wrap" : ""}`}>
       {items.map((item, i) => (
-        <li key={`${item.itemId}-${i}`} className="min-w-0">
+        <li key={`${item.itemId}-${i}`} className="min-w-0 lg:w-16">
           <ItemIcon item={item} enemy={enemy} heroName={heroName} icons={icons} />
         </li>
       ))}
@@ -294,7 +337,9 @@ function ItemIcon({ item, enemy, heroName, icons }: Art & { item: Item; enemy: b
 function FirstSkills({ levels, agreement }: { levels: ReturnType<typeof firstLevels>; agreement?: { wins: number; of: number } }) {
   return (
     <div className="grid items-center gap-x-8 gap-y-4 rounded-xl border border-line-strong bg-raised p-5 lg:grid-cols-[auto_auto_minmax(0,1fr)]">
-      <h5 className="text-sm font-medium text-muted">First Skills</h5>
+      <h5>
+        <RowTitle label="First Skills" icon="levels" />
+      </h5>
       <ol aria-label="First skill levels" className="grid grid-cols-[repeat(7,minmax(0,2.75rem))] gap-2.5">
         {levels.map((l) => (
           <li key={l.level} className="flex min-w-0 flex-col items-center gap-1.5" title={`Level ${l.level}: ${l.name}`}>
