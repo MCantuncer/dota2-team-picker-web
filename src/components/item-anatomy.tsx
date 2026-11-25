@@ -16,7 +16,7 @@ export function Coin({ size = "md" }: { size?: "sm" | "md" }) {
 }
 
 /** The item's bonuses, one "+5 Strength" line each: the amount bright, what it adds to muted. */
-export function ItemStatLines({ item }: { item: ItemInfo }) {
+export function ItemStatLines({ item }: { item: Pick<ItemInfo, "name" | "stats"> }) {
   if (!item.stats?.length) return null;
   return (
     <ul aria-label={`What ${item.name} gives`} className="flex flex-col gap-1 text-[0.9375rem] leading-normal">
@@ -55,7 +55,7 @@ function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?
         <span className="mr-auto text-base font-semibold text-fg">
           <span className={used ? "text-accent" : "text-muted"}>{used ? "Active" : "Passive"}:</span> {spell.name}
         </span>
-        {used && cooldown !== undefined && (
+        {cooldown !== undefined && (
           <span className="num flex items-center gap-1.5 text-sm font-semibold text-muted">
             <Clock />
             {cooldown}
@@ -85,10 +85,13 @@ function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?
   );
 }
 
-/** The item's spells, each in its box. Only the first used spell carries the item's cooldown and mana cost. */
-export function ItemSpells({ item }: { item: ItemInfo }) {
+/**
+ * The item's spells, each in its box. Only the first used spell carries the item's cooldown and mana cost; with
+ * `passiveCooldown` (neutral items, like Imp Claw's crit every 7 seconds) the first spell carries it whatever its kind.
+ */
+export function ItemSpells({ item, passiveCooldown = false }: { item: Pick<ItemInfo, "name" | "abilities" | "cooldown" | "manaCost">; passiveCooldown?: boolean }) {
   if (!item.abilities?.length) return null;
-  const first = item.abilities.findIndex((a) => a.kind === "active");
+  const first = passiveCooldown ? 0 : item.abilities.findIndex((a) => a.kind === "active");
   return (
     <ul aria-label={`${item.name} spells`} className="flex flex-col gap-2">
       {item.abilities.map((a, i) => (
