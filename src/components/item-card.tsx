@@ -15,11 +15,12 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import type { ItemInfo } from "@/lib/engine/types";
+import type { ItemInfo, NeutralItem } from "@/lib/engine/types";
 import { recipeOf } from "@/lib/item-recipe";
 import { HeroFace } from "./hero-frame";
 import { Icon } from "./icon";
 import { Coin, ItemParts, ItemSpells, ItemStatLines } from "./item-anatomy";
+import { NeutralKind } from "./neutral-kind";
 
 const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
@@ -28,7 +29,8 @@ const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
  * go same place, confusing"). Any item icon on the Draft page's game plan is a button that opens the Dota-style
  * tooltip right next to itself: its gold, what it gives, its spells and the parts it is built from, with this game's
  * numbers on top where the place it was clicked has them (the Build Path's minutes, the enemies it is for, why).
- * On a phone the card is a sheet from the bottom.
+ * On a phone the card is a sheet from the bottom. Neutral items never come from the shop: their card shows the tier
+ * (or an enchantment's level), the spell and bonuses, and no gold.
  */
 
 /** What one card shows. The shop data comes from `itemId`, or from `name` when the place only knows the name. */
@@ -36,7 +38,10 @@ export interface ItemCardContent {
   itemId?: number;
   /** The name to show when the shop data has none (or to find it by, without `itemId`). */
   name?: string;
+  /** The picture's path on the Steam CDN, or a full address. */
   img?: string;
+  /** An enchantment's level where the card was opened (its tier's level). */
+  level?: number;
   /** This game's numbers for the item, under the header. */
   band?: ReactNode;
   /** Last, under the parts, such as the Build Path's on time or late split. */
@@ -50,8 +55,13 @@ interface Open {
   stack: ItemCardContent[];
 }
 
-interface CardApi {
+/** Shop items and neutral items by id, for the cards. */
+interface Lookup {
   items?: Record<string, ItemInfo>;
+  neutrals?: Record<string, NeutralItem>;
+}
+
+interface CardApi extends Lookup {
   openId?: string;
   show: (id: string, anchor: HTMLElement, card: ItemCardContent) => void;
   /** Set inside the card: an item there opens over the card instead of moving it. */
@@ -61,7 +71,7 @@ interface CardApi {
 const CardContext = createContext<CardApi | null>(null);
 
 /** Gives every item button under it one shared card, so only one is open at a time. */
-export function ItemCardProvider({ items, children }: { items?: Record<string, ItemInfo>; children: ReactNode }) {
+export function ItemCardProvider({ items, neutrals, children }: Lookup & { children: ReactNode }) {
   const [open, setOpen] = useState<Open>();
   const show = useCallback(
     (id: string, anchor: HTMLElement, card: ItemCardContent) => setOpen((now) => (now?.id === id ? undefined : { id, anchor, stack: [card] })),
@@ -75,7 +85,7 @@ export function ItemCardProvider({ items, children }: { items?: Record<string, I
     if (refocus) anchorRef.current?.focus({ preventScroll: true });
     setOpen(undefined);
   }, []);
-  const api = useMemo(() => ({ items, openId: open?.id, show }), [items, open?.id, show]);
+  const api = useMemo(() => ({ items, neutrals, openId: open?.id, show }), [items, neutrals, open?.id, show]);
   return (
     <CardContext.Provider value={api}>
       {children}
@@ -85,6 +95,7 @@ export function ItemCardProvider({ items, children }: { items?: Record<string, I
             anchor={open.anchor}
             stack={open.stack}
             items={items}
+            neutrals={neutrals}
             onPush={(card) => setOpen((now) => now && { ...now, stack: [...now.stack, card] })}
             onBack={() => setOpen((now) => now && { ...now, stack: now.stack.slice(0, -1) })}
             onClose={close}
@@ -116,7 +127,7 @@ export function ItemButton({
   const open = api?.openId === id && !api.push;
   const art = typeof children === "function" ? children(open) : children;
   if (!api) return <span className={className}>{art}</span>;
-  const said = label ?? findItem(api.items, card)?.info.name ?? card.name ?? "Item";
+  const said = label ?? findItem(api.items, card)?.info.name ?? findNeutral(api.neutrals, card)?.name ?? card.name ?? "Item";
   return (
     <button
       type="button"
@@ -143,19 +154,27 @@ export function findItem(items: Record<string, ItemInfo> | undefined, card: Pick
   return undefined;
 }
 
+/** The neutral item a card is for, by id; neutral items are never found by name (a shop item may share it). */
+export function findNeutral(neutrals: Record<string, NeutralItem> | undefined, card: Pick<ItemCardContent, "itemId">): NeutralItem | undefined {
+  return card.itemId === undefined ? undefined : neutrals?.[card.itemId];
+}
+
+/** A picture path from the Steam CDN, or an address as it is. */
+export const itemSrc = (img: string) => (/^https?:\/\//.test(img) ? img : ITEM_CDN + img);
+
 const SHEET = "(max-width: 639px)";
 
 function Popup({
   anchor,
   stack,
   items,
+  neutrals,
   onPush,
   onBack,
   onClose,
-}: {
+}: Lookup & {
   anchor: HTMLElement;
   stack: ItemCardContent[];
-  items?: Record<string, ItemInfo>;
   onPush: (card: ItemCardContent) => void;
   onBack: () => void;
   onClose: (refocus: boolean) => void;
@@ -198,7 +217,7 @@ function Popup({
     };
   }, [anchor, measure, onClose]);
 
-  const inside = useMemo<CardApi>(() => ({ items, show: () => {}, push: onPush }), [items, onPush]);
+  const inside = useMemo<CardApi>(() => ({ items, neutrals, show: () => {}, push: onPush }), [items, neutrals, onPush]);
   const prev = stack.length > 1 ? stack.at(-2)! : undefined;
   const back = prev && (findItem(items, prev)?.info.name ?? prev.name ?? "Item");
   return (
@@ -216,7 +235,7 @@ function Popup({
       >
         {sheet && <span aria-hidden className="mx-auto mt-2.5 h-1 w-9 shrink-0 rounded-xs bg-line-hover" />}
         <CardContext.Provider value={inside}>
-          <ItemCard card={card} items={items} titleId={titleId} back={back} onBack={onBack} onClose={() => onClose(true)} onPart={onPush} />
+          <ItemCard card={card} items={items} neutrals={neutrals} titleId={titleId} back={back} onBack={onBack} onClose={() => onClose(true)} onPart={onPush} />
         </CardContext.Provider>
       </div>
     </>
@@ -227,14 +246,14 @@ function Popup({
 export function ItemCard({
   card,
   items,
+  neutrals,
   titleId,
   back,
   onBack,
   onClose,
   onPart,
-}: {
+}: Lookup & {
   card: ItemCardContent;
-  items?: Record<string, ItemInfo>;
   titleId?: string;
   back?: string;
   onBack?: () => void;
@@ -243,15 +262,19 @@ export function ItemCard({
 }) {
   const found = findItem(items, card);
   const info = found?.info;
-  const name = info?.name ?? card.name ?? "Item";
-  const img = info?.img ?? card.img;
-  const body = info && (info.stats?.length || info.abilities?.length);
+  const neutral = info ? undefined : findNeutral(neutrals, card);
+  const name = info?.name ?? neutral?.name ?? card.name ?? "Item";
+  const img = info?.img ?? neutral?.img ?? card.img;
+  const level = neutral?.levels && Math.min(card.level ?? 1, neutral.levels.length);
+  // An enchantment's bonuses are those of its level; an artifact's are its own.
+  const shown = neutral && { name: neutral.name, stats: level ? neutral.levels![level - 1] : neutral.stats, abilities: neutral.abilities, cooldown: neutral.cooldown };
+  const body = (info && (info.stats?.length || info.abilities?.length)) || (shown && (shown.stats?.length || shown.abilities?.length));
   const parts = items && found && recipeOf(found.id, items) ? <ItemParts itemId={found.id} items={items} onPick={onPart && ((p) => onPart({ itemId: p.itemId, name: p.name, img: p.img }))} /> : null;
   return (
     <>
       <div className="flex items-center gap-4 border-b border-line-strong bg-linear-to-b from-hover to-raised px-5 py-4">
         {img ? (
-          <Image src={ITEM_CDN + img} alt="" width={88} height={64} className="block h-16 w-[5.5rem] shrink-0 rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
+          <Image src={itemSrc(img)} alt="" width={88} height={64} className="block h-16 w-[5.5rem] shrink-0 rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
         ) : (
           <span aria-hidden className="block h-16 w-[5.5rem] shrink-0 rounded-md bg-raised" />
         )}
@@ -266,6 +289,7 @@ export function ItemCard({
               <span className="sr-only"> gold</span>
             </span>
           ) : null}
+          {neutral && <NeutralKind item={neutral} level={level} />}
         </div>
         {(onBack || onClose) && (
           <div className="-mr-2 flex shrink-0 items-center gap-1 self-start">
@@ -285,12 +309,14 @@ export function ItemCard({
       {card.band && <div className="flex flex-col gap-2.5 border-b border-line bg-bg px-5 py-3">{card.band}</div>}
       {body && (
         <div className="flex flex-col gap-4 px-5 pt-4 [&:last-child]:pb-5">
-          <ItemStatLines item={info} />
-          <ItemSpells item={info} />
+          {info && <ItemStatLines item={info} />}
+          {info && <ItemSpells item={info} />}
+          {shown && <ItemStatLines item={shown} />}
+          {shown && <ItemSpells item={shown} passiveCooldown />}
         </div>
       )}
       {parts && <div className={`px-5 pb-5 ${body ? "mt-4 border-t border-line pt-4" : "pt-4"}`}>{parts}</div>}
-      {!body && !parts && !card.band && <p className="px-5 py-4 text-sm text-muted">No shop details for this item yet.</p>}
+      {!body && !parts && !card.band && <p className="px-5 py-4 text-sm text-muted">No details for this item yet.</p>}
       {card.footer && <div className={`px-5 pb-5 ${parts ? "" : body ? "mt-4" : "pt-4"}`}>{card.footer}</div>}
     </>
   );
