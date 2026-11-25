@@ -1,6 +1,7 @@
 import type { PlayerPlan } from "@/lib/engine/game-plan";
 import type { ItemFork } from "@/lib/item-forks";
 import { BuildPath, type EnemyItem } from "./build-path";
+import { NeutralItems } from "./neutral-items";
 import { WhoHurtsYou } from "./who-hurts-you";
 
 interface Art {
@@ -10,8 +11,8 @@ interface Art {
 }
 
 /**
- * The Item Build tab: the Build Path (kits, the core items on one line, each item opening its card), Who Hurts You
- * (each threat with its answer). What high-rank wins did when a key item came late opens in that item's card.
+ * The Item Build tab: the Build Path (kits, the core items on one line, each item opening its card), the Neutral
+ * Items per tier, Who Hurts You (each threat with its answer). What high-rank wins did when a key item came late opens in that item's card.
  */
 export function PlayerItems({
   player,
@@ -26,6 +27,7 @@ export function PlayerItems({
   return (
     <div className="flex min-w-0 flex-col gap-12">
       <BuildPath build={build} heroName={heroName} icons={icons} note={laneNote} forks={forks} enemyItems={enemyItems} />
+      {player.neutrals && <NeutralItems tiers={player.neutrals} hero={heroName(player.heroId)} position={player.position} />}
       <WhoHurtsYou player={player} heroName={heroName} icons={icons} />
     </div>
   );
