@@ -1283,6 +1283,7 @@ export function DraftBoard({
           heroName={(id) => hero(id).name}
           abilities={engine.data.heroAbilities}
           items={engine.data.items}
+          neutrals={engine.data.neutrals?.items}
           skillBuilds={engine.data.skillBuilds}
           icons={portraits}
           playerNames={POSITIONS.map((p) => {

@@ -26,6 +26,8 @@ export interface GameStoryPanelProps {
   abilities?: Snapshot["heroAbilities"];
   /** Shop items, for the item art on the Story timeline. */
   items?: Snapshot["items"];
+  /** Neutral items, for their cards on the Item Build. */
+  neutrals?: NonNullable<Snapshot["neutrals"]>["items"];
   /** Skill build slices, for each player's item paths (If It Is Late, in a core item's detail). */
   skillBuilds?: Snapshot["skillBuilds"];
   /** Game plans against the dangerous enemy cores, most dangerous first; each takes his line in Danger Heroes. */
@@ -40,7 +42,7 @@ export interface GameStoryPanelProps {
  * line with both teams' key items, the game plans against the enemies who decide it, and the danger heroes. It
  * is on that tab alone, so the other tabs do not repeat it.
  */
-export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, skillBuilds, threats = [], similar }: GameStoryPanelProps) {
+export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition, action, abilities, items, neutrals, skillBuilds, threats = [], similar }: GameStoryPanelProps) {
   // The Story names heroes, so its art is found by name among this draft's heroes (names are unique in Dota).
   const heroIds = [...plan.players.map((p) => p.heroId), ...plan.lanes.flatMap((l) => [...l.ours, ...l.theirs])];
   const heroIcons = Object.fromEntries(heroIds.flatMap((id) => (icons[id] ? [[heroName(id), icons[id]]] : [])));
@@ -87,7 +89,7 @@ export function GameStoryPanel({ plan, heroName, icons, playerNames, myPosition,
   );
   return (
     // Every item icon in here opens its card next to itself (item-card.tsx).
-    <ItemCardProvider items={items}>
+    <ItemCardProvider items={items} neutrals={neutrals}>
       <section aria-label="Your Game" className="flex flex-col gap-6 border-t border-line pt-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="section-title">Your Game</h2>
