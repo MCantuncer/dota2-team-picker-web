@@ -57,7 +57,7 @@ export default async function MetaPage() {
         )}
       </div>
       {meta && heroes.length > 0 ? (
-        <ItemCardProvider items={meta.extras?.items}>
+        <ItemCardProvider items={meta.extras?.items} neutrals={meta.extras?.neutralItems}>
           <MetaBoard meta={meta} heroes={heroes.map(({ id, name, image, icon }) => ({ id, name, image, icon }))} art={art} />
         </ItemCardProvider>
       ) : (

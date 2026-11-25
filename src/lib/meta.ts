@@ -1,5 +1,5 @@
 import { SUPABASE_URL } from "@/lib/supabase/env";
-import type { ItemInfo } from "@/lib/engine/types";
+import type { ItemInfo, NeutralItem } from "@/lib/engine/types";
 
 /**
  * The Meta page numbers, built by the backend's refresh (services/engine/src/data/meta.ts) into meta.json in the
@@ -77,6 +77,8 @@ export interface MetaExtras {
   matchups: Record<string, { best: Matchup[]; worst: Matchup[] }>;
   /** Shop data of the items above, for item cards. Neutral items have none. */
   items: Record<string, ItemInfo>;
+  /** The tooltips of the neutral items in the builds (tier, spell, bonuses); missing in older files. */
+  neutralItems?: Record<string, NeutralItem>;
   /** Per hero id: its biggest changes in the patch and how many it had; missing in older files. */
   patchNotes?: Record<string, { lines: PatchLine[]; changes: number }>;
 }
@@ -107,6 +109,10 @@ const isLine = (x: unknown) => isRecord(x) && typeof x.ability === "string" && t
 const isNotes = (x: unknown) =>
   isRecord(x) && Object.values(x).every((n) => isRecord(n) && typeof n.changes === "number" && Array.isArray(n.lines) && n.lines.every(isLine));
 
+const isNeutralItems = (x: unknown) =>
+  isRecord(x) &&
+  Object.values(x).every((n) => isRecord(n) && typeof n.name === "string" && typeof n.img === "string" && (n.kind === "artifact" || n.kind === "enchantment"));
+
 /** True when the extras have the shape the page reads; the page then shows the rest without them. */
 export function isExtras(x: unknown): x is MetaExtras {
   return (
@@ -119,6 +125,7 @@ export function isExtras(x: unknown): x is MetaExtras {
     isRecord(x.matchups) &&
     Object.values(x.matchups).every((m) => isRecord(m) && isPairs(m.best, 3) && isPairs(m.worst, 3)) &&
     isRecord(x.items) &&
+    (x.neutralItems === undefined || isNeutralItems(x.neutralItems)) &&
     (x.patchNotes === undefined || isNotes(x.patchNotes))
   );
 }
