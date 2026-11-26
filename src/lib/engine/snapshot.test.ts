@@ -31,4 +31,14 @@ describe("loadSnapshot", () => {
     await expect(loadSnapshot()).resolves.toEqual({ heroes: {} });
     expect(fetch).toHaveBeenCalledTimes(2);
   });
+
+  it("hands the data's game fact updates to the engine", async () => {
+    const updates = { at: "2026-11-27T00:00:00.000Z", itemFacts: { bracer: { attack: true } } };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ heroes: {}, factUpdates: updates }), { status: 200 })));
+    const { loadSnapshot } = await fresh();
+    await loadSnapshot();
+    // The same fresh module graph as the loader, so the engine reads the updates it was given.
+    const { itemFact } = await import("./item-facts");
+    expect(itemFact("bracer")).toEqual({ attack: true });
+  });
 });
