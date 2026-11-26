@@ -35,7 +35,8 @@ export interface MetaDay {
 
 export interface MetaFile {
   computedAt: string;
-  patch: { name: string; startedAt: string };
+  /** The patch, with the game's newest release when the backend found a letter patch of it (7.42a). */
+  patch: { name: string; startedAt: string; release?: { name: string; startedAt: string } };
   days: MetaDay[];
   base: MetaDay[];
   /** Per hero id: share of its games per position 1 to 5, in percent. */
@@ -189,14 +190,34 @@ const MIN_DAY_GAMES = 300;
  */
 export const HALF_LIFE_DAYS = 1;
 
+/** Days a letter patch's games keep counting fully, like the backend's PATCH_FRESH_DAYS. */
+export const LETTER_FRESH_DAYS = 14;
+const DAY_MS = 86_400_000;
+
+/**
+ * The patch day a letter patch came out on (0 is the patch's first day), while it is younger than LETTER_FRESH_DAYS at
+ * the file's time; undefined when there is none or the file's times can't be read.
+ */
+export function letterDay(meta: Pick<MetaFile, "patch" | "computedAt">): number | undefined {
+  const { release, name, startedAt } = meta.patch;
+  if (!release || typeof release.startedAt !== "string" || release.name === name) return undefined;
+  const [patchMs, releaseMs, nowMs] = [startedAt, release.startedAt, meta.computedAt].map(Date.parse);
+  if (!Number.isFinite(patchMs) || !Number.isFinite(releaseMs) || !Number.isFinite(nowMs)) return undefined;
+  if (releaseMs <= patchMs || nowMs - releaseMs >= LETTER_FRESH_DAYS * DAY_MS) return undefined;
+  return Math.floor((releaseMs - patchMs) / DAY_MS);
+}
+
 /**
  * Each day's weight for the patch's rates: 1 for the newest complete day (and the day still running, whose few games
- * already weigh little), halving every HALF_LIFE_DAYS before it.
+ * already weigh little), halving every HALF_LIFE_DAYS before it. With a fresh letter patch, every day from the one it
+ * came out on counts fully (its games are the game as it is now) and the halving starts there.
  */
-export function dayWeights(days: MetaDay[]): number[] {
+export function dayWeights(days: MetaDay[], letter?: number): number[] {
   let newest = days.length - 1;
   while (newest > 0 && !days[newest]?.complete) newest--;
-  return days.map((_, i) => 0.5 ** (Math.max(0, newest - i) / HALF_LIFE_DAYS));
+  const newestIndex = days[newest]?.index ?? 0;
+  const anchor = letter === undefined ? newestIndex : Math.min(letter, newestIndex);
+  return days.map((d) => 0.5 ** (Math.max(0, anchor - d.index) / HALF_LIFE_DAYS));
 }
 
 /** A hero's games and wins over the days, each day times its weight (1 for all by default). */
@@ -219,7 +240,7 @@ const gamesIn = (days: MetaDay[], slice: RankSlice, weights: number[] = []) =>
  * days more (dayWeights); games are the plain count.
  */
 export function heroRates(meta: MetaFile, slice: RankSlice): HeroRate[] {
-  const weights = dayWeights(meta.days);
+  const weights = dayWeights(meta.days, letterDay(meta));
   const games = gamesIn(meta.days, slice, weights);
   const baseGames = gamesIn(meta.base, slice);
   const out: HeroRate[] = [];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroups, buildPath, change, dayLabel, dayWeights, extrasItemIds, HALF_LIFE_DAYS, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
+import { buildGroups, buildPath, change, dayLabel, dayWeights, extrasItemIds, letterDay, HALF_LIFE_DAYS, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -65,6 +65,23 @@ describe("dayWeights", () => {
     const half = 0.5 ** (1 / HALF_LIFE_DAYS);
     expect(dayWeights(days)).toEqual([half ** 2, half, 1, 1]);
     expect(dayWeights([{ ...day(0, {}, 1), complete: false }])).toEqual([1]);
+  });
+
+  it("counts every day from a fresh letter patch fully, halving before it", () => {
+    const days = [0, 1, 2, 3, 4].map((i) => day(i, {}, 1));
+    const half = 0.5 ** (1 / HALF_LIFE_DAYS);
+    expect(dayWeights(days, 2)).toEqual([half ** 2, half, 1, 1, 1]);
+    // A letter patch on the running day: the halving starts at the newest complete day as before.
+    expect(dayWeights(days, 9)).toEqual(dayWeights(days));
+  });
+
+  it("finds the letter patch's day while it is fresh", () => {
+    const patch = { name: "7.42", startedAt: "2026-11-18T21:28:07Z" };
+    const release = { name: "7.42a", startedAt: "2026-11-24T23:40:00Z" };
+    expect(letterDay({ computedAt: "2026-11-26T22:00:00Z", patch: { ...patch, release } })).toBe(6);
+    expect(letterDay({ computedAt: "2026-12-10T00:00:00Z", patch: { ...patch, release } })).toBeUndefined();
+    expect(letterDay({ computedAt: "2026-11-26T22:00:00Z", patch: { ...patch, release: { ...release, name: "7.42" } } })).toBeUndefined();
+    expect(letterDay({ computedAt: "2026-11-26T22:00:00Z", patch })).toBeUndefined();
   });
 
   it("follows a letter patch within two days: Riki from 57.2% to 53.8%", () => {
