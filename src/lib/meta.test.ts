@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroups, buildPath, change, dayLabel, extrasItemIds, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
+import { buildGroups, buildPath, change, dayLabel, dayWeights, extrasItemIds, HALF_LIFE_DAYS, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -34,10 +34,11 @@ describe("heroRates", () => {
   const rates = heroRates(META, 0);
   const riki = rates.find((r) => r.id === 32)!;
 
-  it("sums the patch's days into pick and win rates, with the patch before as base", () => {
+  it("sums the patch's days into pick and win rates, recent days weighing more, with the patch before as base", () => {
     expect(riki.games).toBe(12_000);
     expect(riki.pick).toBeCloseTo(12);
-    expect(riki.win).toBeCloseTo(57.3, 1);
+    // (0.5 x 3,400 + 3,480) / (0.5 x 6,000 + 6,000): the older day counts half.
+    expect(riki.win).toBeCloseTo(57.56, 1);
     expect(riki.basePick).toBeCloseTo(5);
     expect(riki.baseWin).toBeCloseTo(53);
     expect(riki.days.map((d) => d?.toFixed(1))).toEqual(["56.7", "58.0"]);
@@ -52,9 +53,27 @@ describe("heroRates", () => {
   });
 
   it("reads one rank group on its own", () => {
-    expect(heroRates(META, 3).find((r) => r.id === 32)?.win).toBeCloseTo(57.3, 1);
+    expect(heroRates(META, 3).find((r) => r.id === 32)?.win).toBeCloseTo(57.56, 1);
     expect(heroRates(META, 1)).toEqual([]);
     expect(sliceGames(META, 0)).toBe(100_000);
+  });
+});
+
+describe("dayWeights", () => {
+  it("halves each HALF_LIFE_DAYS back from the newest complete day; the running day counts fully", () => {
+    const days = [0, 1, 2, 3].map((i) => ({ ...day(i, {}, 1), complete: i < 3 }));
+    const half = 0.5 ** (1 / HALF_LIFE_DAYS);
+    expect(dayWeights(days)).toEqual([half ** 2, half, 1, 1]);
+    expect(dayWeights([{ ...day(0, {}, 1), complete: false }])).toEqual([1]);
+  });
+
+  it("follows a letter patch within two days: Riki from 57.2% to 53.8%", () => {
+    const before = [0, 1, 2, 3, 4, 5].map((i) => day(i, { 32: hero(60_000, 34_320) }, 400_000));
+    const after = [6, 7].map((i) => day(i, { 32: hero(60_000, 32_280) }, 400_000));
+    const win = heroRates({ ...META, days: [...before, ...after] }, 0).find((r) => r.id === 32)!.win;
+    // The plain average would be 56.4%.
+    expect(win).toBeLessThan(55);
+    expect(win).toBeGreaterThan(53.8);
   });
 });
 

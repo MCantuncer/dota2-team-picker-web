@@ -168,7 +168,7 @@ export async function getMeta(): Promise<MetaFile | null> {
 export interface HeroRate {
   id: number;
   games: number;
-  /** Share of games the hero was in, and its win rate, this patch. */
+  /** Share of games the hero was in, and its win rate, this patch, recent days weighing more (dayWeights). */
   pick: number;
   win: number;
   /** The same in the last days of the patch before, or null when it had too few games then. */
@@ -183,34 +183,58 @@ export interface HeroRate {
 /** A day's games of one hero needed to show its win rate that day. */
 const MIN_DAY_GAMES = 300;
 
-function total(days: MetaDay[], hero: string, slice: RankSlice): [number, number] {
+/**
+ * Days this old count half, so the rates follow a letter patch within a day or two without starting over: the day
+ * after 7.42a Riki won 53.8%, while the plain average of the patch still said 56.6%.
+ */
+export const HALF_LIFE_DAYS = 1;
+
+/**
+ * Each day's weight for the patch's rates: 1 for the newest complete day (and the day still running, whose few games
+ * already weigh little), halving every HALF_LIFE_DAYS before it.
+ */
+export function dayWeights(days: MetaDay[]): number[] {
+  let newest = days.length - 1;
+  while (newest > 0 && !days[newest]?.complete) newest--;
+  return days.map((_, i) => 0.5 ** (Math.max(0, newest - i) / HALF_LIFE_DAYS));
+}
+
+/** A hero's games and wins over the days, each day times its weight (1 for all by default). */
+function total(days: MetaDay[], hero: string, slice: RankSlice, weights: number[] = []): [number, number] {
   let games = 0;
   let wins = 0;
-  for (const d of days) {
-    games += d.heroes[hero]?.[slice * 2] ?? 0;
-    wins += d.heroes[hero]?.[slice * 2 + 1] ?? 0;
-  }
+  days.forEach((d, i) => {
+    const w = weights[i] ?? 1;
+    games += w * (d.heroes[hero]?.[slice * 2] ?? 0);
+    wins += w * (d.heroes[hero]?.[slice * 2 + 1] ?? 0);
+  });
   return [games, wins];
 }
 
-const gamesIn = (days: MetaDay[], slice: RankSlice) => days.reduce((n, d) => n + (d.games[slice] ?? 0), 0);
+const gamesIn = (days: MetaDay[], slice: RankSlice, weights: number[] = []) =>
+  days.reduce((n, d, i) => n + (weights[i] ?? 1) * (d.games[slice] ?? 0), 0);
 
-/** Every hero's numbers in a rank slice, leaving out heroes under MIN_GAMES this patch. */
+/**
+ * Every hero's numbers in a rank slice, leaving out heroes under MIN_GAMES this patch. Pick and win rates weigh recent
+ * days more (dayWeights); games are the plain count.
+ */
 export function heroRates(meta: MetaFile, slice: RankSlice): HeroRate[] {
-  const games = gamesIn(meta.days, slice);
+  const weights = dayWeights(meta.days);
+  const games = gamesIn(meta.days, slice, weights);
   const baseGames = gamesIn(meta.base, slice);
   const out: HeroRate[] = [];
   const ids = new Set(meta.days.flatMap((d) => Object.keys(d.heroes)));
   for (const id of ids) {
-    const [g, w] = total(meta.days, id, slice);
-    if (g < MIN_GAMES || games <= 0) continue;
+    const [g] = total(meta.days, id, slice);
+    const [wg, ww] = total(meta.days, id, slice, weights);
+    if (g < MIN_GAMES || games <= 0 || wg <= 0) continue;
     const [bg, bw] = total(meta.base, id, slice);
     const hasBase = bg >= MIN_GAMES && baseGames > 0;
     out.push({
       id: Number(id),
       games: g,
-      pick: (g / games) * 100,
-      win: (w / g) * 100,
+      pick: (wg / games) * 100,
+      win: (ww / wg) * 100,
       basePick: hasBase ? (bg / baseGames) * 100 : null,
       baseWin: hasBase ? (bw / bg) * 100 : null,
       days: meta.days.map((d) => {
