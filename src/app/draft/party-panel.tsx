@@ -217,7 +217,7 @@ export function PartyPanel({
             />
           )}
           {isLeader && !full && <InviteLinkNote link={link} />}
-          {isLeader && full && <p className="text-sm text-subtle">Party Is Full. Free a seat to invite someone else.</p>}
+          {isLeader && full && <p className="text-sm text-muted">Party Is Full. Free a seat to invite someone else.</p>}
           <p className="text-sm text-muted empty:hidden" aria-live="polite">
             {captainLine}
           </p>

@@ -39,7 +39,7 @@ export function PlanForSwitch({
 }) {
   return (
     <div className="flex items-center gap-2" data-tour="draft-plan">
-      <span className="micro text-subtle">Plan For</span>
+      <span className="micro text-muted">Plan For</span>
       <div className="lane-seg lane-seg-sm" role="group" aria-label="Plan For">
         <button type="button" aria-pressed={mode === "me"} onClick={onJustMe} disabled={Boolean(lockedWhy)} title={lockedWhy}>
           Just Me
@@ -139,7 +139,7 @@ export function TeamSeats({
           {/* Fill From Stack and the party button sit in their own row, so they never fight the seats' height. */}
           {(fillFromStack || startParty) && (
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <span className="micro text-subtle">Team Seats</span>
+              <span className="micro text-muted">Team Seats</span>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 {fillFromStack}
                 {startParty}
@@ -182,7 +182,7 @@ export function TeamSeats({
                   <span className="flex min-w-0 flex-col gap-1.5">
                     {/* Muted, not subtle, on the open seat's copper wash so the label keeps 4.5:1 contrast. */}
                     <span
-                      className={`micro flex items-start gap-1.5 max-sm:min-h-8 ${adding === position ? "text-muted" : "text-subtle"}`}
+                      className="micro flex items-start gap-1.5 max-sm:min-h-8 text-muted"
                     >
                       {/* Two lines on a phone, so "Soft Support" can wrap and every seat's next line still lines up. */}
                       <PositionIcon position={position} size={12} className="mt-0.5 shrink-0" />
@@ -200,7 +200,7 @@ export function TeamSeats({
                         onClick={() => (signedIn ? setAdding(adding === position ? null : position) : pick(SOLO_ME, position))}
                       />
                     ) : (
-                      <span className="text-sm text-subtle">Open</span>
+                      <span className="text-sm text-muted">Open</span>
                     )}
                   </span>
                   {seat && (

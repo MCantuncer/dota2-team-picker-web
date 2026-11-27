@@ -12,12 +12,12 @@ const CARD_ART: HeroArtPlacement = { width: 496, at: [0.5, 0.4], frameWidth: 320
 function Stat({ label, value, delta, note, since }: { label: string; value: string; delta?: number | null; note?: string; since?: string }) {
   return (
     <div className="grid min-w-0 content-start gap-0.5 rounded-lg bg-surface px-3 py-3 ring-1 ring-inset ring-line-strong sm:px-3.5">
-      <span className="text-sm text-subtle">{label}</span>
+      <span className="text-sm text-muted">{label}</span>
       <span className="text-lg font-semibold leading-tight tabular-nums text-fg sm:text-xl">{value}</span>
       {delta !== undefined && delta !== null ? (
         <span className={`text-xs sm:text-sm ${delta >= 0 ? "text-radiant" : "text-dire"}`}>{signed(delta)} vs {since}</span>
       ) : (
-        <span className="text-xs text-subtle sm:text-sm">{note ?? "New this patch"}</span>
+        <span className="text-xs text-muted sm:text-sm">{note ?? "New this patch"}</span>
       )}
     </div>
   );
@@ -44,7 +44,7 @@ function DayChart({ rate, days, W, H }: { rate: HeroRate; days: MetaDay[]; W: nu
       {ticks.map((t) => (
         <g key={t}>
           <line x1={M.l} x2={W - M.r} y1={y(t)} y2={y(t)} className="stroke-line" />
-          <text x={M.l - 8} y={y(t) + 4} textAnchor="end" fontSize={12} className="fill-subtle">
+          <text x={M.l - 8} y={y(t) + 4} textAnchor="end" fontSize={12} className="fill-muted">
             {t}%
           </text>
         </g>
@@ -63,7 +63,7 @@ function DayChart({ rate, days, W, H }: { rate: HeroRate; days: MetaDay[]; W: nu
       ))}
       {days.map((d, i) =>
         i % every === 0 || i === days.length - 1 ? (
-          <text key={d.index} x={x(i)} y={H - 8} textAnchor="middle" fontSize={12} className="fill-subtle">
+          <text key={d.index} x={x(i)} y={H - 8} textAnchor="middle" fontSize={12} className="fill-muted">
             {dayLabel(d)}
           </text>
         ) : null,
@@ -136,7 +136,7 @@ function RankRows({ byRank }: { byRank: (HeroRate | undefined)[] }) {
         <span className="max-sm:hidden" />
         <span className="relative h-4">
           {ticks.map((t) => (
-            <span key={t} className="absolute -translate-x-1/2 text-xs text-subtle" style={{ left: `${at(t)}%` }}>
+            <span key={t} className="absolute -translate-x-1/2 text-xs text-muted" style={{ left: `${at(t)}%` }}>
               {t}%
             </span>
           ))}

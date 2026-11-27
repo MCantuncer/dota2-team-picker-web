@@ -69,7 +69,7 @@ export function JobCard({
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="flex min-w-0 flex-col gap-1">
-            <dt className="text-xs font-medium text-subtle">{c.label}</dt>
+            <dt className="text-xs font-medium text-muted">{c.label}</dt>
             <dd className="text-sm text-fg">{c.value}</dd>
           </div>
         ))}
@@ -95,7 +95,7 @@ export function FillLanes({ fill, heroes }: { fill: FillStatus; heroes: Map<numb
             <Bar done={p.done} total={p.total} label={`Pos ${p.position}`} thin />
           </div>
           {p.heroes.length === 0 ? (
-            <p className="rounded-md border border-dashed border-line-strong px-3 py-3 text-sm text-subtle">No heroes in the hero data yet.</p>
+            <p className="rounded-md border border-dashed border-line-strong px-3 py-3 text-sm text-muted">No heroes in the hero data yet.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">
               {p.heroes.map((h) => {
@@ -112,7 +112,7 @@ export function FillLanes({ fill, heroes }: { fill: FillStatus; heroes: Map<numb
                       <span className="text-sm font-medium break-words text-fg">{name}</span>
                       <div className="flex items-center gap-2">
                         <Bar done={h.fresh} total={h.total} label={`${name} Pos ${p.position}`} thin />
-                        <span className="num shrink-0 text-xs text-subtle">
+                        <span className="num shrink-0 text-xs text-muted">
                           {h.fresh} of {h.total}
                         </span>
                       </div>
@@ -156,7 +156,7 @@ export function PatchCard({ status, nowMs }: { status: PatchStatus; nowMs: numbe
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="flex min-w-0 flex-col gap-1">
-            <dt className="text-xs font-medium text-subtle">{c.label}</dt>
+            <dt className="text-xs font-medium text-muted">{c.label}</dt>
             <dd className="text-sm text-fg">{c.value}</dd>
           </div>
         ))}
@@ -180,7 +180,7 @@ export function PatchCard({ status, nowMs }: { status: PatchStatus; nowMs: numbe
                     {p.state === "fail" ? "Failing" : "Catching Up"}
                     {p.since ? ` Since ${joinedText(p.since, nowMs)}` : ""}
                   </span>
-                  {p.note && <span className="text-xs break-words text-subtle">{p.note.charAt(0).toUpperCase() + p.note.slice(1)}</span>}
+                  {p.note && <span className="text-xs break-words text-muted">{p.note.charAt(0).toUpperCase() + p.note.slice(1)}</span>}
                 </span>
               </li>
             ))}

@@ -158,7 +158,7 @@ export function FriendsBoard({
             </Group>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-2 pl-4 pr-2">
-            <p className="text-xs text-subtle">Friends see your heroes for drafting.</p>
+            <p className="text-xs text-muted">Friends see your heroes for drafting.</p>
             <Link href="/profile#sharing" className="btn btn-ghost btn-sm">
               <Icon name="settings" />
               Sharing Settings
@@ -196,7 +196,7 @@ function Group({ title, count, accent = false, children }: { title: string; coun
     <section aria-label={title} className="border-b border-line py-1.5 last-of-type:border-b-0">
       <h2 className={`flex items-center gap-1.5 px-4 pt-2 pb-1 text-sm font-semibold ${accent ? "text-accent" : "text-muted"}`}>
         {accent && <Icon name="user-plus" />}
-        {title} <span className="num font-medium text-subtle">{count}</span>
+        {title} <span className="num font-medium text-muted">{count}</span>
       </h2>
       <ul>{children}</ul>
     </section>
@@ -209,7 +209,7 @@ function Row({ person, detail, children }: { person: { name: string; avatarUrl: 
       <Avatar account={{ name: person.name, avatarUrl: person.avatarUrl, detail: null, steamLinked: false }} size={40} />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-semibold text-fg">{person.name}</span>
-        <span className="truncate text-sm text-subtle">{detail}</span>
+        <span className="truncate text-sm text-muted">{detail}</span>
       </span>
       <span className="flex shrink-0 gap-1.5">{children}</span>
     </li>
@@ -250,13 +250,13 @@ function FriendRow({ friend: f, selected, now }: { friend: Friend; selected: boo
             <span className="truncate">{f.name}</span>
             {f.rankTier !== null && <RankMedal rankTier={f.rankTier} size={20} />}
           </span>
-          <span className={`truncate text-sm ${f.party === "yours" ? "text-radiant" : "text-subtle"}`}>{status}</span>
+          <span className={`truncate text-sm ${f.party === "yours" ? "text-radiant" : "text-muted"}`}>{status}</span>
         </span>
         {won !== null && (
           <span className="flex w-18 shrink-0 flex-col items-end">
             <span className="num text-sm">{won}%</span>
-            <span className="text-xs text-subtle">
-              in <span className="num font-normal text-subtle">{f.together.games}</span> {f.together.games === 1 ? "game" : "games"}
+            <span className="text-xs text-muted">
+              in <span className="num font-normal text-muted">{f.together.games}</span> {f.together.games === 1 ? "game" : "games"}
             </span>
             <span className="mt-1 h-1 w-full overflow-hidden rounded-full bg-line-hover">
               <span className={`block h-full rounded-full ${won >= 55 ? "bg-radiant" : "bg-muted"}`} style={{ width: `${won}%` }} />
@@ -297,7 +297,7 @@ function FriendLink({ code }: { code: string }) {
 
   return (
     <div data-tour="friends-link" className="flex w-full flex-col gap-1.5 sm:w-[27rem]">
-      <label htmlFor="friend-link" className="text-sm text-subtle">
+      <label htmlFor="friend-link" className="text-sm text-muted">
         Your Friend Link
       </label>
       <div className="flex gap-2">

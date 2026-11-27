@@ -162,7 +162,7 @@ function TourOverlay({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
           place?.arrowLeft != null && <span aria-hidden className={`tour-arrow tour-arrow-${place.side}`} style={{ left: place.arrowLeft }} />
         )}
         <div className="flex items-center gap-3">
-          <span className="text-sm whitespace-nowrap text-subtle tabular-nums">
+          <span className="text-sm whitespace-nowrap text-muted tabular-nums">
             {index + 1} of {list.length}
           </span>
           <span aria-hidden className="tour-progress">

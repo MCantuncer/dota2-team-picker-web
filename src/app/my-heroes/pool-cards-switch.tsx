@@ -37,7 +37,7 @@ export function PoolCardsSwitch({ initialOn, gamesHidden }: { initialOn: boolean
         Suggest heroes from my recent games
       </label>
       {on && gamesHidden && (
-        <p className="text-xs text-subtle">
+        <p className="text-xs text-muted">
           We can&apos;t see your recent games, so there are no suggestions yet. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
           <i>Expose Public Match Data</i>.
         </p>

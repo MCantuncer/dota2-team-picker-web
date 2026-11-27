@@ -22,11 +22,11 @@ export function CheckStrip({ check }: { check: PoolCheck }) {
           >
             <dt className="text-sm font-medium text-muted">{c.label}</dt>
             <dd className={`num text-xl leading-tight tracking-tight md:text-2xl ${c.tone}`}>{c.value}</dd>
-            <dd className="w-full text-xs text-subtle">{c.detail}</dd>
+            <dd className="w-full text-xs text-muted">{c.detail}</dd>
           </div>
         ))}
       </dl>
-      <p className="text-xs text-subtle">
+      <p className="text-xs text-muted">
         {listsText(check.lists)} from {check.players === 1 ? "1 player" : `${check.players} players`}.
       </p>
     </div>
@@ -65,7 +65,7 @@ export function Slips({ slips, heroes, nowMs }: { slips: PoolSlip[]; heroes: { i
                 );
               })}
             </span>
-            <span className="num col-span-2 text-xs text-subtle md:col-span-1 md:justify-self-end md:text-sm">{joinedText(s.at, nowMs)}</span>
+            <span className="num col-span-2 text-xs text-muted md:col-span-1 md:justify-self-end md:text-sm">{joinedText(s.at, nowMs)}</span>
           </li>
         ))}
       </ul>

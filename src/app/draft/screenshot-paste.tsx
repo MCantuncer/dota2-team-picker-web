@@ -173,7 +173,7 @@ export function useDotaScreen({
       <div
         role="status"
         aria-label="Read the Dota screen"
-        className="flex basis-full flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle empty:sr-only"
+        className="flex basis-full flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted empty:sr-only"
       >
         {enabled && side && sideBy === "screen" && (
           <span className="text-muted">

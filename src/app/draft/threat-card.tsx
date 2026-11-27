@@ -61,7 +61,7 @@ export function ThreatCard({ threats, hero, myPosition, games }: ThreatCardProps
           <h2 id="threat-title" className="text-base font-semibold text-fg">
             Dangerous Enemies
           </h2>
-          <span className="text-sm text-subtle">His win rate against teams with as many of his answers as yours</span>
+          <span className="text-sm text-muted">His win rate against teams with as many of his answers as yours</span>
         </div>
         <ThreatTiles threats={threats} chosen={threat.hero} hero={hero} onChoose={setChosen} />
       </div>
@@ -83,7 +83,7 @@ export function ThreatCard({ threats, hero, myPosition, games }: ThreatCardProps
                         {isMine ? "Your Pick" : "Teammates"}
                         {isMine && <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>}
                       </span>
-                      <PositionLabel position={seat.position} size={14} className="micro text-subtle" />
+                      <PositionLabel position={seat.position} size={14} className="micro text-muted" />
                     </span>
                     <span className="flex flex-wrap gap-2">
                       {seat.heroes.map((a) => (
@@ -102,14 +102,14 @@ export function ThreatCard({ threats, hero, myPosition, games }: ThreatCardProps
             </ul>
           )}
 
-          <p className="text-xs text-subtle">
+          <p className="text-xs text-muted">
             From {count(games)} ranked All Pick games of the last 10 days. Points are the pick engine&apos;s matchups: how far
             below his expected win rate he plays against that hero. Only open heroes who often play the seat show.
           </p>
         </div>
 
         <div className="flex flex-col gap-4 border-t border-line p-5 md:p-6 lg:border-t-0 lg:border-l">
-          <span className="micro text-subtle">His Win Rate by Your Team&apos;s Answers</span>
+          <span className="micro text-muted">His Win Rate by Your Team&apos;s Answers</span>
           <div
             role="img"
             aria-label={`His win rate: ${STEP_NAMES.map((s, i) => `${s} ${percent(stair[i]!.winRate)}`).join(", ")}. Your team: ${STEP_NAMES[threat.step]}.`}
@@ -128,7 +128,7 @@ export function ThreatCard({ threats, hero, myPosition, games }: ThreatCardProps
                   </div>
                   <span className="flex flex-col">
                     <span className={`text-sm ${isNow ? "font-semibold text-fg" : "text-muted"}`}>{STEP_NAMES[i]}</span>
-                    <span className="micro text-subtle tabular-nums">{count(s.games)} games</span>
+                    <span className="micro text-muted tabular-nums">{count(s.games)} games</span>
                   </span>
                   {isNow && (
                     <span className="chip micro chip-accent self-start font-semibold whitespace-nowrap">

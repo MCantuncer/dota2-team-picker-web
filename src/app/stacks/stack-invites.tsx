@@ -53,7 +53,7 @@ export function FriendInvites({
         <Icon name="users" />
         Friends
       </h3>
-      <p className="text-sm text-subtle">They get the invite on the site and accept it there.</p>
+      <p className="text-sm text-muted">They get the invite on the site and accept it there.</p>
       {list.length ? (
         <ul className="divide-y divide-line border-t border-line">
           {list.map((f) => {
@@ -64,7 +64,7 @@ export function FriendInvites({
                 <span className="min-w-0 flex-1 truncate font-medium text-fg">{f.name}</span>
                 {inviteId ? (
                   <>
-                    <span className="text-xs text-subtle">Waiting</span>
+                    <span className="text-xs text-muted">Waiting</span>
                     <button onClick={() => cancel(f, inviteId)} disabled={busy === f.id} className="btn btn-secondary btn-sm">
                       Cancel
                     </button>
@@ -96,7 +96,7 @@ export function NewPlayers() {
         <Icon name="userPlus" />
         Not on the Site Yet
       </h3>
-      <p className="text-sm text-subtle">
+      <p className="text-sm text-muted">
         Send them your friend link. They sign in with Steam and add you, then you can invite them here.
       </p>
       <Link href="/friends" className="btn btn-secondary self-start">

@@ -100,7 +100,7 @@ export function CheckInCard({
                 {me ? `${me.name}, ${POSITION_NAMES[game.myPosition - 1]}` : POSITION_NAMES[game.myPosition - 1]}
                 {game.matchId && (
                   <>
-                    <span className="px-2 text-subtle">|</span>
+                    <span className="px-2 text-muted">|</span>
                     Match <span className="num text-fg">{game.matchId}</span>
                   </>
                 )}
@@ -225,7 +225,7 @@ function Question({ title, hint, children }: { title: string; hint?: string; chi
     <section aria-label={title} className="card flex flex-col gap-4 p-4">
       <h3 className="flex items-baseline gap-2">
         <span className="section-title">{title}</span>
-        {hint && <span className="text-sm text-subtle">{hint}</span>}
+        {hint && <span className="text-sm text-muted">{hint}</span>}
       </h3>
       {children}
     </section>

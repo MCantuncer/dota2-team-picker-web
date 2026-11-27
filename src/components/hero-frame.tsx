@@ -229,7 +229,7 @@ export function CutOutline({ width: w, height: h }: CutOutlineProps) {
 }
 
 /** The section mark: the logo frame and its lane, 16px, in the text colour (set it with a `text-*` class). */
-export function LaneMark({ className = "text-subtle" }: { className?: string }) {
+export function LaneMark({ className = "text-muted" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={`size-4 shrink-0 ${className}`} aria-hidden>
       <path

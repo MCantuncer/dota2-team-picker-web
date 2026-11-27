@@ -141,7 +141,7 @@ export function BuildPath({
                   <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight md:order-4 md:mb-2 md:min-h-[1.125rem] md:items-center md:self-auto">
                     {!rough && late !== undefined && <span className="text-warn">Late After {late}</span>}
                     {fork && (
-                      <span className="text-subtle">
+                      <span className="text-muted">
                         <span className="num">
                           {fork.onTime} of {fork.running}
                         </span>{" "}
@@ -149,7 +149,7 @@ export function BuildPath({
                       </span>
                     )}
                     {item === boots && build.bootsOr && (
-                      <span className="text-subtle">
+                      <span className="text-muted">
                         Or {build.bootsOr.name} at <span className="num">{build.bootsOr.minute}</span>
                       </span>
                     )}
@@ -202,7 +202,7 @@ function Kit({ title, label, stops, cardOf, heroName, icons }: Art & { title: st
         {stops.map((stop) => (
           <li key={stop.key} className="flex w-16 flex-col items-center gap-1 text-center">
             <ItemTile item={stop.item} card={cardOf(stop)} heroName={heroName} icons={icons} />
-            <span className="text-xs leading-tight text-subtle">{stop.item.name}</span>
+            <span className="text-xs leading-tight text-muted">{stop.item.name}</span>
           </li>
         ))}
       </ul>

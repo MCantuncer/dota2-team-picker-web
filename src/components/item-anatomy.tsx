@@ -67,7 +67,7 @@ function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?
         <span className="flex items-center gap-3.5">
           {cooldown !== undefined && (
             <span className="num flex items-center gap-1.5 text-sm font-medium text-muted">
-              <span className="text-subtle">
+              <span className="text-muted">
                 <Clock />
               </span>
               {cooldown}
@@ -90,7 +90,7 @@ function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?
         <dl className="mt-1 flex flex-wrap gap-x-7 gap-y-2">
           {spell.facts.map((f) => (
             <div key={f.label} className="flex flex-col gap-0.5">
-              <dt className="text-xs text-subtle">{f.label}</dt>
+              <dt className="text-xs text-muted">{f.label}</dt>
               <dd className="text-sm font-medium text-fg">{f.value}</dd>
             </div>
           ))}

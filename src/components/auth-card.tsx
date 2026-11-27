@@ -44,7 +44,7 @@ function LaneMap({ className }: { className: string }) {
       </svg>
       <Pin slug="puck" side="radiant" left="39%" top="48%" />
       <Pin slug="pudge" side="dire" left="52%" top="35%" />
-      <figcaption className="absolute inset-x-0 -bottom-9 text-center text-sm text-subtle">
+      <figcaption className="absolute inset-x-0 -bottom-9 text-center text-sm text-muted">
         Puck against Pudge in mid. Know the lane before it starts.
       </figcaption>
     </figure>

@@ -83,7 +83,7 @@ export function HeroList({
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-3 sm:hidden">
-        <span className="text-sm text-subtle">Sort</span>
+        <span className="text-sm text-muted">Sort</span>
         <div className="seg h-auto" role="group" aria-label="Sort">
           {SORTS.map((s) => (
             <button key={s.key} type="button" aria-pressed={sort === s.key} onClick={() => setSort(s.key)} className="seg-item min-h-9">
@@ -92,7 +92,7 @@ export function HeroList({
           ))}
         </div>
       </div>
-      <div className={`grid gap-x-3 px-3 text-sm text-subtle max-sm:hidden lg:gap-x-4 ${cols}`}>
+      <div className={`grid gap-x-3 px-3 text-sm text-muted max-sm:hidden lg:gap-x-4 ${cols}`}>
         <span />
         {SORTS.map((s) => (
           <button
@@ -132,18 +132,18 @@ export function HeroList({
                 <span className="flex items-center gap-2.5 max-sm:col-span-2">
                   <Bar value={r.pick} max={maxPick} />
                   <span className="num w-20 text-right sm:w-12">
-                    <span className="mr-1.5 text-xs font-normal text-subtle sm:hidden">Pick</span>
+                    <span className="mr-1.5 text-xs font-normal text-muted sm:hidden">Pick</span>
                     {r.pick.toFixed(1)}%
                   </span>
                 </span>
                 <span className="flex items-center gap-2.5 max-sm:col-span-2">
                   <Bar value={r.win} max={100} centered />
                   <span className="num w-20 text-right sm:w-12">
-                    <span className="mr-1.5 text-xs font-normal text-subtle sm:hidden">Win</span>
+                    <span className="mr-1.5 text-xs font-normal text-muted sm:hidden">Win</span>
                     {r.win.toFixed(1)}%
                   </span>
                 </span>
-                <span className={`num text-right max-sm:hidden ${delta === null ? "text-subtle" : delta >= 0 ? "text-radiant" : "text-dire"}`}>
+                <span className={`num text-right max-sm:hidden ${delta === null ? "text-muted" : delta >= 0 ? "text-radiant" : "text-dire"}`}>
                   {delta === null ? "New" : signed(delta)}
                 </span>
                 <span className="max-sm:col-start-3 max-sm:row-start-1">

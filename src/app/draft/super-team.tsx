@@ -161,7 +161,7 @@ function WhyTile({ tile: t, hero }: { tile: Tile; hero: PlanHeroOf }) {
     >
       <PairFrame a={t.a} b={t.b} icon={t.icon} isEnemy={t.isEnemy} hero={hero} />
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="micro text-subtle">{t.label}</span>
+        <span className="micro text-muted">{t.label}</span>
         {t.value && (
           <span className="text-xl leading-8 font-semibold tracking-tight text-fg tabular-nums">{t.value}</span>
         )}
