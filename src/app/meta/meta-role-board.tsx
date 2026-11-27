@@ -58,6 +58,12 @@ function RateLine({ h }: { h: RoleHero }) {
 }
 
 /**
+ * A row of the five columns: the portrait beside the name. Every row is as tall as a name on two lines ("Legion
+ * Commander"), so the rows of the five columns stay level whichever names they hold.
+ */
+const ROW = "xl:min-h-16 xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-center xl:gap-x-2.5";
+
+/**
  * The top four of each role in five columns: the leader big, the next three as rows. Below the widest screens
  * each role is a row of four tiles, two by two on a phone.
  */
@@ -102,7 +108,7 @@ export function MetaGlance({
                       type="button"
                       onClick={() => onSelect(h.rate.id)}
                       aria-label={`${hero.name}, ${h.rate.win.toFixed(1)}% win rate. Open ${hero.name}`}
-                      className={`grid w-full gap-1.5 rounded-lg text-left hover:brightness-125 ${row ? "xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-center xl:gap-x-2.5" : ""}`}
+                      className={`grid w-full gap-1.5 rounded-lg text-left hover:brightness-125 ${row ? ROW : ""}`}
                     >
                       <HeroPortrait portrait={hero.image} size={100} className={row ? ROW_CUT : ""} />
                       <span className="grid gap-0.5">

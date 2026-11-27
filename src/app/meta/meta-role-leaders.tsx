@@ -35,8 +35,9 @@ export function RoleTabs({ role, onChange }: { role: number; onChange: (role: nu
           aria-selected={role === p}
           tabIndex={role === p ? 0 : -1}
           onClick={() => onChange(p)}
-          // The chosen tab takes the Lane Cut, like a chosen button of the Lane Board's segmented control.
-          className={`grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep ${role === p ? CHOSEN_TAB : ""}`}
+          // The chosen tab takes the Lane Cut, like a chosen button of the Lane Board's segmented control. Six tiles in a
+          // row are narrowest on a tablet, where less side padding keeps "Hard Support" on one line like the others.
+          className={`grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base md:max-lg:px-1 text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep ${role === p ? CHOSEN_TAB : ""}`}
         >
           {p ? (
             <PositionIcon position={p} size={30} />
