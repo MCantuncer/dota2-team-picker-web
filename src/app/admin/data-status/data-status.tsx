@@ -63,7 +63,7 @@ export function JobCard({
         </div>
         <div className="flex items-center gap-4">
           <Bar done={progress.done} total={progress.total} label={title} />
-          <span className="num w-14 shrink-0 text-right text-2xl leading-none font-semibold tracking-tight text-fg">{percent(progress)}%</span>
+          <span className="num w-14 shrink-0 text-right text-xl leading-none font-semibold tracking-tight text-fg">{percent(progress)}%</span>
         </div>
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
@@ -150,7 +150,7 @@ export function PatchCard({ status, nowMs }: { status: PatchStatus; nowMs: numbe
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h2 className="section-title">Patch</h2>
         <p className="text-sm text-muted">
-          <span className="num text-2xl leading-none font-semibold tracking-tight text-fg">{newest.name}</span> Day {newest.day}
+          <span className="num text-xl leading-none font-semibold tracking-tight text-fg">{newest.name}</span> Day {newest.day}
         </p>
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">

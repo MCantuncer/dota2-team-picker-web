@@ -47,7 +47,7 @@ export function ThreatTiles({
                 <span className="micro text-subtle">{STEP_TEXT[t.step]}</span>
               </span>
               <span
-                className={`text-2xl font-semibold tracking-tight tabular-nums ${danger >= 53 ? "text-dire" : danger <= 47 ? "text-radiant" : "text-fg"}`}
+                className={`text-xl font-semibold tracking-tight tabular-nums ${danger >= 53 ? "text-dire" : danger <= 47 ? "text-radiant" : "text-fg"}`}
               >
                 {danger.toFixed(1)}%
               </span>

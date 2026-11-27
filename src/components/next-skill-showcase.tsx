@@ -117,7 +117,7 @@ export function NextSkillShowcase({ choice }: { choice: SkillChoice }) {
                   className="size-5.5 rounded-md"
                 />
                 <span>{o.name}</span>
-                <span className="num text-[0.8125rem]">{pct(o)}</span>
+                <span className="num text-sm">{pct(o)}</span>
               </li>
             ))}
           </ul>

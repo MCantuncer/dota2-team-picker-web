@@ -31,7 +31,7 @@ export function RoleTabs({ role, onChange }: { role: number; onChange: (role: nu
           aria-selected={role === p}
           tabIndex={role === p ? 0 : -1}
           onClick={() => onChange(p)}
-          className="grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-[0.9375rem] text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep"
+          className="grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep"
         >
           {p ? (
             <PositionIcon position={p} size={30} />
@@ -63,7 +63,7 @@ function DayLine({ rate, days }: { rate: HeroRate; days: MetaDay[] }) {
   const last = points.at(-1);
   return (
     <div className="col-span-3 grid gap-1">
-      <div className="flex justify-between text-[0.8125rem] text-subtle">
+      <div className="flex justify-between text-sm text-subtle">
         <span>Win Rate by Day</span>
         {points.length > 0 && last && (
           <span>
@@ -84,9 +84,9 @@ function DayLine({ rate, days }: { rate: HeroRate; days: MetaDay[] }) {
 function Stat({ label, value, delta, since }: { label: string; value: string; delta?: number | null; since?: string }) {
   return (
     <div className="grid min-w-0 content-start gap-px">
-      <dt className="text-[0.8125rem] leading-tight text-subtle">{label}</dt>
-      <dd className="text-[1.375rem] font-semibold leading-tight tabular-nums text-fg">{value}</dd>
-      {delta !== undefined && delta !== null && <span className={`text-[0.8125rem] tabular-nums ${delta >= 0 ? "text-radiant" : "text-dire"}`}>{`${signed(delta)} vs ${since}`}</span>}
+      <dt className="text-sm leading-tight text-subtle">{label}</dt>
+      <dd className="text-lg font-semibold leading-tight tabular-nums text-fg">{value}</dd>
+      {delta !== undefined && delta !== null && <span className={`text-sm tabular-nums ${delta >= 0 ? "text-radiant" : "text-dire"}`}>{`${signed(delta)} vs ${since}`}</span>}
     </div>
   );
 }
@@ -95,8 +95,8 @@ function Block({ title, note, children }: { title: string; note?: string; childr
   return (
     <div className="grid min-w-0 content-start gap-2.5 px-4 py-4 sm:px-[18px]">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h4 className="text-[0.9375rem] text-subtle">{title}</h4>
-        {note && <span className="text-[0.8125rem] text-subtle">{note}</span>}
+        <h4 className="text-base text-subtle">{title}</h4>
+        {note && <span className="text-sm text-subtle">{note}</span>}
       </div>
       {children}
     </div>
@@ -113,7 +113,7 @@ function PatchLines({ notes, count }: { notes: NonNullable<MetaExtras["patchNote
         const [glyph, color, label] = MARK[l.tone];
         return (
           <li key={l.ability + l.text} className="grid grid-cols-[14px_minmax(0,1fr)] gap-2 text-sm leading-[1.45] text-muted">
-            <span aria-label={label} className={`text-[11px] leading-5 ${color}`}>
+            <span aria-label={label} className={`text-xs leading-5 ${color}`}>
               {glyph}
             </span>
             <span>
@@ -155,7 +155,7 @@ function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: n
     <div className="grid gap-3">
       {!compact && early.length > 0 && (
         <div className="grid gap-1.5">
-          <span className="text-[0.8125rem] text-subtle">Early</span>
+          <span className="text-sm text-subtle">Early</span>
           <div className={row}>
             {early.map((e) => (
               <ItemTile key={e.id} id={e.id} art={art}>
@@ -166,7 +166,7 @@ function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: n
         </div>
       )}
       <div className="grid gap-1.5">
-        {!compact && <span className="text-[0.8125rem] text-subtle">{timed ? "Core, in the Order Bought" : "Core"}</span>}
+        {!compact && <span className="text-sm text-subtle">{timed ? "Core, in the Order Bought" : "Core"}</span>}
         <div className={row}>
           {core.slice(0, compact ? 4 : 6).map((c) => (
             <ItemTile key={c.id} id={c.id} art={art}>
@@ -197,8 +197,8 @@ function LosesTo({ hero, extras, heroes, onSelect }: { hero: number; extras: Met
               className="grid w-full gap-1 rounded-md text-left hover:brightness-125"
             >
               <Image src={enemy.image} alt="" width={160} height={90} className="aspect-video w-full rounded-md object-cover" />
-              <span className="text-[0.8125rem] leading-tight text-fg">{enemy.name}</span>
-              <span className="text-[0.8125rem] tabular-nums text-dire">{rate.toFixed(1)}%</span>
+              <span className="text-sm leading-tight text-fg">{enemy.name}</span>
+              <span className="text-sm tabular-nums text-dire">{rate.toFixed(1)}%</span>
             </button>
           </li>
         );
@@ -219,9 +219,9 @@ function CardTop({ hero, rank, tag, line, onSelect }: { hero: MetaHero; rank?: n
         )}
       </span>
       <span className="relative -mt-11 grid gap-1.5 px-4 pb-4 sm:px-[18px]">
-        <span className="text-2xl font-semibold leading-tight text-fg">{hero.name}</span>
+        <span className="text-xl font-semibold leading-tight text-fg">{hero.name}</span>
         <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm text-muted">
-          <span className={`rounded-md px-2.5 py-0.5 text-[0.8125rem] ring-1 ring-inset ${tag.tone}`}>{tag.text}</span>
+          <span className={`rounded-md px-2.5 py-0.5 text-sm ring-1 ring-inset ${tag.tone}`}>{tag.text}</span>
           {line}
         </span>
       </span>
@@ -327,7 +327,7 @@ export function DarkHorseCard({ h, ...p }: CardProps) {
 function CardKey() {
   const dot = (cls: string) => <i aria-hidden className={`inline-block size-2.5 rounded-[3px] ${cls}`} />;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-subtle" aria-hidden>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-subtle" aria-hidden>
       <span className="flex items-center gap-1.5">{dot("bg-radiant")}Buff</span>
       <span className="flex items-center gap-1.5">{dot("bg-dire")}Nerf</span>
       <span className="flex items-center gap-1.5">{dot("bg-accent")}Win Rate by Day</span>

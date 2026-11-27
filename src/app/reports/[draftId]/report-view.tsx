@@ -41,7 +41,7 @@ export function ReportView({
     <div className="flex flex-col gap-6">
       <header className={`flex flex-col gap-2 border-t-2 pt-5 ${facts.won ? "border-t-radiant" : "border-t-dire"}`}>
         <span className={`text-sm font-medium ${facts.won ? "text-radiant" : "text-dire"}`}>{facts.won ? "Won" : "Lost"}</span>
-        <p className="text-3xl font-semibold leading-9 tracking-[-0.02em] text-fg">{headline(facts)}</p>
+        <p className="text-xl font-semibold leading-9 tracking-[-0.02em] text-fg">{headline(facts)}</p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <p className="text-sm text-muted">
             You played {facts.side === "radiant" ? "Radiant" : "Dire"}. Match <span className="num text-fg">{facts.matchId}</span>

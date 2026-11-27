@@ -190,7 +190,7 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
               {t.icon && <Icon name={t.icon} />}
               {t.label}
             </dt>
-            <dd className={`num font-semibold text-fg ${t.icon ? "text-2xl" : "text-xl"}`}>{t.value}</dd>
+            <dd className={`num font-semibold text-fg ${t.icon ? "text-xl" : "text-lg"}`}>{t.value}</dd>
             {t.beat != null && (
               <dd className="flex flex-col gap-1">
                 <span className="relative h-1 rounded-full bg-line-strong">
@@ -244,11 +244,11 @@ function Lane({ lane }: { lane: NonNullable<GameDetail["lane"]> }) {
         {lane.lastHits !== null && (
           <div className="flex gap-6">
             <span className="flex flex-col">
-              <span className="num text-3xl font-semibold text-fg">{lane.lastHits}</span>
+              <span className="num text-xl font-semibold text-fg">{lane.lastHits}</span>
               <span className="text-xs text-subtle">Last Hits</span>
             </span>
             <span className="flex flex-col">
-              <span className="num text-3xl font-semibold text-fg">{lane.denies ?? 0}</span>
+              <span className="num text-xl font-semibold text-fg">{lane.denies ?? 0}</span>
               <span className="text-xs text-subtle">Denies</span>
             </span>
           </div>

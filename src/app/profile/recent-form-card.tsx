@@ -17,7 +17,7 @@ export function RecentFormCard({ form }: { form: RecentForm | null }) {
       {form ? (
         <>
           <span className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-2xl font-semibold tracking-[-0.02em] text-fg">
+            <span className="text-xl font-semibold tracking-[-0.02em] text-fg">
               Won {form.wins} of {form.results.length}
             </span>
             <span className="text-sm text-muted">your latest ranked and normal games</span>

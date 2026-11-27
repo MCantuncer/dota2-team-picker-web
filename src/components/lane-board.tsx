@@ -44,7 +44,7 @@ export function PlayerLine({ player, onClock = false }: { player: PlayerPlan; on
   if (!player.job && !fallbacks.length) return null;
   return (
     <div className="flex max-w-[62ch] flex-col gap-3">
-      {player.job && <p className="text-[0.9375rem] text-fg">{player.job}</p>}
+      {player.job && <p className="text-base text-fg">{player.job}</p>}
       {fallbacks.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <h4 className="text-sm font-medium text-muted">If It Goes Wrong</h4>
@@ -77,7 +77,7 @@ export function Versus({ heroId, position, side, heroName, icons }: Art & { hero
       <span className="flex flex-col gap-0.5">
         <b className="text-base font-semibold text-fg">{heroName(heroId)}</b>
         {position !== undefined && (
-          <span className={`flex items-center gap-1.5 text-[0.8125rem] text-muted ${enemy ? "justify-end" : ""}`}>
+          <span className={`flex items-center gap-1.5 text-sm text-muted ${enemy ? "justify-end" : ""}`}>
             {enemy && "Enemy"}
             <PositionLabel position={position} size={14} iconClassName={enemy ? "text-dire" : "text-radiant"} />
           </span>
@@ -99,15 +99,15 @@ export function PairBar({ pair, heroName }: { pair: PairLane; heroName: (id: num
       <div aria-hidden className="flex h-3 gap-0.5 overflow-hidden rounded-md">
         {parts.map((p) => (p.share > 0 ? <i key={p.key} className={`block ${p.bar}`} style={{ flex: p.share }} /> : null))}
       </div>
-      <dl className="grid grid-cols-3 gap-3 text-[0.8125rem] text-muted">
+      <dl className="grid grid-cols-3 gap-3 text-sm text-muted">
         {parts.map((p, i) => (
           <div key={p.key} className={`flex flex-col-reverse justify-end ${i === 1 ? "items-center text-center" : i === 2 ? "items-end text-right" : ""}`}>
             <dt>{p.label}</dt>
-            <dd className={`num text-xl font-semibold leading-tight tracking-[-0.02em] ${p.text}`}>{p.share}%</dd>
+            <dd className={`num text-lg font-semibold leading-tight tracking-[-0.02em] ${p.text}`}>{p.share}%</dd>
           </div>
         ))}
       </dl>
-      <figcaption className="text-[0.8125rem] text-subtle">
+      <figcaption className="text-sm text-subtle">
         <span className="num">{pair.games.toLocaleString("en-US")}</span> lanes of {heroName(pair.hero)} against {heroName(pair.enemy)}
       </figcaption>
     </figure>

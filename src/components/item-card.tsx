@@ -285,7 +285,7 @@ export function ItemCard({
           <span aria-hidden className="block h-19 w-26 shrink-0 rounded-lg bg-raised" />
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <h4 id={titleId} className="text-[1.375rem] leading-[1.625rem] font-semibold tracking-[-0.02em] text-fg">
+          <h4 id={titleId} className="text-lg leading-[1.625rem] font-semibold tracking-[-0.02em] text-fg">
             {name}
           </h4>
           {info?.cost ? (
@@ -360,7 +360,7 @@ function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFac
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="text-[0.9375rem] font-semibold text-fg">
+        <span className="text-base font-semibold text-fg">
           Done by <span className="num">{minute}</span>
           {/* Other numbers ride on the same line, quieter ("x2 Copies"), so no column stands alone under the bar. */}
           {facts.map((f) => (
@@ -371,7 +371,7 @@ function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFac
           ))}
         </span>
         {timing.late !== undefined && (
-          <span className="text-[0.8125rem] text-subtle">
+          <span className="text-sm text-subtle">
             Late after <span className="num font-semibold text-warn">{timing.late} min</span>
           </span>
         )}

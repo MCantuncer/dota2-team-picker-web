@@ -10,7 +10,7 @@ function Stat({ label, value, delta, note, since }: { label: string; value: stri
   return (
     <div className="grid min-w-0 content-start gap-0.5 rounded-lg bg-surface px-3 py-3 ring-1 ring-inset ring-line-strong sm:px-3.5">
       <span className="text-sm text-subtle">{label}</span>
-      <span className="text-xl font-semibold leading-tight tabular-nums text-fg sm:text-[1.75rem]">{value}</span>
+      <span className="text-lg font-semibold leading-tight tabular-nums text-fg sm:text-xl">{value}</span>
       {delta !== undefined && delta !== null ? (
         <span className={`text-xs sm:text-sm ${delta >= 0 ? "text-radiant" : "text-dire"}`}>{signed(delta)} vs {since}</span>
       ) : (
@@ -186,7 +186,7 @@ export function HeroCard({
           className="aspect-video w-full rounded-lg object-cover lg:row-span-2"
         />
         <div className="grid gap-3 lg:self-end">
-          <h2 className="text-[2rem] font-semibold leading-tight tracking-[-0.02em] text-fg">{hero.name}</h2>
+          <h2 className="text-2xl font-semibold leading-tight tracking-[-0.02em] text-fg">{hero.name}</h2>
           {rate.roles.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {rate.roles.map((p) => (

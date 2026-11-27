@@ -86,7 +86,7 @@ export function WhoHurtsYou({ player, heroName, icons }: Art & { player: PlayerP
   return (
     <section aria-labelledby="who-hurts-you" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <h3 id="who-hurts-you" className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">
+        <h3 id="who-hurts-you" className="text-lg font-semibold tracking-[-0.02em] text-fg">
           Who Hurts You
         </h3>
         <span className="text-sm text-muted">{"Each enemy's worst spell for you, and your answer"}</span>
@@ -150,7 +150,7 @@ function Tile({ row, note, answer, heroName, icons, cards }: Art & { row: Threat
       <div className={`flex min-w-0 flex-col items-start gap-1 ${cards.head}`}>
         {lane && <span className="chip h-6 bg-dire-tint px-2 text-xs font-medium text-dire shadow-none">{lane.laneSure ? "In Your Lane" : "In Your Lane, Guessed"}</span>}
         <b className="text-base font-semibold text-fg">{title}</b>
-        <span className="text-[0.8125rem] text-muted">
+        <span className="text-sm text-muted">
           {row.enemies.map((e) => heroName(e.heroId)).join(", ")}
           {kinds.length > 0 && ` · ${kinds.join(", ")}`}
         </span>

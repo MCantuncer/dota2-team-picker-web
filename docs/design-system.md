@@ -71,18 +71,21 @@ tracking (-0.02em). Never `uppercase`, never wide tracking. All numbers use tabu
 
 | Style | Class | Use |
 |---|---|---|
-| Display 64/68 (48 on phones) | `text-5xl sm:text-6xl font-semibold` | Landing headline, the recommended hero name |
-| Page title 40/44 | `.page-title` | One per page |
+| Display 40/40 | `text-2xl font-semibold` | The one big number or name of a page: the best pick's score, the landing headline |
+| Page title 28/32 | `.page-title` | One per page |
+| Stat 28/32 | `text-xl font-semibold` | A score or count that leads its card |
 | Section title 20/24 | `.section-title` | Panel and column headings |
-| Hero name 20/24 | `text-xl font-semibold` | Hero name on a suggestion, member name |
-| Body 15/22 | (default) | Default text, reasons |
-| Small 13/18 | `text-sm` | Meta lines, helper text, form labels |
-| Label 13/16 | `.label-caps` | Field and group labels (never caps; the class name is historical) |
+| Hero name 20/26 | `text-lg font-semibold` | Hero name on a suggestion, member name |
+| Lead 16/24 | `text-base` | A card's opening line, large controls |
+| Body 14/21 | (default), `text-sm` | Default text, reasons, helper text, form labels, buttons and fields |
 | Number 14/20 | `.num` | Scores, win rates, counts |
-| Micro 12/16 | `.micro` | Key hints, position digits, badges, "+N" |
+| Label 12/16 | `.label-caps` | Field and group labels (never caps; the class name is historical) |
+| Micro 12/16 | `.micro`, `text-xs` | Key hints, position digits, badges, "+N" |
 
-Nothing below 12px. No arbitrary sizes (`text-[13px]`). No `font-mono`: digits use `.num` or `.micro`. Percentages have
-one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`).
+Six sizes and no others: 12, 14, 16, 20, 28 and 40 px, as `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl` and
+`text-2xl`. They are set in `globals.css`, which clears Tailwind's own sizes, so `text-3xl` and up set nothing. No
+arbitrary sizes (`text-[13px]`). `src/app/type-scale.test.ts` fails on a size outside the scale. No `font-mono`: digits
+use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed with a real minus sign (`+2.1`, `−3.4`).
 
 ## Spacing, radius, elevation
 

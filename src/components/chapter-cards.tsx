@@ -130,7 +130,7 @@ function ComboArt({
           ))}
         </div>
       )}
-      <p className="text-[0.9375rem] font-medium leading-snug text-fg">{combo.text}</p>
+      <p className="text-base font-medium leading-snug text-fg">{combo.text}</p>
       <div className="flex items-center gap-2">
         {combo.heroes.map((hero) => {
           const portrait = portraitOf(hero);
@@ -145,7 +145,7 @@ function ActionLine({ action, portraitOf, names }: { action: string; portraitOf:
   return (
     <div className="flex items-start gap-2.5">
       <FaceStack icons={namedHeroes(action, names).flatMap((name) => portraitOf(name) ?? [])} />
-      <p className="min-w-0 text-[0.9375rem] font-medium leading-snug text-fg">{action}</p>
+      <p className="min-w-0 text-base font-medium leading-snug text-fg">{action}</p>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function RaceWindow({ chapter, story }: { chapter: Chapter; story: Story }) {
         </span>
         <span className="num">{to}</span>
       </div>
-      <p className="text-[0.9375rem] leading-snug text-fg">
+      <p className="text-base leading-snug text-fg">
         {fight ? (
           <>
             Your team is ready at <b className="num">{race.ready}</b>. {theirs.hero}&apos;s {theirs.item} comes at <b className="num">{ITEM_MINUTE(theirs)}</b>.
@@ -202,7 +202,7 @@ function RoshanReady({
         <Image src={CDN + AEGIS} alt="" width={66} height={48} className="h-12 w-[4.125rem] rounded-md object-cover" />
         <div className="flex flex-col gap-0.5">
           {/* "From 20 Min" read as one moment (Can, 2026-11-22): the window opens at that minute and stays open. */}
-          <b className="text-xl font-semibold tracking-[-0.01em] text-fg">{roshan.minute} Min or Later</b>
+          <b className="text-lg font-semibold tracking-[-0.01em] text-fg">{roshan.minute} Min or Later</b>
           {last && <span className="text-sm text-muted">Three key items done by&nbsp;{last.minute}</span>}
         </div>
       </div>

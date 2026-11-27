@@ -949,7 +949,7 @@ export function DraftBoard({
             controls line up. */}
         <div className="grid gap-x-8 gap-y-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:gap-y-4">
           <div className="flex items-center gap-3 lg:col-start-1 lg:row-start-1">
-            <h1 className="text-2xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
+            <h1 className="text-xl leading-8 font-semibold tracking-tight text-fg">Draft</h1>
             {party && <span className="chip chip-accent micro">Party</span>}
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:justify-end lg:self-start">

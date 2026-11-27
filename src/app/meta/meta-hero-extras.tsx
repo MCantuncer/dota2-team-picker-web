@@ -93,7 +93,7 @@ function BuildRows({ build, art }: { build: NonNullable<MetaExtras["builds"][str
                 <li key={it.id} className="grid grid-cols-[3.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-1.5">
                   <ItemIcon id={it.id} art={art} className="h-[2.375rem] w-[3.25rem]" />
                   <span className="grid gap-1.5">
-                    <span className="text-[0.9375rem] font-semibold leading-tight text-fg">{art[it.id]?.name ?? "Item"}</span>
+                    <span className="text-base font-semibold leading-tight text-fg">{art[it.id]?.name ?? "Item"}</span>
                     <span className="relative h-1.5 rounded-full bg-line-strong">
                       <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${it.share}%` }} />
                     </span>

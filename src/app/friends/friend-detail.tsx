@@ -79,7 +79,7 @@ export function FriendDetail({
       <div className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-4">
         <Avatar account={{ name: f.name, avatarUrl: f.avatarUrl, detail: null, steamLinked: false }} size={64} />
         <div className="flex min-w-0 flex-col gap-1.5">
-          <h2 id="friend-name" className="text-2xl font-bold leading-tight text-fg">
+          <h2 id="friend-name" className="text-xl font-bold leading-tight text-fg">
             {f.name}
           </h2>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -109,14 +109,14 @@ export function FriendDetail({
       <dl className="grid grid-cols-2 border-b border-line md:grid-cols-[0.9fr_1.2fr_1.9fr_1fr] [&>div]:min-w-0 [&>div]:border-line [&>div]:px-5 [&>div]:py-3.5">
         <div className="border-r max-md:border-b">
           <dt className="text-xs text-subtle">Games Together</dt>
-          <dd className="mt-1 text-2xl font-semibold text-fg">
-            <span className="num text-2xl">{f.together.games}</span> <span className="text-xs font-normal text-subtle">60 days</span>
+          <dd className="mt-1 text-xl font-semibold text-fg">
+            <span className="num text-xl">{f.together.games}</span> <span className="text-xs font-normal text-subtle">60 days</span>
           </dd>
         </div>
         <div className="max-md:border-b md:border-r">
           <dt className="text-xs text-subtle">Won Together</dt>
-          <dd className="mt-1 text-2xl font-semibold">
-            {won === null ? <span className="text-subtle">No games</span> : <span className={`num text-2xl ${won >= 55 ? "text-radiant" : "text-fg"}`}>{won}%</span>}
+          <dd className="mt-1 text-xl font-semibold">
+            {won === null ? <span className="text-subtle">No games</span> : <span className={`num text-xl ${won >= 55 ? "text-radiant" : "text-fg"}`}>{won}%</span>}
             {without !== null && <span className="ml-1.5 text-xs font-normal text-subtle">{without}% without</span>}
             {won !== null && (
               <span aria-hidden className="relative mt-2 block h-1.5 rounded-full bg-line-hover">

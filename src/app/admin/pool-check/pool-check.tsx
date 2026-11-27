@@ -21,7 +21,7 @@ export function CheckStrip({ check }: { check: PoolCheck }) {
             className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 border-line px-5 py-4 not-first:border-t md:flex-col md:items-start md:justify-start md:gap-1 md:px-6 md:py-5 md:not-first:border-l md:not-first:border-t-0"
           >
             <dt className="text-sm font-medium text-muted">{c.label}</dt>
-            <dd className={`num text-3xl leading-tight tracking-tight md:text-4xl ${c.tone}`}>{c.value}</dd>
+            <dd className={`num text-xl leading-tight tracking-tight md:text-2xl ${c.tone}`}>{c.value}</dd>
             <dd className="w-full text-xs text-subtle">{c.detail}</dd>
           </div>
         ))}

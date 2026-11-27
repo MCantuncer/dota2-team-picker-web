@@ -144,12 +144,33 @@
   --font-heading: var(--font-geist-sans), sans-serif;
 }
 
+/*
+ * The type scale: six sizes and no others (12, 14, 16, 20, 28, 40). Tailwind's own sizes are cleared, so a class
+ * outside the scale (`text-3xl`, `text-[13px]`) sets nothing, and src/app/type-scale.test.ts fails on one.
+ * See docs/design-system.md, "Type".
+ */
+@theme {
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2rem;
+  --text-2xl: 2.5rem;
+  --text-2xl--line-height: 2.5rem;
+}
+
 body {
   background: var(--bg);
   color: var(--muted);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  font-size: 0.9375rem;
-  line-height: 1.375rem;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -201,7 +222,7 @@ body {
     border-radius: 0.5rem;
     padding-inline: 1.125rem;
     font-family: var(--font-geist-sans), sans-serif;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     line-height: 1;
     font-weight: 500;
     white-space: nowrap;
@@ -229,20 +250,18 @@ body {
   .btn-sm {
     height: 2rem;
     padding-inline: 0.75rem;
-    font-size: 0.8125rem;
   }
   /* Rounded actions on a card, such as Add to Top 3 on a hero's card. Taller on phones. */
   .pill {
     height: 2.5rem;
     border-radius: 0.75rem;
     padding-inline: 0.875rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
   }
   @media (width < 40rem) {
     .pill {
       height: 2.875rem;
-      font-size: 0.875rem;
     }
   }
   /* Flat copper: the one main action on a screen. */
@@ -306,7 +325,7 @@ body {
     border-radius: 0.5rem;
     background: var(--surface);
     padding-inline: 0.875rem;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     color: var(--fg);
     box-shadow: inset 0 0 0 1px var(--line-strong);
     transition: box-shadow var(--dur-fast);
@@ -486,8 +505,8 @@ body {
 
   .page-title {
     font-family: var(--font-geist-sans), sans-serif;
-    font-size: 2.5rem;
-    line-height: 1.1;
+    font-size: 1.75rem;
+    line-height: 2rem;
     font-weight: 600;
     letter-spacing: -0.03em;
     color: var(--fg);
@@ -496,7 +515,7 @@ body {
   /* A small label over a group ("Your best pick for Pos 1"). Sentence case; the name is historical. */
   .label-caps {
     font-family: var(--font-geist-sans), sans-serif;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--subtle);
   }
@@ -653,7 +672,6 @@ body {
     min-width: 2rem;
     justify-content: center;
     padding-inline: 0.375rem;
-    font-size: 0.8125rem;
   }
 
   /*
@@ -698,7 +716,6 @@ body {
   .lane-seg-sm > button {
     height: 1.625rem;
     padding-inline: 0.75rem;
-    font-size: 0.8125rem;
   }
   .lane-seg > button.is-radiant[aria-pressed="true"] {
     color: var(--radiant);

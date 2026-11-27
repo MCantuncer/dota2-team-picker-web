@@ -34,7 +34,7 @@ export function StackEmpty({ hero, create }: { hero?: string; create: ReactNode 
           <Icon name="layers" />
           New Stack
         </span>
-        <h2 id="no-stack" className="page-title sm:text-5xl">
+        <h2 id="no-stack" className="page-title">
           Build Your Stack
         </h2>
         <p className="max-w-md text-muted">The players you queue with, saved once. Draft for all five together.</p>

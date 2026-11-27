@@ -119,7 +119,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
       <section aria-labelledby={`${id}-order`} className="flex min-w-0 flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <div className="flex flex-col gap-1">
-            <h3 id={`${id}-order`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
+            <h3 id={`${id}-order`} className="text-lg font-semibold tracking-[-0.02em] text-fg">
               Skill Order
             </h3>
             {plan.agreement ? <AgreementMeter agreement={plan.agreement} /> : <p className="text-sm text-muted">{plan.buildReason}</p>}
@@ -140,7 +140,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
 
       <section aria-labelledby={`${id}-talents`} className="flex max-w-[46rem] flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-          <h3 id={`${id}-talents`} className="text-[1.75rem] font-semibold tracking-[-0.02em] text-fg">
+          <h3 id={`${id}-talents`} className="text-lg font-semibold tracking-[-0.02em] text-fg">
             Talents
           </h3>
           <TreeLegend newPairs={tiers.some((t) => t.newPair)} />
@@ -239,7 +239,7 @@ function BuffArrow({ className = "" }: { className?: string }) {
 /** What the tree's marks mean: the arrow, the lit tile and (when a tier is new) the New tag. */
 function TreeLegend({ newPairs }: { newPairs: boolean }) {
   return (
-    <ul aria-label="Talent tree key" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-subtle">
+    <ul aria-label="Talent tree key" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-subtle">
       <li className="flex items-center gap-1.5">
         <BuffArrow className="size-3.5" />
         Buffs This Skill
@@ -265,7 +265,7 @@ function LevelNode({ tier, on }: { tier: TalentTier; on: boolean }) {
     <span className="relative flex items-center self-stretch">
       <span aria-hidden className={`h-0.5 flex-1 ${side === "left" ? "bg-accent" : ""}`} />
       <span
-        className={`num flex size-10 shrink-0 items-center justify-center rounded-full border-2 bg-bg text-[0.9375rem] font-semibold sm:size-11 ${
+        className={`num flex size-10 shrink-0 items-center justify-center rounded-full border-2 bg-bg text-base font-semibold sm:size-11 ${
           tier.pick === null ? "border-dashed border-line-hover text-muted" : side ? "border-accent text-accent" : "border-line-strong text-fg"
         } ${on ? "bg-accent-tint" : ""}`}
       >

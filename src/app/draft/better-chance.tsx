@@ -107,7 +107,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
             <span className="micro text-subtle">Teams With Drafts Like This Won</span>
             <span
               data-testid="edge-now"
-              className={`text-4xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
+              className={`text-2xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
             >
               {rangeText(range)}
             </span>
@@ -124,7 +124,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
               <span className="flex items-baseline gap-2">
                 <span
                   data-testid="edge-now"
-                  className={`text-4xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
+                  className={`text-2xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
                 >
                   {show(now)}
                 </span>
@@ -136,7 +136,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
                 <span className="micro text-subtle">With the Plan</span>
                 <span
                   data-testid="edge-plan"
-                  className="text-2xl leading-10 font-semibold tracking-tight text-muted tabular-nums"
+                  className="text-xl leading-10 font-semibold tracking-tight text-muted tabular-nums"
                 >
                   {show(plan)}
                 </span>
@@ -238,7 +238,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
                   <span className="micro">{label}</span>
                 </span>
                 <span
-                  className={`text-xl font-semibold tracking-tight tabular-nums ${color ? text[color] : "text-fg"}`}
+                  className={`text-lg font-semibold tracking-tight tabular-nums ${color ? text[color] : "text-fg"}`}
                 >
                   {signed(part)}
                 </span>
