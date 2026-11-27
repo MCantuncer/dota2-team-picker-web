@@ -7,12 +7,10 @@ import { FaceStack } from "./face-stack";
 import { HeroFace } from "./hero-frame";
 import { ItemBand, ItemButton } from "./item-card";
 import { ABILITY_CDN } from "./skill-track";
-import { itemArt } from "./story-timeline";
+import { AEGIS, itemArt } from "./story-timeline";
 import { namedHeroes } from "@/lib/story-axis";
 
 const CDN = "https://cdn.cloudflare.steamstatic.com";
-/** Roshan's Aegis is not a shop item, so its art is not in the snapshot's items. */
-const AEGIS = "/apps/dota2/images/dota_react/items/aegis.png";
 
 export interface ChapterCardsProps {
   story: Story;

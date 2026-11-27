@@ -128,8 +128,7 @@ describe("GameStoryPanel", () => {
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
     const timeline = screen.getByRole("group", { name: /^Item timings:/ });
     expect(timeline).toHaveAccessibleName("Item timings: our Hero 1 Black King Bar at 17, their Hero 8 Blink Dagger at 19, ready to fight at 17.");
-    expect(within(timeline).getByText("10 to 20 min")).toBeInTheDocument();
-    expect(within(timeline).getByText("Ready to fight")).toBeInTheDocument();
+    expect(within(timeline).getByText("Ready to Fight")).toBeInTheDocument();
     expect(screen.getByText("Group up and take towers before Hero 8's Blink Dagger.")).toBeInTheDocument();
   });
 
@@ -151,7 +150,9 @@ describe("GameStoryPanel", () => {
     renderPanel(1);
     await user.click(screen.getByRole("tab", { name: "Game Story" }));
     expect(screen.queryByText("0 to 10 min")).toBeNull();
-    expect(screen.getAllByText("10 to 20 min").length).toBeGreaterThan(0);
+    // The ruler zooms to the items, and it never reaches back into the lane.
+    const minutes = within(screen.getByRole("group", { name: /^Item timings:/ })).getAllByText(/^\d+$/).map((n) => Number(n.textContent));
+    expect(Math.min(...minutes)).toBeGreaterThanOrEqual(10);
   });
 
   it("shows each tab's answer on the tab itself, and names it for screen readers", () => {
