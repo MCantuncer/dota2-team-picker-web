@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { etaText, type FillStatus, percent, type Progress } from "@/lib/admin-data-status";
+import { etaText, type FillStatus, type PatchStatus, percent, type Progress } from "@/lib/admin-data-status";
 import { joinedText } from "@/lib/admin-players";
 import { POSITION_NAMES } from "@/lib/party";
 
@@ -125,5 +125,68 @@ export function FillLanes({ fill, heroes }: { fill: FillStatus; heroes: Map<numb
         </section>
       ))}
     </div>
+  );
+}
+
+const RELEASE_FROM = { valve: "Valve's Patch List", "game-files": "Game Files" } as const;
+
+/**
+ * The patch the data is on and how the sources keep up with it: a quiet line when all is well, else one row per
+ * source failing (red) or still catching up with the patch (amber).
+ */
+export function PatchCard({ status, nowMs }: { status: PatchStatus; nowMs: number }) {
+  const newest = status.release ?? status.patch;
+  const failing = status.problems.filter((p) => p.state === "fail").length;
+  const behind = status.problems.length - failing;
+  const counts = [`${status.working} working`, ...(behind ? [`${behind} catching up`] : []), ...(failing ? [`${failing} failing`] : [])];
+  const cells = [
+    { label: "Patch", value: `${status.patch.name}, Day ${status.patch.day}` },
+    { label: "Newest Release", value: status.release ? `${status.release.name}, Day ${status.release.day}` : "No letter patch yet" },
+    { label: "Found In", value: status.release ? RELEASE_FROM[status.release.from] : "OpenDota" },
+    { label: "Sources", value: counts.join(", ") },
+  ];
+  return (
+    <section aria-label="Patch" className="card flex flex-col gap-6 p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 className="section-title">Patch</h2>
+        <p className="text-sm text-muted">
+          <span className="num text-2xl leading-none font-semibold tracking-tight text-fg">{newest.name}</span> Day {newest.day}
+        </p>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
+        {cells.map((c) => (
+          <div key={c.label} className="flex min-w-0 flex-col gap-1">
+            <dt className="text-xs font-medium text-subtle">{c.label}</dt>
+            <dd className="text-sm text-fg">{c.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="border-t border-line pt-6">
+        {status.problems.length === 0 ? (
+          <p className="flex items-center gap-3 text-sm text-muted">
+            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-radiant" />
+            Every source is working and caught up with the patch.
+          </p>
+        ) : (
+          <ul aria-label="Sources Needing Attention" className="flex flex-col divide-y divide-line">
+            {status.problems.map((p) => (
+              <li key={p.name} className="flex flex-col gap-1.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-6">
+                <span className="flex min-w-0 items-center gap-3 sm:w-72 sm:shrink-0">
+                  <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${p.state === "fail" ? "bg-dire" : "bg-warn"}`} />
+                  <span className="text-sm font-medium break-words text-fg">{p.name}</span>
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5 pl-5.5 sm:pl-0">
+                  <span className={`text-sm ${p.state === "fail" ? "text-dire" : "text-warn"}`}>
+                    {p.state === "fail" ? "Failing" : "Catching Up"}
+                    {p.since ? ` Since ${joinedText(p.since, nowMs)}` : ""}
+                  </span>
+                  {p.note && <span className="text-xs break-words text-subtle">{p.note.charAt(0).toUpperCase() + p.note.slice(1)}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

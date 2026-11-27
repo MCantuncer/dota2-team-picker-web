@@ -4,6 +4,7 @@ import {
   fillStatus,
   HEROES_PER_POSITION,
   nextRun,
+  patchStatus,
   patchVersion,
   percent,
   readFill,
@@ -112,5 +113,42 @@ describe("nextRun", () => {
   it("finds the next scheduled time, tomorrow after the last one", () => {
     expect(new Date(nextRun(NOW, REFRESH_HOURS, REFRESH_MINUTE)).toISOString()).toBe("2026-11-11T14:17:00.000Z");
     expect(new Date(nextRun(Date.parse("2026-11-11T14:17:00Z"), REFRESH_HOURS, REFRESH_MINUTE)).toISOString()).toBe("2026-11-12T02:17:00.000Z");
+  });
+});
+
+describe("patchStatus", () => {
+  const patch = { name: "7.42", startedAt: "2026-11-03T12:00:00Z" } as NonNullable<Snapshot["patch"]>;
+
+  it("is null before the hero data has a patch", () => {
+    expect(patchStatus({}, NOW)).toBeNull();
+  });
+
+  it("counts days from each start and shows a letter patch as the newest release", () => {
+    const status = patchStatus({ patch: { ...patch, release: { name: "7.42a", startedAt: "2026-11-09T18:00:00Z", from: "valve" } } }, NOW);
+    expect(status?.patch).toEqual({ name: "7.42", day: 9 });
+    expect(status?.release).toEqual({ name: "7.42a", day: 2, from: "valve" });
+  });
+
+  it("leaves the release out when it is the big patch itself", () => {
+    const status = patchStatus({ patch: { ...patch, release: { name: "7.42", startedAt: patch.startedAt, from: "game-files" } } }, NOW);
+    expect(status?.release).toBeUndefined();
+  });
+
+  it("lists failing sources first, then the ones catching up, each by name", () => {
+    const status = patchStatus(
+      {
+        patch,
+        sourceHealth: {
+          "STRATZ Patch List": { state: "lag", at: "2026-11-11T10:17:00Z", since: "2026-11-03T14:17:00Z", note: "Doesn't list 7.42 yet" },
+          "STRATZ Matchups": { state: "fail", at: "2026-11-11T10:17:00Z", since: "2026-11-10T10:17:00Z" },
+          "OpenDota Constants": { state: "lag", at: "2026-11-11T10:17:00Z" },
+          "Game Facts": { state: "ok", at: "2026-11-11T10:17:00Z" },
+        },
+      },
+      NOW,
+    );
+    expect(status?.working).toBe(1);
+    expect(status?.problems.map((p) => `${p.state} ${p.name}`)).toEqual(["fail STRATZ Matchups", "lag OpenDota Constants", "lag STRATZ Patch List"]);
+    expect(status?.problems[2].note).toBe("Doesn't list 7.42 yet");
   });
 });

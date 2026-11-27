@@ -195,3 +195,37 @@ export const REFRESH_MINUTE = 17;
 export const BACKFILL_HOURS = Array.from({ length: 24 }, (_, h) => h);
 /** Minute past the hour of the matchup backfill. */
 export const BACKFILL_MINUTE = 40;
+
+/** A day count of a patch or release: 1 on the day it came out. */
+const patchDay = (startedAt: string, nowMs: number) => Math.floor((nowMs - Date.parse(startedAt)) / (24 * 60 * 60 * 1000)) + 1;
+
+/** One data source that is not fine: failing (the refresh kept its last data) or still catching up with the patch. */
+export interface SourceProblem {
+  name: string;
+  state: "fail" | "lag";
+  since?: string;
+  note?: string;
+}
+
+/** The patch the data is on, the game's newest release, and how the data sources are keeping up with it. */
+export interface PatchStatus {
+  patch: { name: string; day: number };
+  /** The newest release when it is a letter patch of the same patch (7.42a), else undefined. */
+  release?: { name: string; day: number; from: "valve" | "game-files" };
+  working: number;
+  /** Failing first, then catching up, each by name. */
+  problems: SourceProblem[];
+}
+
+/** The Patch card's numbers, or null when the hero data has no patch yet. */
+export function patchStatus(snapshot: Pick<Snapshot, "patch" | "sourceHealth">, nowMs: number): PatchStatus | null {
+  const p = snapshot.patch;
+  if (!p || Number.isNaN(Date.parse(p.startedAt))) return null;
+  const r = p.release;
+  const release = r && r.name !== p.name && !Number.isNaN(Date.parse(r.startedAt)) ? { name: r.name, day: patchDay(r.startedAt, nowMs), from: r.from } : undefined;
+  const sources = Object.entries(snapshot.sourceHealth ?? {});
+  const problems: SourceProblem[] = sources
+    .flatMap(([name, s]) => (s.state === "ok" ? [] : [{ name, state: s.state, since: s.since, note: s.note }]))
+    .sort((a, b) => (a.state === b.state ? a.name.localeCompare(b.name) : a.state === "fail" ? -1 : 1));
+  return { patch: { name: p.name, day: patchDay(p.startedAt, nowMs) }, release, working: sources.length - problems.length, problems };
+}
