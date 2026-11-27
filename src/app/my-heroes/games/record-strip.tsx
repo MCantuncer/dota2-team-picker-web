@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { HeroFace } from "@/components/hero-frame";
 import { type PlayerRecord, RECORD_DAYS, winPercent } from "@/lib/player-record";
 import type { HeroArt } from "./previous-games";
 
@@ -32,7 +32,7 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
         {top ? (
           <>
             <dd className="flex min-w-0 items-center gap-2.5">
-              {hero?.image && <Image src={hero.image} alt="" width={48} height={27} className="rounded-md object-cover" />}
+              {hero?.image && <HeroFace portrait={hero.image} name={hero.name} size={28} isDecorative />}
               <span className="truncate text-base font-semibold text-fg">{hero?.name ?? `Hero ${top.id}`}</span>
             </dd>
             <dd className="num text-xs text-muted">

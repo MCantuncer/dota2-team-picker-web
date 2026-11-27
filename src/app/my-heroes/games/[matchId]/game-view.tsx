@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { HeroFace } from "@/components/hero-frame";
 import { HeroRender } from "@/components/hero-render";
 import { Icon, type IconName } from "@/components/icon";
 import { PageTour } from "@/components/page-tour";
@@ -326,8 +326,8 @@ function Deaths({
               aria-label={`${deaths.length} deaths on the game clock, ${early} of them before 10 minutes`}
               className="relative h-16"
             >
-              <span className="absolute left-0 top-[34px] h-2 rounded-l-full bg-dire-tint" style={{ width: at(LANE_END_S) }} />
-              <span className="absolute inset-x-0 top-[37px] h-0.5 bg-line-strong" />
+              <span className="absolute left-0 top-10 h-2 rounded-l-full bg-dire-tint" style={{ width: at(LANE_END_S) }} />
+              <span className="absolute inset-x-0 top-[43px] h-0.5 bg-line-strong" />
               {deaths.map((d, i) => {
                 const art = d.killerHeroId ? heroes.get(d.killerHeroId) : undefined;
                 const isEarly = d.time < LANE_END_S;
@@ -337,16 +337,11 @@ function Deaths({
                     className="absolute top-0 flex -translate-x-1/2 flex-col items-center"
                     style={{ left: at(d.time) }}
                   >
+                    {/* A red edge marks a death before 10 minutes, like the stem under it. */}
                     {art?.image ? (
-                      <Image
-                        src={art.image}
-                        alt=""
-                        width={40}
-                        height={22}
-                        className={`h-[22px] w-10 rounded-md object-cover ${isEarly ? "outline-2 outline-dire" : ""}`}
-                      />
+                      <HeroFace portrait={art.image} name={art.name} size={28} isEnemy={isEarly} isDecorative />
                     ) : (
-                      <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-muted">
+                      <span className="flex size-7 items-center justify-center rounded-md bg-raised text-muted">
                         <Icon name="skull" />
                       </span>
                     )}
@@ -371,13 +366,13 @@ function Deaths({
               return (
                 <li
                   key={i}
-                  className="grid grid-cols-[3.5rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1 py-2.5 sm:grid-cols-[3.5rem_2.5rem_minmax(0,1fr)_auto]"
+                  className="grid grid-cols-[3.5rem_1.75rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1 py-2.5 sm:grid-cols-[3.5rem_1.75rem_minmax(0,1fr)_auto]"
                 >
                   <span className="num text-sm font-semibold text-fg">{clock(d.time)}</span>
                   {art?.image ? (
-                    <Image src={art.image} alt="" width={40} height={22} className="h-[22px] w-10 rounded-md object-cover" />
+                    <HeroFace portrait={art.image} name={art.name} size={28} isDecorative />
                   ) : (
-                    <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-muted">
+                    <span className="flex size-7 items-center justify-center rounded-md bg-raised text-muted">
                       <Icon name="skull" />
                     </span>
                   )}

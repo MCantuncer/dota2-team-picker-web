@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { POSITION_NAMES } from "@/lib/draft";
@@ -8,6 +7,7 @@ import { type DueCheckIn, PICKS_FEELS, type PicksFeel } from "@/lib/game-check-i
 import { isPoolCardHidden } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/client";
 import { ANSWER_TILE, PICK_ICONS } from "./answer-tile";
+import { HeroPortrait } from "./hero-frame";
 import { Icon } from "./icon";
 
 /** How long the thank-you note stays before the card goes. */
@@ -91,7 +91,9 @@ export function CheckInPrompt({
     >
       <div className="flex items-center gap-3">
         {heroImage && (
-          <Image src={heroImage} alt="" width={96} height={54} className="h-13.5 w-24 shrink-0 rounded-md object-cover" />
+          <span className="block w-24 shrink-0">
+            <HeroPortrait portrait={heroImage} size={54} />
+          </span>
         )}
         <div className="flex min-w-0 grow flex-col gap-1">
           <h2

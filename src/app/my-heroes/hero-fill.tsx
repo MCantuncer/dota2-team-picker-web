@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { HeroFace } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import {
   againAt,
@@ -208,17 +208,9 @@ export function FillCard({ added }: { added: FillAdded }) {
             Remove any you don&apos;t want.
           </p>
         </div>
-        <div aria-hidden className="hidden shrink-0 pl-2.5 sm:flex">
+        <div aria-hidden className="hidden shrink-0 gap-1.5 sm:flex">
           {added.heroes.map((h) => (
-            <Image
-              key={h.id}
-              src={h.image}
-              alt=""
-              width={64}
-              height={36}
-              unoptimized
-              className="-ml-2.5 h-9 w-16 rounded-md object-cover ring-2 ring-surface"
-            />
+            <HeroFace key={h.id} portrait={h.image} name={h.name} size={36} isDecorative />
           ))}
         </div>
         <button type="button" onClick={hide} aria-label="Hide this card" className="btn btn-icon">
