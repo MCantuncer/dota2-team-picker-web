@@ -1,49 +1,35 @@
-import type { Chapter, Story } from "@/lib/engine/story";
+import type { Story } from "@/lib/engine/story";
 
-/** Minutes drawn for the last chapter, which has no end. */
-const LAST_SPAN = 15;
-/** The closest two item marks in one row may sit, in percent of the axis, so their art doesn't overlap. */
-export const MIN_GAP = 12;
+/** Minutes the ruler shows before the first mark and after the last, so no mark sits on the edge. */
+export const RULER_PAD = { before: 3, after: 2 } as const;
+/** The fewest minutes the ruler spans, so one lone item still reads as a moment in a game. */
+const MIN_SPAN = 8;
 
 /**
- * Where a minute sits on the Story's axis, in percent: each chapter gets an equal column and its minutes
- * spread evenly across it. A minute before the first chapter sits at 0, one in a gap between chapters at
- * the next chapter's start, and one past the last chapter's drawn span at 100.
+ * The minutes the Race Rows ruler covers (Can's pick on the timeline board, 2026-11-27): zoomed to where the
+ * marks are, from three minutes before the first (never before the lane ends) to two after the last. Every mark
+ * then sits on its real minute, so items that land close together are drawn close but never stacked.
  */
-export function axisPosition(chapters: Chapter[], minute: number): number {
-  if (!chapters.length) return 0;
-  const width = 100 / chapters.length;
-  for (const [i, c] of chapters.entries()) {
-    if (minute < c.from) return i * width;
-    const end = c.to ?? c.from + LAST_SPAN;
-    if (c.to === null || minute < c.to) return Math.min(100, i * width + (width * (minute - c.from)) / (end - c.from));
-  }
-  return 100;
+export function rulerSpan(minutes: number[]): { from: number; to: number } {
+  if (!minutes.length) return { from: LANE_END, to: LANE_END + MIN_SPAN };
+  const from = Math.max(LANE_END, Math.min(...minutes) - RULER_PAD.before);
+  const to = Math.max(from + MIN_SPAN, Math.max(...minutes) + RULER_PAD.after);
+  return { from, to };
 }
 
+/** Where a minute sits on a ruler, as a fraction from 0 (its first minute) to 1 (its last), kept inside. */
+export const rulerAt = (span: { from: number; to: number }, minute: number) =>
+  Math.min(1, Math.max(0, (minute - span.from) / (span.to - span.from)));
+
 /**
- * Marks in one row, in order, pushed apart so their art doesn't overlap and kept whole inside the axis.
- * When too many share a row for the usual gap, the gap shrinks so they still fit.
+ * How many minutes apart the ruler's numbers are, so they never touch: every minute on a short ruler, every
+ * second or fifth on a long one. A phone's ruler is narrower, so it gets a coarser step.
  */
-export function spreadMarks<T extends { left: number }>(marks: T[]): T[] {
-  const sorted = [...marks].sort((a, b) => a.left - b.left);
-  if (!sorted.length) return sorted;
-  const lo = MIN_GAP / 2;
-  const hi = 100 - MIN_GAP / 2;
-  const gap = sorted.length > 1 ? Math.min(MIN_GAP, (hi - lo) / (sorted.length - 1)) : MIN_GAP;
-  const out = sorted.map((m) => ({ ...m, left: Math.min(hi, Math.max(lo, m.left)) }));
-  for (let i = 1; i < out.length; i++) {
-    const prev = out[i - 1]!; // i >= 1, so out[i - 1] exists.
-    const cur = out[i]!; // i < out.length.
-    if (cur.left - prev.left < gap) out[i] = { ...cur, left: prev.left + gap };
-  }
-  // Marks pushed past the right edge step back left, keeping the gap.
-  for (let i = out.length - 1; i >= 0; i--) {
-    const cur = out[i]!; // i is in range.
-    const limit = hi - (out.length - 1 - i) * gap;
-    if (cur.left > limit) out[i] = { ...cur, left: limit };
-  }
-  return out;
+export function rulerStep(span: { from: number; to: number }, phone = false): number {
+  const minutes = span.to - span.from;
+  // A phone's step is always a multiple of the wide step, so the numbers it keeps are ones the wide ruler shows.
+  if (phone) return minutes <= 8 ? 1 : minutes <= 16 ? 2 : minutes <= 30 ? 4 : 10;
+  return minutes <= 16 ? 1 : minutes <= 30 ? 2 : 5;
 }
 
 /** The heroes an action names, in the order it names them, matched as whole names. */
