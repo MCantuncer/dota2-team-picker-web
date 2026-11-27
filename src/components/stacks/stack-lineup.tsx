@@ -3,16 +3,9 @@ import type { ReactNode } from "react";
 import { Avatar } from "@/components/account-menu";
 import { PositionIcon } from "@/components/position-icon";
 import { RankMedal } from "@/components/rank-medal";
+import { POSITION_NAMES } from "@/lib/party";
 import { rankName } from "@/lib/rank";
 import type { Seat } from "@/lib/stack-seats";
-
-export const POSITION_NAMES: Record<number, string> = {
-  1: "Safe Lane",
-  2: "Mid Lane",
-  3: "Off Lane",
-  4: "Soft Support",
-  5: "Hard Support",
-};
 
 /** A hero's name and 16:9 portrait; the portrait is missing when the hero list couldn't be loaded. */
 export interface HeroArt {
