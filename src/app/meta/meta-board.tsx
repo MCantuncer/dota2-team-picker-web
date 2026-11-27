@@ -3,9 +3,10 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PageStage } from "@/components/page-stage";
 import { RankRow, type RankChoice } from "@/components/rank-row";
+import { VerdictHead } from "@/components/verdict-head";
 import { POSITION_NAMES } from "@/lib/draft";
 import { banRates, heroRates, movers, previousPatch, RANK_GROUPS, roleItems, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
-import { metaVerdict } from "@/lib/meta-verdict";
+import { glanceTitle, metaVerdict, moversTitle, newItemsTitle, roleItemsTitle } from "@/lib/meta-verdict";
 import { HeroCard } from "./meta-hero-card";
 import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
@@ -28,15 +29,11 @@ const ROLE_BUILDERS = ["Carries", "Mids", "Offlaners", "Soft Supports", "Hard Su
 /** Movers shown per side. */
 const MOVERS = 6;
 
-export function Panel({ title, note, actions, small, children }: { title: string; note?: string; actions?: ReactNode; small?: boolean; children: ReactNode }) {
-  const Heading = small ? "h3" : "h2";
+export function Panel({ title, note, facts, finding, actions, small, children }: { title: string; note?: string; facts?: string; finding?: string | null; actions?: ReactNode; small?: boolean; children: ReactNode }) {
   return (
     <section className="grid min-w-0 content-start gap-5 rounded-xl border border-line bg-surface p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
-        <div className="grid gap-1">
-          <Heading className={small ? "text-lg font-semibold text-fg" : "section-title"}>{title}</Heading>
-          {note && <p className="text-sm text-muted">{note}</p>}
-        </div>
+        <VerdictHead label={title} facts={facts} finding={finding} note={note} small={small} />
         {actions}
       </div>
       {children}
@@ -111,7 +108,8 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
   const group = RANK_GROUPS.find((g) => g.slice === slice);
   // The opening names the chosen role's leader, or the strongest of the five role leaders.
   const tops = lead ? lead.leaders.slice(0, 1).map((h) => ({ role, rate: h.rate })) : (glance ?? []).flatMap((l, i) => (l[0] ? [{ role: i + 1, rate: l[0].rate }] : []));
-  const verdict = metaVerdict(tops, lead ? lead.pool.map((h) => h.rate) : rates, (id) => byId.get(id)?.name ?? `Hero ${id}`, before);
+  const heroName = (id: number) => byId.get(id)?.name ?? `Hero ${id}`;
+  const verdict = metaVerdict(tops, lead ? lead.pool.map((h) => h.rate) : rates, heroName, before);
   const mapNote = [
     `${rates.length} heroes`,
     `${games.toLocaleString("en-US")} games`,
@@ -181,7 +179,12 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
 
       {glance && (
         <section className="grid gap-[18px]">
-          <SectionHead title="The Meta at a Glance" note="The top four of each role, ranked by wins above even. Pick a role for its leaders, builds and counters." />
+          <SectionHead
+            title="The Meta at a Glance"
+            facts="Top four of each role by wins above even"
+            finding={glanceTitle(tops.map((t) => t.rate), before)}
+            note="Pick a role for its leaders, builds and counters."
+          />
           <MetaGlance roles={glance} heroes={byId} onRole={setRole} onSelect={select} />
         </section>
       )}
@@ -189,7 +192,8 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
       <section className="grid gap-[18px]">
         <SectionHead
           title="Winners and Losers"
-          note={`${role ? `${POSITION_NAMES[role - 1]}, ${measure === "win" ? "win" : "pick"}` : `Every role, ${measure === "win" ? "win" : "pick"}`} rate change from the last week of ${oldPatch} to ${meta.patch.name} so far, in points.`}
+          facts={`${measure === "win" ? "Win" : "Pick"} rate, ${role ? POSITION_NAMES[role - 1] : "every role"}, last week of ${oldPatch} to ${meta.patch.name} so far`}
+          finding={moversTitle(moved.up[0], moved.down[0], measure, heroName)}
         >
           {measureSwitch}
         </SectionHead>
@@ -207,7 +211,8 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
         <section className="grid gap-[18px]">
           <SectionHead
             title={`What ${ROLE_BUILDERS[role - 1]} Build`}
-            note={`Share of ${items.games.toLocaleString("en-US")} ${POSITION_NAMES[role - 1]} games of ${meta.patch.name} that ended with each item. Bars run to 50%.`}
+            facts={`${items.games.toLocaleString("en-US")} ${POSITION_NAMES[role - 1]} games of ${meta.patch.name}, bars run to 50%`}
+            finding={roleItemsTitle(items.items[0] && { name: art[items.items[0].id]?.name ?? "Item", share: items.items[0].share }, role)}
           />
           <RoleItems items={items.items} art={art} />
         </section>
@@ -231,7 +236,8 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
       {meta.extras && meta.extras.newItems.length > 0 && (
         <Panel
           title={`New Items in ${meta.patch.name}`}
-          note={`Games of this patch that ended with each, and the heroes holding it most. Every rank and role, ${meta.extras.buildGames.toLocaleString("en-US")} games so far.`}
+          facts={`Every rank and role, ${meta.extras.buildGames.toLocaleString("en-US")} games so far, with each item's top heroes`}
+          finding={newItemsTitle(meta.extras.newItems.flatMap((n) => (art[n.id] ? [{ name: art[n.id]!.name, games: n.games }] : [])))}
         >
           <NewItems extras={meta.extras} art={art} heroes={byId} onSelect={select} />
         </Panel>

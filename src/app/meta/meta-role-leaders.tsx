@@ -5,6 +5,7 @@ import { HeroPortrait } from "@/components/hero-frame";
 import type { KeyboardEvent } from "react";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
+import { VerdictHead } from "@/components/verdict-head";
 import { POSITION_NAMES } from "@/lib/draft";
 import { buildPath, change, dayLabel, signed, type HeroRate, type MetaDay, type MetaExtras, type RoleHero } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
@@ -342,13 +343,11 @@ function CardKey() {
   );
 }
 
-export function SectionHead({ title, note, children }: { title: string; note: string; children?: React.ReactNode }) {
+/** A section's head: its label, or its finding as the title when `finding` is given (see VerdictHead). */
+export function SectionHead({ title, note, facts, finding, children }: { title: string; note?: string; facts?: string; finding?: string | null; children?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-      <div className="grid max-w-3xl gap-1">
-        <h2 className="section-title">{title}</h2>
-        <p className="text-sm text-muted">{note}</p>
-      </div>
+      <VerdictHead label={title} facts={facts} finding={finding} note={note} />
       {children}
     </div>
   );
