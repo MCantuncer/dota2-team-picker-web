@@ -162,6 +162,19 @@ Two controls, the same on every page:
   shows its name. On a phone the names are left out ("All", "Planner") and the medals share the row's width. Never a
   select, never a second style. `lockedWhy` locks the row and says why in the tooltip.
 
+## Panel Titles
+
+A panel or section that has a finding says it as its title, `VerdictHead` (`src/components/verdict-head.tsx`):
+
+- **Label line**: what the panel is, 14px semibold muted, with its facts beside it in a few words (the measure, the
+  role, the dates, how many games).
+- **Title**: the finding, calculated from the panel's data on every load and Title Cased ("Monkey King Is Up 5.5
+  Points, Outworld Devourer Down 6.1"). It is the heading; the label is read before it for screen readers. It
+  follows the page's filters. One rule per panel, with tests (`src/lib/meta-verdict.ts`).
+- **No finding**: when the data cannot back one (too few games, a tie), the label is the title and the facts sit
+  under it. Never a typed slogan.
+- **Tools keep labels**: a panel the user works in (Meta Map, Every Hero, How We Test) has no finding to state.
+
 ## Links
 
 No underlined or plain text links anywhere. Every link is a designed control, picked by what it does:
