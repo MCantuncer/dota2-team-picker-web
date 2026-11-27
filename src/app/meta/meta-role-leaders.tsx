@@ -39,7 +39,7 @@ export function RoleTabs({ role, onChange }: { role: number; onChange: (role: nu
           ) : (
             <span aria-hidden className="grid size-[30px] grid-cols-2 gap-[3px]">
               {[0, 1, 2, 3].map((i) => (
-                <i key={i} className="rounded-[2px] bg-current" />
+                <i key={i} className="rounded-xs bg-current" />
               ))}
             </span>
           )}
@@ -326,7 +326,7 @@ export function DarkHorseCard({ h, ...p }: CardProps) {
 
 /** What the marks and lines on the cards mean. */
 function CardKey() {
-  const dot = (cls: string) => <i aria-hidden className={`inline-block size-2.5 rounded-[3px] ${cls}`} />;
+  const dot = (cls: string) => <i aria-hidden className={`inline-block size-2.5 rounded-xs ${cls}`} />;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" aria-hidden>
       <span className="flex items-center gap-1.5">{dot("bg-radiant")}Buff</span>

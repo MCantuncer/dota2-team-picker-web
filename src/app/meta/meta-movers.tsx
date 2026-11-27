@@ -58,7 +58,7 @@ export function MoverRows({
                     <span key={t} className="absolute -inset-y-0.5 w-px bg-line-hover" style={{ left: `${at(t)}%` }} />
                   ))}
                   <span
-                    className={`absolute top-px h-3 rounded-[3px] ${rising ? "bg-radiant" : "bg-dire"}`}
+                    className={`absolute top-px h-3 rounded-xs ${rising ? "bg-radiant" : "bg-dire"}`}
                     style={{ left: `${Math.min(at(0), at(delta))}%`, width: `${Math.abs(at(delta) - at(0))}%` }}
                   />
                 </span>

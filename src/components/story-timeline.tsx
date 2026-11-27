@@ -154,7 +154,7 @@ function Group({
   return (
     <>
       <div className="col-span-2 col-start-1 flex h-8 items-end gap-2 whitespace-nowrap text-xs text-muted" style={{ gridRowStart: row }}>
-        <i className={`mb-0.5 block h-3.5 w-1 rounded-sm ${color}`} />
+        <i className={`mb-0.5 block h-3.5 w-1 rounded-xs ${color}`} />
         {title}
       </div>
       {spikes.map((spike, i) => {
@@ -174,7 +174,7 @@ function Group({
               <span className={`whitespace-nowrap text-sm text-fg ${portrait ? "max-sm:sr-only" : "max-sm:text-xs"}`}>{spike.hero}</span>
             </div>
             <div className="relative col-start-2 h-[3.25rem] rounded-lg bg-raised" style={{ gridRowStart: row + 1 + i }}>
-              <span className={`absolute left-0 top-1/2 -mt-0.5 h-1 rounded-sm opacity-40 ${color}`} style={{ width: at(x) }} />
+              <span className={`absolute left-0 top-1/2 -mt-0.5 h-1 rounded-xs opacity-40 ${color}`} style={{ width: at(x) }} />
               {/* The item's centre sits on its minute; the minute reads beside it. */}
               {/* Above the lines that run down through the rows, so the art stays whole. */}
               <span
@@ -265,7 +265,7 @@ function RoshanLine({ minute, share }: { minute: number; share: (m: number) => n
       <span
         className={`absolute -top-[3.75rem] flex items-center gap-1.5 whitespace-nowrap border-dashed border-line-control text-xs leading-5 text-muted ${x >= FLIP_AT ? "right-0 flex-row-reverse border-r pr-2" : "-left-px border-l pl-2"}`}
       >
-        <Image src={ITEM_CDN + AEGIS} alt="" width={22} height={16} className="h-4 w-[1.375rem] rounded-sm object-cover" />
+        <Image src={ITEM_CDN + AEGIS} alt="" width={22} height={16} className="h-4 w-[1.375rem] rounded-md object-cover" />
         Roshan {minute}+
       </span>
     </div>

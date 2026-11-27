@@ -21,7 +21,7 @@ export function FeedbackView({ feedback }: { feedback: PlayerFeedback }) {
           </h2>
           <ul className="flex flex-wrap gap-2">
             {feedback.improved.map((i) => (
-              <li key={i.kind} className="flex items-center gap-1.5 rounded-sm bg-radiant-tint px-2.5 py-1 text-sm text-fg">
+              <li key={i.kind} className="flex items-center gap-1.5 rounded-md bg-radiant-tint px-2.5 py-1 text-sm text-fg">
                 <span className="text-radiant">
                   <Icon name="trendUp" />
                 </span>

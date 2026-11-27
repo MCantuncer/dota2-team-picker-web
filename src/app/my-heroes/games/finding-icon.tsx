@@ -22,7 +22,7 @@ export function FindingIcon({ kind, tone, tile = false }: { kind: FindingKind | 
   return (
     <span
       aria-hidden
-      className={`flex size-10 shrink-0 items-center justify-center rounded-sm ${
+      className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
         tone === "strength" ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"
       }`}
     >

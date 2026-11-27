@@ -122,14 +122,14 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
     <li className="flex items-start gap-4 py-3.5 first:pt-0 last:pb-0">
       <span className="relative shrink-0">
         {info?.image ? (
-          <Image src={info.image} alt="" width={80} height={45} className="h-11.25 w-20 rounded-xs object-cover" />
+          <Image src={info.image} alt="" width={80} height={45} className="h-11.25 w-20 rounded-md object-cover" />
         ) : (
-          <span className="micro flex h-11.25 w-20 items-center justify-center rounded-xs bg-surface p-1 text-center text-muted">
+          <span className="micro flex h-11.25 w-20 items-center justify-center rounded-md bg-surface p-1 text-center text-muted">
             {heroName}
           </span>
         )}
         {isMine && (
-          <span className="absolute right-0.5 top-0.5 rounded-xs bg-radiant px-1 text-xs font-semibold leading-4 text-bg">You</span>
+          <span className="absolute right-0.5 top-0.5 rounded-md bg-radiant px-1 text-xs font-semibold leading-4 text-bg">You</span>
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -156,7 +156,7 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
           <ul aria-label={`${heroName} key items`} className="flex flex-wrap gap-2">
             {items.map((item) => (
               <li key={`${item.name}-${item.minute}`} className="flex items-center gap-1 text-xs text-muted">
-                <Image src={item.image} alt={item.name} title={item.name} width={32} height={24} className="h-6 w-8 rounded-xs" />
+                <Image src={item.image} alt={item.name} title={item.name} width={32} height={24} className="h-6 w-8 rounded-md" />
                 <span className="num">{item.minute}m</span>
               </li>
             ))}

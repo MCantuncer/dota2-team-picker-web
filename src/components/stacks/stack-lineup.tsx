@@ -93,7 +93,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
           </>
         )}
         {you && (
-          <span className="absolute right-1.5 top-1.5 rounded-xs bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">
+          <span className="absolute right-1.5 top-1.5 rounded-md bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">
             You
           </span>
         )}
@@ -154,7 +154,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
                   width={40}
                   height={22}
                   unoptimized
-                  className="h-5.5 w-10 rounded-xs object-cover"
+                  className="h-5.5 w-10 rounded-md object-cover"
                 />
               ) : (
                 <span key={id} className="micro text-muted">

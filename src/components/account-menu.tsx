@@ -60,7 +60,7 @@ const ADMIN_PAGES = [
 ];
 
 const itemClass =
-  "flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-sm outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none";
+  "flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none";
 
 /**
  * The avatar button in the header corner and its dropdown (the WAI-ARIA menu button pattern):

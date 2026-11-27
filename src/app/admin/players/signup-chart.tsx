@@ -15,7 +15,7 @@ export function SignupChart({ stats }: { stats: SignupStats }) {
             {/* Empty days keep the line but drop the "0", so the days with signups stand out. */}
             <span className={`num mb-1 h-4 text-xs ${i === last ? "text-fg" : "text-muted"}`}>{d.n > 0 ? d.n : ""}</span>
             <span
-              className={`w-full max-w-10 rounded-t-sm ${i === last ? "bg-accent" : "bg-accent-deep"}`}
+              className={`w-full max-w-10 rounded-t-xs ${i === last ? "bg-accent" : "bg-accent-deep"}`}
               style={{ height: `${(d.n / most) * 100}%`, minHeight: 3 }}
             />
             <span className={`num absolute -bottom-6 text-xs ${i === last ? "font-medium text-fg" : "font-normal text-muted"}`}>

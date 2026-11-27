@@ -59,7 +59,7 @@ export function Slips({ slips, heroes, nowMs }: { slips: PoolSlip[]; heroes: { i
                 const hero = byId.get(id);
                 return (
                   <span key={id} className="inline-flex items-center gap-1.5 font-medium text-fg">
-                    {hero && <Image src={hero.icon} alt="" width={24} height={24} unoptimized className="h-6 w-6 shrink-0 rounded-sm bg-raised" />}
+                    {hero && <Image src={hero.icon} alt="" width={24} height={24} unoptimized className="h-6 w-6 shrink-0 rounded-md bg-raised" />}
                     {hero?.name ?? `Hero ${id}`}
                   </span>
                 );

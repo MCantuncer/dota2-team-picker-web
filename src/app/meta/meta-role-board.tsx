@@ -32,14 +32,14 @@ export function RoleItems({ items, art }: { items: { id: number; share: number; 
                 )}
                 <span className="self-end text-sm font-medium leading-tight text-fg">{it?.name ?? "Item"}</span>
                 <span className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-2 self-start text-right text-sm tabular-nums text-muted">
-                  <span className="relative h-1.5 rounded-[3px] bg-line-strong">
-                    <span className="absolute inset-y-0 left-0 rounded-[3px] bg-accent" style={{ width: `${Math.min(100, (i.share / ITEM_BAR_TOP) * 100)}%` }} />
+                  <span className="relative h-1.5 rounded-xs bg-line-strong">
+                    <span className="absolute inset-y-0 left-0 rounded-xs bg-accent" style={{ width: `${Math.min(100, (i.share / ITEM_BAR_TOP) * 100)}%` }} />
                   </span>
                   {Math.round(i.share)}%
                 </span>
               </span>
             </ItemButton>
-            {i.isNew && <span className="pointer-events-none absolute -top-2 right-2.5 rounded-[4px] bg-accent px-1.5 text-xs font-semibold leading-[1.0625rem] text-on-accent">New</span>}
+            {i.isNew && <span className="pointer-events-none absolute -top-2 right-2.5 rounded-md bg-accent px-1.5 text-xs font-semibold leading-[1.0625rem] text-on-accent">New</span>}
           </li>
         );
       })}
