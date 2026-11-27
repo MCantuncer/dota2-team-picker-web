@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { OpenDotaButton } from "@/components/external-button";
+import { HeroPortrait } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import type { Facts, HeroCard } from "@/lib/report-facts";
 import { draftLine, headline, heroNotes } from "@/lib/report-text";
@@ -122,14 +123,16 @@ function HeroRow({ hero, art, isMine }: { hero: HeroCard; art: ReportArt; isMine
     <li className="flex items-start gap-4 py-3.5 first:pt-0 last:pb-0">
       <span className="relative shrink-0">
         {info?.image ? (
-          <Image src={info.image} alt="" width={80} height={45} className="h-11.25 w-20 rounded-md object-cover" />
+          <span className="block w-20">
+            <HeroPortrait portrait={info.image} size={45} className={isMine ? "lane-cut-you" : ""} />
+          </span>
         ) : (
           <span className="micro flex h-11.25 w-20 items-center justify-center rounded-md bg-surface p-1 text-center text-muted">
             {heroName}
           </span>
         )}
         {isMine && (
-          <span className="absolute right-0.5 top-0.5 rounded-md bg-radiant px-1 text-xs font-semibold leading-4 text-bg">You</span>
+          <span className="absolute top-0.5 left-0.5 rounded-md bg-radiant px-1 text-xs font-semibold leading-4 text-bg">You</span>
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">

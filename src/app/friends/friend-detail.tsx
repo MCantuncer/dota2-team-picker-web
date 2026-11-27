@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Avatar } from "@/components/account-menu";
+import { HeroFace, HeroPortrait } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/draft";
@@ -186,7 +187,7 @@ export function FriendDetail({
 
 function Face({ art }: { art: HeroArt }) {
   return art.image ? (
-    <Image src={art.image} alt={art.name} title={art.name} width={48} height={27} className="h-6.75 w-12 rounded-md object-cover" />
+    <HeroFace portrait={art.image} name={art.name} size={28} />
   ) : (
     <span className="text-sm text-fg">{art.name}</span>
   );
@@ -195,9 +196,13 @@ function Face({ art }: { art: HeroArt }) {
 function HeroLine({ art, who }: { art: HeroArt; who: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      {art.image && <Image src={art.image} alt="" width={64} height={36} className="h-8 w-14 shrink-0 rounded-md object-cover sm:h-9 sm:w-16" />}
+      {art.image && (
+        <span className="block w-14 shrink-0 sm:w-16">
+          <HeroPortrait portrait={art.image} size={36} />
+        </span>
+      )}
       <span className="flex min-w-0 flex-col">
-        <span className="truncate text-sm font-semibold text-fg">{art.name}</span>
+        <span className="text-sm font-semibold text-fg">{art.name}</span>
         <span className="truncate text-xs text-muted">{who}</span>
       </span>
     </span>
