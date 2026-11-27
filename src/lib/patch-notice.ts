@@ -13,7 +13,12 @@ export interface PatchNotice {
   patchGames: number;
   /** Share of the pick counts from this patch, 0 to 1; the rest is older games from STRATZ. */
   share: number;
+  /** The newest letter patch of it (7.42a) and its day, when there is one; its games count extra in the picks. */
+  release?: { name: string; day: number };
 }
+
+const dayOf = (startedMs: number, now: Date) =>
+  Math.max(1, Math.floor((now.getTime() - startedMs) / DAY_MS) + 1);
 
 /**
  * The New Patch notice for the Draft page, while the hero data counts a young patch's own games next to older
@@ -36,10 +41,15 @@ export function patchNotice(
   for (const row of Object.values(data.matchups))
     for (const gw of Object.values(row)) rows += gw.games;
   const total = rows / PAIR_ROWS_PER_GAME;
+  const r = data.patch.release;
+  const releaseStart = Date.parse(r?.startedAt ?? "");
   return {
     name: data.patch.name,
-    day: Math.max(1, Math.floor((now.getTime() - started) / DAY_MS) + 1),
+    day: dayOf(started, now),
     patchGames,
     share: total > 0 ? Math.min(1, patchGames / total) : 1,
+    ...(r && r.name !== data.patch.name && Number.isFinite(releaseStart)
+      ? { release: { name: r.name, day: dayOf(releaseStart, now) } }
+      : {}),
   };
 }
