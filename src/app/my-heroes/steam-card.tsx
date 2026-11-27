@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useActionState } from "react";
 import { ExternalButton } from "@/components/external-button";
+import { HeroPortrait } from "@/components/hero-frame";
 import { SteamLogo } from "@/components/steam-button";
 import { syncSteam } from "./actions";
 
@@ -57,7 +58,10 @@ export function SteamCard({ account }: { account: SteamAccount }) {
           <ul className="flex gap-2" aria-label="Most played heroes">
             {account.topHeroes.map((h) => (
               <li key={h.id} className="flex flex-col items-center gap-0.5" title={`${h.name}: ${h.games} games`}>
-                <Image src={h.image} alt={h.name} width={56} height={32} className="rounded-md ring-1 ring-line-strong" />
+                <span className="block w-14">
+                  <HeroPortrait portrait={h.image} size={32} />
+                </span>
+                <span className="sr-only">{h.name}: </span>
                 <span className="text-xs text-muted">{h.games}</span>
               </li>
             ))}

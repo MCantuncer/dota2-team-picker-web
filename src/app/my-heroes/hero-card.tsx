@@ -1,11 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { type ReactNode, useEffect, useRef } from "react";
-import { renderOf } from "@/components/hero-render";
+import { HeroArt, HeroPortrait, type HeroArtPlacement } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { POSITION_NAMES } from "@/lib/draft";
 import { daysAgo, type FillNumbers } from "@/lib/top-heroes";
+
+/** The render at the top of the phone sheets: every hero's face at the same point, a little above the middle. */
+const SHEET_ART: HeroArtPlacement = { width: 330, at: [0.5, 0.42] };
 
 interface CardHero {
   id: number;
@@ -133,18 +135,14 @@ export function HeroCard({
           if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) onClose();
         }}
       >
-        <div className="relative h-36 bg-surface sm:hidden">
-          <Image
-            src={renderOf(hero.image) ?? hero.image}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover object-[center_25%]"
-          />
+        <div className="hero-stage relative h-36 overflow-hidden sm:hidden">
+          <HeroArt heroId={hero.id} portrait={hero.image} placement={SHEET_ART} />
         </div>
         <div className="flex flex-col gap-3 p-4 sm:p-3.5">
           <div className="flex items-center gap-3">
-            <Image src={hero.image} alt="" width={96} height={54} unoptimized className="rounded-md max-sm:hidden" />
+            <span className="block w-24 shrink-0 max-sm:hidden">
+              <HeroPortrait portrait={hero.image} size={54} />
+            </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-lg font-semibold text-fg sm:text-base">{hero.name}</span>
               {subtitle}
@@ -223,13 +221,15 @@ export function ReplaceTopCard({
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-full w-full max-w-xl flex-col gap-4 overflow-y-auto md:max-w-4xl rounded-xl bg-raised shadow-lg ring-1 ring-inset ring-line-hover max-sm:p-0 sm:p-5"
       >
-        <div className="relative h-28 bg-surface sm:hidden">
-          <Image src={renderOf(hero.image) ?? hero.image} alt="" fill sizes="100vw" className="object-cover object-[center_25%]" />
+        <div className="hero-stage relative h-28 overflow-hidden sm:hidden">
+          <HeroArt heroId={hero.id} portrait={hero.image} placement={SHEET_ART} />
         </div>
         <div className="flex items-center gap-3.5 max-sm:px-4">
-          <Image src={hero.image} alt="" width={112} height={63} unoptimized className="rounded-md max-sm:hidden" />
+          <span className="block w-28 shrink-0 max-sm:hidden">
+            <HeroPortrait portrait={hero.image} size={63} />
+          </span>
           <div className="flex flex-col gap-1">
-            <h2 id="replace-title" className="text-lg font-semibold text-fg">
+            <h2 id="replace-title" className="text-lg font-semibold text-balance text-fg">
               Add {hero.name} to Your Top 5
             </h2>
             <p id="replace-line" className="text-sm text-muted">
@@ -245,10 +245,12 @@ export function ReplaceTopCard({
                 disabled={busy}
                 onClick={() => onReplace(h.id)}
                 aria-label={`Replace ${h.name} with ${hero.name}`}
-                className="group flex w-full items-center gap-3 overflow-hidden rounded-xl bg-surface text-left ring-1 ring-inset ring-line-hover transition-shadow hover:ring-accent disabled:opacity-55 md:flex-col md:items-stretch md:gap-0"
+                className="group flex w-full items-center gap-3 rounded-xl bg-surface p-2 text-left ring-1 ring-inset ring-line-hover transition-shadow hover:ring-accent disabled:opacity-55 md:flex-col md:items-stretch md:gap-2.5 md:p-2.5"
               >
-                <Image src={h.image} alt="" width={256} height={144} unoptimized className="aspect-video w-26 shrink-0 object-cover md:w-full" />
-                <span className="flex flex-1 items-center justify-between gap-2 pr-3 md:flex-col md:items-stretch md:p-2.5">
+                <span className="block w-26 shrink-0 md:w-full">
+                  <HeroPortrait portrait={h.image} size={90} className="max-md:[--cut:9px]! max-md:[--cut-radius:6px]!" />
+                </span>
+                <span className="flex flex-1 items-center justify-between gap-2 pr-1 md:flex-col md:items-stretch md:pr-0">
                   <span className="text-sm font-semibold leading-tight text-fg md:min-h-[2.5em]">{h.name}</span>
                   <span className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-tint px-3 text-sm font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
                     <SwapIcon />
