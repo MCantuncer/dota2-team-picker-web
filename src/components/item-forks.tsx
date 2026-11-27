@@ -48,7 +48,7 @@ function Split({ fork }: { fork: ItemFork }) {
               <li key={s.itemId} className="flex min-w-0 items-center gap-2.5">
                 {s.img ? (
                   <ItemButton
-                    card={{ itemId: s.itemId, name: s.name, img: s.img, band: <ItemBand facts={[{ value: `${s.minute} min`, label: "Usual" }, { value: String(s.games), label: "Wins" }]} /> }}
+                    card={{ itemId: s.itemId, name: s.name, img: s.img, band: <ItemBand timing={{ minute: s.minute }} facts={[{ value: String(s.games), label: "Wins" }]} /> }}
                     className="shrink-0"
                   >
                     <ItemArt img={s.img} />

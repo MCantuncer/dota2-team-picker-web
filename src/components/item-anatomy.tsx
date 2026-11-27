@@ -6,23 +6,27 @@ const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 
 /*
  * The parts of the Build Path's item tooltip (Can 2026-11-15: "Dota like", option D on the item panel mockup), laid
- * out the way the game's own tooltip is: the bonuses as "+5 Strength" lines, each spell in a box with its cooldown and
- * mana cost, its text and its number lines, then the parts the item is built from with their gold.
+ * out the way the game's own tooltip is: the parts the item is built from with their gold, the bonuses as "+5 Strength"
+ * lines, and each spell in a box with its cooldown and mana cost, its text and its number lines.
  */
+
+/** Dota's own gold icon, the coin stack the game and dota2.com show next to a price (Can 2026-11-27). */
+export const GOLD_ICON = `${ITEM_CDN}/apps/dota2/images/dota_react/icons/gold.png`;
 
 /** The gold coin next to a price. */
 export function Coin({ size = "md" }: { size?: "sm" | "md" }) {
-  return <span aria-hidden className={`shrink-0 rounded-full bg-accent shadow-[inset_0_-1px_0_var(--accent-deep)] ${size === "sm" ? "size-2" : "size-3"}`} />;
+  const px = size === "sm" ? 16 : 22;
+  return <Image src={GOLD_ICON} alt="" aria-hidden width={px} height={px} className="shrink-0" />;
 }
 
-/** The item's bonuses, one "+5 Strength" line each: the amount bright, what it adds to muted. */
+/** The item's bonuses, side by side: the amount large and bright, what it adds to after it in muted. */
 export function ItemStatLines({ item }: { item: Pick<ItemInfo, "name" | "stats"> }) {
   if (!item.stats?.length) return null;
   return (
-    <ul aria-label={`What ${item.name} gives`} className="flex flex-col gap-1 text-[0.9375rem] leading-normal">
+    <ul aria-label={`What ${item.name} gives`} className="flex flex-wrap gap-x-7 gap-y-2">
       {item.stats.map((s) => (
-        <li key={s.label}>
-          <span className="num font-semibold text-fg">{s.value}</span> <span className="text-muted">{s.label}</span>
+        <li key={s.label} className="flex items-baseline gap-1.5">
+          <span className="num text-lg leading-[1.375rem] font-semibold text-fg">{s.value}</span> <span className="text-sm text-muted">{s.label}</span>
         </li>
       ))}
     </ul>
@@ -31,7 +35,7 @@ export function ItemStatLines({ item }: { item: Pick<ItemInfo, "name" | "stats">
 
 function Clock() {
   return (
-    <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <circle cx="8" cy="8" r="6" />
       <path d="M8 4.5V8l2.5 1.5" />
     </svg>
@@ -40,43 +44,54 @@ function Clock() {
 
 function Drop() {
   return (
-    <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+    <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
       <path d="M8 2s4.5 5 4.5 8a4.5 4.5 0 0 1-9 0C3.5 7 8 2 8 2z" />
     </svg>
   );
 }
 
-/** One spell box: "Active: Avatar" with the cooldown and mana on the right, then its text and number lines. */
+/**
+ * One spell: a copper "Active" tag (a quiet "Passive" one) before its name, the cooldown and mana on the right, then
+ * its text and its number lines as a label over each value. No box of its own: a hairline above sets it apart.
+ */
 function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?: number; manaCost?: number }) {
   const used = spell.kind === "active";
   return (
-    <li className="flex flex-col gap-2.5 rounded-lg bg-raised px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--line-strong)]">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="mr-auto text-base font-semibold text-fg">
-          <span className={used ? "text-accent" : "text-muted"}>{used ? "Active" : "Passive"}:</span> {spell.name}
+    <li className="flex flex-col gap-2.5 border-t border-line pt-[1.125rem]">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <span className={`rounded-md px-2 text-xs leading-[1.125rem] font-medium ${used ? "bg-accent-tint text-accent" : "bg-raised text-muted"}`}>
+          {used ? "Active" : "Passive"}
         </span>
-        {cooldown !== undefined && (
-          <span className="num flex items-center gap-1.5 text-sm font-semibold text-muted">
-            <Clock />
-            {cooldown}
-            <span className="sr-only"> seconds cooldown</span>
-          </span>
-        )}
-        {used && manaCost !== undefined && (
-          <span className="num flex items-center gap-1.5 text-sm font-semibold text-muted">
-            <Drop />
-            {manaCost}
-            <span className="sr-only"> mana</span>
-          </span>
-        )}
+        <span className="sr-only">: </span>
+        <span className="mr-auto text-[1.0625rem] leading-[1.375rem] font-semibold tracking-[-0.01em] text-fg">{spell.name}</span>
+        <span className="flex items-center gap-3.5">
+          {cooldown !== undefined && (
+            <span className="num flex items-center gap-1.5 text-sm font-medium text-muted">
+              <span className="text-subtle">
+                <Clock />
+              </span>
+              {cooldown}
+              <span className="sr-only"> seconds cooldown</span>
+            </span>
+          )}
+          {used && manaCost !== undefined && (
+            <span className="num flex items-center gap-1.5 text-sm font-medium text-muted">
+              <span className="text-attr-int">
+                <Drop />
+              </span>
+              {manaCost}
+              <span className="sr-only"> mana</span>
+            </span>
+          )}
+        </span>
       </div>
-      {spell.text && <p className="text-sm leading-relaxed text-muted">{spell.text}</p>}
+      {spell.text && <p className="text-sm leading-[1.375rem] text-muted">{spell.text}</p>}
       {spell.facts && spell.facts.length > 0 && (
-        <dl className="flex flex-wrap gap-x-5 gap-y-1 text-[0.8125rem]">
+        <dl className="mt-1 flex flex-wrap gap-x-7 gap-y-2">
           {spell.facts.map((f) => (
-            <div key={f.label} className="flex gap-1.5">
-              <dt className="text-subtle">{f.label}</dt>
-              <dd className="font-semibold text-fg">{f.value}</dd>
+            <div key={f.label} className="flex flex-col gap-0.5">
+              <dt className="text-xs text-subtle">{f.label}</dt>
+              <dd className="text-sm font-medium text-fg">{f.value}</dd>
             </div>
           ))}
         </dl>
@@ -93,7 +108,8 @@ export function ItemSpells({ item, passiveCooldown = false }: { item: Pick<ItemI
   if (!item.abilities?.length) return null;
   const first = passiveCooldown ? 0 : item.abilities.findIndex((a) => a.kind === "active");
   return (
-    <ul aria-label={`${item.name} spells`} className="flex flex-col gap-2">
+    // With no bonuses above it, the first spell needs no hairline of its own.
+    <ul aria-label={`${item.name} spells`} className="flex flex-col gap-[1.125rem] first:[&>li:first-child]:border-t-0 first:[&>li:first-child]:pt-0">
       {item.abilities.map((a, i) => (
         <SpellBox key={a.name} spell={a} cooldown={i === first ? item.cooldown : undefined} manaCost={i === first ? item.manaCost : undefined} />
       ))}
@@ -102,8 +118,11 @@ export function ItemSpells({ item, passiveCooldown = false }: { item: Pick<ItemI
 }
 
 /**
- * The parts the item is built from, the recipe scroll last, each with its name and gold. Nothing for a basic item.
- * With `onPick`, each part (not the scroll) is a button that opens that part's own card.
+ * The parts the item is built from, the recipe scroll last, each with its name and gold, on a thin line that runs into
+ * the finished item ringed in copper, so the row reads as buy these, get this (Can 2026-11-27: components give a
+ * "start first with this" feel; option B3, Forge Line, of the item pop-up parts canvas). On a phone the finished item
+ * at the end is left out, as the card's header shows it, so four parts still fit. Nothing for a basic item. With
+ * `onPick`, each part (not the scroll) is a button that opens that part's own card.
  */
 export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Record<string, ItemInfo>; onPick?: (part: RecipePart) => void }) {
   const item = items[itemId];
@@ -111,14 +130,17 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
   if (!item || !recipe) return null;
   const parts = [...recipe.parts, ...(recipe.scroll > 0 ? [{ itemId: 0, name: "Recipe", img: RECIPE_IMG, cost: recipe.scroll, count: 1 }] : [])];
   return (
-    <section aria-label={`How to build ${item.name}`} className="flex flex-col gap-3">
-      <h5 className="text-[0.8125rem] font-medium text-subtle">Built From</h5>
-      <ol className="flex flex-wrap gap-2.5">
+    <section aria-label={`How to build ${item.name}`} className="relative flex items-stretch justify-between">
+      {/* The line joins the middles of the first and the last art: half a part's width in, half the item's on the right. */}
+      <span aria-hidden className="absolute top-[1.375rem] right-[2.375rem] left-[2.375rem] h-px bg-linear-to-r from-line-hover to-accent-deep sm:right-[2.625rem]" />
+      {/* The list adds no box of its own, so the parts and the item share one even spacing. */}
+      <ol className="contents">
         {parts.map((part) => (
-          <li key={`${part.itemId}-${part.name}`} className="flex w-[4.75rem] flex-col items-center gap-1.5 text-center">
+          <li key={`${part.itemId}-${part.name}`} className="relative flex w-[4.75rem] flex-col items-center gap-2 text-center">
             <PartArt part={part} onPick={onPick && part.itemId ? () => onPick(part) : undefined} />
-            <span className="text-xs leading-tight text-muted">
-              {part.count > 1 && <span className="sr-only">{part.count} </span>}
+            {/* Like the in-game shop: the art and its gold, the name read out and shown on hover (Can 2026-11-27). */}
+            <span className="sr-only">
+              {part.count > 1 && `${part.count} `}
               {part.name}
             </span>
             <span className="num flex items-center gap-1.5 text-[0.8125rem] font-semibold text-accent-bright">
@@ -129,6 +151,16 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
           </li>
         ))}
       </ol>
+      <div aria-hidden className="relative hidden w-[5.25rem] shrink-0 flex-col items-center text-center sm:flex">
+        <span className="absolute top-[1.0625rem] -left-2 size-0 border-y-[5px] border-l-[7px] border-y-transparent border-l-accent-deep" />
+        <Image
+          src={ITEM_CDN + item.img}
+          alt=""
+          width={72}
+          height={52}
+          className="relative -mt-1 block h-13 w-[4.5rem] rounded-lg object-cover shadow-[0_0_0_1px_var(--accent),0_0_0_4px_var(--surface),0_6px_16px_rgb(232_160_82/0.18)]"
+        />
+      </div>
     </section>
   );
 }
@@ -137,7 +169,14 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
 function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
   const art = (
     <>
-      <Image src={ITEM_CDN + part.img} alt="" width={60} height={44} className="block h-11 w-[3.75rem] rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
+      {/* The ring of card colour around the art hides the line behind it. */}
+      <Image
+        src={ITEM_CDN + part.img}
+        alt=""
+        width={60}
+        height={44}
+        className="block h-11 w-15 rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_0_0_4px_var(--surface)]"
+      />
       {part.count > 1 && (
         <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
           x{part.count}
@@ -145,14 +184,14 @@ function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
       )}
     </>
   );
-  if (!onPick) return <span className="relative">{art}</span>;
+  if (!onPick) return <span className="relative" title={part.name}>{art}</span>;
   return (
     <button
       type="button"
       onClick={onPick}
       aria-label={`Open ${part.name}`}
       title={part.name}
-      className="relative cursor-pointer rounded-md transition-[filter] hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="relative cursor-pointer rounded-lg transition-[filter] hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       {art}
     </button>

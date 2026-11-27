@@ -220,7 +220,7 @@ function RoshanReady({
                     img,
                     band: (
                       <ItemBand
-                        facts={[{ value: `${s.around ? "~" : ""}${s.minute} min`, label: "Usual", tone: "text-radiant" }]}
+                        timing={{ minute: s.minute, around: s.around, side: "ally" }}
                         chip={{ text: s.hero, enemy: false, faces: [{ name: s.hero, portrait }] }}
                       />
                     ),
