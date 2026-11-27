@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/draft";
@@ -100,7 +101,7 @@ export function MetaGlance({
                       aria-label={`${hero.name}, ${h.rate.win.toFixed(1)}% win rate. Open ${hero.name}`}
                       className={`grid w-full gap-1.5 rounded-lg text-left hover:brightness-125 ${row ? "xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-center xl:gap-x-2.5" : ""}`}
                     >
-                      <Image src={hero.image} alt="" width={row ? 160 : 320} height={row ? 90 : 180} className="aspect-video w-full rounded-md object-cover" />
+                      <HeroPortrait portrait={hero.image} size={row ? 36 : 116} />
                       <span className="grid gap-0.5">
                         <span className={`text-base leading-tight text-fg ${row ? "" : "xl:font-semibold"}`}>{hero.name}</span>
                         <RateLine h={h} />

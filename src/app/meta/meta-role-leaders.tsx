@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import type { KeyboardEvent } from "react";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
@@ -196,7 +197,7 @@ function LosesTo({ hero, extras, heroes, onSelect }: { hero: number; extras: Met
               aria-label={`${enemy.name}: wins ${rate.toFixed(1)}% against, ${games.toLocaleString("en-US")} games. Open ${enemy.name}`}
               className="grid w-full gap-1 rounded-md text-left hover:brightness-125"
             >
-              <Image src={enemy.image} alt="" width={160} height={90} className="aspect-video w-full rounded-md object-cover" />
+              <HeroPortrait portrait={enemy.image} size={74} />
               <span className="text-sm leading-tight text-fg">{enemy.name}</span>
               <span className="text-sm tabular-nums text-dire">{rate.toFixed(1)}%</span>
             </button>

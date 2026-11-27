@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import { useState } from "react";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
@@ -146,7 +147,7 @@ function MatchupList({ title, rows, heroes, onSelect, up }: { title: string; row
                 aria-label={`${enemy.name}: wins ${rate.toFixed(1)}% against, ${games.toLocaleString("en-US")} games. Open ${enemy.name}`}
                 className="grid w-full grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg p-1.5 text-left hover:bg-hover sm:grid-cols-1 sm:gap-1.5"
               >
-                <Image src={enemy.image} alt="" width={160} height={90} className="aspect-video w-full rounded-md object-cover" />
+                <HeroPortrait portrait={enemy.image} size={74} />
                 <span className="text-sm leading-tight text-fg sm:min-h-[2.5em]">{enemy.name}</span>
                 <span className={`num ${up ? "text-radiant" : "text-dire"}`}>{rate.toFixed(1)}%</span>
               </button>
@@ -212,7 +213,7 @@ export function NewItems({ extras, art, heroes, onSelect }: { extras: MetaExtras
                       title={h.name}
                       className="rounded-md hover:brightness-125"
                     >
-                      <Image src={h.icon} alt="" width={44} height={44} className="aspect-square w-full rounded-md" />
+                      <HeroPortrait portrait={h.image} size={72} isFace />
                     </button>
                   ) : null;
                 })}

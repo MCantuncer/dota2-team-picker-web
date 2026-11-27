@@ -1,10 +1,13 @@
-import Image from "next/image";
+import { HeroArt, HeroStage, type HeroArtPlacement } from "@/components/hero-frame";
 import { PositionLabel } from "@/components/position-label";
 import { RankMedal } from "@/components/rank-medal";
 import { banChange, change, dayLabel, RANK_GROUPS, signed, type BanRate, type HeroRate, type MetaDay, type MetaExtras, type RankSlice } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 import { BuildPanel, MatchupsPanel, type ItemArt } from "./meta-hero-extras";
 import { MetaLaneTactics } from "./meta-lane-tactics";
+
+/** The card's render: head and shoulders, the face a little above the middle. It scales with the frame. */
+const CARD_ART: HeroArtPlacement = { width: 496, at: [0.5, 0.4], frameWidth: 320 };
 
 function Stat({ label, value, delta, note, since }: { label: string; value: string; delta?: number | null; note?: string; since?: string }) {
   return (
@@ -178,13 +181,9 @@ export function HeroCard({
   return (
     <section aria-label={hero.name} className="grid gap-4 rounded-xl border border-line bg-surface p-3 sm:p-6 lg:grid-cols-2">
       <div className="grid items-center gap-5 rounded-xl bg-raised p-4 ring-1 ring-inset ring-line-strong sm:grid-cols-[13rem_minmax(0,1fr)] sm:p-5 lg:col-span-2 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-x-6">
-        <Image
-          src={hero.image}
-          alt=""
-          width={480}
-          height={270}
-          className="aspect-video w-full rounded-lg object-cover lg:row-span-2"
-        />
+        <HeroStage size={180} className="@container aspect-video w-full lg:row-span-2">
+          <HeroArt heroId={hero.id} portrait={hero.image} placement={CARD_ART} />
+        </HeroStage>
         <div className="grid gap-3 lg:self-end">
           <h2 className="text-2xl font-semibold leading-tight tracking-[-0.02em] text-fg">{hero.name}</h2>
           {rate.roles.length > 0 && (
