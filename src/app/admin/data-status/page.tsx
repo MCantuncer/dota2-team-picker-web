@@ -6,6 +6,7 @@ import {
   fillStatus,
   HEROES_PER_POSITION,
   nextRun,
+  patchStatus,
   patchVersion,
   readFill,
   readSnapshot,
@@ -16,7 +17,7 @@ import {
 import type { Snapshot } from "@/lib/engine/types";
 import { getHeroes } from "@/lib/heroes";
 import { createClient } from "@/lib/supabase/server";
-import { FillLanes, JobCard } from "./data-status";
+import { FillLanes, JobCard, PatchCard } from "./data-status";
 
 export const metadata: Metadata = { title: "Data Status · Dota 2 Team Picker", robots: { index: false } };
 
@@ -42,7 +43,7 @@ export default async function DataStatusPage() {
     <main className="page flex flex-1 flex-col gap-8 py-10">
       <div className="flex flex-col gap-1.5">
         <h1 className="page-title">Data Status</h1>
-        <p className="text-sm text-muted">How far the slow STRATZ jobs have come. Turkey time. GitHub often starts scheduled runs late.</p>
+        <p className="text-sm text-muted">The patch, the data sources and how far the slow STRATZ jobs have come. Turkey time. GitHub often starts scheduled runs late.</p>
       </div>
 
       {!snapshot || !rows ? (
@@ -69,8 +70,10 @@ function Status({
 }) {
   const paths = twoPathStatus(snapshot, nowMs);
   const fill = fillStatus(snapshot, rows);
+  const patch = patchStatus(snapshot, nowMs);
   return (
     <>
+      {patch && <PatchCard status={patch} nowMs={nowMs} />}
       <JobCard
         title="Two-Path Builds"
         unit="hero builds"
