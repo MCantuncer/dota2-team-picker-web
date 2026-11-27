@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { RankMedal } from "@/components/rank-medal";
 import { POSITION_NAMES } from "@/lib/draft";
-import { heroRates, movers, previousPatch, RANK_GROUPS, roleItems, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
+import { banRates, heroRates, movers, previousPatch, RANK_GROUPS, roleItems, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
 import { HeroCard } from "./meta-hero-card";
 import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
@@ -65,6 +65,7 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
   const lead = useMemo(() => (role ? roleLeaders(meta, all, role) : null), [meta, all, role]);
   // A role's winners and losers are its leaders' pool, so a hero played there now and then does not show.
   const moved = movers(lead ? lead.pool.map((h) => h.rate) : rates, measure, MOVERS);
+  const bans = useMemo(() => banRates(meta, slice), [meta, slice]);
   const highs = useMemo(() => new Map(heroRates(meta, 4).map((r) => [r.id, r])), [meta]);
   const glance = useMemo(() => (role ? null : [1, 2, 3, 4, 5].map((p) => roleLeaders(meta, all, p).leaders)), [meta, all, role]);
   const items = useMemo(
@@ -187,7 +188,7 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
         ) : (
           <>
             <div className="max-sm:hidden">
-              <PickWinMap rates={rates} heroes={byId} selected={selected} onSelect={select} />
+              <PickWinMap rates={rates} bans={bans} heroes={byId} selected={selected} onSelect={select} />
             </div>
             <div className="sm:hidden">
               <MapBoards rates={rates} heroes={byId} selected={selected} onSelect={select} />
@@ -216,6 +217,7 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
           <HeroCard
             hero={byId.get(rate.id)!}
             rate={rate}
+            ban={bans.get(rate.id)}
             byRank={byRank}
             days={meta.days}
             slice={slice}

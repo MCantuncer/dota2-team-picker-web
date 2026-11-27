@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { PositionLabel } from "@/components/position-label";
 import { RankMedal } from "@/components/rank-medal";
-import { change, dayLabel, RANK_GROUPS, signed, type HeroRate, type MetaDay, type MetaExtras, type RankSlice } from "@/lib/meta";
+import { banChange, change, dayLabel, RANK_GROUPS, signed, type BanRate, type HeroRate, type MetaDay, type MetaExtras, type RankSlice } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 import { BuildPanel, MatchupsPanel, type ItemArt } from "./meta-hero-extras";
 import { MetaLaneTactics } from "./meta-lane-tactics";
@@ -35,6 +35,7 @@ function DayChart({ rate, days, W, H }: { rate: HeroRate; days: MetaDay[]; W: nu
   const y = (v: number) => M.t + (1 - (v - lo) / (hi - lo)) * (H - M.t - M.b);
   // Label at most 7 days, evenly spread, so they never collide.
   const every = Math.ceil(days.length / (W > 400 ? 7 : 4));
+  const base = rate.baseWin === null ? null : baseLabel(rate.baseWin, y, W, M, points.map((p) => [x(p[0]), y(p[1])] as const));
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={`Win rate by day: ${points.map((p) => `${dayLabel(days[p[0]]!)} ${p[1].toFixed(1)}%`).join(", ")}`}>
       {ticks.map((t) => (
@@ -45,11 +46,11 @@ function DayChart({ rate, days, W, H }: { rate: HeroRate; days: MetaDay[]; W: nu
           </text>
         </g>
       ))}
-      {rate.baseWin !== null && (
+      {rate.baseWin !== null && base && (
         <g>
           <line x1={M.l} x2={W - M.r} y1={y(rate.baseWin)} y2={y(rate.baseWin)} className="stroke-line-control" strokeDasharray="5 4" strokeWidth={1.5} />
-          <text x={W - M.r} y={y(rate.baseWin) - 6} textAnchor="end" fontSize={12} className="fill-muted">
-            Before: {rate.baseWin.toFixed(1)}%
+          <text x={base.x} y={base.y} textAnchor={base.anchor} fontSize={12} className="fill-muted">
+            {base.text}
           </text>
         </g>
       )}
@@ -66,6 +67,34 @@ function DayChart({ rate, days, W, H }: { rate: HeroRate; days: MetaDay[]; W: nu
       )}
     </svg>
   );
+}
+
+/**
+ * Where the patch before's label sits on its dashed line: above or below it, at the right end or the left, the first
+ * place no day's point touches, so the line's newest days never run through the text.
+ */
+function baseLabel(
+  win: number,
+  y: (v: number) => number,
+  W: number,
+  M: { l: number; r: number },
+  points: (readonly [number, number])[],
+): { x: number; y: number; anchor: "start" | "end"; text: string } {
+  const text = `Before: ${win.toFixed(1)}%`;
+  const width = text.length * 7;
+  const line = y(win);
+  const spots = [
+    { x: W - M.r, y: line - 6, anchor: "end" as const },
+    { x: W - M.r, y: line + 16, anchor: "end" as const },
+    { x: M.l + 8, y: line - 6, anchor: "start" as const },
+    { x: M.l + 8, y: line + 16, anchor: "start" as const },
+  ];
+  // The text's box, 12px tall above its baseline, kept 8px clear of every point (radius 5 and its ring).
+  const clear = (s: (typeof spots)[number]) => {
+    const [left, right] = s.anchor === "end" ? [s.x - width, s.x] : [s.x, s.x + width];
+    return points.every(([px, py]) => px < left - 8 || px > right + 8 || py < s.y - 12 - 8 || py > s.y + 8);
+  };
+  return { ...(spots.find(clear) ?? spots[0]!), text };
 }
 
 /** One hero's win rate per rank group on a shared 40% to 60% scale. */
@@ -118,6 +147,7 @@ function RankRows({ byRank }: { byRank: (HeroRate | undefined)[] }) {
 export function HeroCard({
   hero,
   rate,
+  ban,
   byRank,
   days,
   slice,
@@ -131,6 +161,8 @@ export function HeroCard({
 }: {
   hero: MetaHero;
   rate: HeroRate;
+  /** The hero's ban rate, when the saved games have enough. */
+  ban?: BanRate;
   byRank: (HeroRate | undefined)[];
   days: MetaDay[];
   slice: RankSlice;
@@ -165,9 +197,18 @@ export function HeroCard({
             </div>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:col-span-2 sm:gap-3 lg:col-span-1 lg:self-start">
+        <div className={`grid gap-2 sm:col-span-2 sm:gap-3 lg:col-span-1 lg:self-start ${ban ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
           <Stat label="Win Rate" value={`${rate.win.toFixed(1)}%`} delta={change(rate, "win")} since={oldPatch} />
           <Stat label="Pick Rate" value={`${rate.pick.toFixed(1)}%`} delta={change(rate, "pick")} since={oldPatch} />
+          {ban && (
+            <Stat
+              label="Ban Rate"
+              value={`${ban.ban.toFixed(1)}%`}
+              delta={banChange(ban)}
+              since={oldPatch}
+              note={`${ban.games.toLocaleString("en-US")} games sampled`}
+            />
+          )}
           <Stat label="Games" value={rate.games.toLocaleString("en-US")} note={group ? group.name : "This patch"} />
         </div>
       </div>

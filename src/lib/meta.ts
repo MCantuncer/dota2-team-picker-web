@@ -43,6 +43,25 @@ export interface MetaFile {
   roles: Record<string, number[]>;
   /** The hero card extras; missing until the backend has built them. */
   extras?: MetaExtras;
+  /** Bans per day from the backend's saved ranked games; missing in older files. */
+  bans?: MetaBans;
+}
+
+/** One day's bans in the saved ranked games: games per rank slice, and per hero id the games it was banned in. */
+export interface BanDay {
+  index: number;
+  complete: boolean;
+  games: number[];
+  heroes: Record<string, number[]>;
+}
+
+/**
+ * The bans of the Meta days, from the ranked games the backend saves with every ban (about 420 a day): the explorer's
+ * public games, which the other numbers come from, hold no bans.
+ */
+export interface MetaBans {
+  days: BanDay[];
+  base: BanDay[];
 }
 
 /** A hero's games in a position, and how many of them ended with each item: [item id, games], most first. */
@@ -131,6 +150,20 @@ export function isExtras(x: unknown): x is MetaExtras {
   );
 }
 
+const isBanDay = (x: unknown): x is BanDay =>
+  isRecord(x) &&
+  typeof x.index === "number" &&
+  typeof x.complete === "boolean" &&
+  isNumbers(x.games) &&
+  x.games.length === 5 &&
+  isRecord(x.heroes) &&
+  Object.values(x.heroes).every((h) => isNumbers(h) && h.length === 5);
+
+/** True when the bans have the shape the page reads; the page then shows the rest without them. */
+export function isBans(x: unknown): x is MetaBans {
+  return isRecord(x) && Array.isArray(x.days) && x.days.every(isBanDay) && Array.isArray(x.base) && x.base.every(isBanDay);
+}
+
 /** True when `x` has the shape the page reads; anything else is not shown. */
 export function isMeta(x: unknown): x is MetaFile {
   return (
@@ -161,6 +194,10 @@ export async function getMeta(): Promise<MetaFile | null> {
   if (body.extras !== undefined && !isExtras(body.extras)) {
     console.error("Meta extras have an unexpected shape");
     delete body.extras;
+  }
+  if (body.bans !== undefined && !isBans(body.bans)) {
+    console.error("Meta bans have an unexpected shape");
+    delete body.bans;
   }
   return body;
 }
@@ -212,7 +249,7 @@ export function letterDay(meta: Pick<MetaFile, "patch" | "computedAt">): number 
  * already weigh little), halving every HALF_LIFE_DAYS before it. With a fresh letter patch, every day from the one it
  * came out on counts fully (its games are the game as it is now) and the halving starts there.
  */
-export function dayWeights(days: MetaDay[], letter?: number): number[] {
+export function dayWeights(days: Pick<MetaDay, "index" | "complete">[], letter?: number): number[] {
   let newest = days.length - 1;
   while (newest > 0 && !days[newest]?.complete) newest--;
   const newestIndex = days[newest]?.index ?? 0;
@@ -268,6 +305,62 @@ export function heroRates(meta: MetaFile, slice: RankSlice): HeroRate[] {
   return out;
 }
 
+/** A ban rate rests on at least this many saved games (weighted as the days are); fewer and it is not shown. */
+export const MIN_BAN_GAMES = 300;
+
+/** A hero's ban rate in percent, the patch before's, and whether the change is bigger than the sample's noise. */
+export interface BanRate {
+  ban: number;
+  baseBan: number | null;
+  /** Saved games the rate rests on. */
+  games: number;
+  /** True when the change since the patch before is outside the 95% range of the two samples' noise. */
+  sure: boolean;
+}
+
+/** Banned games, games and the effective number of games of a weighted sample (Kish), for its noise. */
+function banTotals(days: BanDay[], hero: string, slice: RankSlice, weights: number[]) {
+  let bans = 0;
+  let games = 0;
+  let squares = 0;
+  days.forEach((d, i) => {
+    const w = weights[i] ?? 1;
+    const g = d.games[slice] ?? 0;
+    bans += w * (d.heroes[hero]?.[slice] ?? 0);
+    games += w * g;
+    squares += w * w * g;
+  });
+  return { bans, games, effective: squares > 0 ? (games * games) / squares : 0 };
+}
+
+/**
+ * Every hero's ban rate in a rank slice, from the saved games: the days weigh as the pick and win rates do
+ * (dayWeights), and the patch before's last days are the base. Empty without bans or under MIN_BAN_GAMES games.
+ */
+export function banRates(meta: MetaFile, slice: RankSlice): Map<number, BanRate> {
+  const out = new Map<number, BanRate>();
+  const bans = meta.bans;
+  if (!bans) return out;
+  const weights = dayWeights(bans.days, letterDay(meta));
+  const ids = new Set(bans.days.flatMap((d) => Object.keys(d.heroes)));
+  const empty = banTotals(bans.days, "", slice, weights);
+  if (empty.effective < MIN_BAN_GAMES) return out;
+  const base = banTotals(bans.base, "", slice, []);
+  const hasBase = base.games >= MIN_BAN_GAMES;
+  for (const id of ids) {
+    const now = banTotals(bans.days, id, slice, weights);
+    const p = now.bans / now.games;
+    const before = banTotals(bans.base, id, slice, []);
+    const q = hasBase ? before.bans / before.games : null;
+    const noise = q === null ? Infinity : 1.96 * Math.sqrt((p * (1 - p)) / now.effective + (q * (1 - q)) / before.games);
+    out.set(Number(id), { ban: p * 100, baseBan: q === null ? null : q * 100, games: Math.round(now.games), sure: q !== null && Math.abs(p - q) > noise });
+  }
+  return out;
+}
+
+/** The ban rate's change since the patch before in points, when it is bigger than the noise; else null. */
+export const banChange = (b: BanRate): number | null => (b.sure && b.baseBan !== null ? b.ban - b.baseBan : null);
+
 /** Games this patch in a rank slice. */
 export const sliceGames = (meta: MetaFile, slice: RankSlice) => gamesIn(meta.days, slice);
 
@@ -294,6 +387,13 @@ export function movers(rates: HeroRate[], measure: Measure, count: number): { up
 export function patchDay(meta: MetaFile, now: Date): number {
   const started = Date.parse(meta.patch.startedAt);
   return Math.max(1, Math.floor((now.getTime() - started) / (24 * 60 * 60 * 1000)) + 1);
+}
+
+/** The release the page names: a fresh letter patch (7.42a) with its own day, else the patch with its day. */
+export function shownRelease(meta: MetaFile, now: Date): { name: string; day: number } {
+  const release = meta.patch.release;
+  if (!release || letterDay(meta) === undefined) return { name: meta.patch.name, day: patchDay(meta, now) };
+  return { name: release.name, day: Math.max(1, Math.floor((now.getTime() - Date.parse(release.startedAt)) / DAY_MS) + 1) };
 }
 
 /** A day's short label, like "Nov 19": the date at the day's middle, since a patch day starts at the patch's hour. */

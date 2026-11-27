@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { change, signed, type HeroRate } from "@/lib/meta";
+import { banChange, change, signed, type BanRate, type HeroRate } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 
 const W = 1000;
@@ -27,11 +27,14 @@ function winAxis(rates: HeroRate[]): { lo: number; hi: number; ticks: number[] }
  */
 export function PickWinMap({
   rates,
+  bans,
   heroes,
   selected,
   onSelect,
 }: {
   rates: HeroRate[];
+  /** Ban rates by hero id; a hero without one shows no ban line. */
+  bans: Map<number, BanRate>;
   heroes: Map<number, MetaHero>;
   selected: number | null;
   onSelect: (id: number) => void;
@@ -43,6 +46,7 @@ export function PickWinMap({
   const y = (v: number) => M.t + (1 - (v - lo) / (hi - lo)) * (H - M.t - M.b);
   const shown = rates.find((r) => r.id === hover);
   const shownHero = shown ? heroes.get(shown.id) : undefined;
+  const shownBan = shown ? bans.get(shown.id) : undefined;
 
   return (
     <div className="relative w-full">
@@ -118,6 +122,11 @@ export function PickWinMap({
           <span className="text-muted">
             Pick Rate <span className="num text-fg">{shown.pick.toFixed(1)}%</span> <Change value={change(shown, "pick")} />
           </span>
+          {shownBan && (
+            <span className="text-muted">
+              Ban Rate <span className="num text-fg">{shownBan.ban.toFixed(1)}%</span> <Change value={banChange(shownBan)} />
+            </span>
+          )}
         </div>
       )}
     </div>

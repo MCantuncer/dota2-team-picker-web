@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { ItemCardProvider } from "@/components/item-card";
 import { getItems } from "@/lib/items";
-import { extrasItemIds, getMeta, patchDay, sliceGames } from "@/lib/meta";
+import { extrasItemIds, getMeta, patchDay, shownRelease, sliceGames } from "@/lib/meta";
 import { MetaBoard } from "./meta-board";
 
 export const metadata: Metadata = {
@@ -25,7 +25,8 @@ export default async function MetaPage() {
     getHeroes().catch(() => [] as Hero[]),
   ]);
 
-  const day = meta ? patchDay(meta, new Date()) : 0;
+  // A fresh letter patch (7.42a) is named with its own day: the rates weigh its games most.
+  const { name, day } = meta ? shownRelease(meta, new Date()) : { name: "", day: 0 };
   // Names and pictures of the items the extras show; the item list is cached for a day.
   const items = meta?.extras ? await getItems().catch(() => new Map()) : new Map();
   const art = Object.fromEntries(
@@ -43,15 +44,15 @@ export default async function MetaPage() {
         </div>
         {meta && (
           <div className="grid grid-cols-[auto_auto] items-center gap-x-4 rounded-xl bg-surface p-3 pr-5 ring-1 ring-inset ring-line">
-            <span className="num row-span-2 flex size-12 items-center justify-center rounded-lg bg-accent-tint text-base text-accent ring-1 ring-inset ring-accent-deep">
-              {meta.patch.name}
+            <span className="num row-span-2 flex h-12 min-w-12 items-center justify-center rounded-lg bg-accent-tint px-2 text-base text-accent ring-1 ring-inset ring-accent-deep">
+              {name}
             </span>
             <span className="font-semibold text-fg">
               {day <= NEW_PATCH_DAYS ? "New Patch" : "Patch"}, Day {day}
             </span>
             <span className="text-sm text-muted">
               <span className="num text-fg">{sliceGames(meta, 0).toLocaleString("en-US")}</span> ranked games{" "}
-              {meta.days.length >= day ? "so far" : `in the last ${meta.days.length} days`}
+              {meta.days.length >= patchDay(meta, new Date()) ? "so far" : `in the last ${meta.days.length} days`}
             </span>
           </div>
         )}
