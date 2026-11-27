@@ -182,7 +182,8 @@ No underlined or plain text links anywhere. Every link is a designed control, pi
 Every hero on the Lane Board sits in the Lane Cut: the logo frame, a rounded square with the top right and bottom
 left corners (where the mid lane leaves and enters) cut at 45 degrees, and a 1px lit edge that follows the cuts. The
 cut and the corner grow with the frame, from 4px on a 20px face to 16px on the largest art (`laneCutStyle(size)`).
-An enemy's edge is Dire red. The components are in `components/hero-frame.tsx`:
+An enemy's edge is Dire red, and a hero chosen in a picker (My Heroes) takes the accent edge with its number at the
+top left, away from the cut corner. The components are in `components/hero-frame.tsx`:
 
 - **`HeroFace`**: a square crop of the 256x144 portrait, 20 to 64px, for rails, reason lines and chips. `isEnemy`,
   `isDim` (banned or out of play), and `isDecorative` when the name is written next to it.

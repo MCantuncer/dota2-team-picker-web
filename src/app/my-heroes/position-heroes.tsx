@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { type ReactNode, useMemo, useRef, useState } from "react";
+import { HeroPortrait } from "@/components/hero-frame";
 import { PositionIcon } from "@/components/position-icon";
 import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
@@ -294,7 +294,9 @@ export function PositionHeroes({
                     aria-haspopup="dialog"
                     className="flex items-center gap-2 py-1 pl-1 pr-2"
                   >
-                    <Image src={h.image} alt="" width={48} height={27} unoptimized className="rounded-md" />
+                    <span className="block w-12 shrink-0">
+                      <HeroPortrait portrait={h.image} size={27} />
+                    </span>
                     <span className="num text-muted">{i + 1}</span>
                     {h.name}
                     {isTop && (
@@ -370,7 +372,11 @@ export function PositionHeroes({
                 const h = byId.get(card.heroId);
                 return (
                   <li key={card.id} className="flex flex-wrap items-center gap-3">
-                    {h && <Image src={h.image} alt="" width={64} height={36} unoptimized className="rounded-md" />}
+                    {h && (
+                      <span className="block w-16 shrink-0">
+                        <HeroPortrait portrait={h.image} size={36} />
+                      </span>
+                    )}
                     {/* The text keeps a readable width; on a phone the buttons move under it instead of squeezing it. */}
                     <div className="flex min-w-0 flex-1 basis-56 flex-col">
                       <span className="text-sm font-medium text-fg">{card.question}</span>
@@ -431,13 +437,12 @@ export function PositionHeroes({
                         onClick={() => toggleHero(h.id)}
                         aria-pressed={on}
                         title={h.name}
-                        className={`relative block w-full overflow-hidden rounded-md ring-2 ${
-                          on ? "ring-accent" : "opacity-55 ring-transparent hover:opacity-100"
-                        }`}
+                        aria-label={h.name}
+                        className={`relative block w-full ${on ? "" : "opacity-55 hover:opacity-100"}`}
                       >
-                        <Image src={h.image} alt={h.name} width={128} height={72} unoptimized className="aspect-video w-full bg-raised object-cover" />
+                        <HeroPortrait portrait={h.image} size={43} className={on ? "[--cut-edge:var(--accent)]!" : ""} />
                         {on && (
-                          <span className="num absolute right-0.5 top-0.5 rounded-md bg-accent px-1 text-xs font-semibold leading-4 text-on-accent">
+                          <span className="num absolute top-0.5 left-0.5 rounded-md bg-accent px-1 text-xs font-semibold leading-4 text-on-accent">
                             {shown.indexOf(h.id) + 1}
                           </span>
                         )}
