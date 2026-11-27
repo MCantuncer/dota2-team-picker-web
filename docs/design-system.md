@@ -199,6 +199,20 @@ No underlined or plain text links anywhere. Every link is a designed control, pi
 
 `src/app/no-text-links.test.ts` fails on `.link`, `underline` or `hover:underline` in a class list.
 
+## Sponsor Slot
+
+The site carries ads only as one designed slot per reading page, `SponsorBand` (`src/components/sponsor-band.tsx`):
+
+- **Where**: Meta (after the Meta Map) and Proof (before By Rank and Role), between two panels in the middle of the
+  page. Never on Draft, a live game, sign in, Stacks or Home, and never a second slot on a page.
+- **Look**: the word Sponsor in 14px semibold above a panel frame of its own, so it is never taken for one of our
+  findings. One still picture, centred: 728 by 90 from `md`, 320 by 100 on a phone.
+- **Still**: no floating, sticky, pop up or slide in ads, no sound, no video. The picture's room is kept before it
+  loads, so nothing jumps.
+- **Unsold**: a page with no booking draws nothing at all, never an empty box. Bookings live in
+  `src/lib/sponsors.ts` (`sponsorFor`): a name, an https link and two picture files under `/public/sponsors`.
+- The link opens in a new tab with `rel="sponsored noopener noreferrer"`.
+
 ## Lane Cut Frame
 
 Every hero on the Lane Board sits in the Lane Cut: the logo frame, a rounded square with the top right and bottom

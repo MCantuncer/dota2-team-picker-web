@@ -3,9 +3,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { PageStage } from "@/components/page-stage";
+import { SponsorBand } from "@/components/sponsor-band";
 import { VerdictHead } from "@/components/verdict-head";
 import { getHeroes, type Hero } from "@/lib/heroes";
 import { getProof, ladderRows, percent, proofVerdict, rankRoleTitle, rivalsTitle, runningTitle, shortDay } from "@/lib/proof";
+import { sponsorFor } from "@/lib/sponsors";
 import { FourSteps, GameRows, Ladder, LaneFrame, RankRoleTiles, RivalRows, RunningLine } from "./proof-parts";
 
 export const metadata: Metadata = {
@@ -83,6 +85,8 @@ export default async function ProofPage() {
           <RunningLine running={proof.running} />
         </Panel>
       </div>
+
+      <SponsorBand sponsor={sponsorFor("proof")} />
 
       <Panel title="By Rank and Role" finding={rankRoleTitle(proof.byRank, proof.byRole)}>
         <RankRoleTiles byRank={proof.byRank} byRole={proof.byRole} />

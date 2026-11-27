@@ -3,10 +3,12 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PageStage } from "@/components/page-stage";
 import { RankRow, type RankChoice } from "@/components/rank-row";
+import { SponsorBand } from "@/components/sponsor-band";
 import { VerdictHead } from "@/components/verdict-head";
 import { POSITION_NAMES } from "@/lib/draft";
 import { banRates, heroRates, movers, previousPatch, RANK_GROUPS, roleItems, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
 import { glanceTitle, metaVerdict, moversTitle, newItemsTitle, roleItemsTitle } from "@/lib/meta-verdict";
+import { sponsorFor } from "@/lib/sponsors";
 import { HeroCard } from "./meta-hero-card";
 import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
@@ -232,6 +234,8 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
           </>
         )}
       </Panel>
+
+      <SponsorBand sponsor={sponsorFor("meta")} />
 
       {meta.extras && meta.extras.newItems.length > 0 && (
         <Panel
