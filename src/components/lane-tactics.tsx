@@ -48,8 +48,11 @@ interface LaneTacticsProps extends Art {
  */
 export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "Lane Tactics", withTarget = true }: LaneTacticsProps) {
   const Heading = level === 3 ? "h3" : "h4";
-  const [enemy, setEnemy] = useState(pairs[0]?.enemy);
-  const pair = pairs.find((p) => p.enemy === enemy) ?? pairs[0];
+  // Only pairs with something to draw: a pair whose one tactic is the last hit target has nothing here when the
+  // target is drawn elsewhere, and a title over nothing reads as a broken page.
+  const shown = pairs.filter((p) => p.tactics.some((t) => withTarget || t.rule !== "lastHits"));
+  const [enemy, setEnemy] = useState(shown[0]?.enemy);
+  const pair = shown.find((p) => p.enemy === enemy) ?? shown[0];
   if (!pair) return null;
   // The last hit target is the lane's scoreboard, drawn as its own row under the rules.
   const rules = pair.tactics.filter((t) => t.rule !== "lastHits");
@@ -65,11 +68,11 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "
           </Heading>
           <span className="text-sm text-muted">Against {heroName(pair.enemy)}, most important first</span>
         </div>
-        {pairs.length > 1 && (
-          <div role="group" aria-label="Enemy laner" className={`grid gap-2 ${SWITCH_COLUMNS[pairs.length] ?? SWITCH_COLUMNS[6]}`}>
-            {pairs.map((p, i) => {
+        {shown.length > 1 && (
+          <div role="group" aria-label="Enemy laner" className={`grid gap-2 ${SWITCH_COLUMNS[shown.length] ?? SWITCH_COLUMNS[6]}`}>
+            {shown.map((p, i) => {
               const on = p.enemy === pair.enemy;
-              const alone = i === pairs.length - 1 && pairs.length % 2 === 1;
+              const alone = i === shown.length - 1 && shown.length % 2 === 1;
               return (
                 <button
                   key={p.enemy}
