@@ -26,7 +26,7 @@ export function SteamIdentity({ name, avatarUrl, steamId }: { name: string; avat
           className="group flex min-w-0 max-w-full items-center gap-2 text-lg font-semibold tracking-[-0.01em] text-fg"
         >
           <span className="truncate">{name}</span>
-          <span className="text-subtle group-hover:text-fg">
+          <span className="text-muted group-hover:text-fg">
             <Icon name="external" />
           </span>
           <span className="sr-only">(Steam profile, opens in a new tab)</span>

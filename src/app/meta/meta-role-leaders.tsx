@@ -63,7 +63,7 @@ function DayLine({ rate, days }: { rate: HeroRate; days: MetaDay[] }) {
   const last = points.at(-1);
   return (
     <div className="col-span-3 grid gap-1">
-      <div className="flex justify-between text-sm text-subtle">
+      <div className="flex justify-between text-sm text-muted">
         <span>Win Rate by Day</span>
         {points.length > 0 && last && (
           <span>
@@ -84,7 +84,7 @@ function DayLine({ rate, days }: { rate: HeroRate; days: MetaDay[] }) {
 function Stat({ label, value, delta, since }: { label: string; value: string; delta?: number | null; since?: string }) {
   return (
     <div className="grid min-w-0 content-start gap-px">
-      <dt className="text-sm leading-tight text-subtle">{label}</dt>
+      <dt className="text-sm leading-tight text-muted">{label}</dt>
       <dd className="text-lg font-semibold leading-tight tabular-nums text-fg">{value}</dd>
       {delta !== undefined && delta !== null && <span className={`text-sm tabular-nums ${delta >= 0 ? "text-radiant" : "text-dire"}`}>{`${signed(delta)} vs ${since}`}</span>}
     </div>
@@ -95,18 +95,18 @@ function Block({ title, note, children }: { title: string; note?: string; childr
   return (
     <div className="grid min-w-0 content-start gap-2.5 px-4 py-4 sm:px-[18px]">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h4 className="text-base text-subtle">{title}</h4>
-        {note && <span className="text-sm text-subtle">{note}</span>}
+        <h4 className="text-base text-muted">{title}</h4>
+        {note && <span className="text-sm text-muted">{note}</span>}
       </div>
       {children}
     </div>
   );
 }
 
-const MARK = { 1: ["▲", "text-radiant", "Buff"], [-1]: ["▼", "text-dire", "Nerf"], 0: ["●", "text-subtle", "Change"] } as const;
+const MARK = { 1: ["▲", "text-radiant", "Buff"], [-1]: ["▼", "text-dire", "Nerf"], 0: ["●", "text-muted", "Change"] } as const;
 
 function PatchLines({ notes, count }: { notes: NonNullable<MetaExtras["patchNotes"]>[string] | undefined; count: number }) {
-  if (!notes || notes.lines.length === 0) return <p className="text-sm text-subtle">No changes in this patch.</p>;
+  if (!notes || notes.lines.length === 0) return <p className="text-sm text-muted">No changes in this patch.</p>;
   return (
     <ul className="grid gap-[7px]">
       {notes.lines.slice(0, count).map((l) => {
@@ -145,9 +145,9 @@ function ItemTile({ id, art, children }: { id: number; art: ItemArt; children: R
 /** Early items, then core items in the order they are bought, each with its share and usual minute. */
 function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: number; extras: MetaExtras; art: ItemArt; compact?: boolean }) {
   const build = extras.builds[hero]?.[role];
-  if (!build) return <p className="text-sm text-subtle">Builds are being counted for this role.</p>;
+  if (!build) return <p className="text-sm text-muted">Builds are being counted for this role.</p>;
   const { early, core } = buildPath(build, extras.items);
-  if (core.length === 0) return <p className="text-sm text-subtle">No core item in most games yet.</p>;
+  if (core.length === 0) return <p className="text-sm text-muted">No core item in most games yet.</p>;
   const row = `grid ${compact ? "grid-cols-[repeat(4,minmax(0,56px))]" : "grid-cols-[repeat(6,minmax(0,50px))]"} justify-between gap-x-1 gap-y-2`;
   const timed = core.some((c) => c.minute !== null);
   const small = "text-xs leading-tight tabular-nums";
@@ -155,7 +155,7 @@ function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: n
     <div className="grid gap-3">
       {!compact && early.length > 0 && (
         <div className="grid gap-1.5">
-          <span className="text-sm text-subtle">Early</span>
+          <span className="text-sm text-muted">Early</span>
           <div className={row}>
             {early.map((e) => (
               <ItemTile key={e.id} id={e.id} art={art}>
@@ -166,7 +166,7 @@ function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: n
         </div>
       )}
       <div className="grid gap-1.5">
-        {!compact && <span className="text-sm text-subtle">{timed ? "Core, in the Order Bought" : "Core"}</span>}
+        {!compact && <span className="text-sm text-muted">{timed ? "Core, in the Order Bought" : "Core"}</span>}
         <div className={row}>
           {core.slice(0, compact ? 4 : 6).map((c) => (
             <ItemTile key={c.id} id={c.id} art={art}>
@@ -182,7 +182,7 @@ function BuildRows({ hero, role, extras, art, compact }: { hero: number; role: n
 
 function LosesTo({ hero, extras, heroes, onSelect }: { hero: number; extras: MetaExtras; heroes: Map<number, MetaHero>; onSelect: (id: number) => void }) {
   const rows = (extras.matchups[hero]?.worst ?? []).slice(0, 3);
-  if (rows.length === 0) return <p className="text-sm text-subtle">Too few games against each Enemy yet.</p>;
+  if (rows.length === 0) return <p className="text-sm text-muted">Too few games against each Enemy yet.</p>;
   return (
     <ul className="grid grid-cols-3 gap-2">
       {rows.map(([id, rate, games]) => {
@@ -292,10 +292,10 @@ export function LeaderCard({ h, i, all, ...p }: CardProps & { i: number; all: Ro
         <p className="text-sm leading-normal text-fg">{whyLine(h, p.high, notes?.changes, p.role, p.oldPatch)}</p>
       </Block>
       <Block title="Build Path" note={p.extras?.builds[h.rate.id]?.[p.role] ? `${p.extras.builds[h.rate.id]![p.role]!.games.toLocaleString("en-US")} games` : undefined}>
-        {p.extras ? <BuildRows hero={h.rate.id} role={p.role} extras={p.extras} art={p.art} /> : <p className="text-sm text-subtle">Builds are being counted.</p>}
+        {p.extras ? <BuildRows hero={h.rate.id} role={p.role} extras={p.extras} art={p.art} /> : <p className="text-sm text-muted">Builds are being counted.</p>}
       </Block>
       <Block title="Loses Most To" note="Adjusted for each Enemy's strength">
-        {p.extras ? <LosesTo hero={h.rate.id} extras={p.extras} heroes={p.heroes} onSelect={p.onSelect} /> : <p className="text-sm text-subtle">Matchups are being counted.</p>}
+        {p.extras ? <LosesTo hero={h.rate.id} extras={p.extras} heroes={p.heroes} onSelect={p.onSelect} /> : <p className="text-sm text-muted">Matchups are being counted.</p>}
       </Block>
     </article>
   );
@@ -327,7 +327,7 @@ export function DarkHorseCard({ h, ...p }: CardProps) {
 function CardKey() {
   const dot = (cls: string) => <i aria-hidden className={`inline-block size-2.5 rounded-[3px] ${cls}`} />;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-subtle" aria-hidden>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" aria-hidden>
       <span className="flex items-center gap-1.5">{dot("bg-radiant")}Buff</span>
       <span className="flex items-center gap-1.5">{dot("bg-dire")}Nerf</span>
       <span className="flex items-center gap-1.5">{dot("bg-accent")}Win Rate by Day</span>

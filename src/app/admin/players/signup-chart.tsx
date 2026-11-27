@@ -18,13 +18,13 @@ export function SignupChart({ stats }: { stats: SignupStats }) {
               className={`w-full max-w-10 rounded-t-sm ${i === last ? "bg-accent" : "bg-accent-deep"}`}
               style={{ height: `${(d.n / most) * 100}%`, minHeight: 3 }}
             />
-            <span className={`num absolute -bottom-6 text-xs ${i === last ? "font-medium text-fg" : "font-normal text-subtle"}`}>
+            <span className={`num absolute -bottom-6 text-xs ${i === last ? "font-medium text-fg" : "font-normal text-muted"}`}>
               {Number(d.date.slice(8))}
             </span>
           </div>
         ))}
       </div>
-      <div aria-hidden className="flex justify-between pt-5 text-xs text-subtle">
+      <div aria-hidden className="flex justify-between pt-5 text-xs text-muted">
         <span>{shortDate(days[0]?.date ?? stats.firstDay).split(" ")[1]}</span>
         <span>Today</span>
       </div>
@@ -53,7 +53,7 @@ export function SignupStrip({ stats }: { stats: SignupStats }) {
         >
           <dt className="text-sm font-medium text-muted">{c.label}</dt>
           <dd className={`num order-none text-xl leading-tight tracking-tight sm:text-2xl ${c.lead ? "text-accent" : "text-fg"}`}>{c.value}</dd>
-          <dd className="w-full text-xs text-subtle">{c.detail}</dd>
+          <dd className="w-full text-xs text-muted">{c.detail}</dd>
         </div>
       ))}
     </dl>

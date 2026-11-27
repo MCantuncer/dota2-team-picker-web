@@ -152,10 +152,10 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
         <Avatar account={account} size={30} />
         <span className="hidden min-w-0 flex-col text-left leading-tight md:flex">
           <span className="max-w-36 truncate text-sm font-medium text-fg">{account.name}</span>
-          {account.detail && <span className="max-w-36 truncate text-xs text-subtle">{account.detail}</span>}
+          {account.detail && <span className="max-w-36 truncate text-xs text-muted">{account.detail}</span>}
         </span>
         {account.rankTier ? <RankMedal rankTier={account.rankTier} size={26} /> : null}
-        <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 text-subtle transition-transform ${open ? "rotate-180" : ""}`}>
+        <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`}>
           <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
@@ -206,7 +206,7 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
 
         {admin && (
           <div role="group" aria-labelledby={`${menuId}-admin`} className="border-t border-line py-1">
-            <div id={`${menuId}-admin`} className="px-2.5 pb-1 pt-1.5 text-xs text-subtle">
+            <div id={`${menuId}-admin`} className="px-2.5 pb-1 pt-1.5 text-xs text-muted">
               Admin
             </div>
             {ADMIN_PAGES.map((page) => (

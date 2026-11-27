@@ -8,7 +8,7 @@ export function ResultSquares({ results }: { results: boolean[] }) {
           <span key={i} aria-hidden className={`h-5 w-3 rounded-xs ${w ? "bg-radiant" : "bg-dire"}`} />
         ))}
       </span>
-      <span aria-hidden className="micro flex justify-between text-subtle" style={{ maxWidth: `${results.length}rem` }}>
+      <span aria-hidden className="micro flex justify-between text-muted" style={{ maxWidth: `${results.length}rem` }}>
         <span>Newest</span>
         <span>Oldest</span>
       </span>

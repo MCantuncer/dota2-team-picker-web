@@ -92,7 +92,7 @@ function Bars({ steps, names, now, label }: { steps: StairStep[]; names: string[
               style={{ height: Math.max(4, Math.round(((s.winRate - floor) / (top - floor)) * 64)) }}
             />
           </div>
-          <span className={`micro ${now === i ? "font-semibold text-fg" : "text-subtle"}`}>{names[i]}</span>
+          <span className={`micro ${now === i ? "font-semibold text-fg" : "text-muted"}`}>{names[i]}</span>
           {now === i && <span className="chip micro chip-accent self-start font-semibold whitespace-nowrap">Your Team</span>}
         </div>
       ))}
@@ -125,7 +125,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
     <section aria-labelledby="threat-plan-title" className="flex flex-col rounded-xl bg-surface ring-1 ring-line ring-inset">
       {threats.length > 1 && (
         <div className="flex flex-col gap-4 border-b border-line p-5 md:p-6">
-          <h3 className="text-sm font-semibold text-subtle">Dangerous Enemies</h3>
+          <h3 className="text-sm font-semibold text-muted">Dangerous Enemies</h3>
           <ThreatTiles threats={threats} chosen={threat.hero} hero={hero} onChoose={setChosen} />
         </div>
       )}
@@ -136,7 +136,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
           </HeroStage>
         )}
         <div className="flex min-w-0 flex-col gap-1">
-          <h3 id="threat-plan-title" className="text-sm font-semibold text-subtle">
+          <h3 id="threat-plan-title" className="text-sm font-semibold text-muted">
             Game Plan Against {him.name}
           </h3>
           <p className="text-lg font-semibold text-fg">{threatVerdict(threat, hero)}</p>
@@ -192,7 +192,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                   <span className="text-radiant">{percent(lostShare(lane.with) * 100)}</span> of his lanes. He usually loses{" "}
                   {percent(lostShare(lane.usual) * 100)}.
                 </p>
-                <p className="text-xs text-subtle">A lane result counts every hero in the lane.</p>
+                <p className="text-xs text-muted">A lane result counts every hero in the lane.</p>
               </>
             }
             picture={
@@ -216,7 +216,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                     </div>
                   );
                 })}
-                <span className="micro flex flex-wrap gap-x-3 text-subtle">
+                <span className="micro flex flex-wrap gap-x-3 text-muted">
                   <span className="flex items-center gap-1">
                     <span className="size-2 rounded-xs bg-radiant-strong" />
                     Your Lane Won
@@ -266,7 +266,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                   <span className={toneOf(pace.early.winRate)}>{percent(pace.early.winRate)}</span>; at {pace.minute + 1} to{" "}
                   {pace.minute + 3}, <span className={toneOf(pace.late.winRate)}>{percent(pace.late.winRate)}</span>.
                 </p>
-                <p className="text-xs text-subtle">
+                <p className="text-xs text-muted">
                   This shows when, not why: a fast item often comes from a game that was already going well.
                 </p>
               </>
@@ -290,7 +290,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                     );
                   })}
                 </div>
-                <span className="micro flex justify-between text-subtle tabular-nums">
+                <span className="micro flex justify-between text-muted tabular-nums">
                   <span>{pace.minutes[0]?.[0]} min</span>
                   <span>Minute Done</span>
                   <span>{pace.minutes.at(-1)?.[0]} min</span>
@@ -318,7 +318,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
           />
         )}
       </div>
-      <p className="px-5 pb-5 text-xs text-subtle md:px-6">
+      <p className="px-5 pb-5 text-xs text-muted md:px-6">
         From ranked All Pick games of the last 10 days (answers and game length) and STRATZ (lanes and items).
       </p>
     </section>

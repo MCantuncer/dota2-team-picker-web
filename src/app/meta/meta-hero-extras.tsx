@@ -46,7 +46,7 @@ export function BuildPanel({ hero, extras, role, art, patch }: { hero: MetaHero;
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
         <div className="grid gap-1">
           <h3 className="font-semibold text-fg">Build in {patch}</h3>
-          <p className="text-sm text-subtle">
+          <p className="text-sm text-muted">
             {build
               ? `Share of ${build.games.toLocaleString("en-US")} ${hero.name} games${position ? ` as ${POSITION_NAMES[position - 1]}` : ""} that ended with each item`
               : `Counted from this patch's ranked games, ${extras.buildGames.toLocaleString("en-US")} so far`}
@@ -87,7 +87,7 @@ function BuildRows({ build, art }: { build: NonNullable<MetaExtras["builds"][str
       <div className={`grid gap-x-8 gap-y-6 ${BUILD_COLS[groups.length] ?? ""}`}>
         {groups.map((g) => (
           <div key={g.name} className="grid content-start gap-3">
-            <h4 className="text-sm text-subtle">{g.name}</h4>
+            <h4 className="text-sm text-muted">{g.name}</h4>
             <ul className="grid gap-2.5">
               {g.items.map((it) => (
                 <li key={it.id} className="grid grid-cols-[3.25rem_minmax(0,1fr)_3rem] items-center gap-x-3 gap-y-1.5">
@@ -107,7 +107,7 @@ function BuildRows({ build, art }: { build: NonNullable<MetaExtras["builds"][str
       </div>
       {build.neutral.length > 0 && (
         <div className="grid gap-3 border-t border-line pt-5">
-          <h4 className="text-sm text-subtle">Neutral Items</h4>
+          <h4 className="text-sm text-muted">Neutral Items</h4>
           <ul className="grid grid-cols-2 gap-3 sm:auto-cols-fr sm:grid-flow-col sm:gap-5">
             {build.neutral.map(([id, games]) => (
               <li key={id} className="flex items-center gap-3">
@@ -128,7 +128,7 @@ function BuildRows({ build, art }: { build: NonNullable<MetaExtras["builds"][str
 function MatchupList({ title, rows, heroes, onSelect, up }: { title: string; rows: Matchup[]; heroes: Map<number, MetaHero>; onSelect: (id: number) => void; up: boolean }) {
   return (
     <div className="grid content-start gap-3">
-      <h4 className="flex items-center gap-2 text-sm text-subtle">
+      <h4 className="flex items-center gap-2 text-sm text-muted">
         <span aria-hidden className={up ? "text-radiant" : "text-dire"}>
           {up ? "▲" : "▼"}
         </span>
@@ -166,7 +166,7 @@ export function MatchupsPanel({ hero, extras, heroes, onSelect }: { hero: MetaHe
     <div className="grid min-w-0 content-start gap-5 rounded-xl bg-raised p-4 ring-1 ring-inset ring-line-strong sm:p-5 lg:col-span-2">
       <div className="grid gap-1">
         <h3 className="font-semibold text-fg">Matchups</h3>
-        <p className="text-sm text-subtle">{hero.name}&apos;s win rate with each hero on the enemy team, this patch</p>
+        <p className="text-sm text-muted">{hero.name}&apos;s win rate with each hero on the enemy team, this patch</p>
       </div>
       <div className="grid gap-6 xl:grid-cols-2 xl:gap-8">
         <MatchupList title="Wins Most Against" rows={m.best} heroes={heroes} onSelect={onSelect} up />

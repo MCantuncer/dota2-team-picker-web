@@ -44,7 +44,7 @@ export function ThreatTiles({
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-sm font-semibold text-fg">{name}</span>
                 <PositionLabel position={t.position} size={14} className="micro text-dire" />
-                <span className="micro text-subtle">{STEP_TEXT[t.step]}</span>
+                <span className="micro text-muted">{STEP_TEXT[t.step]}</span>
               </span>
               <span
                 className={`text-xl font-semibold tracking-tight tabular-nums ${danger >= 53 ? "text-dire" : danger <= 47 ? "text-radiant" : "text-fg"}`}

@@ -188,7 +188,7 @@ function Tile({ value, label, good = false }: { value: ReactNode; label: string;
   return (
     <span className="flex flex-col rounded-xs bg-surface px-2.5 py-1.5">
       <span className={`num text-lg ${good ? "text-radiant" : "text-fg"}`}>{value}</span>
-      <span className="text-xs text-subtle">{label}</span>
+      <span className="text-xs text-muted">{label}</span>
     </span>
   );
 }

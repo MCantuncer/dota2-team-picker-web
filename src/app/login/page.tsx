@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <p className="text-sm text-muted">
         You sign in on steamcommunity.com. We only get your public SteamID, never your password or email.
       </p>
-      <p className="text-sm text-subtle">
+      <p className="text-sm text-muted">
         For rank-based suggestions, turn on <em>Expose Public Match Data</em> in Dota 2 (Settings &gt; Options &gt;
         Social).
       </p>

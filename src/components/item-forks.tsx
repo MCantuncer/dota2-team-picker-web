@@ -18,7 +18,7 @@ export function ForkBlock({ fork }: { fork: ItemFork }) {
         <h4 id={id} className="text-sm font-semibold text-fg">
           If It Is Late
         </h4>
-        <span className="text-xs text-subtle">High-rank wins this patch. Wins only: what winners did, not proof it wins.</span>
+        <span className="text-xs text-muted">High-rank wins this patch. Wins only: what winners did, not proof it wins.</span>
       </div>
       {fork.split ? (
         <Split fork={fork} />
@@ -58,7 +58,7 @@ function Split({ fork }: { fork: ItemFork }) {
                 )}
                 <span className="flex flex-col">
                   <span className="text-sm font-semibold text-fg">{s.name}</span>
-                  <span className="num text-xs text-subtle">
+                  <span className="num text-xs text-muted">
                     Usually {s.minute} min, {s.games} wins
                   </span>
                 </span>
@@ -113,7 +113,7 @@ function Lane({ label, games, of, tone, children }: { label: string; games: numb
           >
             <span className={`block h-full rounded-md ${t.fill}`} style={{ width: `${width}%` }} />
           </span>
-          <span aria-hidden className="num whitespace-nowrap text-xs text-subtle">
+          <span aria-hidden className="num whitespace-nowrap text-xs text-muted">
             {games} of {of} wins
           </span>
         </span>

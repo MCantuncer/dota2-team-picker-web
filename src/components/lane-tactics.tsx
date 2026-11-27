@@ -83,7 +83,7 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "
                   {icons[p.enemy] && <HeroFace portrait={icons[p.enemy]!} name={heroName(p.enemy)} size={30} isEnemy isDecorative />}
                   <span className="flex min-w-0 flex-col items-start text-left leading-tight">
                     {heroName(p.enemy)}
-                    {note?.(p.enemy) && <span className="num text-xs text-subtle">{note(p.enemy)}</span>}
+                    {note?.(p.enemy) && <span className="num text-xs text-muted">{note(p.enemy)}</span>}
                   </span>
                 </button>
               );
@@ -164,7 +164,7 @@ function TacticCard({ tactic, enemy, first, wide, heroName, icons }: Art & { tac
       <div className={`flex items-center gap-3.5 ${wide ? "md:col-span-2" : "sm:max-xl:col-span-2"}`}>
         <TacticIcons spells={tactic.spells} size={40} face={{ portrait: icons[enemy], name: heroName(enemy) }} />
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className={`text-xs ${first ? "font-medium text-accent-bright" : "text-subtle"}`}>{first ? "Care Most" : tactic.tag}</span>
+          <span className={`text-xs ${first ? "font-medium text-accent-bright" : "text-muted"}`}>{first ? "Care Most" : tactic.tag}</span>
           <h5 className="text-base font-semibold leading-snug text-fg">{tactic.title}</h5>
         </div>
       </div>
@@ -314,7 +314,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
           {Array.from({ length: Math.min(casts, 6) }, (_, i) => (
             <i key={i} className="block h-2.5 w-7 rounded-[3px]" style={{ background: "var(--attr-int)" }} />
           ))}
-          <span className="num ml-1 text-subtle">{casts === 1 ? "1 Cast" : `${casts} Casts`}</span>
+          <span className="num ml-1 text-muted">{casts === 1 ? "1 Cast" : `${casts} Casts`}</span>
         </span>
       </div>
     </figure>

@@ -64,7 +64,7 @@ export function PickWinMap({
               strokeWidth={t === 50 ? 1.5 : 1}
               strokeDasharray={t === 50 ? "5 4" : undefined}
             />
-            <text x={M.l - 10} y={y(t) + 4} textAnchor="end" fontSize={12} className="fill-subtle">
+            <text x={M.l - 10} y={y(t) + 4} textAnchor="end" fontSize={12} className="fill-muted">
               {t}%
             </text>
           </g>
@@ -72,7 +72,7 @@ export function PickWinMap({
         {PICK_TICKS.filter((t) => t <= pickMax).map((t) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={M.t} y2={H - M.b} className="stroke-line" />
-            <text x={x(t)} y={H - M.b + 22} textAnchor="middle" fontSize={12} className="fill-subtle">
+            <text x={x(t)} y={H - M.b + 22} textAnchor="middle" fontSize={12} className="fill-muted">
               {t}%
             </text>
           </g>

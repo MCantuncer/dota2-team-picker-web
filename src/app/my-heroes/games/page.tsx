@@ -132,7 +132,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
         {showRecord && record && <RecordStrip record={record} hero={topHero} />}
         {showRecord && record && record.latest.length > 1 && (
           <div className="flex flex-col gap-2">
-            <span className="text-sm text-subtle">
+            <span className="text-sm text-muted">
               Last {record.latest.length} results: won {record.latest.filter(Boolean).length}
             </span>
             <ResultSquares results={record.latest} />

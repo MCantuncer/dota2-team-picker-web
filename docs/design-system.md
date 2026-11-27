@@ -46,8 +46,8 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `stage` | The stage light behind a hero render (`.hero-stage`). A gradient, so `var(--stage)` only |
 | `lane-line` | The Team Plan's mid lane and the ring of an open node (`.lane-spine`, `.lane-node-open`) |
 | `fg` | Main text |
-| `muted` | Secondary text, labels |
-| `subtle` | Placeholders, meta lines. Not on `hover` (fails contrast) |
+| `muted` | The one grey for text: secondary text, labels, captions, placeholders |
+| `subtle` | Off states and small marks only: an unchosen position digit, a passed option, a hover outline, the tick on a bar. Never a tone for text you read (`text-subtle` fails the build) |
 | `accent`, `accent-hover`, `accent-bright`, `accent-deep` | Copper: focus ring, primary button, the recommended answer, selected underline |
 | `accent-tint` | Fill behind a selected or "best" item |
 | `on-accent` | Text on a copper fill |
@@ -297,7 +297,7 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - **Enemy items** on the same line, below it, at their minute: a Dire dot, the item with a 20px enemy face on its
   corner, the minute in Dire red and "Hero: Item". Ours sit above the line, theirs below, so the race reads at a
   glance. Rough (around) minutes leave them off.
-- **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (subtle) under its late minute, and
+- **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (muted) under its late minute, and
   its card ends with the split: two neutral lanes (copper for on time, grey for late) sized by their share of the
   wins, what the late wins bought next with usual minutes, and a Wins Only note. No green or red: neither lane is
   the right one. The path's Late After uses the fork's minute, so both say the same number.
@@ -406,7 +406,7 @@ The Game Story tab's Lanes block (`components/lane-board.tsx`):
   that colour before the line.
 - **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
   bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
-  Support (5). The tile takes the text colour: copper when selected, `subtle` otherwise. Always next to the position name.
+  Support (5). The tile takes the text colour: copper when selected, `muted` otherwise. Always next to the position name.
 - **Focus** is a 2px copper ring with 2px offset on everything interactive (set globally; don't remove it).
 - **Empty states** sit inside their panel: one line in `text-muted` saying what fills it, plus one action.
 - **Loading** for remote data uses skeletons in the real shape. No spinners on the pick path.

@@ -169,7 +169,7 @@ export function PickStrip({
         <div className="flex min-h-[2.375rem] min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
           {head}
           {picks.length > 0 && (
-            <span className="micro flex flex-wrap items-center gap-x-4 gap-y-1 text-subtle">
+            <span className="micro flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
               <span className="flex items-center gap-2">
                 <Strength place={{ rank: 1, of: 5 }} isLegend />
                 Strength Among All {picks[0]!.suggestion.place.of} Heroes for This Role
@@ -453,7 +453,7 @@ function NotThisGame({
           </span>
           Not This Game
         </h3>
-        <p className="micro text-subtle">Your heroes below 0 in this draft</p>
+        <p className="micro text-muted">Your heroes below 0 in this draft</p>
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(9.5rem,100%),1fr))] gap-x-4 gap-y-2">
         {entries.map((entry) => {

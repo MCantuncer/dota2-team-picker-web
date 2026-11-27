@@ -100,9 +100,9 @@ export function FollowPcPanel({
         ))}
       </ol>
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-line-hover px-4 py-3 text-sm text-muted">
-        <span aria-hidden className="live-dot text-subtle" />
+        <span aria-hidden className="live-dot text-muted" />
         Waiting for your PC
-        <span className="ml-auto text-subtle">Same Steam Account</span>
+        <span className="ml-auto text-muted">Same Steam Account</span>
       </div>
     </section>
   );

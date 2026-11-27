@@ -92,7 +92,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
                   <SyncButton />
                 </div>
                 {profile?.synced_at && (
-                  <span className="text-xs text-subtle">
+                  <span className="text-xs text-muted">
                     Last updated <LocalTime iso={profile.synced_at} />
                   </span>
                 )}

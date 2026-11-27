@@ -48,7 +48,7 @@ function RateLine({ h }: { h: RoleHero }) {
   return (
     <span className="flex items-baseline gap-2 text-sm tabular-nums">
       <b className="font-semibold text-fg">{h.rate.win.toFixed(1)}%</b>
-      <span className={d === null ? "text-subtle" : d >= 0 ? "text-radiant" : "text-dire"}>{d === null ? "New" : signed(d)}</span>
+      <span className={d === null ? "text-muted" : d >= 0 ? "text-radiant" : "text-dire"}>{d === null ? "New" : signed(d)}</span>
     </span>
   );
 }
@@ -85,7 +85,7 @@ export function MetaGlance({
             </button>
           </h3>
           {leaders.length === 0 ? (
-            <p className="text-sm text-subtle">Too few games at this rank yet.</p>
+            <p className="text-sm text-muted">Too few games at this rank yet.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-1">
               {leaders.slice(0, 4).map((h, i) => {

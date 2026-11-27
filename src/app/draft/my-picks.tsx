@@ -282,12 +282,12 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
       </span>
       <span className="micro text-muted">Points</span>
       {s.place.rank > 0 && (
-        <span className="micro text-subtle">
+        <span className="micro text-muted">
           {ordinal(s.place.rank)} of {s.place.of} {ROLES[position]}
         </span>
       )}
       {gain !== null && (
-        <span className="micro text-subtle" title="Change in your team's win chance">
+        <span className="micro text-muted" title="Change in your team's win chance">
           <span className={`num ${gain < 0 ? "text-dire" : "text-radiant"}`}>{signed(gain)}%</span> win chance
         </span>
       )}
@@ -319,7 +319,7 @@ function RecordBars({ record, ctx }: { record: VerdictRecord; ctx: PickCtx }) {
   return (
     <section aria-label={title} className="@container flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <span className="micro text-subtle">{title}</span>
+        <span className="micro text-muted">{title}</span>
         {record.goodToo && (
           <span className="micro inline-flex h-6 items-center gap-1.5 rounded-md bg-radiant-tint px-2 font-semibold text-radiant">
             <Icon name="check" />A Good Pick Too
@@ -356,7 +356,7 @@ function RecordRow({ line, ctx, isMine = false }: { line: RecordLine; ctx: PickC
       </span>
       <span className="flex items-baseline justify-end gap-2 text-sm whitespace-nowrap tabular-nums">
         {!line.tooFew && <span className={`font-semibold ${isMine ? "text-radiant" : "text-muted"}`}>{rate}%</span>}
-        <span className="text-subtle">
+        <span className="text-muted">
           {!line.games
             ? "No games yet"
             : line.tooFew
@@ -420,7 +420,7 @@ function OpenRow({
         }`}
       >
         {row}
-        <span className={`flex h-6 items-center transition-transform ${isOpen ? "rotate-180 text-fg" : "text-subtle"}`} aria-hidden>
+        <span className={`flex h-6 items-center transition-transform ${isOpen ? "rotate-180 text-fg" : "text-muted"}`} aria-hidden>
           <Icon name="chevronDown" />
         </span>
       </button>
@@ -443,13 +443,13 @@ function WhyLines({ s, ctx, control, idBase }: { s: Suggestion; ctx: PickCtx; co
   const why = s.why;
   return (
     <div className="flex min-w-0 flex-col gap-2.5">
-      <h4 className="micro text-subtle">Why This Hero</h4>
+      <h4 className="micro text-muted">Why This Hero</h4>
       <ul className={`flex flex-col ${control && why ? "gap-1" : "gap-2.5"}`}>
         {lines.map((l, i) => {
           const part = why && control ? partOfLine(l, ctx.enemies) : null;
           const content = (
             <>
-              <span className={`flex h-6 items-center ${l.isWarn ? "text-warn" : "text-subtle"}`}>
+              <span className={`flex h-6 items-center ${l.isWarn ? "text-warn" : "text-muted"}`}>
                 <Icon name={LINE_ICONS[l.kind]} />
               </span>
               <span className="min-w-0 text-sm leading-6 text-muted">
@@ -696,7 +696,7 @@ export function PickCard({
               onClick={onToggle}
               className="btn btn-ghost btn-icon btn-sm -my-0.5 -mr-1.5 shrink-0"
             >
-              <span className={`flex transition-transform ${isOpen ? "rotate-180 text-fg" : "text-subtle"}`}>
+              <span className={`flex transition-transform ${isOpen ? "rotate-180 text-fg" : "text-muted"}`}>
                 <Icon name="chevronDown" />
               </span>
             </button>
@@ -741,7 +741,7 @@ export function PickCard({
           </div>
 
           <div className="flex flex-col gap-3 border-t border-line pt-5">
-            <h4 className="micro flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-subtle">
+            <h4 className="micro flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-muted">
               Score Parts
               <span className="tabular-nums">
                 <span className="font-semibold text-fg">{signed(split.draft)}</span> From This Draft,{" "}
@@ -853,7 +853,7 @@ export function BestCard({
             {s.name}
           </h3>
           <span className="flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5 text-subtle">
+            <span className="flex items-center gap-1.5 text-muted">
               <PositionIcon position={ctx.position} size={14} />
               <span className="micro text-muted">{POSITION_NAMES[ctx.position - 1]}</span>
             </span>
@@ -878,7 +878,7 @@ export function BestCard({
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 border-t border-line pt-5 md:col-span-2 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0.5 xl:pl-6">
-          <h4 className="micro text-subtle">Score Parts</h4>
+          <h4 className="micro text-muted">Score Parts</h4>
           <div className="grid grid-cols-2 gap-2">
             {(
               [
@@ -903,7 +903,7 @@ export function BestCard({
           />
         </div>
       </div>
-      <p className="micro border-t border-line px-5 py-4 text-subtle md:px-6">{reacting}</p>
+      <p className="micro border-t border-line px-5 py-4 text-muted md:px-6">{reacting}</p>
     </article>
   );
 }
@@ -926,7 +926,7 @@ export function ScoreLadder({ list, hero }: { list: Suggestion[]; hero: PlanHero
           <LaneMark className="text-fg" />
           Score Ladder
         </h3>
-        <p className="micro text-subtle">The light band is how far each score could be off.</p>
+        <p className="micro text-muted">The light band is how far each score could be off.</p>
       </div>
       <ul className="flex flex-col gap-3">
         {list.map((s, i) => (
@@ -952,7 +952,7 @@ export function ScoreLadder({ list, hero }: { list: Suggestion[]; hero: PlanHero
         ))}
       </ul>
       <div className="grid grid-cols-[1.75rem_minmax(0,1fr)_2.75rem] gap-2.5" aria-hidden>
-        <span className="micro relative col-start-2 h-4 text-subtle tabular-nums">
+        <span className="micro relative col-start-2 h-4 text-muted tabular-nums">
           {ticks.map((t) => (
             <span key={t} className="absolute -translate-x-1/2" style={{ left: `${x(t)}%` }}>
               {t > 0 ? `+${t}` : t < 0 ? `−${-t}` : "0"}

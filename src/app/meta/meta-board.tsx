@@ -33,7 +33,7 @@ export function Panel({ title, note, actions, small, children }: { title: string
       <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
         <div className="grid gap-1">
           <Heading className={small ? "text-lg font-semibold text-fg" : "section-title"}>{title}</Heading>
-          {note && <p className="text-sm text-subtle">{note}</p>}
+          {note && <p className="text-sm text-muted">{note}</p>}
         </div>
         {actions}
       </div>
@@ -116,7 +116,7 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
         <RoleTabs role={role} onChange={setRole} />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-subtle">Rank</span>
+            <span className="text-sm text-muted">Rank</span>
             <div className="seg h-auto" role="group" aria-label="Rank">
               <Choice pressed={slice === 0} onClick={() => setSlice(0)}>
                 All Ranks
@@ -238,7 +238,7 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
 /** What the day line in each row shows. */
 function ListKey() {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-subtle" aria-hidden>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted" aria-hidden>
       <span className="flex items-center gap-2">
         <svg width={28} height={8}>
           <line x1={0} x2={28} y1={4} y2={4} className="stroke-line-control" strokeDasharray="3 3" strokeWidth={1.5} />

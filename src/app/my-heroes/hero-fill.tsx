@@ -130,7 +130,7 @@ export function FillButton({ place = "heading", primary = false }: { place?: "he
   const running = state === "running";
   return (
     <div className="flex flex-wrap items-center gap-3" data-tour="my-heroes-fill">
-      {readyAt && now && !running && <span className="text-sm text-subtle">{againAt(readyAt, now)}</span>}
+      {readyAt && now && !running && <span className="text-sm text-muted">{againAt(readyAt, now)}</span>}
       <button
         type="button"
         onClick={start}
@@ -281,7 +281,7 @@ export function FillCard({ added }: { added: FillAdded }) {
 function CardIcon({ tone, icon = "chart" }: { tone: "accent" | "quiet" | "warn"; icon?: "lock" | "chart" | "clock" | "alert" }) {
   const colors = {
     accent: "bg-accent-tint text-accent",
-    quiet: "bg-raised text-subtle",
+    quiet: "bg-raised text-muted",
     warn: "bg-warn-tint text-warn",
   }[tone];
   return (
