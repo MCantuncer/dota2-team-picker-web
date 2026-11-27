@@ -26,6 +26,41 @@ describe("patchNotice", () => {
     });
   });
 
+  it("adds the newest letter patch and its own day", () => {
+    const notice = patchNotice(
+      {
+        patch: {
+          ...patch,
+          release: {
+            name: "7.42a",
+            startedAt: "2026-11-24T08:00:00.000Z",
+            from: "valve",
+          },
+        },
+        matchups,
+        matchupsFrom: { source: "stratz", at: "", patchGames: 750 },
+      },
+      new Date("2026-11-27T00:30:00Z"),
+    );
+    expect(notice?.day).toBe(9);
+    expect(notice?.release).toEqual({ name: "7.42a", day: 3 });
+  });
+
+  it("leaves the release out when it is the big patch itself", () => {
+    const notice = patchNotice(
+      {
+        patch: {
+          ...patch,
+          release: { name: "7.42", startedAt: patch.startedAt, from: "valve" },
+        },
+        matchups,
+        matchupsFrom: { source: "stratz", at: "", patchGames: 750 },
+      },
+      new Date("2026-11-21T11:00:00Z"),
+    );
+    expect(notice?.release).toBeUndefined();
+  });
+
   it("counts the release day as day 1", () => {
     const notice = patchNotice(
       {

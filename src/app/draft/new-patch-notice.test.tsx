@@ -18,4 +18,28 @@ describe("NewPatchNotice", () => {
       screen.getByRole("meter", { name: "Pick data from 7.42" }),
     ).toHaveAttribute("aria-valuenow", "64");
   });
+
+  it("leads with the letter patch and its day, and says its games weigh more", () => {
+    const { container } = render(
+      <NewPatchNotice
+        notice={{
+          name: "7.42",
+          day: 9,
+          patchGames: 997075,
+          share: 0.67,
+          release: { name: "7.42a", day: 3 },
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "New Patch 7.42a" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("New Patch, Day 3")).toBeInTheDocument();
+    expect(container.textContent).toContain(
+      "ranked games from 7.42, weighing 7.42a games more.",
+    );
+    expect(
+      screen.getByRole("meter", { name: "Pick data from 7.42" }),
+    ).toHaveAttribute("aria-valuenow", "67");
+  });
 });
