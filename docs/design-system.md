@@ -134,6 +134,22 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
 or class in its own small PR, then use it.
 
+## Page Opening
+
+A reading page opens with the Stage, `PageStage` (`src/components/page-stage.tsx`), and says its finding first:
+
+- **Name line**: the page's name in 14px semibold with short facts beside it (the patch chip, the day, how many
+  games the numbers come from).
+- **Title**: the finding, calculated from the page's data on every load and Title Cased ("Meepo Leads Mid at
+  57.0%"). It is the `h1`; the page's name is read before it for screen readers. 40px from `sm`, 28px on a phone.
+  Never a typed slogan: if the data cannot back a finding, the title falls back to what the page is.
+- **Line**: one or two sentences with the numbers behind the title.
+- **Hero**: the render of the hero the title names, dimmed (`HeroRender`), on the right from `lg`. Below `lg` it is a
+  faint backdrop that fades out at the section's foot. One per page. A page without a hero puts its own figure there.
+
+Meta is the first page on the Stage (`metaVerdict` in `src/lib/meta-verdict.ts` writes its title for the chosen Role
+and Rank). Draft keeps its compact working head and Home its landing layout.
+
 ## Role and Rank
 
 Two controls, the same on every page:
