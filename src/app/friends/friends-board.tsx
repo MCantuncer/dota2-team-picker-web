@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Avatar } from "@/components/account-menu";
 import { Icon } from "@/components/icon";
+import { PageStage } from "@/components/page-stage";
 import { PageTour } from "@/components/page-tour";
 import { RankMedal } from "@/components/rank-medal";
 import type { HeroArt } from "@/components/stacks/stack-lineup";
 import { winPercent, type Friend, type FriendRequest, type SharedGame } from "@/lib/friends";
+import { friendsVerdict } from "@/lib/friends-verdict";
 import { createClient } from "@/lib/supabase/client";
 import { FriendDetail } from "./friend-detail";
 
@@ -24,7 +26,7 @@ export interface Suggestion {
 export type PartyRole = "leader" | "member" | null;
 
 /**
- * The Friends page: your friend link, then your friends as a list (requests, in your party, the rest,
+ * The Friends page: its Stage with your friend link, then your friends as a list (requests, in your party, the rest,
  * players from your Stacks) with the selected friend opened beside it. On phones the list and the friend
  * are separate screens: `opened` says the address named a friend.
  */
@@ -78,25 +80,22 @@ export function FriendsBoard({
   const sent = requests.filter((r) => !r.incoming);
   const inParty = friends.filter((f) => f.party === "yours");
   const rest = friends.filter((f) => f.party !== "yours");
+  const verdict = friendsVerdict(friends.length, selected, games, (id) => heroes[id]?.name);
 
   return (
     <>
-      {/* Title, friend link, then the page's ?, each in its own column; on a phone the link drops under both. */}
-      <div
-        className={`grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-6 gap-y-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] ${opened ? "max-lg:hidden" : ""}`}
-      >
-        <div className="flex flex-col gap-1.5">
-          <h1 className="page-title">Friends</h1>
-          <p className="text-sm text-muted">Who you queue with, and how you do together.</p>
-        </div>
-        {friendCode && (
-          <div className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
-            <FriendLink code={friendCode} />
-          </div>
-        )}
-        <div className="self-start sm:col-start-3 sm:row-start-1">
-          <PageTour tour="friends" />
-        </div>
+      {/* The finding is about the friend who is open. On a phone an open friend is a screen of its own, without it. */}
+      <div className={opened ? "max-lg:hidden" : undefined}>
+        <PageStage
+          name="Friends"
+          facts={verdict.facts ? <span>{verdict.facts}</span> : undefined}
+          title={verdict.title}
+          portrait={verdict.heroId ? heroes[verdict.heroId]?.image : undefined}
+          aside={<PageTour tour="friends" />}
+          actions={friendCode ? <FriendLink code={friendCode} /> : undefined}
+        >
+          {verdict.line}
+        </PageStage>
       </div>
       {error && <p role="alert" className="text-sm text-dire">{error}</p>}
       {opened && (
@@ -296,12 +295,12 @@ function FriendLink({ code }: { code: string }) {
   };
 
   return (
-    <div data-tour="friends-link" className="flex w-full flex-col gap-1.5 sm:w-[27rem]">
+    <div data-tour="friends-link" className="flex w-full min-w-0 flex-col gap-1.5 sm:w-[27rem]">
       <label htmlFor="friend-link" className="text-sm text-muted">
         Your Friend Link
       </label>
       <div className="flex gap-2">
-        <input id="friend-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="field min-w-0 flex-1 text-sm" />
+        <input id="friend-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="field w-0 min-w-0 flex-1 text-sm" />
         <button onClick={copy} className="btn btn-primary">
           <Icon name={copied ? "check" : "copy"} />
           {copied ? "Copied" : "Copy Link"}

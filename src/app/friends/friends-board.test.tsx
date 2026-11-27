@@ -58,6 +58,15 @@ describe("FriendsBoard", () => {
     refresh.mockReset();
   });
 
+  it("opens with how you do beside the open friend, and changes with them", () => {
+    const { unmount } = show();
+    expect(screen.getByRole("heading", { level: 1, name: "Friends: You Win 67% with Deniz, Best on Invoker" })).toBeInTheDocument();
+    expect(screen.getByText("3 friends")).toBeInTheDocument();
+    unmount();
+    show({ selected: selin, games: [] });
+    expect(screen.getByRole("heading", { level: 1, name: "Friends: No Games with Selin Yet" })).toBeInTheDocument();
+  });
+
   it("groups friends: requests, in your party, then the rest", () => {
     show();
     const list = screen.getByRole("complementary", { name: "Your friends" });
