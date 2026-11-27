@@ -165,7 +165,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
                   {mine && <span className="rounded-full bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>}
                 </span>
                 <span className="flex items-center gap-1.5 text-sm text-muted">
-                  <PositionLabel position={p.position} size={14} iconClassName="text-subtle" />
+                  <PositionLabel position={p.position} size={14} iconClassName="text-muted" />
                   {who && who !== "You" ? <span>· {who}</span> : null}
                 </span>
               </span>

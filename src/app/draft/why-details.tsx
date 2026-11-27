@@ -64,7 +64,7 @@ export function WhyOpen({ target, why, breakdown, score, heroName, hero, owner }
             <Chip icon={PART_ICONS[target.part]}>
               {PART_NAMES[target.part]} <Num value={total} />
             </Chip>
-            <span className="text-subtle" aria-hidden>
+            <span className="text-muted" aria-hidden>
               <Icon name="chevronRight" />
             </span>
           </>
@@ -72,7 +72,7 @@ export function WhyOpen({ target, why, breakdown, score, heroName, hero, owner }
         <Chip>
           Score <Num value={score} />
         </Chip>
-        <span className="micro ml-auto text-subtle">1 Point ≈ 1% Win Chance</span>
+        <span className="micro ml-auto text-muted">1 Point ≈ 1% Win Chance</span>
       </div>
     </div>
   );
@@ -106,7 +106,7 @@ function Chip({ icon, children, isOn = false }: { icon?: IconName; children: Rea
       }`}
     >
       {icon && (
-        <span className="text-subtle">
+        <span className="text-muted">
           <Icon name={icon} />
         </span>
       )}
@@ -130,7 +130,7 @@ function Track({ expected, counted, seen, expectedLabel = "Expected" }: { expect
       style={{ left: `${left}%` }}
     >
       <span className={`text-sm leading-5 ${isStrong ? "font-semibold text-fg" : "text-muted"}`}>{(value * 100).toFixed(1)}%</span>
-      <span className="micro whitespace-nowrap text-subtle">{word}</span>
+      <span className="micro whitespace-nowrap text-muted">{word}</span>
     </span>
   );
   return (
@@ -163,7 +163,7 @@ function Equation({ terms, result, resultLabel = "Points" }: { terms: { value: s
       {terms.map((t, i) => (
         <span key={t.label} className="flex items-center gap-2">
           {i > 0 && (
-            <span className="text-subtle" aria-hidden>
+            <span className="text-muted" aria-hidden>
               ×
             </span>
           )}
@@ -171,7 +171,7 @@ function Equation({ terms, result, resultLabel = "Points" }: { terms: { value: s
         </span>
       ))}
       {terms.length > 0 && (
-        <span className="text-subtle" aria-hidden>
+        <span className="text-muted" aria-hidden>
           =
         </span>
       )}
@@ -184,7 +184,7 @@ function Term({ value, label, isResult = false, isNegative = false }: { value: s
   return (
     <span className={`flex min-w-14 flex-col items-center rounded-md px-2.5 py-1.5 ${isResult ? "bg-surface ring-1 ring-line-control ring-inset" : "ring-1 ring-line ring-inset"}`}>
       <span className={`text-sm font-semibold tabular-nums ${isNegative ? "text-dire" : "text-fg"}`}>{value}</span>
-      <span className="micro whitespace-nowrap text-subtle">{label}</span>
+      <span className="micro whitespace-nowrap text-muted">{label}</span>
     </span>
   );
 }
@@ -260,7 +260,7 @@ function RoleFitExplain({ why }: { why: PickWhy }) {
         <span className="relative h-9">
           <span className={`absolute flex flex-col ${f.share > 0.85 ? "-translate-x-full items-end" : "-translate-x-1/2 items-center"}`} style={{ left: x(f.share) }}>
             <span className="text-sm leading-5 font-semibold text-fg tabular-nums">{share}%</span>
-            <span className="micro flex items-center gap-1 whitespace-nowrap text-subtle">
+            <span className="micro flex items-center gap-1 whitespace-nowrap text-muted">
               <PositionIcon position={f.position} size={12} />
               {POSITION_NAMES[f.position - 1]}
             </span>
@@ -278,7 +278,7 @@ function RoleFitExplain({ why }: { why: PickWhy }) {
           <span className="absolute inset-y-0 right-0 bg-radiant/45" style={{ left: x(f.fullAt) }} />
           <span className="absolute inset-y-0 w-1 -translate-x-1/2 rounded-xs bg-fg" style={{ left: x(Math.min(f.share, 0.99)) }} />
         </span>
-        <span className="micro relative h-8 text-subtle tabular-nums">
+        <span className="micro relative h-8 text-muted tabular-nums">
           {(
             [
               [f.zeroAt, "0"],
@@ -312,10 +312,10 @@ function NeedsExplain({ why }: { why: PickWhy }) {
           <li
             key={n.need}
             className={`flex h-10 items-center gap-2 rounded-md px-2.5 text-sm ${
-              n.isCovered ? "bg-radiant-tint text-fg ring-1 ring-radiant/40 ring-inset" : "border border-dashed border-line-control text-subtle"
+              n.isCovered ? "bg-radiant-tint text-fg ring-1 ring-radiant/40 ring-inset" : "border border-dashed border-line-control text-muted"
             }`}
           >
-            <span className={n.isCovered ? "text-radiant" : "text-subtle"}>
+            <span className={n.isCovered ? "text-radiant" : "text-muted"}>
               <Icon name={n.isCovered ? "check" : "minus"} />
             </span>
             {capital(NEED_SHORT[n.need].replace(/^an? /, ""))}
@@ -439,7 +439,7 @@ function SafetyExplain({ why, item, focus, hero }: { why: PickWhy; item: WhyItem
           </span>
         ))}
         {s.banned.map((id) => (
-          <span key={id} className="flex items-center gap-2 text-sm text-subtle">
+          <span key={id} className="flex items-center gap-2 text-sm text-muted">
             <Face id={id} hero={hero} size={28} isEnemy />
             <Icon name="ban" />
           </span>
@@ -482,7 +482,7 @@ function WholePart({ part, why, hero, owner }: { part: WhyPart; why: PickWhy; he
                 <Face id={r.face} hero={hero} size={24} isEnemy={r.isEnemy} />
               ) : (
                 r.icon && (
-                  <span className="text-subtle">
+                  <span className="text-muted">
                     <Icon name={r.icon} />
                   </span>
                 )

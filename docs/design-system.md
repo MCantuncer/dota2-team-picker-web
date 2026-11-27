@@ -46,8 +46,8 @@ Use them as Tailwind utilities (`bg-surface`, `text-muted`, `border-line`, `ring
 | `stage` | The stage light behind a hero render (`.hero-stage`). A gradient, so `var(--stage)` only |
 | `lane-line` | The Team Plan's mid lane and the ring of an open node (`.lane-spine`, `.lane-node-open`) |
 | `fg` | Main text |
-| `muted` | Secondary text, labels |
-| `subtle` | Placeholders, meta lines. Not on `hover` (fails contrast) |
+| `muted` | The one grey for text: secondary text, labels, captions, placeholders |
+| `subtle` | Off states and small marks only: an unchosen position digit, a passed option, a hover outline, the tick on a bar. Never a tone for text you read (`text-subtle` fails the build) |
 | `accent`, `accent-hover`, `accent-bright`, `accent-deep` | Copper: focus ring, primary button, the recommended answer, selected underline |
 | `accent-tint` | Fill behind a selected or "best" item |
 | `on-accent` | Text on a copper fill |
@@ -156,11 +156,18 @@ An enemy's edge is Dire red. The components are in `components/hero-frame.tsx`:
 
 - **`HeroFace`**: a square crop of the 256x144 portrait, 20 to 64px, for rails, reason lines and chips. `isEnemy`,
   `isDim` (banned or out of play), and `isDecorative` when the name is written next to it.
+- **`HeroPortrait`**: the whole 16:9 portrait in a frame that fills its column, for lists and boards where the name
+  is written next to it (the Meta lists, matchups). `isFace` crops it to the square face when the column, not a
+  fixed size, sets how big the face is. Never draw a bare portrait with `rounded-*`.
 - **`HeroStage` with `HeroArt`**: every large hero card shows the full-body render on our stage, never the 16:9
   portrait. `HeroArt` loads the render from the Steam CDN through `next/image`, at most 720px wide so it is never
-  shown past its own pixels.
+  shown past its own pixels. In a frame whose width changes with the page, give the placement a `frameWidth` and
+  the stage `@container`: the render then scales with the frame.
 - **`CutOutline`**: an empty slot. Solid corners, dashed straight edges, in `line-control`.
 - **`LaneMark`**: the 16px section mark, in the text colour.
+
+One exception: the Meta Map keeps the game's minimap icons, because 127 dots on a chart read better as icons than
+as framed faces.
 
 ## Team Plan
 
@@ -297,7 +304,7 @@ The Item Build tab's Build Path (`components/build-path.tsx`):
 - **Enemy items** on the same line, below it, at their minute: a Dire dot, the item with a 20px enemy face on its
   corner, the minute in Dire red and "Hero: Item". Ours sit above the line, theirs below, so the race reads at a
   glance. Rough (around) minutes leave them off.
-- **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (subtle) under its late minute, and
+- **If It Is Late**: a core item with high-rank win paths says "N of M On Time" (muted) under its late minute, and
   its card ends with the split: two neutral lanes (copper for on time, grey for late) sized by their share of the
   wins, what the late wins bought next with usual minutes, and a Wins Only note. No green or red: neither lane is
   the right one. The path's Late After uses the fork's minute, so both say the same number.
@@ -345,13 +352,22 @@ The Item Build tab's threat tiles (`components/who-hurts-you.tsx`), one per thre
 
 ## Game Clock
 
-The Game Story tab's minute line (`components/story-timeline.tsx`) with three marks on top of the key items:
+The Game Story tab's minute line (`components/story-timeline.tsx`) is drawn as Race Rows (Can's pick, 2026-11-27):
 
-- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band on
-  the axis from our ready minute to theirs, the ready label reading "Fight Here, 15 to 17". When they are first, a
-  Dire band reads "Hold Until N".
-- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down to a warn chip with the question
-  ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the axis the label sits left of the line.
+- **Rows**: one per core with a key item, Your Team then Enemy, each under a short title with a radiant or dire mark.
+  A 40px `HeroFace` and the name on the left (faces only on phones), a track on the right with a bar of farm leading
+  to the item, the item centred on its minute and the minute beside it in the side's colour.
+- **Ruler**: zoomed to where the marks land, three minutes before the first (never before 10) to two after the last
+  (`rulerSpan` in `lib/story-axis.ts`). Every minute is ticked; numbers every 1, 2 or 5 minutes so they never touch,
+  and a phone keeps only numbers the wide ruler shows. Nothing is pushed sideways: close items are drawn close.
+- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band
+  down every row from our ready minute to theirs, labelled "Fight Here, 15 to 17" above the ruler. When they are
+  first, a Dire band reads "Hold Until N". Without a race, a copper line reads "Ready to Fight".
+- **Roshan**: a quiet dashed line with the Aegis and "Roshan N+" on the ruler's second line.
+- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down every row to a warn chip with
+  the question ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the ruler the words sit left of
+  the line; on phones they take the row under the rows.
+- Labels past the middle of the ruler open to the left of their line. Item art sits above every line.
 - **At 20 Min**: the team's fallbacks as two cards, Ahead (radiant left edge) then Behind (dire left edge), question
   bold in the side's colour and the answer under it.
 
@@ -406,7 +422,7 @@ The Game Story tab's Lanes block (`components/lane-board.tsx`):
   that colour before the line.
 - **Position icons** (`PositionIcon`): Dota's role symbols on a solid tile, the symbol cut out. Sword Safe Lane (1),
   bow Mid Lane (2), shield with lightning Off Lane (3), hand with a flame Soft Support (4), hand with a cross Hard
-  Support (5). The tile takes the text colour: copper when selected, `subtle` otherwise. Always next to the position name.
+  Support (5). The tile takes the text colour: copper when selected, `muted` otherwise. Always next to the position name.
 - **Focus** is a 2px copper ring with 2px offset on everything interactive (set globally; don't remove it).
 - **Empty states** sit inside their panel: one line in `text-muted` saying what fills it, plus one action.
 - **Loading** for remote data uses skeletons in the real shape. No spinners on the pick path.

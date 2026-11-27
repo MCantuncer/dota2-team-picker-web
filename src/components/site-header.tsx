@@ -34,7 +34,7 @@ export function SiteHeader() {
           <LogoMark className="h-8 w-8" />
           <span className="flex flex-col leading-none">
             <span className="text-base font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
-            <span className="mt-1 text-xs text-subtle">for Dota 2</span>
+            <span className="mt-1 text-xs text-muted">for Dota 2</span>
           </span>
         </Link>
         <Suspense fallback={<div className="ml-auto" />}>

@@ -184,7 +184,7 @@ function JoinControl({ stack, onError }: { stack: StackSummary; onError: (e: str
   if (request) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-sm text-subtle">Asked, waiting for the owner</span>
+        <span className="text-sm text-muted">Asked, waiting for the owner</span>
         <button onClick={() => cancel(request)} disabled={busy} className="btn btn-secondary btn-lg">
           Cancel
         </button>

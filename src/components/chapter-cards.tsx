@@ -122,7 +122,7 @@ function ComboArt({
         <div className="flex items-center gap-2" aria-hidden>
           {spells.map((s, i) => (
             <span key={s.key} className="flex items-center gap-2">
-              {i > 0 && <span className="text-lg text-subtle">+</span>}
+              {i > 0 && <span className="text-lg text-muted">+</span>}
               <Image src={`${ABILITY_CDN}${s.key}.png`} alt="" width={48} height={48} className="size-12 rounded-md" />
             </span>
           ))}
@@ -162,7 +162,7 @@ function RaceWindow({ chapter, story }: { chapter: Chapter; story: Story }) {
   const fight = race.ready < theirs.minute;
   return (
     <div className="flex flex-col gap-2.5 border-t border-line pt-4">
-      <div className="flex items-center gap-2 text-xs text-subtle" aria-hidden>
+      <div className="flex items-center gap-2 text-xs text-muted" aria-hidden>
         <span className="num">{from}</span>
         <span className="relative h-2.5 flex-1 rounded-xs bg-raised">
           {hi > lo && <i className={`absolute inset-y-0 rounded-xs ${fight ? "bg-accent" : "bg-dire/70"}`} style={{ left: `${at(lo)}%`, width: `${at(hi) - at(lo)}%` }} />}

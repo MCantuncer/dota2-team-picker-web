@@ -725,7 +725,7 @@ export function DraftBoard({
       side={mySide === "dire" ? "radiant" : "dire"}
       isSideKnown={mySide !== null}
       className={enemyFirst ? "" : secondRail}
-      aside={anyGuess && <span className="micro text-subtle">Dashed Is a Guess</span>}
+      aside={anyGuess && <span className="micro text-muted">Dashed Is a Guess</span>}
       input={
         !locked &&
         enemies.length < TEAM_SIZE && (
@@ -989,7 +989,7 @@ export function DraftBoard({
           </div>
           <div className="flex flex-col items-start gap-3 max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6">
             <div className="flex items-center gap-2" data-tour="draft-role">
-              <span className="micro text-subtle" id="my-position">
+              <span className="micro text-muted" id="my-position">
                 Role
               </span>
               <div className="lane-seg lane-seg-sm max-sm:[&>button]:px-2.5" role="group" aria-labelledby="my-position">
@@ -1015,12 +1015,12 @@ export function DraftBoard({
             </div>
             {/* Phones can't hover for the reason a Role is off, so it is written out. */}
             {waitingSeats.length > 0 && (
-              <p className="text-xs text-subtle sm:hidden">
+              <p className="text-xs text-muted sm:hidden">
                 {waitingSeats.map((s) => `${POSITION_NAMES[s.position - 1]} is waiting for ${s.name}.`).join(" ")}
               </p>
             )}
             <label className="flex items-center gap-2">
-              <span className="micro text-subtle">Rank</span>
+              <span className="micro text-muted">Rank</span>
               <select
                 value={rank ?? ""}
                 onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
@@ -1102,12 +1102,12 @@ export function DraftBoard({
       )}
 
       {locked ? (
-        <p className="text-xs text-subtle">
+        <p className="text-xs text-muted">
           {captainName} enters every hero. Tell them which of your picks you want.
         </p>
       ) : (
         showKeys && (
-          <p id="draft-keys" className="text-xs text-subtle">
+          <p id="draft-keys" className="text-xs text-muted">
             Type 2 or 3 letters and press <Kbd>Enter</Kbd>; <Kbd>Tab</Kbd> moves to the next box. Several at once work too
             (<span className="text-muted">pa sf</span>). Add a digit for a hero&apos;s position (<span className="text-muted">cm5</span>, <span className="text-muted">sf2</span>).
             <Kbd>Backspace</Kbd> in an empty box takes the last hero back out. In an empty box, <Kbd>1</Kbd> to <Kbd>8</Kbd> open a

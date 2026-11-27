@@ -33,7 +33,7 @@ export function NewPatchNotice({ notice }: { notice: PatchNotice }) {
       </p>
       <div className="flex flex-col gap-1.5 max-sm:col-span-2">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="micro text-subtle">
+          <span className="micro text-muted">
             Pick Data from {notice.name}
           </span>
           <span className="num text-sm font-semibold text-fg">{percent}%</span>

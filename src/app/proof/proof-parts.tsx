@@ -91,7 +91,7 @@ export function Scale({
   return (
     <div aria-hidden className="relative h-5 min-w-28">
       {ticks.map((t) => (
-        <span key={t} className="absolute -translate-x-1/2 text-xs text-subtle" style={{ left: at(t, lo, hi) }}>
+        <span key={t} className="absolute -translate-x-1/2 text-xs text-muted" style={{ left: at(t, lo, hi) }}>
           {format(t)}
         </span>
       ))}
@@ -180,7 +180,7 @@ export function RivalRows({ rivals }: { rivals: Proof["rivals"] }) {
           >
             <span className="grid">
               <span className="font-semibold">{name}</span>
-              <span className="text-sm text-subtle">{help}</span>
+              <span className="text-sm text-muted">{help}</span>
             </span>
             {lift !== null && margin !== null ? (
               <>
@@ -201,7 +201,7 @@ export function RivalRows({ rivals }: { rivals: Proof["rivals"] }) {
                 </span>
               </>
             ) : (
-              <span className="text-right text-subtle">Too few picks</span>
+              <span className="text-right text-muted">Too few picks</span>
             )}
           </div>
         );
@@ -210,7 +210,7 @@ export function RivalRows({ rivals }: { rivals: Proof["rivals"] }) {
         <span />
         <Scale lo={lo} hi={hi} ticks={ticksOf(lo, hi, 5)} format={(t) => (t > 0 ? `+${t}` : t < 0 ? `−${-t}` : "0")} />
       </div>
-      <p className="text-sm text-subtle">
+      <p className="text-sm text-muted">
         The dot is the gain in win rate points over every other pick, the shaded part its range.
       </p>
     </div>
@@ -223,7 +223,7 @@ export function RivalRows({ rivals }: { rivals: Proof["rivals"] }) {
  */
 export function RunningLine({ running }: { running: Proof["running"] }) {
   if (running.length < 2)
-    return <p className="text-sm text-subtle">The line starts once a few more days of games are in.</p>;
+    return <p className="text-sm text-muted">The line starts once a few more days of games are in.</p>;
   const [lo, hi] = scaleFor(
     running.flatMap((p) => [(p.lift - p.margin) * 100, (p.lift + p.margin) * 100]),
     0,
@@ -245,7 +245,7 @@ export function RunningLine({ running }: { running: Proof["running"] }) {
       <div className="grid grid-cols-[2rem_1fr] gap-x-2">
         <div aria-hidden className="relative h-44">
           {ticksOf(lo, hi, 5).map((t) => (
-            <span key={t} className="absolute right-0 -translate-y-1/2 text-xs text-subtle" style={{ top: `${y(t)}%` }}>
+            <span key={t} className="absolute right-0 -translate-y-1/2 text-xs text-muted" style={{ top: `${y(t)}%` }}>
               {label(t)}
             </span>
           ))}
@@ -295,12 +295,12 @@ export function RunningLine({ running }: { running: Proof["running"] }) {
             </span>
           ))}
         </div>
-        <div aria-hidden className="col-start-2 mt-2 flex justify-between text-xs text-subtle">
+        <div aria-hidden className="col-start-2 mt-2 flex justify-between text-xs text-muted">
           <span>{shortDay(running[0]!.day)}</span>
           <span>{shortDay(last.day)}</span>
         </div>
       </div>
-      <p className="text-sm text-subtle">
+      <p className="text-sm text-muted">
         All games so far on each day. Today {signedPoints(last.lift)}, from {signedPoints(last.lift - last.margin)} to{" "}
         {signedPoints(last.lift + last.margin)}.
       </p>
@@ -334,7 +334,7 @@ function LiftTile({
     >
       <span className={row ? "row-span-2 min-[52rem]:row-span-1" : undefined}>{label}</span>
       {lift.lift === null || lift.margin === null ? (
-        <span className="text-sm text-subtle">Too few picks</span>
+        <span className="text-sm text-muted">Too few picks</span>
       ) : (
         <>
           <span
@@ -342,7 +342,7 @@ function LiftTile({
           >
             {signedPoints(lift.lift)}
           </span>
-          <span className={`text-sm text-subtle ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}>
+          <span className={`text-sm text-muted ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}>
             Give or take {(lift.margin * 100).toFixed(1)}
           </span>
         </>
@@ -504,7 +504,7 @@ export function FourSteps({ proof }: { proof: Proof }) {
             <Icon name={s.icon} />
           </span>
           <span className="font-semibold">{s.title}</span>
-          <span className="text-sm text-subtle">{s.text(proof)}</span>
+          <span className="text-sm text-muted">{s.text(proof)}</span>
         </li>
       ))}
     </ol>

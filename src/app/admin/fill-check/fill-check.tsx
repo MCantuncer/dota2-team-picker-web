@@ -105,7 +105,7 @@ function Results({ report, nowS, name }: { report: FillCheckReport; nowS: number
           Positions
         </h2>
         <table className="w-full text-left text-sm">
-          <thead className="text-subtle">
+          <thead className="text-muted">
             <tr>
               <th className="py-1 font-medium">Position</th>
               <th className="py-1 font-medium">Games</th>
@@ -161,7 +161,7 @@ function HeroList({
         {title}
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-subtle">{empty}</p>
+        <p className="text-sm text-muted">{empty}</p>
       ) : (
         <ul className="flex flex-col">
           {rows.map((r) => (
@@ -174,7 +174,7 @@ function HeroList({
                 {r.games} games, {r.wins} won ({percent(r.wins / r.games)}), {r.strongGames} of {r.judgedGames} strong
                 {r.gamesNeeded !== null && `, needed ${r.gamesNeeded}`}, last played {Math.max(0, Math.round((nowS - r.lastPlayed) / DAY_S))} days ago
               </span>
-              {"why" in r && <span className="text-subtle">{r.why}</span>}
+              {"why" in r && <span className="text-muted">{r.why}</span>}
             </li>
           ))}
         </ul>

@@ -107,7 +107,7 @@ export function PairBar({ pair, heroName }: { pair: PairLane; heroName: (id: num
           </div>
         ))}
       </dl>
-      <figcaption className="text-sm text-subtle">
+      <figcaption className="text-sm text-muted">
         <span className="num">{pair.games.toLocaleString("en-US")}</span> lanes of {heroName(pair.hero)} against {heroName(pair.enemy)}
       </figcaption>
     </figure>

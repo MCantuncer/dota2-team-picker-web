@@ -47,7 +47,7 @@ export function Rail({
   const head = (
     <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-4 gap-y-3">
       <div className="flex items-center gap-2.5">
-        <LaneMark className={side ? SIDE_TEXT[side] : "text-subtle"} />
+        <LaneMark className={side ? SIDE_TEXT[side] : "text-muted"} />
         <h2 id={headingId} className="text-base font-semibold whitespace-nowrap text-fg">
           {title} <span className="num ml-1 font-normal text-muted">{count}</span>
           {side && isSideKnown && <span className="sr-only"> {side === "radiant" ? "Radiant" : "Dire"}</span>}
@@ -122,12 +122,12 @@ export function RailSlot({ name, portrait, side, by, onRemove, children }: RailS
         )}
       </span>
       <span aria-hidden className={`h-0.5 rounded-xs max-sm:hidden ${SIDE_BAR[side]}`} />
-      <span className="micro flex items-center gap-2 font-semibold text-fg">
+      <span className="micro flex items-center gap-2 font-semibold text-fg sm:grow sm:items-start">
         <span aria-hidden className={`h-3.5 w-0.5 rounded-xs sm:hidden ${SIDE_BAR[side]}`} />
         {name}
       </span>
       {children}
-      {by && <span className="micro text-subtle">Entered by {by}</span>}
+      {by && <span className="micro text-muted">Entered by {by}</span>}
     </li>
   );
 }
@@ -169,7 +169,7 @@ export function BanLine({
       className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3 border-t border-line px-5 py-3 lg:col-span-2"
     >
       <div className="flex items-center gap-2.5">
-        <LaneMark className="text-subtle" />
+        <LaneMark className="text-muted" />
         <h2 id={headingId} className="text-base font-semibold whitespace-nowrap text-fg">
           Bans <span className="num ml-1 font-normal text-muted">{count}</span>
         </h2>

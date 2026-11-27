@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/draft";
@@ -10,6 +11,9 @@ import type { ItemArt } from "./meta-hero-extras";
 
 /** Bars of the role items run to this share, in percent. */
 const ITEM_BAR_TOP = 50;
+
+/** From xl the second to fourth hero of a role are small rows, so their frames take the cut of a 36px frame. */
+const ROW_CUT = "xl:[--cut:7px]! xl:[--cut-radius:6px]!";
 
 /** The items that end most of a role's games, each with its share as a bar, new items marked. */
 export function RoleItems({ items, art }: { items: { id: number; share: number; isNew: boolean }[]; art: ItemArt }) {
@@ -48,7 +52,7 @@ function RateLine({ h }: { h: RoleHero }) {
   return (
     <span className="flex items-baseline gap-2 text-sm tabular-nums">
       <b className="font-semibold text-fg">{h.rate.win.toFixed(1)}%</b>
-      <span className={d === null ? "text-subtle" : d >= 0 ? "text-radiant" : "text-dire"}>{d === null ? "New" : signed(d)}</span>
+      <span className={d === null ? "text-muted" : d >= 0 ? "text-radiant" : "text-dire"}>{d === null ? "New" : signed(d)}</span>
     </span>
   );
 }
@@ -85,7 +89,7 @@ export function MetaGlance({
             </button>
           </h3>
           {leaders.length === 0 ? (
-            <p className="text-sm text-subtle">Too few games at this rank yet.</p>
+            <p className="text-sm text-muted">Too few games at this rank yet.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-1">
               {leaders.slice(0, 4).map((h, i) => {
@@ -100,7 +104,7 @@ export function MetaGlance({
                       aria-label={`${hero.name}, ${h.rate.win.toFixed(1)}% win rate. Open ${hero.name}`}
                       className={`grid w-full gap-1.5 rounded-lg text-left hover:brightness-125 ${row ? "xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-center xl:gap-x-2.5" : ""}`}
                     >
-                      <Image src={hero.image} alt="" width={row ? 160 : 320} height={row ? 90 : 180} className="aspect-video w-full rounded-md object-cover" />
+                      <HeroPortrait portrait={hero.image} size={100} className={row ? ROW_CUT : ""} />
                       <span className="grid gap-0.5">
                         <span className={`text-base leading-tight text-fg ${row ? "" : "xl:font-semibold"}`}>{hero.name}</span>
                         <RateLine h={h} />

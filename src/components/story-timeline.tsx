@@ -121,7 +121,7 @@ function Ruler({ span, share }: { span: { from: number; to: number }; share: (m:
       {minutes.map((m) => (
         <span
           key={m}
-          className={`num absolute bottom-1 grid -translate-x-1/2 justify-items-center gap-1 text-xs ${m % 5 === 0 ? "text-muted" : "text-subtle"}`}
+          className={`num absolute bottom-1 grid -translate-x-1/2 justify-items-center gap-1 text-xs text-muted ${m % 5 === 0 ? "font-semibold" : ""}`}
           style={{ left: at(share(m)) }}
         >
           <span className={m % phoneStep === 0 ? (m % step === 0 ? "" : "sm:invisible") : m % step === 0 ? "invisible sm:visible" : "invisible"}>{m}</span>

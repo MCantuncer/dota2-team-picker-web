@@ -89,7 +89,7 @@ export function FriendDetail({
                 {rankName(f.rankTier)}
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-subtle">
+              <span className="flex items-center gap-1.5 text-muted">
                 <Icon name="lock" />
                 {f.shared ? "No rank yet" : "Rank hidden"}
               </span>
@@ -100,7 +100,7 @@ export function FriendDetail({
                 {POSITION_NAMES[p - 1]}
               </span>
             ))}
-            {lastGame && <span className="text-subtle">Last game {lastGame}</span>}
+            {lastGame && <span className="text-muted">Last game {lastGame}</span>}
           </div>
         </div>
         <FriendActions friend={f} partyRole={partyRole} onRemove={onRemove} />
@@ -108,16 +108,16 @@ export function FriendDetail({
 
       <dl className="grid grid-cols-2 border-b border-line md:grid-cols-[0.9fr_1.2fr_1.9fr_1fr] [&>div]:min-w-0 [&>div]:border-line [&>div]:px-5 [&>div]:py-3.5">
         <div className="border-r max-md:border-b">
-          <dt className="text-xs text-subtle">Games Together</dt>
+          <dt className="text-xs text-muted">Games Together</dt>
           <dd className="mt-1 text-xl font-semibold text-fg">
-            <span className="num text-xl">{f.together.games}</span> <span className="text-xs font-normal text-subtle">60 days</span>
+            <span className="num text-xl">{f.together.games}</span> <span className="text-xs font-normal text-muted">60 days</span>
           </dd>
         </div>
         <div className="max-md:border-b md:border-r">
-          <dt className="text-xs text-subtle">Won Together</dt>
+          <dt className="text-xs text-muted">Won Together</dt>
           <dd className="mt-1 text-xl font-semibold">
-            {won === null ? <span className="text-subtle">No games</span> : <span className={`num text-xl ${won >= 55 ? "text-radiant" : "text-fg"}`}>{won}%</span>}
-            {without !== null && <span className="ml-1.5 text-xs font-normal text-subtle">{without}% without</span>}
+            {won === null ? <span className="text-muted">No games</span> : <span className={`num text-xl ${won >= 55 ? "text-radiant" : "text-fg"}`}>{won}%</span>}
+            {without !== null && <span className="ml-1.5 text-xs font-normal text-muted">{without}% without</span>}
             {won !== null && (
               <span aria-hidden className="relative mt-2 block h-1.5 rounded-full bg-line-hover">
                 <span className={`block h-full rounded-full ${won >= 55 ? "bg-radiant" : "bg-muted"}`} style={{ width: `${won}%` }} />
@@ -127,30 +127,30 @@ export function FriendDetail({
           </dd>
         </div>
         <div className="max-md:col-span-2 max-md:border-b md:border-r">
-          <dt className="text-xs text-subtle">Best Pair</dt>
+          <dt className="text-xs text-muted">Best Pair</dt>
           <dd className="mt-1 flex items-center gap-1.5 whitespace-nowrap">
             {pair ? (
               <>
                 <Face art={hero(pair.myHeroId)} />
-                <span className="text-sm text-subtle">+</span>
+                <span className="text-sm text-muted">+</span>
                 <Face art={hero(pair.friendHeroId)} />
                 <span className="ml-1.5 text-base font-semibold text-radiant">Won {winPercent(pair)}%</span>
-                <span className="text-xs text-subtle">in {pair.games}</span>
+                <span className="text-xs text-muted">in {pair.games}</span>
               </>
             ) : (
-              <span className="text-sm text-subtle">Shows after 3 games on the same heroes</span>
+              <span className="text-sm text-muted">Shows after 3 games on the same heroes</span>
             )}
           </dd>
         </div>
         <div className="max-md:col-span-2">
-          <dt className="text-xs text-subtle">Last Together</dt>
+          <dt className="text-xs text-muted">Last Together</dt>
           <dd className="mt-1 text-base font-semibold text-fg">{f.lastTogether ? <GameTime iso={f.lastTogether} /> : "Not in 60 days"}</dd>
         </div>
       </dl>
 
       <div className="px-5 pt-4">
         <h3 className="flex items-baseline gap-2 font-semibold text-fg">
-          Games Together <span className="text-sm font-normal text-subtle">Times are your local time.</span>
+          Games Together <span className="text-sm font-normal text-muted">Times are your local time.</span>
         </h3>
         {games.length === 0 ? (
           <p className="py-4 text-sm text-muted">
@@ -168,7 +168,7 @@ export function FriendDetail({
                 <HeroLine art={hero(g.friendHeroId)} who={f.name} />
                 <span className="text-right text-sm text-muted max-sm:col-start-2 max-sm:row-start-1">
                   <GameTime iso={g.startedAt} />
-                  <span className="block text-xs text-subtle">{gameModeName(g.gameMode, g.lobbyType)}</span>
+                  <span className="block text-xs text-muted">{gameModeName(g.gameMode, g.lobbyType)}</span>
                 </span>
               </li>
             ))}
@@ -198,7 +198,7 @@ function HeroLine({ art, who }: { art: HeroArt; who: string }) {
       {art.image && <Image src={art.image} alt="" width={64} height={36} className="h-8 w-14 shrink-0 rounded-sm object-cover sm:h-9 sm:w-16" />}
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-sm font-semibold text-fg">{art.name}</span>
-        <span className="truncate text-xs text-subtle">{who}</span>
+        <span className="truncate text-xs text-muted">{who}</span>
       </span>
     </span>
   );
@@ -286,7 +286,7 @@ function FriendActions({ friend: f, partyRole, onRemove }: { friend: Friend; par
         </div>
       </div>
       {partyRole === "member" && f.party !== "yours" && (
-        <p id="invite-note" className="text-xs text-subtle">
+        <p id="invite-note" className="text-xs text-muted">
           Only your party leader can invite.
         </p>
       )}

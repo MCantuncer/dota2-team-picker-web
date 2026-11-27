@@ -54,7 +54,7 @@ export function MaxOrder({ steps }: { steps: MaxStep[] }) {
       {steps.map((s, i) => (
         <li key={s.id} className={`flex items-center gap-3 ${s.ult && i > 0 ? "sm:ml-2" : ""}`}>
           {i > 0 && !s.ult && (
-            <svg aria-hidden viewBox="0 0 16 16" className="hidden size-4 text-subtle sm:block" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg aria-hidden viewBox="0 0 16 16" className="hidden size-4 text-muted sm:block" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M6 3l5 5-5 5" />
             </svg>
           )}
@@ -110,14 +110,14 @@ export function SkillTrack({ plan, rows }: { plan: SkillPlan; rows: SkillRow[] }
           const name = [row?.name, talent].filter(Boolean).join(" and ") || "No point";
           return (
             <li key={level} className="flex flex-col items-center gap-1.5" aria-label={`Level ${level}: ${name}`}>
-              <span className="num text-xs text-subtle">{level}</span>
+              <span className="num text-xs text-muted">{level}</span>
               {!row ? (
                 talent ? (
                   <span title={talent} className="flex size-10 items-center justify-center rounded-md bg-accent-tint shadow-[inset_0_0_0_1px_var(--accent-deep)]">
                     <Image src={TALENT_ICON} alt="" width={24} height={25} unoptimized className="size-6" />
                   </span>
                 ) : (
-                  <span title="No Point" className="flex size-10 items-center justify-center rounded-md border border-dashed border-line-control text-subtle" />
+                  <span title="No Point" className="flex size-10 items-center justify-center rounded-md border border-dashed border-line-control text-muted" />
                 )
               ) : (
                 <span className="relative">

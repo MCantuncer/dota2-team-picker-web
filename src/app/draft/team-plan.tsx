@@ -83,11 +83,14 @@ export function FacedText({
   heroes,
   hero,
   enemies,
+  isStacked = false,
 }: {
   text: string;
   heroes: readonly number[];
   hero: PlanHeroOf;
   enemies: ReadonlySet<number>;
+  /** In a narrow column (a pick tile from 640px) each hero takes a line of its own, flush with the text. */
+  isStacked?: boolean;
 }) {
   const parts: ReactNode[] = [];
   let rest = text;
@@ -98,7 +101,10 @@ export function FacedText({
     parts.push(minus(rest.slice(0, at)));
     const tail = /^[:,.)]/.exec(rest.slice(at + name.length))?.[0] ?? "";
     parts.push(
-      <span key={`${id}-${i}`} className="mx-1 inline-flex max-w-full items-center gap-2 align-[-5px] whitespace-nowrap">
+      <span
+        key={`${id}-${i}`}
+        className={`inline-flex max-w-full items-center gap-2 align-[-5px] whitespace-nowrap ${isStacked ? "max-sm:mx-1 sm:flex" : "mx-1"}`}
+      >
         <Face id={id} hero={hero} isEnemy={enemies.has(id)} />
         {/* In a narrow tile a long name wraps beside its face instead of running past the edge. */}
         <span className="min-w-0 whitespace-normal">
@@ -138,7 +144,7 @@ export function ReasonLine({
     <li
       className={`grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-2.5 text-sm leading-6 ${isWarn ? "-mx-2 rounded-md bg-warn-tint px-2 py-1" : ""}`}
     >
-      <span className={`flex h-6 items-center ${isWarn ? "text-warn" : "text-subtle"}`}>
+      <span className={`flex h-6 items-center ${isWarn ? "text-warn" : "text-muted"}`}>
         <Icon name={icon} />
       </span>
       <span className="min-w-0 text-muted">
@@ -336,7 +342,7 @@ export function PositionCard({
   const nameId = `plan-hero-${slot.position}`;
   const whyId = `plan-why-${slot.position}`;
   const state = slot.locked ? null : !isPooled ? (
-    <span className="micro text-subtle" title="No heroes saved for this position, so this is the best of every hero">
+    <span className="micro text-muted" title="No heroes saved for this position, so this is the best of every hero">
       Any Hero
     </span>
   ) : (
@@ -413,14 +419,14 @@ export function PositionCard({
           )}
         </div>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <span className="flex items-center gap-1.5 text-subtle">
+          <span className="flex items-center gap-1.5 text-muted">
             <PositionIcon position={slot.position} size={14} />
             <span className="micro text-muted">{POSITION_NAMES[slot.position]}</span>
           </span>
           {isMine ? (
             <span className="micro rounded-full bg-radiant px-2 leading-5 font-semibold text-bg">You</span>
           ) : (
-            <span className={`micro font-semibold break-words ${player ? "text-fg" : "text-subtle"}`}>
+            <span className={`micro font-semibold break-words ${player ? "text-fg" : "text-muted"}`}>
               {player ?? "Open Seat"}
             </span>
           )}
@@ -431,7 +437,7 @@ export function PositionCard({
 
       {/* Why This Hero: the engine's reasons, all of them. */}
       <div className="col-span-2 flex min-w-0 flex-col gap-2.5 border-t border-line pt-5 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0.5 lg:pl-6">
-        <h4 className="micro text-subtle">Why This Hero</h4>
+        <h4 className="micro text-muted">Why This Hero</h4>
         {slot.reasons.length || firstWhy ? (
           <ul id={whyId} className="flex flex-col gap-2.5">
             {firstWhy && <Reason reason={firstWhy} hero={hero} enemies={enemies} icon="zap" />}
@@ -496,9 +502,9 @@ export function AnotherSuperTeam({
               <span className="text-lg leading-7 font-semibold tracking-tight text-fg tabular-nums">
                 {signed(-team.behind)}
               </span>
-              <span className="micro text-subtle">Points Behind</span>
+              <span className="micro text-muted">Points Behind</span>
             </span>
-            <span className="micro text-muted">{why ? minus(capitalize(why)) : minus(team.verdict)}</span>
+            <span className="text-sm text-muted">{why ? minus(capitalize(why)) : minus(team.verdict)}</span>
           </div>
           {differ.length > 0 && (
             <ul aria-label="Heroes That Differ" className="flex min-w-0 flex-wrap items-start gap-2 max-md:w-full">
@@ -514,7 +520,7 @@ export function AnotherSuperTeam({
                       {portrait && <HeroArt heroId={s.heroId} portrait={portrait} placement={TILE_ART} />}
                     </HeroStage>
                     <span className="flex min-w-0 items-start gap-1">
-                      <span className="micro text-subtle tabular-nums">
+                      <span className="micro text-muted tabular-nums">
                         <span className="sr-only">Pos </span>
                         {s.position}
                       </span>

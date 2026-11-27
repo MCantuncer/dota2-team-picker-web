@@ -40,7 +40,7 @@ export function StackLineup({
           <h2 id="lineup-heading" className="section-title">
             Lineup
           </h2>
-          <p className="text-sm text-subtle">
+          <p className="text-sm text-muted">
             {shared ? "Each player's top hero for the position they play most." : "Everyone in this Stack."}
           </p>
           {action && <div className="ml-auto">{action}</div>}
@@ -83,7 +83,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
               }}
               size={44}
             />
-            {s.shared && <span className="micro text-subtle">No heroes saved</span>}
+            {s.shared && <span className="micro text-muted">No heroes saved</span>}
           </div>
         )}
         {top && (
@@ -106,7 +106,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
               {POSITION_NAMES[s.position]}
             </span>
             <span
-              className="micro pl-6 text-subtle"
+              className="micro pl-6 text-muted"
               title={
                 s.played
                   ? `Played ${POSITION_NAMES[s.position]} in ${s.played.games} of their last ${s.played.of} games with a known position`
@@ -123,7 +123,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
             </span>
           </span>
         ) : (
-          <span className="text-sm text-subtle">
+          <span className="text-sm text-muted">
             {!s.shared ? "Heroes not shared" : s.positions.length ? "Any position" : "No positions yet"}
           </span>
         )}
@@ -138,7 +138,7 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
               {rank}
             </>
           ) : (
-            <span className="text-subtle">No rank</span>
+            <span className="text-muted">No rank</span>
           )}
         </span>
         {s.heroes.length > 1 && (
@@ -157,13 +157,13 @@ function SeatCard({ seat: s, hero, you }: { seat: Seat; hero: (id: number) => He
                   className="h-5.5 w-10 rounded-xs object-cover"
                 />
               ) : (
-                <span key={id} className="micro text-subtle">
+                <span key={id} className="micro text-muted">
                   {h.name}
                 </span>
               );
             })}
             {s.heroes.length > 1 + ALSO && (
-              <span className="micro ml-auto text-subtle">+{s.heroes.length - 1 - ALSO}</span>
+              <span className="micro ml-auto text-muted">+{s.heroes.length - 1 - ALSO}</span>
             )}
           </span>
         )}
@@ -180,7 +180,7 @@ function Coverage({ seats }: { seats: Seat[] }) {
         <h2 id="coverage-heading" className="section-title">
           Position Coverage
         </h2>
-        <p className="text-sm text-subtle">Who in the Stack plays each position.</p>
+        <p className="text-sm text-muted">Who in the Stack plays each position.</p>
       </div>
       <ul className="grid grid-cols-1 overflow-hidden rounded-md ring-1 ring-inset ring-line md:grid-cols-5">
         {[1, 2, 3, 4, 5].map((p) => {

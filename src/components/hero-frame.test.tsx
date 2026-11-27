@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { CutOutline, HeroArt, HeroFace, HeroStage, LaneMark, laneCutOf, type HeroArtPlacement } from "./hero-frame";
+import { CutOutline, HeroArt, HeroFace, HeroPortrait, HeroStage, LaneMark, laneCutOf, type HeroArtPlacement } from "./hero-frame";
 
 const CDN = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
 const ANTI_MAGE = { heroId: 1, portrait: `${CDN}/antimage.png` }; // face at (370, 100) on a square render
@@ -49,6 +49,14 @@ describe("HeroArt", () => {
     const img = renderArt(ANTI_MAGE);
     expect(decodeURIComponent(img.getAttribute("src") ?? "")).toContain("/heroes/renders/antimage.png");
     expect(img).toHaveAttribute("alt", "");
+  });
+
+  it("scales with a frame that changes width, keeping the face on the anchor", () => {
+    // 360px wide in a 240px frame: the render is 150% of the frame's width at any size.
+    const img = renderArt(ANTI_MAGE, { ...CARD, frameWidth: 240 });
+    expect(img.style.width).toBe("150cqw");
+    expect(img.style.left).toBe("calc(50% - 77.08cqw)");
+    expect(img.style.top).toBe("calc(40% - 20.83cqw)");
   });
 
   it("centres a hero with no face point, and never draws past the render's pixels", () => {
@@ -114,5 +122,27 @@ describe("LaneMark", () => {
   it("takes its colour from the text colour", () => {
     const { container } = render(<LaneMark className="text-radiant" />);
     expect(container.querySelector("svg")).toHaveClass("text-radiant");
+  });
+});
+
+describe("HeroPortrait", () => {
+  it("frames the whole portrait in a Lane Cut that fills its column", () => {
+    const { container } = render(<HeroPortrait portrait={ANTI_MAGE.portrait} size={54} className="row-span-2" />);
+    const frame = container.firstElementChild as HTMLElement;
+    expect(frame).toHaveClass("lane-cut", "aspect-video", "w-full", "row-span-2");
+    expect(frame.style.getPropertyValue("--cut")).toBe(`${laneCutOf(54).cut}px`);
+    const img = container.querySelector("img");
+    expect(img).toHaveAttribute("alt", "");
+  });
+
+  it("crops to the face as a square, with the Dire edge for an enemy", () => {
+    const { container } = render(<HeroPortrait portrait={ANTI_MAGE.portrait} size={72} isFace isEnemy />);
+    expect(container.firstElementChild).toHaveClass("lane-cut", "lane-cut-enemy", "aspect-square");
+    expect(container.querySelector("img")?.style.objectPosition).toBe("50% 35%");
+  });
+
+  it("asks for the whole portrait whatever the cut, since its column sets how big it is drawn", () => {
+    const { container } = render(<HeroPortrait portrait={ANTI_MAGE.portrait} size={36} />);
+    expect(container.querySelector("img")).toHaveAttribute("width", "256");
   });
 });

@@ -124,7 +124,7 @@ export function StackBoard({
                   className={`btn btn-sm ${s.id === current?.id ? "btn-secondary text-fg" : "btn-ghost text-muted"}`}
                 >
                   {s.name}
-                  {!s.owned && <span className="text-xs text-subtle">Manager</span>}
+                  {!s.owned && <span className="text-xs text-muted">Manager</span>}
                 </Link>
               ))}
               <CreateStack userId={userId} compact />
@@ -193,7 +193,7 @@ export function StackBoard({
                       <Link href={`/stacks/${s.id}`} className="row-link truncate font-semibold">
                         {s.name}
                       </Link>
-                      <span className="flex items-center gap-1 text-sm text-subtle">
+                      <span className="flex items-center gap-1 text-sm text-muted">
                         <Icon name="crown" />
                         <span className="truncate">{s.ownerName}</span>
                       </span>

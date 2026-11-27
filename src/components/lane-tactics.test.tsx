@@ -75,6 +75,19 @@ describe("LaneTactics", () => {
     const { container } = render(<LaneTactics pairs={[]} heroName={name} icons={{}} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("draws nothing, not a title over nothing, when the only tactic is the target drawn elsewhere", () => {
+    const target = tactic("lastHits", "Last Hit Target: 39 by the End of Lane", 0, { kind: "lastHits", target: 39, usual: 25, enemy: 54 });
+    const { container } = render(<LaneTactics pairs={[{ hero: 74, enemy: 11, tactics: [target] }]} heroName={name} icons={{}} withTarget={false} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("leaves an enemy with nothing to draw out of the switch", () => {
+    const target = tactic("lastHits", "Last Hit Target: 39 by the End of Lane", 0, { kind: "lastHits", target: 39, usual: 25, enemy: 54 });
+    render(<LaneTactics pairs={[{ hero: 36, enemy: 11, tactics: [target] }, lina]} heroName={name} icons={{}} withTarget={false} />);
+    expect(screen.getByText("Against Hero 25, most important first")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Enemy laner" })).not.toBeInTheDocument();
+  });
 });
 
 describe("playerTactics", () => {
