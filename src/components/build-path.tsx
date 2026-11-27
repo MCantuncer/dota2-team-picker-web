@@ -245,11 +245,8 @@ function stopCard(stop: Stop, rough: boolean, heroName: (id: number) => string, 
   const foes = foesOf(item);
   const why = [item.reason, item.effect].filter((s): s is string => Boolean(s)).map(sentence).join(" ");
   const late = fork?.late ?? item.lateMinute;
-  const facts = [
-    ...(stop.where === "path" ? [{ value: `${rough ? "~" : ""}${item.minute} min`, label: rough ? "Rough Minute" : "Usual" }] : []),
-    ...(stop.where === "path" && !rough && late !== undefined ? [{ value: `${late} min`, label: "Late After", tone: "text-warn" }] : []),
-    ...(item.count ? [{ value: `x${item.count}`, label: "Copies" }] : []),
-  ];
+  const timing = stop.where === "path" ? { minute: item.minute, around: rough, late: rough ? undefined : late } : undefined;
+  const facts = item.count ? [{ value: `x${item.count}`, label: "Copies" }] : [];
   const chip = foes.length
     ? { text: `${item.against?.length ? "For" : "Works on"} ${foes.map(heroName).join(" and ")}`, enemy: true, faces: foes.map((id) => ({ name: heroName(id), portrait: icons[id] })) }
     : undefined;
@@ -257,7 +254,7 @@ function stopCard(stop: Stop, rough: boolean, heroName: (id: number) => string, 
     itemId: item.itemId,
     name: item.name,
     img: item.img,
-    band: facts.length || chip || why ? <ItemBand facts={facts} chip={chip} why={why || undefined} /> : undefined,
+    band: timing || facts.length || chip || why ? <ItemBand timing={timing} facts={facts} chip={chip} why={why || undefined} /> : undefined,
     footer: fork ? <ForkBlock fork={fork} /> : undefined,
   };
 }
@@ -276,7 +273,7 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
           img: enemy.img,
           band: (
             <ItemBand
-              facts={[{ value: `${enemy.around ? "~" : ""}${enemy.minute} min`, label: "Usual", tone: "text-dire" }]}
+              timing={{ minute: enemy.minute, around: enemy.around, side: "enemy" }}
               chip={{ text: `Enemy ${enemy.hero}`, enemy: true, faces: [{ name: enemy.hero, portrait: enemy.heroIcon }] }}
             />
           ),

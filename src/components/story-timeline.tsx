@@ -124,7 +124,7 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
               img: itemImg,
               band: (
                 <ItemBand
-                  facts={[{ value: `${spike.around ? "~" : ""}${spike.minute} min`, label: "Usual", tone: side === "us" ? "text-radiant" : "text-dire" }]}
+                  timing={{ minute: spike.minute, around: spike.around, side: side === "us" ? "ally" : "enemy" }}
                   chip={{ text: side === "us" ? spike.hero : `Enemy ${spike.hero}`, enemy: side === "them", faces: [{ name: spike.hero, portrait: heroIcon }] }}
                 />
               ),

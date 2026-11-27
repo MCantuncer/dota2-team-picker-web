@@ -250,7 +250,7 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                           itemId: pace.itemId,
                           band: (
                             <ItemBand
-                              facts={[{ value: `${pace.minute} min`, label: "Usual", tone: "text-dire" }]}
+                              timing={{ minute: pace.minute, side: "enemy" }}
                               chip={{ text: `Enemy ${him.name}`, enemy: true, faces: [{ name: him.name, portrait: him.portrait }] }}
                             />
                           ),

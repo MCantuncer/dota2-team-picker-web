@@ -69,7 +69,7 @@ describe("Build Path", () => {
     const card = screen.getByRole("dialog", { name: "Phase Boots" });
     expect(card).toHaveFocus();
     expect(within(card).getByText("9 min")).toBeInTheDocument();
-    expect(within(card).getByText("Usual")).toBeInTheDocument();
+    expect(within(card).getByText(/Done by/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Magic Wand" }));
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(screen.getByRole("dialog", { name: "Magic Wand" })).toBeInTheDocument();

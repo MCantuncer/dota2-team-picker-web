@@ -179,7 +179,7 @@ function TileAnswer({ row, answer, heroName, icons, cards }: Art & { row: Threat
       {answer ? (
         <>
           <ItemButton
-            card={{ itemId: answer.itemId, name: answer.name, img: answer.img, band: <ItemBand facts={[{ value: `${answer.minute} min`, label: "Usual" }]} chip={chip} /> }}
+            card={{ itemId: answer.itemId, name: answer.name, img: answer.img, band: <ItemBand timing={{ minute: answer.minute }} chip={chip} /> }}
             className="shrink-0"
           >
             <Image src={ITEM_CDN + answer.img} alt="" width={55} height={40} className="block h-10 w-[3.4375rem] rounded-md object-cover" />

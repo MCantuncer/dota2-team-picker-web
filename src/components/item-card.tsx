@@ -27,7 +27,7 @@ const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
 /*
  * The item pop-up card (Can 2026-11-15: "pop up a card when user clicks any item", "for each item details I need to
  * go same place, confusing"). Any item icon on the Draft page's game plan is a button that opens the Dota-style
- * tooltip right next to itself: its gold, what it gives, its spells and the parts it is built from, with this game's
+ * tooltip right next to itself: its gold, the parts it is built from, what it gives and its spells, with this game's
  * numbers on top where the place it was clicked has them (the Build Path's minutes, the enemies it is for, why).
  * On a phone the card is a sheet from the bottom. Neutral items never come from the shop: their card shows the tier
  * (or an enchantment's level), the spell and bonuses, and no gold.
@@ -242,7 +242,7 @@ function Popup({
   );
 }
 
-/** The Dota-style tooltip: the header with art, name and gold, this game's band, the bonuses, spells and parts. */
+/** The Dota-style tooltip: the header with art, name and gold, the parts to buy, this game's band, the bonuses and spells. */
 export function ItemCard({
   card,
   items,
@@ -272,14 +272,20 @@ export function ItemCard({
   const parts = items && found && recipeOf(found.id, items) ? <ItemParts itemId={found.id} items={items} onPick={onPart && ((p) => onPart({ itemId: p.itemId, name: p.name, img: p.img }))} /> : null;
   return (
     <>
-      <div className="flex items-center gap-4 border-b border-line-strong bg-linear-to-b from-hover to-raised px-5 py-4">
+      <div className="flex items-center gap-4 border-b border-line py-5 pr-4 pl-5">
         {img ? (
-          <Image src={itemSrc(img)} alt="" width={88} height={64} className="block h-16 w-[5.5rem] shrink-0 rounded-md object-cover shadow-[0_0_0_1px_var(--line-hover)]" />
+          <Image
+            src={itemSrc(img)}
+            alt=""
+            width={104}
+            height={76}
+            className="block h-19 w-26 shrink-0 rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_6px_18px_rgb(0_0_0/0.4)]"
+          />
         ) : (
-          <span aria-hidden className="block h-16 w-[5.5rem] shrink-0 rounded-md bg-raised" />
+          <span aria-hidden className="block h-19 w-26 shrink-0 rounded-lg bg-raised" />
         )}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <h4 id={titleId} className="text-xl font-semibold tracking-[-0.01em] text-fg">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <h4 id={titleId} className="text-[1.375rem] leading-[1.625rem] font-semibold tracking-[-0.02em] text-fg">
             {name}
           </h4>
           {info?.cost ? (
@@ -306,18 +312,18 @@ export function ItemCard({
           </div>
         )}
       </div>
-      {card.band && <div className="flex flex-col gap-2.5 border-b border-line bg-bg px-5 py-3">{card.band}</div>}
+      {parts && <div className="border-b border-line px-5 pt-[1.125rem] pb-4">{parts}</div>}
+      {card.band && <div className="flex flex-col gap-3.5 border-b border-line bg-bg px-5 pt-4 pb-[1.125rem]">{card.band}</div>}
       {body && (
-        <div className="flex flex-col gap-4 px-5 pt-4 [&:last-child]:pb-5">
+        <div className="flex flex-col gap-[1.125rem] px-5 pt-[1.125rem] [&:last-child]:pb-5">
           {info && <ItemStatLines item={info} />}
           {info && <ItemSpells item={info} />}
           {shown && <ItemStatLines item={shown} />}
           {shown && <ItemSpells item={shown} passiveCooldown />}
         </div>
       )}
-      {parts && <div className={`px-5 pb-5 ${body ? "mt-4 border-t border-line pt-4" : "pt-4"}`}>{parts}</div>}
       {!body && !parts && !card.band && <p className="px-5 py-4 text-sm text-muted">No details for this item yet.</p>}
-      {card.footer && <div className={`px-5 pb-5 ${parts ? "" : body ? "mt-4" : "pt-4"}`}>{card.footer}</div>}
+      {card.footer && <div className={`px-5 pb-5 ${body ? "mt-4" : "pt-4"}`}>{card.footer}</div>}
     </>
   );
 }
@@ -328,41 +334,121 @@ export interface BandFact {
   tone?: string;
 }
 
-/** The card's game band: the numbers ("18 min Usual", "22 min Late After"), a chip for the heroes, and why. */
+/** When this game's player (or an enemy) usually has the item: the minute, "~" when rough, and when it is late. */
+export interface BandTiming {
+  minute: number;
+  around?: boolean;
+  /** The minute after which buying it is slower than most. */
+  late?: number;
+  /** Whose item: the dot takes their colour (copper for yours, red for an enemy's, green for an ally's). */
+  side?: "you" | "enemy" | "ally";
+}
+
+const DOT = { you: "bg-accent", enemy: "bg-dire", ally: "bg-radiant" } as const;
+const LEAD = { you: "to-accent-deep", enemy: "to-dire-strong", ally: "to-radiant-strong" } as const;
+
+/**
+ * The minute as a small bar from 0 to at least 40 (Can 2026-11-27, option C2 Timing Bar): a dot at the usual minute
+ * and, after the late minute, a striped part. "Done by 18 min" over it on the left, "Late after 22 min" on the right.
+ */
+function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFact[] }) {
+  const side = timing.side ?? "you";
+  const end = Math.max(40, Math.ceil((Math.max(timing.minute, timing.late ?? 0) + 6) / 10) * 10);
+  const at = (m: number) => `${(Math.min(Math.max(m, 0), end) / end) * 100}%`;
+  const ticks = Array.from({ length: end / 10 + 1 }, (_, i) => i * 10);
+  const minute = `${timing.around ? "~" : ""}${timing.minute} min`;
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="text-[0.9375rem] font-semibold text-fg">
+          Done by <span className="num">{minute}</span>
+          {/* Other numbers ride on the same line, quieter ("x2 Copies"), so no column stands alone under the bar. */}
+          {facts.map((f) => (
+            <span key={f.label} className="font-normal text-subtle">
+              <span aria-hidden> · </span>
+              <span className={`num font-semibold ${f.tone ?? "text-fg"}`}>{f.value}</span> {f.label}
+            </span>
+          ))}
+        </span>
+        {timing.late !== undefined && (
+          <span className="text-[0.8125rem] text-subtle">
+            Late after <span className="num font-semibold text-warn">{timing.late} min</span>
+          </span>
+        )}
+      </div>
+      <div aria-hidden className="relative h-[1.875rem]">
+        <span className="absolute inset-x-0 top-1 h-1.5 rounded-[3px] bg-line" />
+        <span
+          className={`absolute top-1 h-1.5 rounded-l-[3px] bg-linear-to-r from-transparent ${LEAD[side]}`}
+          style={{ left: at(timing.minute - 6), width: `calc(${at(timing.minute)} - ${at(timing.minute - 6)})` }}
+        />
+        {timing.late !== undefined && (
+          <>
+            <span
+              className="absolute top-1 right-0 h-1.5 rounded-r-[3px] bg-[repeating-linear-gradient(135deg,var(--warn-tint)_0_4px,var(--line)_4px_8px)]"
+              style={{ left: at(timing.late) }}
+            />
+            <span className="absolute top-0 h-3.5 w-0.5 rounded-[1px] bg-warn" style={{ left: at(timing.late) }} />
+          </>
+        )}
+        <span className={`absolute top-0 size-3.5 -translate-x-1/2 rounded-full shadow-[0_0_0_3px_var(--bg)] ${DOT[side]}`} style={{ left: at(timing.minute) }} />
+        {ticks.map((m, i) => (
+          <span
+            key={m}
+            className={`num absolute top-4 text-xs text-subtle ${i === 0 ? "" : i === ticks.length - 1 ? "-translate-x-full" : "-translate-x-1/2"}`}
+            style={{ left: at(m) }}
+          >
+            {m}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The card's game band: the minute as a timing bar, other numbers as columns ("x2" over "Copies") split by hairlines,
+ * then the heroes it is for as portraits beside why (or beside their word when there is no why).
+ */
 export function ItemBand({
+  timing,
   facts = [],
   chip,
   why,
 }: {
+  timing?: BandTiming;
   facts?: BandFact[];
   chip?: { text: string; enemy: boolean; faces: { name: string; portrait?: string }[] };
   why?: string;
 }) {
+  const faces = chip?.faces.filter((f) => f.portrait) ?? [];
   return (
     <>
-      {(facts.length > 0 || chip) && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {facts.length > 0 && (
-            <dl className="contents">
-              {facts.map((f) => (
-                <div key={f.label} className="flex items-baseline gap-1.5">
-                  <dt className="order-last text-[0.8125rem] text-subtle">{f.label}</dt>
-                  <dd className={`num text-[0.9375rem] font-semibold ${f.tone ?? "text-fg"}`}>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
+      {timing && <TimingBar timing={timing} facts={facts} />}
+      {!timing && facts.length > 0 && (
+        <dl className="-mx-4 flex flex-wrap gap-y-3">
+          {facts.map((f) => (
+            <div key={f.label} className="flex min-w-0 flex-col gap-1 border-line px-4 not-first:border-l">
+              <dt className="order-last text-xs text-subtle">{f.label}</dt>
+              <dd className={`num text-lg leading-[1.375rem] font-semibold tracking-[-0.01em] ${f.tone ?? "text-fg"}`}>{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {(chip || why) && (
+        <div className="flex items-center gap-3">
           {chip && (
-            <span className="flex items-center gap-2">
-              <span className={`chip h-6 gap-1.5 px-2 text-[0.8125rem] font-medium shadow-none ${chip.enemy ? "bg-dire-tint text-dire" : "bg-radiant-tint text-radiant"}`}>
-                {chip.text}
-              </span>
-              {chip.faces.map((f) => (f.portrait ? <HeroFace key={f.name} portrait={f.portrait} name={f.name} size={24} isEnemy={chip.enemy} isDecorative /> : null))}
+            <span className="flex shrink-0 items-center gap-1.5" title={chip.text}>
+              {faces.map((f) => (
+                <HeroFace key={f.name} portrait={f.portrait!} name={f.name} size={36} isEnemy={chip.enemy} isDecorative />
+              ))}
+              {/* The faces say who; the words are read out, and shown when there is no why to sit beside them. */}
+              <span className={why && faces.length ? "sr-only" : `text-sm font-medium ${chip.enemy ? "text-dire" : "text-radiant"}`}>{chip.text}</span>
             </span>
           )}
+          {why && <p className="text-sm leading-[1.3125rem] text-muted">{why}</p>}
         </div>
       )}
-      {why && <p className="text-sm leading-relaxed text-muted">{why}</p>}
     </>
   );
 }
