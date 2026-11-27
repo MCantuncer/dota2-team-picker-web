@@ -10,9 +10,13 @@ const ITEM_CDN = "https://cdn.cloudflare.steamstatic.com";
  * lines, and each spell in a box with its cooldown and mana cost, its text and its number lines.
  */
 
+/** Dota's own gold icon, the coin stack the game and dota2.com show next to a price (Can 2026-11-27). */
+export const GOLD_ICON = `${ITEM_CDN}/apps/dota2/images/dota_react/icons/gold.png`;
+
 /** The gold coin next to a price. */
 export function Coin({ size = "md" }: { size?: "sm" | "md" }) {
-  return <span aria-hidden className={`shrink-0 rounded-full bg-accent shadow-[inset_0_-1px_0_var(--accent-deep)] ${size === "sm" ? "size-2" : "size-3"}`} />;
+  const px = size === "sm" ? 16 : 22;
+  return <Image src={GOLD_ICON} alt="" aria-hidden width={px} height={px} className="shrink-0" />;
 }
 
 /** The item's bonuses, side by side: the amount large and bright, what it adds to after it in muted. */
