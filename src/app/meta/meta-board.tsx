@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
+import { PageStage } from "@/components/page-stage";
 import { RankRow, type RankChoice } from "@/components/rank-row";
 import { POSITION_NAMES } from "@/lib/draft";
 import { banRates, heroRates, movers, previousPatch, RANK_GROUPS, roleItems, roleLeaders, sliceGames, type Measure, type MetaFile, type RankSlice } from "@/lib/meta";
+import { metaVerdict } from "@/lib/meta-verdict";
 import { HeroCard } from "./meta-hero-card";
 import { NewItems, type ItemArt } from "./meta-hero-extras";
 import { HeroList } from "./meta-list";
@@ -56,8 +58,17 @@ function Choice({ pressed, onClick, label, children }: { pressed: boolean; onCli
   );
 }
 
-/** The Meta page's filters and charts. Everything below the header follows the rank and role filters. */
-export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaHero[]; art: ItemArt }) {
+/** The release the opening names, and how far the numbers reach. */
+export interface MetaRelease {
+  name: string;
+  day: number;
+  isNew: boolean;
+  /** "so far", or "in the last 9 days" once the patch is older than the days kept. */
+  reach: string;
+}
+
+/** The Meta page: its opening finding, filters and charts. Everything follows the rank and role filters. */
+export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; heroes: MetaHero[]; art: ItemArt; release: MetaRelease }) {
   const [slice, setSlice] = useState<RankSlice>(0);
   const [role, setRole] = useState(0);
   const [measure, setMeasure] = useState<Measure>("win");
@@ -94,9 +105,13 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
     // Bring the card into view when it is off screen, as on the map or a long list.
     requestAnimationFrame(() => card.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
   };
-  const oldPatch = previousPatch(meta.patch.name) ?? "Before";
+  const before = previousPatch(meta.patch.name);
+  const oldPatch = before ?? "Before";
   const games = sliceGames(meta, slice);
   const group = RANK_GROUPS.find((g) => g.slice === slice);
+  // The opening names the chosen role's leader, or the strongest of the five role leaders.
+  const tops = lead ? lead.leaders.slice(0, 1).map((h) => ({ role, rate: h.rate })) : (glance ?? []).flatMap((l, i) => (l[0] ? [{ role: i + 1, rate: l[0].rate }] : []));
+  const verdict = metaVerdict(tops, lead ? lead.pool.map((h) => h.rate) : rates, (id) => byId.get(id)?.name ?? `Hero ${id}`, before);
   const mapNote = [
     `${rates.length} heroes`,
     `${games.toLocaleString("en-US")} games`,
@@ -118,6 +133,24 @@ export function MetaBoard({ meta, heroes, art }: { meta: MetaFile; heroes: MetaH
 
   return (
     <div className="grid gap-8">
+      <PageStage
+        name="Meta"
+        title={verdict?.title ?? "What Ranked Players Pick and Win With"}
+        portrait={verdict ? byId.get(verdict.heroId)?.image : undefined}
+        facts={
+          <>
+            <span className="chip chip-accent num">{release.name}</span>
+            <span>
+              {release.isNew ? "New Patch" : "Patch"}, Day {release.day}
+            </span>
+            <span>
+              {games.toLocaleString("en-US")} ranked games{group ? ` in ${group.name}` : ""} {release.reach}
+            </span>
+          </>
+        }
+      >
+        {verdict?.line ?? "Too few games at this rank and role yet."}
+      </PageStage>
       <div className="grid gap-3.5">
         <RoleTabs role={role} onChange={setRole} />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
