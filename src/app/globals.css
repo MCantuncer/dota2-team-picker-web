@@ -593,77 +593,10 @@ body {
     mask-image: radial-gradient(closest-side at 50% 50%, #000 50%, transparent 88%);
   }
 
-  /* Segmented control (tabs such as Draft / Team). Mark the chosen item aria-selected or aria-pressed. */
-  .seg {
-    display: inline-flex;
-    height: 2rem;
-    gap: 0.125rem;
-    border-radius: 0.5rem;
-    padding: 0.125rem;
-    background: var(--surface);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
-  }
-  .seg-item {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 0.375rem;
-    padding-inline: 0.75rem;
-    font-family: var(--font-geist-sans), sans-serif;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--muted);
-    cursor: pointer;
-    transition:
-      background-color var(--dur-fast),
-      color var(--dur-fast);
-  }
-  .seg-item:hover {
-    color: var(--fg);
-  }
-  .seg-item[aria-selected="true"],
-  .seg-item[aria-pressed="true"] {
-    background: var(--raised);
-    color: var(--fg);
-    box-shadow: inset 0 -1px 0 var(--accent);
-  }
-  /* A guessed choice nobody confirmed yet: dashed, not filled. */
-  .seg-item[data-guess] {
-    color: var(--fg);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
-    outline: 1px dashed var(--muted);
-    outline-offset: -1px;
-  }
-  .seg-item:disabled {
-    cursor: default;
-  }
-  .seg-item:disabled:hover {
-    color: var(--muted);
-  }
-  .seg-item[aria-checked="true"]:disabled:hover {
-    color: var(--accent);
-  }
-  .seg-item[aria-pressed="true"]:disabled:hover,
-  .seg-item[data-guess]:disabled:hover {
-    color: var(--fg);
-  }
-  /* A compact segmented control for one row, such as an ally's position. */
-  .seg-sm {
-    height: 2rem;
-  }
-  .seg-sm .seg-item[aria-checked="true"] {
-    background: var(--accent-tint);
-    color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent-deep);
-  }
-  .seg-sm .seg-item {
-    min-width: 2rem;
-    justify-content: center;
-    padding-inline: 0.375rem;
-  }
-
   /*
-   * Lane Board segmented control (view tabs, Plan For, the side switch): the chosen segment takes the Lane Cut.
-   * Mark it aria-pressed. `.lane-seg-sm` is the compact one; `.is-radiant` and `.is-dire` colour a side switch.
+   * The site's one segmented control (view tabs, Plan For, the side switch, Rank, a measure or sort switch): the
+   * chosen segment takes the Lane Cut. Mark it aria-pressed. `.lane-seg-sm` is the compact one for a row of
+   * settings; `.is-radiant` and `.is-dire` colour a side switch.
    */
   .lane-seg {
     display: inline-flex;
@@ -685,7 +618,11 @@ body {
     font-weight: 500;
     color: var(--muted);
     white-space: nowrap;
+    cursor: pointer;
     transition: color var(--dur-fast);
+  }
+  .lane-seg > button:disabled {
+    cursor: default;
   }
   .lane-seg > button:hover,
   .lane-seg > button[aria-pressed="true"] {

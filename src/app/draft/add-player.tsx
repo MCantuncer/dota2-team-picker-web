@@ -139,7 +139,7 @@ export function AddPlayer({
         onKeyDown={onKeyDown}
         className="field"
       />
-      <div role="group" aria-label="Show" className="flex flex-wrap gap-1.5">
+      <div role="group" aria-label="Show" className="lane-seg lane-seg-sm flex-wrap self-start">
         {chips.map((c) => (
           <button
             key={c.key}
@@ -150,7 +150,7 @@ export function AddPlayer({
               setFilter(c.key);
               setActive(0);
             }}
-            className="seg-item h-7 gap-1.5"
+            className="inline-flex items-center gap-1.5"
           >
             {c.label} <span className="num text-muted">{c.count}</span>
           </button>

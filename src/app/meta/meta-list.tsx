@@ -84,9 +84,9 @@ export function HeroList({
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-3 sm:hidden">
         <span className="text-sm text-muted">Sort</span>
-        <div className="seg h-auto" role="group" aria-label="Sort">
+        <div className="lane-seg max-sm:[&>button]:px-3" role="group" aria-label="Sort">
           {SORTS.map((s) => (
-            <button key={s.key} type="button" aria-pressed={sort === s.key} onClick={() => setSort(s.key)} className="seg-item min-h-9">
+            <button key={s.key} type="button" aria-pressed={sort === s.key} onClick={() => setSort(s.key)}>
               {s.label}
             </button>
           ))}
