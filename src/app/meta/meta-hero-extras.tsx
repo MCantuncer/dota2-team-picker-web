@@ -54,7 +54,7 @@ export function BuildPanel({ hero, extras, role, art, patch }: { hero: MetaHero;
           </p>
         </div>
         {positions.length > 1 && (
-          <div className="seg h-auto" role="group" aria-label="Build role">
+          <div className="lane-seg max-sm:[&>button]:px-2" role="group" aria-label="Build role">
             {positions.map((p) => (
               <button
                 key={p}
@@ -63,10 +63,11 @@ export function BuildPanel({ hero, extras, role, art, patch }: { hero: MetaHero;
                 aria-label={p ? POSITION_NAMES[p - 1] : "All Roles"}
                 title={p ? POSITION_NAMES[p - 1] : "All Roles"}
                 onClick={() => setPicked(p)}
-                className="seg-item min-h-9 gap-2"
+                className="inline-flex items-center gap-2"
               >
-                {p ? <PositionIcon position={p} size={20} /> : "All Roles"}
-                {p > 0 && <span className="hidden sm:inline">{POSITION_NAMES[p - 1]}</span>}
+                {/* Six tabs must fit the card: icons alone under 1024, and All for All Roles on a phone. */}
+                {p ? <PositionIcon position={p} size={20} /> : <span className="max-sm:hidden">All Roles</span>}
+                {p ? <span className="hidden lg:inline">{POSITION_NAMES[p - 1]}</span> : <span className="sm:hidden">All</span>}
               </button>
             ))}
           </div>

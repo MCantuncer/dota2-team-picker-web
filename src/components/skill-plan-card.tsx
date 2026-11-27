@@ -125,9 +125,9 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
             {plan.agreement ? <AgreementMeter agreement={plan.agreement} /> : <p className="text-sm text-muted">{plan.buildReason}</p>}
           </div>
           {plan.levels && (
-            <div role="group" aria-label="Skill order view" className="seg">
+            <div role="group" aria-label="Skill order view" className="lane-seg">
               {(["track", "grid"] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className="seg-item">
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
                   {v === "track" ? "Track" : "Grid"}
                 </button>
               ))}

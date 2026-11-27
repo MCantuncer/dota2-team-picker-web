@@ -47,14 +47,6 @@ const RANK_CHOICES: RankChoice<RankSlice>[] = [
   ...RANK_GROUPS.map((g) => ({ value: g.slice, name: g.name, medal: g.medal })),
 ];
 
-function Choice({ pressed, onClick, label, children }: { pressed: boolean; onClick: () => void; label?: string; children: ReactNode }) {
-  return (
-    <button type="button" aria-pressed={pressed} aria-label={label} title={label} onClick={onClick} className="seg-item min-h-9 gap-2">
-      {children}
-    </button>
-  );
-}
-
 /** The release the opening names, and how far the numbers reach. */
 export interface MetaRelease {
   name: string;
@@ -119,13 +111,13 @@ export function MetaBoard({ meta, heroes, art, release }: { meta: MetaFile; hero
     .filter(Boolean)
     .join(", ");
   const measureSwitch = (
-    <div className="seg h-auto" role="group" aria-label="Measure">
-      <Choice pressed={measure === "win"} onClick={() => setMeasure("win")}>
+    <div className="lane-seg" role="group" aria-label="Measure">
+      <button type="button" aria-pressed={measure === "win"} onClick={() => setMeasure("win")}>
         Win Rate
-      </Choice>
-      <Choice pressed={measure === "pick"} onClick={() => setMeasure("pick")}>
+      </button>
+      <button type="button" aria-pressed={measure === "pick"} onClick={() => setMeasure("pick")}>
         Pick Rate
-      </Choice>
+      </button>
     </div>
   );
 

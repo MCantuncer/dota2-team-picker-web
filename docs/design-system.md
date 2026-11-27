@@ -96,7 +96,7 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
   are `px-4 py-3`. Use `gap` on flex and grid, not margins between siblings.
 - **Corners**: `rounded-xl` (12) panels, cards and menus, `rounded-lg` (8) buttons, fields and tiles, `rounded-md` (6)
   icons, chips, badges and anything else that holds text or art, down to a count badge. `rounded-xs` (2) is for
-  marks only: bars, ticks, legend squares, pips. `.card`, `.btn`, `.field`, `.seg` and `.chip` already have them.
+  marks only: bars, ticks, legend squares, pips. `.card`, `.btn`, `.field`, `.lane-seg` and `.chip` already have them.
   `rounded-full` only for avatars, status dots and the green You pill. Hero frames use the Lane Cut instead. Bare
   `rounded`, `rounded-sm` and sizes in brackets are not used, and `corner-scale.test.ts` fails the build if one
   comes back. Chips are never pills.
@@ -119,13 +119,11 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
 | `.section-title`, `.page-title`, `.label-caps`, `.num`, `.micro` | Type styles above |
 | `.kbd` | Key hint (`Enter`, `Tab`, `Esc`). Show the key next to every keyboard action |
 | `.chip`, `.chip-accent` | Small label ("Pos 5"), and the copper version ("Best", "Captain") |
-| `.seg` + `.seg-item` | Segmented control; mark the chosen item `aria-selected` or `aria-pressed` |
-| `.seg-sm` | Compact segmented control for one row (an ally's position). Its items are radios: the chosen one (`aria-checked`) is copper filled, a guessed, unconfirmed one gets `data-guess`: dashed, not filled |
 | `.notice` + `.notice-error`, `-warn`, `-done` | Page or panel message; edge colour and icon carry the meaning |
 | `.row-link` | Makes a whole row or card one click target: on the row's main link (the name); the row is `relative`, buttons inside it add `relative z-10`. See Links below |
 | `.stack-banner` + `.stack-render` | A Stack's head: surface with faint Radiant and Dire corners and a hairline split, and one hero render on the right with a round fade (so spell effects in a render's corners drop away). One per page |
 | `.lane-cut`, `.lane-cut-enemy`, `.lane-cut-you`, `.hero-stage` | The Lane Cut hero frame, its Dire edge, the green edge of the player's own hero, and the stage behind a render. Use them through the components in Lane Cut Frame below |
-| `.lane-seg` + `.lane-seg-sm` | The Lane Board segmented control (view tabs, Plan For, the side switch, Rank): the chosen button (`aria-pressed`) takes the Lane Cut. `.is-radiant` and `.is-dire` colour a side switch |
+| `.lane-seg` + `.lane-seg-sm` | The site's one segmented control: a group of plain buttons, the chosen one (`aria-pressed`) takes the grey Lane Cut. `.lane-seg` (32px tabs) for a switch that stands alone: view tabs, Win Rate or Pick Rate, Sort, Build Role, the Skill Order view. `.lane-seg-sm` (26px tabs) for a row of settings: Plan For, Role, Rank, the side switch, a filter. `.is-radiant` and `.is-dire` colour a side switch. A button with an icon adds `inline-flex items-center gap-2`; on a phone a wide switch tightens with `max-sm:[&>button]:px-3`. There is no other switch look |
 | `.lane-digits` + `.lane-digit` | Position digits under a hero on a rail: the chosen one (`aria-checked`) is a small Lane Cut tile, a guess (`data-guess`) is dashed |
 | `.lane-spine` + `.lane-node` | The Team Plan's mid lane: one bright line through the position cards, a node per card. `.lane-node-open` is a ring, `.lane-node-done` filled (picked), `.lane-node-now` the copper dot, only for Pick First |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
@@ -432,7 +430,7 @@ The Skills and Talents tab (`components/skill-plan-card.tsx`, `components/skill-
   (`SkillPlan.agreement`); the build reason sentence only when there is no order.
 - **Max order**: each basic ability as a chip (32px icon, name, Max by N) in the order they are maxed, chevrons between
   on wide screens, then the ultimate in an accent tint chip with the levels it takes.
-- **Track** (default) or **Grid** (`.seg` switch): the track is one 40px cell per level, the level number over the
+- **Track** (default) or **Grid** (`.lane-seg` switch): the track is one 40px cell per level, the level number over the
   ability icon, the talent mark in an accent tint, or a dashed No Point cell. The grid is the game's skill build table.
 - **Talent tree**: level 25 on top, mirrored; the pick is lit (semibold, copper share bar), the other side muted with
   a line-control bar. Bars are the share of recent high-rank games that took each talent, with the number beside;
