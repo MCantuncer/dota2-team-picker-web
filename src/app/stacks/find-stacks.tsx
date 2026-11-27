@@ -120,7 +120,7 @@ export function FindStacks({
             >
               <Icon name="flame" />
               Hot
-              <span className="num rounded-sm bg-on-accent/15 px-1 leading-5">#{hot}</span>
+              <span className="num rounded-md bg-on-accent/15 px-1 leading-5">#{hot}</span>
             </span>
           )}
         </div>

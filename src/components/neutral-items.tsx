@@ -44,7 +44,7 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
     <li className="flex flex-col gap-4 rounded-xl bg-surface p-4 ring-1 ring-inset ring-line-strong">
       <div className="flex items-start justify-between gap-3">
         <span className="flex items-center gap-2 text-base font-semibold text-fg">
-          <span aria-hidden className="size-2.5 rotate-45 rounded-[2px]" style={{ background: TIER_COLOR[tier.tier] }} />
+          <span aria-hidden className="size-2.5 rotate-45 rounded-xs" style={{ background: TIER_COLOR[tier.tier] }} />
           <span>
             Tier <span className="num">{tier.tier}</span>
           </span>

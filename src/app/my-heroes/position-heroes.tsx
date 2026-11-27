@@ -279,7 +279,7 @@ export function PositionHeroes({
             return (
               <div key={id} className="relative">
                 <div
-                  className={`flex items-stretch rounded-sm text-sm text-fg ring-1 ring-inset ${
+                  className={`flex items-stretch rounded-lg text-sm text-fg ring-1 ring-inset ${
                     open ? "bg-accent-tint ring-accent" : "bg-surface ring-line-hover"
                   }`}
                 >
@@ -294,7 +294,7 @@ export function PositionHeroes({
                     aria-haspopup="dialog"
                     className="flex items-center gap-2 py-1 pl-1 pr-2"
                   >
-                    <Image src={h.image} alt="" width={48} height={27} unoptimized className="rounded-xs" />
+                    <Image src={h.image} alt="" width={48} height={27} unoptimized className="rounded-md" />
                     <span className="num text-subtle">{i + 1}</span>
                     {h.name}
                     {isTop && (
@@ -370,7 +370,7 @@ export function PositionHeroes({
                 const h = byId.get(card.heroId);
                 return (
                   <li key={card.id} className="flex flex-wrap items-center gap-3">
-                    {h && <Image src={h.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />}
+                    {h && <Image src={h.image} alt="" width={64} height={36} unoptimized className="rounded-md" />}
                     {/* The text keeps a readable width; on a phone the buttons move under it instead of squeezing it. */}
                     <div className="flex min-w-0 flex-1 basis-56 flex-col">
                       <span className="text-sm font-medium text-fg">{card.question}</span>
@@ -431,13 +431,13 @@ export function PositionHeroes({
                         onClick={() => toggleHero(h.id)}
                         aria-pressed={on}
                         title={h.name}
-                        className={`relative block w-full overflow-hidden rounded-xs ring-2 ${
+                        className={`relative block w-full overflow-hidden rounded-md ring-2 ${
                           on ? "ring-accent" : "opacity-55 ring-transparent hover:opacity-100"
                         }`}
                       >
                         <Image src={h.image} alt={h.name} width={128} height={72} unoptimized className="aspect-video w-full bg-raised object-cover" />
                         {on && (
-                          <span className="num absolute right-0.5 top-0.5 rounded-xs bg-accent px-1 text-xs font-semibold leading-4 text-on-accent">
+                          <span className="num absolute right-0.5 top-0.5 rounded-md bg-accent px-1 text-xs font-semibold leading-4 text-on-accent">
                             {shown.indexOf(h.id) + 1}
                           </span>
                         )}

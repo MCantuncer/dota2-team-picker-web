@@ -87,7 +87,7 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
               {/* Near the end of the axis the label sits left of the mark so it stays inside. */}
               {/* The label sits on the axis line, so it gets the page colour behind it: the line never runs through it. */}
               <span
-                className={`absolute top-1 whitespace-nowrap rounded-xs bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-1.5" : "left-1.5"}`}
+                className={`absolute top-1 whitespace-nowrap rounded-md bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent ${at(story.ready) > 85 ? "right-1.5" : "left-1.5"}`}
               >
                 {band?.fight ? band.label : "Ready to fight"}
               </span>
@@ -115,7 +115,7 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
     >
       <div className="mb-1 flex items-center gap-1">
         {/* The axis has its own label, so its art carries no names of its own; the item opens its card. */}
-        {heroIcon && <Image src={heroIcon} alt="" width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />}
+        {heroIcon && <Image src={heroIcon} alt="" width={64} height={36} className="h-9 w-16 rounded-md object-cover" />}
         {itemImg && (
           <ItemButton
             label={`${side === "us" ? "" : "Enemy "}${spike.hero}: ${spike.item}`}
@@ -129,9 +129,9 @@ function SpikeMark({ spike, left, side, heroIcon, itemImg }: { spike: Spike; lef
                 />
               ),
             }}
-            className="rounded-xs"
+            className="rounded-md"
           >
-            <Image src={ITEM_CDN + itemImg} alt="" width={44} height={32} className="block h-8 w-11 rounded-xs object-cover" />
+            <Image src={ITEM_CDN + itemImg} alt="" width={44} height={32} className="block h-8 w-11 rounded-md object-cover" />
           </ItemButton>
         )}
       </div>

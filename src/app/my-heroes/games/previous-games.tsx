@@ -137,7 +137,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
       className="relative flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 transition-colors hover:bg-surface md:grid md:grid-cols-[0.125rem_2rem_minmax(7rem,1fr)_2.5rem_7rem_5rem_minmax(10rem,2fr)_1rem] md:gap-x-3 lg:gap-x-4"
     >
       <span aria-hidden className={`h-8 w-0.5 rounded-full ${game.isWin ? "bg-radiant" : "bg-dire"}`} />
-      {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-xs" />}
+      {hero?.icon && <Image src={hero.icon} alt="" width={32} height={32} unoptimized className="rounded-md" />}
       <div className="flex min-w-36 flex-col md:min-w-0">
         <Link
           href={`/my-heroes/games/${game.matchId}`}

@@ -178,7 +178,7 @@ function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
         className="block h-11 w-15 rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_0_0_4px_var(--surface)]"
       />
       {part.count > 1 && (
-        <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
+        <span className="num absolute -bottom-1 -right-2 rounded-md bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
           x{part.count}
         </span>
       )}

@@ -130,7 +130,7 @@ function Tile({ row, note, answer, heroName, icons, cards }: Art & { row: Threat
           <span className={`absolute left-1.5 top-1.5 flex gap-1.5 ${cards.faces}`}>
             {others.map((e) =>
               icons[e.heroId] ? (
-                <span key={e.heroId} className="rounded-[0.375rem] shadow-[0_0_0_2px_var(--bg)]">
+                <span key={e.heroId} className="rounded-md shadow-[0_0_0_2px_var(--bg)]">
                   <HeroFace portrait={icons[e.heroId]!} name={heroName(e.heroId)} size={32} isEnemy isDecorative />
                 </span>
               ) : null,

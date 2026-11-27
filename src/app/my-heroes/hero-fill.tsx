@@ -217,7 +217,7 @@ export function FillCard({ added }: { added: FillAdded }) {
               width={64}
               height={36}
               unoptimized
-              className="-ml-2.5 h-9 w-16 rounded-xs object-cover ring-2 ring-surface"
+              className="-ml-2.5 h-9 w-16 rounded-md object-cover ring-2 ring-surface"
             />
           ))}
         </div>
@@ -285,7 +285,7 @@ function CardIcon({ tone, icon = "chart" }: { tone: "accent" | "quiet" | "warn";
     warn: "bg-warn-tint text-warn",
   }[tone];
   return (
-    <span aria-hidden className={`flex size-11 shrink-0 items-center justify-center rounded-sm ${colors}`}>
+    <span aria-hidden className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${colors}`}>
       <Icon name={icon} large />
     </span>
   );

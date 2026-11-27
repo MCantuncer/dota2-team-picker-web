@@ -91,7 +91,7 @@ export function CheckInPrompt({
     >
       <div className="flex items-center gap-3">
         {heroImage && (
-          <Image src={heroImage} alt="" width={96} height={54} className="h-13.5 w-24 shrink-0 rounded-xs object-cover" />
+          <Image src={heroImage} alt="" width={96} height={54} className="h-13.5 w-24 shrink-0 rounded-md object-cover" />
         )}
         <div className="flex min-w-0 grow flex-col gap-1">
           <h2

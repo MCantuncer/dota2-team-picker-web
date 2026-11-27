@@ -230,7 +230,7 @@ function Popup({
         tabIndex={-1}
         style={sheet ? undefined : place ? { top: place.top, left: place.left, maxHeight: place.maxHeight } : { top: 0, left: 0, visibility: "hidden" }}
         className={`fixed z-50 flex flex-col overflow-y-auto overscroll-contain bg-surface outline-none shadow-[inset_0_0_0_1px_var(--line-hover),0_18px_40px_rgb(0_0_0/0.5)] ${
-          sheet ? "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom,0px)]" : "w-[30rem] rounded-xl"
+          sheet ? "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-xl pb-[env(safe-area-inset-bottom,0px)]" : "w-[30rem] rounded-xl"
         }`}
       >
         {sheet && <span aria-hidden className="mx-auto mt-2.5 h-1 w-9 shrink-0 rounded-xs bg-line-hover" />}
@@ -377,18 +377,18 @@ function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFac
         )}
       </div>
       <div aria-hidden className="relative h-[1.875rem]">
-        <span className="absolute inset-x-0 top-1 h-1.5 rounded-[3px] bg-line" />
+        <span className="absolute inset-x-0 top-1 h-1.5 rounded-xs bg-line" />
         <span
-          className={`absolute top-1 h-1.5 rounded-l-[3px] bg-linear-to-r from-transparent ${LEAD[side]}`}
+          className={`absolute top-1 h-1.5 rounded-l-xs bg-linear-to-r from-transparent ${LEAD[side]}`}
           style={{ left: at(timing.minute - 6), width: `calc(${at(timing.minute)} - ${at(timing.minute - 6)})` }}
         />
         {timing.late !== undefined && (
           <>
             <span
-              className="absolute top-1 right-0 h-1.5 rounded-r-[3px] bg-[repeating-linear-gradient(135deg,var(--warn-tint)_0_4px,var(--line)_4px_8px)]"
+              className="absolute top-1 right-0 h-1.5 rounded-r-xs bg-[repeating-linear-gradient(135deg,var(--warn-tint)_0_4px,var(--line)_4px_8px)]"
               style={{ left: at(timing.late) }}
             />
-            <span className="absolute top-0 h-3.5 w-0.5 rounded-[1px] bg-warn" style={{ left: at(timing.late) }} />
+            <span className="absolute top-0 h-3.5 w-0.5 rounded-xs bg-warn" style={{ left: at(timing.late) }} />
           </>
         )}
         <span className={`absolute top-0 size-3.5 -translate-x-1/2 rounded-full shadow-[0_0_0_3px_var(--bg)] ${DOT[side]}`} style={{ left: at(timing.minute) }} />

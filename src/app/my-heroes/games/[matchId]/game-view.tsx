@@ -44,7 +44,7 @@ export function GameView({ game, heroes }: { game: GameDetail; heroes: Map<numbe
         <div className="flex flex-wrap items-center gap-3.5">
           <h1 className="page-title">{name(game.heroId)}</h1>
           <span
-            className={`rounded-sm px-3 py-1 text-base font-semibold ${
+            className={`rounded-md px-3 py-1 text-base font-semibold ${
               game.isWin ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"
             }`}
           >
@@ -343,10 +343,10 @@ function Deaths({
                         alt=""
                         width={40}
                         height={22}
-                        className={`h-[22px] w-10 rounded-xs object-cover ${isEarly ? "outline-2 outline-dire" : ""}`}
+                        className={`h-[22px] w-10 rounded-md object-cover ${isEarly ? "outline-2 outline-dire" : ""}`}
                       />
                     ) : (
-                      <span className="flex h-[22px] w-10 items-center justify-center rounded-xs bg-raised text-subtle">
+                      <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-subtle">
                         <Icon name="skull" />
                       </span>
                     )}
@@ -375,19 +375,19 @@ function Deaths({
                 >
                   <span className="num text-sm font-semibold text-fg">{clock(d.time)}</span>
                   {art?.image ? (
-                    <Image src={art.image} alt="" width={40} height={22} className="h-[22px] w-10 rounded-xs object-cover" />
+                    <Image src={art.image} alt="" width={40} height={22} className="h-[22px] w-10 rounded-md object-cover" />
                   ) : (
-                    <span className="flex h-[22px] w-10 items-center justify-center rounded-xs bg-raised text-subtle">
+                    <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-subtle">
                       <Icon name="skull" />
                     </span>
                   )}
                   <span className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-fg">
                     {d.killerHeroId ? name(d.killerHeroId) : "Creeps or a tower"}
                     {d.isKillerFromMid && (
-                      <span className="rounded-xs bg-dire-tint px-2 py-0.5 text-xs text-dire">Rotation from Mid</span>
+                      <span className="rounded-md bg-dire-tint px-2 py-0.5 text-xs text-dire">Rotation from Mid</span>
                     )}
                     {d.buildingsLost.length > 0 && (
-                      <span className="flex items-center gap-1.5 rounded-xs bg-dire-tint px-2 py-0.5 text-xs text-dire">
+                      <span className="flex items-center gap-1.5 rounded-md bg-dire-tint px-2 py-0.5 text-xs text-dire">
                         <Icon name="castle" />
                         Lost while dead: {d.buildingsLost.map(buildingName).join(", ")}
                       </span>

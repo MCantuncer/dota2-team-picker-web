@@ -218,7 +218,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
           {foe !== undefined && icons[foe] ? (
             <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
           ) : (
-            <i aria-hidden className="inline-block size-2.5 shrink-0 rounded-[0.1875rem] shadow-[0_0_0_2px_var(--accent)]" />
+            <i aria-hidden className="inline-block size-2.5 shrink-0 rounded-xs shadow-[0_0_0_2px_var(--accent)]" />
           )}
           <span>
             <b className="font-medium text-fg">Changed for this draft.</b> {sentence(why)}
@@ -320,10 +320,10 @@ function ItemIcon({ item, enemy, heroName, icons }: Art & { item: Item; enemy: b
             <Image src={ITEM_CDN + item.img} alt="" width={64} height={47} className="block size-full object-cover" />
           </span>
           {item.count && (
-            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+            <span className="num absolute -right-1 bottom-0.5 rounded-md bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
           )}
           {foe !== undefined && icons[foe] && (
-            <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--raised)]">
+            <span className="absolute -left-1.5 -top-1.5 rounded-md shadow-[0_0_0_2px_var(--raised)]">
               <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
             </span>
           )}

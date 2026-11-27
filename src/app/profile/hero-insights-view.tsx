@@ -181,7 +181,7 @@ function Takeaway({
   const color = tone === "good" ? "text-radiant" : tone === "bad" ? "text-dire" : "text-fg";
   return (
     <li className="card flex items-center gap-3 p-3">
-      {hero && <Image src={hero.image} alt="" width={80} height={45} unoptimized className="shrink-0 rounded-xs" />}
+      {hero && <Image src={hero.image} alt="" width={80} height={45} unoptimized className="shrink-0 rounded-md" />}
       <span className="flex min-w-0 flex-col">
         <span className="label-caps">{title}</span>
         <span className="truncate text-base font-semibold text-fg">{hero?.name ?? `Hero ${line.heroId}`}</span>
@@ -199,7 +199,7 @@ function SegLink({ href, current, label }: { href: string; current: boolean; lab
       href={href}
       scroll={false}
       aria-current={current ? "page" : undefined}
-      className={`rounded-sm px-3 py-1 ${current ? "bg-raised font-medium text-fg" : "text-muted hover:text-fg"}`}
+      className={`rounded-md px-3 py-1 ${current ? "bg-raised font-medium text-fg" : "text-muted hover:text-fg"}`}
     >
       {label}
     </Link>
@@ -223,9 +223,9 @@ function HeroRow({
   return (
     <li className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 py-2.5 sm:grid-cols-[auto_12rem_minmax(6rem,1fr)_12rem_auto]">
       {hero ? (
-        <Image src={hero.image} alt="" width={64} height={36} unoptimized className="rounded-xs" />
+        <Image src={hero.image} alt="" width={64} height={36} unoptimized className="rounded-md" />
       ) : (
-        <span className="h-9 w-16 rounded-xs bg-raised" />
+        <span className="h-9 w-16 rounded-md bg-raised" />
       )}
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="truncate text-sm font-medium text-fg">{name}</span>

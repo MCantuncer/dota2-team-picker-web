@@ -27,7 +27,7 @@ export function NeutralKind({ item, level }: { item: NeutralItem; level?: number
   }
   return (
     <span className="flex items-center gap-2 text-base font-semibold" style={{ color: TIER_COLOR[item.tier ?? 0] ?? "var(--muted)" }}>
-      <span aria-hidden className="size-2.5 rotate-45 rounded-[2px] bg-current" />
+      <span aria-hidden className="size-2.5 rotate-45 rounded-xs bg-current" />
       <span>
         Tier <span className="num">{item.tier}</span> Artifact
       </span>

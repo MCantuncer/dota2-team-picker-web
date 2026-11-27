@@ -144,7 +144,7 @@ export function HeroCard({
         </div>
         <div className="flex flex-col gap-3 p-4 sm:p-3.5">
           <div className="flex items-center gap-3">
-            <Image src={hero.image} alt="" width={96} height={54} unoptimized className="rounded-xs max-sm:hidden" />
+            <Image src={hero.image} alt="" width={96} height={54} unoptimized className="rounded-md max-sm:hidden" />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-lg font-semibold text-fg sm:text-base">{hero.name}</span>
               {subtitle}
@@ -186,7 +186,7 @@ export function HeroCard({
 
 function Tile({ value, label, good = false }: { value: ReactNode; label: string; good?: boolean }) {
   return (
-    <span className="flex flex-col rounded-xs bg-surface px-2.5 py-1.5">
+    <span className="flex flex-col rounded-lg bg-surface px-2.5 py-1.5">
       <span className={`num text-lg ${good ? "text-radiant" : "text-fg"}`}>{value}</span>
       <span className="text-xs text-subtle">{label}</span>
     </span>
@@ -250,7 +250,7 @@ export function ReplaceTopCard({
                 <Image src={h.image} alt="" width={256} height={144} unoptimized className="aspect-video w-26 shrink-0 object-cover md:w-full" />
                 <span className="flex flex-1 items-center justify-between gap-2 pr-3 md:flex-col md:items-stretch md:p-2.5">
                   <span className="text-sm font-semibold leading-tight text-fg md:min-h-[2.5em]">{h.name}</span>
-                  <span className="flex h-8 items-center justify-center gap-1.5 rounded-[10px] bg-accent-tint px-3 text-sm font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
+                  <span className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-tint px-3 text-sm font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
                     <SwapIcon />
                     Replace
                   </span>

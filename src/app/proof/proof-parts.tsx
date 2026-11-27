@@ -108,7 +108,7 @@ const ticksOf = (lo: number, hi: number, step: number) =>
  */
 export function LaneFrame({ lift }: { lift: Lift }) {
   return (
-    <figure className="relative mx-auto aspect-square w-full max-w-80 overflow-hidden rounded-[1.375rem] border-2 border-line-hover">
+    <figure className="relative mx-auto aspect-square w-full max-w-80 overflow-hidden rounded-xl border-2 border-line-hover">
       <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
         <polygon points="0,0 100,0 0,100" fill="var(--accent-tint)" />
         <polygon points="100,0 100,100 0,100" fill="var(--raised)" />

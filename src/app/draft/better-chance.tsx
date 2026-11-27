@@ -185,7 +185,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
             {range && (
               <span
                 data-testid="chance-range"
-                className="absolute -top-1.5 -bottom-1.5 rounded-sm bg-fg/20 ring-1 ring-fg/55 ring-inset"
+                className="absolute -top-1.5 -bottom-1.5 rounded-xs bg-fg/20 ring-1 ring-fg/55 ring-inset"
                 style={{
                   left: `${Math.min(rangeLow, rangeHigh)}%`,
                   width: `${Math.max(Math.abs(rangeHigh - rangeLow), 1.2)}%`,

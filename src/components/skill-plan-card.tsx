@@ -245,12 +245,12 @@ function TreeLegend({ newPairs }: { newPairs: boolean }) {
         Buffs This Skill
       </li>
       <li className="flex items-center gap-1.5">
-        <span aria-hidden className="size-3 rounded-[3px] border border-accent-deep bg-accent-tint" />
+        <span aria-hidden className="size-3 rounded-xs border border-accent-deep bg-accent-tint" />
         Take This
       </li>
       {newPairs && (
         <li className="flex items-center gap-1.5">
-          <span aria-hidden className="size-3 rounded-[3px] border border-dashed border-line-hover" />
+          <span aria-hidden className="size-3 rounded-xs border border-dashed border-line-hover" />
           New This Patch
         </li>
       )}
@@ -374,13 +374,13 @@ function SkillGrid({ rows, levels }: { rows: SkillRow[]; levels: number }) {
                 <span className="flex items-center gap-2.5">
                   {row.kind === "talents" ? (
                     // Valve's own talent tree mark, as in the game's skill build. An SVG, so it isn't resized.
-                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-raised">
+                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-md bg-raised">
                       <Image src={TALENT_ICON} alt="" width={24} height={25} unoptimized className="size-6 opacity-90" />
                     </span>
                   ) : row.key ? (
-                    <Image src={`${ABILITY_CDN}${row.key}.png`} alt="" width={36} height={36} className="size-9 shrink-0 rounded-xs" />
+                    <Image src={`${ABILITY_CDN}${row.key}.png`} alt="" width={36} height={36} className="size-9 shrink-0 rounded-md" />
                   ) : (
-                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-raised text-muted">
+                    <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-md bg-raised text-muted">
                       +
                     </span>
                   )}
@@ -393,7 +393,7 @@ function SkillGrid({ rows, levels }: { rows: SkillRow[]; levels: number }) {
                 return (
                   <td
                     key={level}
-                    className={`num h-6 w-6 min-w-6 rounded-[3px] text-center text-xs ${on ? "bg-accent font-semibold text-bg" : "bg-raised/70"}`}
+                    className={`num h-6 w-6 min-w-6 rounded-md text-center text-xs ${on ? "bg-accent font-semibold text-bg" : "bg-raised/70"}`}
                   >
                     {on ? level : null}
                   </td>

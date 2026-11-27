@@ -146,7 +146,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const hero = (id: number) => byId.get(id);
   const names = (ids: number[]) => keepWhole(ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and "));
   return (
-    <figure className="rounded-sm bg-surface/90 px-5 py-4 ring-1 ring-line-strong">
+    <figure className="rounded-xl bg-surface/90 px-5 py-4 ring-1 ring-line-strong">
       <figcaption className="text-sm text-subtle">
         Example: you play mid with {names(EXAMPLE.allies)}, the enemy has {names(EXAMPLE.enemies)}
       </figcaption>
@@ -156,9 +156,9 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
           return (
             <li key={s.id} className="grid grid-cols-[4rem_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line py-2.5">
               {h ? (
-                <Image src={h.image} alt="" width={64} height={36} className="h-9 w-16 rounded-xs object-cover" />
+                <Image src={h.image} alt="" width={64} height={36} className="h-9 w-16 rounded-md object-cover" />
               ) : (
-                <span className="h-9 w-16 rounded-xs bg-raised" />
+                <span className="h-9 w-16 rounded-md bg-raised" />
               )}
               <span className="min-w-0">
                 <span className="block font-medium text-fg">{h?.name ?? `Hero ${s.id}`}</span>

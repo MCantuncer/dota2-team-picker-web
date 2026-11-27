@@ -100,7 +100,7 @@ export function HeroList({
             type="button"
             aria-pressed={sort === s.key}
             onClick={() => setSort(s.key)}
-            className={`w-fit rounded text-left hover:text-fg aria-pressed:text-accent ${s.key === "change" ? "justify-self-end" : ""} ${s.key === "pick" ? "lg:col-start-4" : ""}`}
+            className={`w-fit rounded-md text-left hover:text-fg aria-pressed:text-accent ${s.key === "change" ? "justify-self-end" : ""} ${s.key === "pick" ? "lg:col-start-4" : ""}`}
           >
             {s.label}
           </button>

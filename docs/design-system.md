@@ -95,9 +95,11 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
   gets room around it (`ml-1`, `gap-2`). 16 phone gutter, 24 from 640px, 32 page top padding, 48 page bottom. Rows
   are `px-4 py-3`. Use `gap` on flex and grid, not margins between siblings.
 - **Corners**: `rounded-xl` (12) panels, cards and menus, `rounded-lg` (8) buttons, fields and tiles, `rounded-md` (6)
-  icons, chips and badges, `rounded-xs` (2) 16:9 portraits and pips. `.card`, `.btn`, `.field`, `.seg` and `.chip`
-  already have them. `rounded-full` only for avatars, status dots and the green You pill. Hero frames use the Lane
-  Cut instead. Bare `rounded` is not used. Chips are never pills.
+  icons, chips, badges and anything else that holds text or art, down to a count badge. `rounded-xs` (2) is for
+  marks only: bars, ticks, legend squares, pips. `.card`, `.btn`, `.field`, `.seg` and `.chip` already have them.
+  `rounded-full` only for avatars, status dots and the green You pill. Hero frames use the Lane Cut instead. Bare
+  `rounded`, `rounded-sm` and sizes in brackets are not used, and `corner-scale.test.ts` fails the build if one
+  comes back. Chips are never pills.
 - **Elevation**: page, then `.card` (one level, never a card inside a card), then `raised` blocks inside a card, then
   menus and toasts on `surface` with a `line-strong` border and a shadow. A selected item gets a copper underline or
   edge, not a shadow. Prefer hairline rows (`border-t border-line`) over cards.
@@ -385,9 +387,10 @@ The Game Story tab's Lanes block (`components/lane-board.tsx`):
 
 ## Heroes, icons, states
 
-- **Hero portraits** are 16:9 from the Steam CDN, `object-cover`, `rounded-xs`. Sizes: 40x22 search rows and chips,
-  64x36 strips, 80x45 draft slots, 112x63 suggestion cards. Square icons (OpenDota `icon`) where a portrait does not
-  fit. Missing art is a slate tile with the full name in `.micro`, never a coloured placeholder.
+- **Hero portraits** are 16:9 from the Steam CDN, `object-cover`, in a Lane Cut frame (`rounded-md` where a page has
+  not moved to the frame yet). Sizes: 40x22 search rows and chips, 64x36 strips, 80x45 draft slots, 112x63 suggestion
+  cards. Square icons (OpenDota `icon`) where a portrait does not fit. Missing art is a slate tile with the full name
+  in `.micro`, never a coloured placeholder.
 - **Picked** by your team: 3px `radiant` top bar. By the enemy: 3px `dire` top bar. **Banned**: greyscale, darkened,
   with a `ban` slash.
 - **Draft board rails** (`app/draft/draft-rails.tsx`): each rail's search box sits in its heading row (title, the

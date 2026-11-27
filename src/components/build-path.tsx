@@ -219,10 +219,10 @@ function ItemTile({ item, card, heroName, icons, className = "" }: Art & { item:
         <>
           <ItemArt item={item} className={`h-[2.9375rem] w-16 ${open ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
           {item.count && (
-            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+            <span className="num absolute -right-1 bottom-0.5 rounded-md bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
           )}
           {foe !== undefined && icons[foe] && (
-            <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">
+            <span className="absolute -left-1.5 -top-1.5 rounded-md shadow-[0_0_0_2px_var(--bg)]">
               <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
             </span>
           )}
@@ -286,7 +286,7 @@ function EnemyStop({ enemy, style }: { enemy: EnemyItem; style: CSSProperties })
           <span className="block h-8 w-11 rounded-md bg-raised" />
         )}
         {enemy.heroIcon && (
-          <span className="absolute -left-2 -top-2 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">
+          <span className="absolute -left-2 -top-2 rounded-md shadow-[0_0_0_2px_var(--bg)]">
             <HeroFace portrait={enemy.heroIcon} name={enemy.hero} size={20} isEnemy isDecorative />
           </span>
         )}
