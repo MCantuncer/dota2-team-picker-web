@@ -175,7 +175,9 @@ A panel or section that has a finding says it as its title, `VerdictHead` (`src/
   role, the dates, how many games).
 - **Title**: the finding, calculated from the panel's data on every load and Title Cased ("Monkey King Is Up 5.5
   Points, Outworld Devourer Down 6.1"). It is the heading; the label is read before it for screen readers. It
-  follows the page's filters. One rule per panel, with tests (`src/lib/meta-verdict.ts`).
+  follows the page's filters. One rule per panel, with tests (`src/lib/meta-verdict.ts` for Meta, the `...Title`
+  functions in `src/lib/proof.ts` for Proof). A title compares the numbers the panel shows, so a reader can check
+  it against the rows under it.
 - **No finding**: when the data cannot back one (too few games, a tie), the label is the title and the facts sit
   under it. Never a typed slogan.
 - **Tools keep labels**: a panel the user works in (Meta Map, Every Hero, How We Test) has no finding to state.

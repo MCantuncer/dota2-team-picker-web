@@ -3,8 +3,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { PageStage } from "@/components/page-stage";
+import { VerdictHead } from "@/components/verdict-head";
 import { getHeroes, type Hero } from "@/lib/heroes";
-import { getProof, ladderRows, percent, proofVerdict, shortDay } from "@/lib/proof";
+import { getProof, ladderRows, percent, proofVerdict, rankRoleTitle, rivalsTitle, runningTitle, shortDay } from "@/lib/proof";
 import { FourSteps, GameRows, Ladder, LaneFrame, RankRoleTiles, RivalRows, RunningLine } from "./proof-parts";
 
 export const metadata: Metadata = {
@@ -16,10 +17,10 @@ export const metadata: Metadata = {
 /** The numbers change once a day; the page is rebuilt at most once an hour. */
 export const revalidate = 3600;
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({ title, facts, finding, children }: { title: string; facts?: string; finding?: string | null; children: ReactNode }) {
   return (
     <section className="grid min-w-0 content-start gap-5 rounded-xl border border-line bg-surface p-5 sm:p-6">
-      <h2 className="section-title">{title}</h2>
+      <VerdictHead label={title} facts={facts} finding={finding} />
       {children}
     </section>
   );
@@ -75,15 +76,15 @@ export default async function ProofPage() {
       </PageStage>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Against Simple Rules">
+        <Panel title="Against Simple Rules" finding={rivalsTitle(proof.rivals)}>
           <RivalRows rivals={proof.rivals} />
         </Panel>
-        <Panel title="Over Time">
+        <Panel title="Over Time" finding={runningTitle(proof.running)}>
           <RunningLine running={proof.running} />
         </Panel>
       </div>
 
-      <Panel title="By Rank and Role">
+      <Panel title="By Rank and Role" finding={rankRoleTitle(proof.byRank, proof.byRole)}>
         <RankRoleTiles byRank={proof.byRank} byRole={proof.byRole} />
       </Panel>
 

@@ -101,6 +101,51 @@ export function proofVerdict({ lift, margin }: Pick<Lift, "lift" | "margin">): s
   return "Too Close to Call";
 }
 
+/** A lift in points as the page shows it, one decimal: 0.051 is 5.1. */
+const shownPoints = (lift: number) => Math.round(lift * 1000) / 10;
+
+const COUNT = ["No", "One", "Two", "Three", "Four", "Five"];
+
+/**
+ * Against Simple Rules' title: our lift next to the better of the two simple rules, from the numbers the rows show
+ * ("Our Picks Lead the Best Simple Rule by 0.2 Points"). Null when ours or both of theirs are missing.
+ */
+export function rivalsTitle(rivals: Record<Rival, Pick<Lift, "lift">>): string | null {
+  const others = [rivals.meta.lift, rivals.popular.lift].filter((l) => l !== null);
+  if (rivals.engine.lift === null || others.length === 0) return null;
+  const gap = Math.round((shownPoints(rivals.engine.lift) - Math.max(...others.map(shownPoints))) * 10) / 10;
+  if (gap === 0) return "Our Picks Are Level with the Best Simple Rule";
+  return gap > 0
+    ? `Our Picks Lead the Best Simple Rule by ${gap.toFixed(1)} Points`
+    : `The Best Simple Rule Leads Our Picks by ${(-gap).toFixed(1)} Points`;
+}
+
+/** Over Time's title: on how many of the days the gain was above zero ("A Gain on All 10 Days"). Null under two days. */
+export function runningTitle(running: Pick<Proof["running"][number], "lift">[]): string | null {
+  if (running.length < 2) return null;
+  const up = running.filter((d) => shownPoints(d.lift) > 0).length;
+  if (up === 0) return `No Gain on Any of ${running.length} Days`;
+  return up === running.length ? `A Gain on ${up === 2 ? "Both" : `All ${up}`} Days` : `A Gain on ${up} of ${running.length} Days`;
+}
+
+/**
+ * By Rank and Role's title: in how many rank groups and roles the gain is above zero ("A Gain in Every Rank and in
+ * Four of Five Roles"). Groups with too few picks are left out; null unless two of each can be counted.
+ */
+export function rankRoleTitle(byRank: Record<string, Pick<Lift, "lift">>, byRole: Record<string, Pick<Lift, "lift">>): string | null {
+  const count = (lifts: Record<string, Pick<Lift, "lift">>, one: string) => {
+    const known = Object.values(lifts).flatMap((l) => (l.lift === null ? [] : [shownPoints(l.lift)]));
+    const up = known.filter((l) => l > 0).length;
+    const text = up === known.length ? `Every ${one}` : up === 0 ? `No ${one}` : `${COUNT[up] ?? up} of ${COUNT[known.length] ?? known.length} ${one}s`;
+    return { known: known.length, up, text };
+  };
+  const ranks = count(byRank, "Rank");
+  const roles = count(byRole, "Role");
+  if (ranks.known < 2 || roles.known < 2) return null;
+  if (ranks.up === 0 && roles.up === 0) return "No Gain in Any Rank or Role";
+  return `A Gain in ${ranks.text} and in ${roles.text}`;
+}
+
 /** A share as a percentage with one decimal: 0.57 is "57.0%". */
 export function percent(share: number): string {
   return `${(share * 100).toFixed(1)}%`;
