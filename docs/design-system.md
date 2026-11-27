@@ -123,7 +123,7 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
 | `.row-link` | Makes a whole row or card one click target: on the row's main link (the name); the row is `relative`, buttons inside it add `relative z-10`. See Links below |
 | `.stack-banner` + `.stack-render` | A Stack's head: surface with faint Radiant and Dire corners and a hairline split, and one hero render on the right with a round fade (so spell effects in a render's corners drop away). One per page |
 | `.lane-cut`, `.lane-cut-enemy`, `.lane-cut-you`, `.hero-stage` | The Lane Cut hero frame, its Dire edge, the green edge of the player's own hero, and the stage behind a render. Use them through the components in Lane Cut Frame below |
-| `.lane-seg` + `.lane-seg-sm` | The Lane Board segmented control (view tabs, Plan For, the side switch): the chosen button (`aria-pressed`) takes the Lane Cut. `.is-radiant` and `.is-dire` colour a side switch |
+| `.lane-seg` + `.lane-seg-sm` | The Lane Board segmented control (view tabs, Plan For, the side switch, Rank): the chosen button (`aria-pressed`) takes the Lane Cut. `.is-radiant` and `.is-dire` colour a side switch |
 | `.lane-digits` + `.lane-digit` | Position digits under a hero on a rail: the chosen one (`aria-checked`) is a small Lane Cut tile, a guess (`data-guess`) is dashed |
 | `.lane-spine` + `.lane-node` | The Team Plan's mid lane: one bright line through the position cards, a node per card. `.lane-node-open` is a ring, `.lane-node-done` filled (picked), `.lane-node-now` the copper dot, only for Pick First |
 | `.lane-check` | Lane Mark, our on/off checkbox (`<input type="checkbox" className="lane-check">` inside its `<label>`): a tile with the mid lane that lights copper with the logo dot when on. For settings that apply at once, never for a list of choices |
@@ -131,6 +131,18 @@ use `.num` or `.micro`. Percentages have one decimal (`54.1%`); gaps are signed 
 
 Reuse these before writing a new style. If a screen needs something new, add it here and to `globals.css` as a token
 or class in its own small PR, then use it.
+
+## Role and Rank
+
+Two controls, the same on every page:
+
+- **Role** is a row of tiles (symbol over the name, the chosen tile takes the Lane Cut) where the role switches what
+  the page shows: Meta's role tabs. Where the role is one setting among others (Draft), it is the compact `.lane-seg`
+  row of position symbols.
+- **Rank** is always `RankRow` (`src/components/rank-row.tsx`) behind a "Rank" label: a `.lane-seg-sm` row with a text
+  choice first ("All Ranks", or "Planner's Rank" in a party) and one medal per rank or rank group; the chosen medal
+  shows its name. On a phone the names are left out ("All", "Planner") and the medals share the row's width. Never a
+  select, never a second style. `lockedWhy` locks the row and says why in the tooltip.
 
 ## Links
 
