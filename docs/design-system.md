@@ -158,7 +158,9 @@ and Home its landing layout.
 
 The player's own pages open the same way. My Heroes names the pool hero they played most in six months
 (`poolVerdict` in `src/lib/pool-verdict.ts`); its Stage is `PoolStage`, which reads the lists as they are on screen,
-so the title, the facts and the hero change with every add or remove.
+so the title, the facts and the hero change with every add or remove. Your Profile names the Best Hero of the
+chosen period (`profileVerdict` in `src/lib/profile-verdict.ts`), with the rank and the period as its facts; the
+player's Steam name sits under the line in place of a main button.
 
 ## Role and Rank
 
