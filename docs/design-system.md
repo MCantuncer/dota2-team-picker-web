@@ -145,10 +145,15 @@ A reading page opens with the Stage, `PageStage` (`src/components/page-stage.tsx
   Never a typed slogan: if the data cannot back a finding, the title falls back to what the page is.
 - **Line**: one or two sentences with the numbers behind the title.
 - **Hero**: the render of the hero the title names, dimmed (`HeroRender`), on the right from `lg`. Below `lg` it is a
-  faint backdrop that fades out at the section's foot. One per page. A page without a hero puts its own figure there.
+  faint backdrop that fades out at the section's foot. One per page.
+- **Figure**: a page whose finding names no hero passes its own `figure` instead. It stands on the right from `md`
+  and, being data, moves under the text below that, never behind it.
+- **Button**: at most one main button (`actions`), under the line.
 
-Meta is the first page on the Stage (`metaVerdict` in `src/lib/meta-verdict.ts` writes its title for the chosen Role
-and Rank). Draft keeps its compact working head and Home its landing layout.
+Meta is on the Stage (`metaVerdict` in `src/lib/meta-verdict.ts` writes its title for the chosen Role and Rank), and
+so is Proof: its question is the name line and its title the answer (`proofVerdict` in `src/lib/proof.ts`: "Yes, by
+5.1 Points", "No, by ..." or "Too Close to Call" when the margin crosses zero). Draft keeps its compact working head
+and Home its landing layout.
 
 ## Role and Rank
 

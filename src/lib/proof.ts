@@ -89,6 +89,18 @@ export function signedPoints(share: number): string {
   return `${points > 0 ? "+" : "−"}${Math.abs(points).toFixed(1)}`;
 }
 
+/**
+ * The Proof Page's title: the answer to "Do our picks win?", from the lift and its 95% margin. It says yes or no only
+ * when the whole range is on one side of zero; a range that crosses zero is too close to call.
+ */
+export function proofVerdict({ lift, margin }: Pick<Lift, "lift" | "margin">): string {
+  if (lift === null || margin === null) return "Too Few Games to Say Yet";
+  const size = signedPoints(Math.abs(lift)).replace("+", "");
+  if (lift - margin > 0) return `Yes, by ${size} Points`;
+  if (lift + margin < 0) return `No, by ${size} Points`;
+  return "Too Close to Call";
+}
+
 /** A share as a percentage with one decimal: 0.57 is "57.0%". */
 export function percent(share: number): string {
   return `${(share * 100).toFixed(1)}%`;
