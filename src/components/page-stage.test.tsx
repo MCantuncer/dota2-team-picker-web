@@ -24,4 +24,20 @@ describe("PageStage", () => {
     rerender(<PageStage name="Meta" title="Meepo Leads Mid at 57.0%" />);
     expect(container.querySelector("img")).toBeNull();
   });
+
+  it("puts a page's own figure and button in place of the hero", () => {
+    const { container } = render(
+      <PageStage
+        name="Do Our Picks Win?"
+        title="Yes, by 5.1 Points"
+        portrait={PORTRAIT}
+        figure={<figure>54.6%</figure>}
+        actions={<a href="/draft">Try a Draft</a>}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Do Our Picks Win? Yes, by 5.1 Points" })).toBeInTheDocument();
+    expect(screen.getByRole("figure")).toHaveTextContent("54.6%");
+    expect(screen.getByRole("link", { name: "Try a Draft" })).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+  });
 });

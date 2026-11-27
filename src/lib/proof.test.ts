@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sampleProof } from "../../test/fixtures/proof";
-import { isProof, ladderRows, percent, shortDay, signedPoints } from "./proof";
+import { isProof, ladderRows, percent, proofVerdict, shortDay, signedPoints } from "./proof";
 
 describe("isProof", () => {
   it("takes the published shape", () => {
@@ -27,6 +27,23 @@ describe("number formats", () => {
   it("writes percentages and short days", () => {
     expect(percent(0.57)).toBe("57.0%");
     expect(shortDay("2026-11-05")).toBe("Nov 5");
+  });
+});
+
+describe("proofVerdict", () => {
+  it("says yes or no with the size when the whole range is on one side of zero", () => {
+    expect(proofVerdict({ lift: 0.051, margin: 0.016 })).toBe("Yes, by 5.1 Points");
+    expect(proofVerdict({ lift: -0.03, margin: 0.012 })).toBe("No, by 3.0 Points");
+  });
+
+  it("does not call a gain or a loss the margin could erase", () => {
+    expect(proofVerdict({ lift: 0.008, margin: 0.016 })).toBe("Too Close to Call");
+    expect(proofVerdict({ lift: -0.004, margin: 0.016 })).toBe("Too Close to Call");
+    expect(proofVerdict({ lift: 0.016, margin: 0.016 })).toBe("Too Close to Call");
+  });
+
+  it("gives no answer without games on both sides", () => {
+    expect(proofVerdict({ lift: null, margin: null })).toBe("Too Few Games to Say Yet");
   });
 });
 
