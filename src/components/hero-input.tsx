@@ -107,7 +107,7 @@ export function HeroInput({ id, tour, placeholder, label, search, exclude, withP
                 e.preventDefault();
                 commit(h);
               }}
-              className={`flex cursor-pointer justify-between rounded-sm px-2 py-1 text-sm ${i === active ? "bg-hover" : ""}`}
+              className={`flex cursor-pointer justify-between rounded-md px-2 py-1 text-sm ${i === active ? "bg-hover" : ""}`}
             >
               {h.name}
               {i === 0 && <Kbd>Enter</Kbd>}

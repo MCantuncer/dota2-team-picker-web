@@ -102,7 +102,7 @@ function MemberRow({
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-medium leading-tight text-fg">{m.name}</span>
               {m.role === "co_captain" && (
-                <span className="shrink-0 rounded-sm bg-accent/15 px-1.5 py-px text-xs font-semibold text-accent ring-1 ring-accent/40">
+                <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-px text-xs font-semibold text-accent ring-1 ring-accent/40">
                   Manager
                 </span>
               )}
@@ -224,7 +224,7 @@ function HeroIcon({ face, decorative }: { face: HeroFace; decorative?: boolean }
       width={24}
       height={24}
       unoptimized
-      className="h-6 w-6 shrink-0 rounded-sm bg-raised"
+      className="h-6 w-6 shrink-0 rounded-md bg-raised"
     />
   );
 }
@@ -235,7 +235,7 @@ function HeroChip({ face, record }: { face: HeroFace; record?: { games: number; 
     ? `${face.name}: ${record.games} games, ${((record.wins / record.games) * 100).toFixed(1)}% won`
     : face.name;
   return (
-    <span title={title} className="flex h-7 items-center gap-1.5 rounded bg-raised py-0.5 pl-0.5 pr-2 text-sm text-fg ring-1 ring-line-strong">
+    <span title={title} className="flex h-7 items-center gap-1.5 rounded-md bg-raised py-0.5 pl-0.5 pr-2 text-sm text-fg ring-1 ring-line-strong">
       {face.icon && <HeroIcon face={face} decorative />}
       {face.name}
     </span>
@@ -326,7 +326,7 @@ function MemberMenu({
               setOpen(false);
               onRole(role === "co_captain" ? "player" : "co_captain");
             }}
-            className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-fg outline-none hover:bg-hover focus-visible:bg-hover"
+            className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-fg outline-none hover:bg-hover focus-visible:bg-hover"
           >
             {role === "co_captain" ? "Make Player" : "Make Manager"}
           </button>
@@ -339,7 +339,7 @@ function MemberMenu({
               setOpen(false);
               onRemove();
             }}
-            className="flex w-full items-center rounded px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
+            className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-dire outline-none hover:bg-hover focus-visible:bg-hover"
           >
             Remove From Team
           </button>

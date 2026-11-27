@@ -255,11 +255,11 @@ function Team({
               alt={heroOf(id).name}
               width={64}
               height={36}
-              className="h-9 w-16 rounded-xs object-cover"
+              className="h-9 w-16 rounded-md object-cover"
             />
           </li>
         ) : (
-          <li key={id} className="micro flex h-9 w-16 items-center justify-center rounded-xs bg-raised text-center text-muted">
+          <li key={id} className="micro flex h-9 w-16 items-center justify-center rounded-md bg-raised text-center text-muted">
             {heroOf(id).name}
           </li>
         ),

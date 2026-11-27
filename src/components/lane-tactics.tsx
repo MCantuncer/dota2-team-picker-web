@@ -141,7 +141,7 @@ export function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
       <figure className="flex flex-col gap-2.5">
         <div role="img" aria-label={marks.map((m) => `${m.label} ${m.value}`).join(", ")} className="relative h-2.5 rounded-full bg-line-strong">
           {marks.map((m) => (
-            <i key={m.key} className="absolute -top-[5px] block h-5 w-[3px] -translate-x-1/2 rounded-sm" style={{ left: at(m.value), background: m.color }} />
+            <i key={m.key} className="absolute -top-[5px] block h-5 w-[3px] -translate-x-1/2 rounded-xs" style={{ left: at(m.value), background: m.color }} />
           ))}
         </div>
         <figcaption className="flex flex-col gap-1 text-sm text-muted sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-4">
@@ -248,11 +248,11 @@ function KillLine({ health, total, parts }: Extract<TacticVisual, { kind: "killL
           <span
             key={p.label}
             title={`${p.label} ${p.amount}`}
-            className="num flex min-w-0 items-center justify-center gap-1 overflow-hidden rounded border text-xs text-fg"
+            className="num flex min-w-0 items-center justify-center gap-1 overflow-hidden rounded-md border text-xs text-fg"
             style={{ flex: p.amount, background: "var(--dire-tint)", borderColor: "color-mix(in srgb, var(--dire) 35%, var(--line))" }}
           >
             {p.spell ? (
-              <Image src={`${ABILITY_CDN}${p.spell}.png`} alt="" width={18} height={18} className="size-[1.125rem] shrink-0 rounded-[3px]" />
+              <Image src={`${ABILITY_CDN}${p.spell}.png`} alt="" width={18} height={18} className="size-[1.125rem] shrink-0 rounded-md" />
             ) : (
               <span className="truncate px-1">{p.label}</span>
             )}
@@ -276,7 +276,7 @@ function Ruler({ bars, heroName, icons }: Art & { bars: RangeBar[] }) {
           <RowIcon spell={b.spell} hero={b.hero} enemy={b.side === "enemy"} heroName={heroName} icons={icons} />
           <div className="relative h-[1.375rem]">
             <i
-              className="absolute inset-y-1 left-0 block rounded"
+              className="absolute inset-y-1 left-0 block rounded-xs"
               style={{ width: `${(b.range / scale) * 100}%`, background: `color-mix(in srgb, var(--${b.side === "ours" ? "radiant" : "dire"}) 65%, var(--raised))` }}
             />
             <span className="num absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-fg" style={{ left: `calc(${(b.range / scale) * 100}% + 0.5rem)` }}>
@@ -299,7 +299,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
         <span>Enemy Hits</span>
         <span className="flex items-center gap-1">
           {Array.from({ length: hits }, (_, i) => (
-            <i key={i} className="block h-3.5 rounded-[3px] bg-dire" style={{ width: w(hit) }} />
+            <i key={i} className="block h-3.5 rounded-xs bg-dire" style={{ width: w(hit) }} />
           ))}
           <span className="num ml-1.5 text-fg">-{hit * hits}</span>
         </span>
@@ -307,7 +307,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
       <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-2.5">
         <span>One Cast</span>
         <span className="flex items-center gap-1">
-          <i className="block h-3.5 rounded-[3px] bg-radiant" style={{ width: w(heal) }} />
+          <i className="block h-3.5 rounded-xs bg-radiant" style={{ width: w(heal) }} />
           <span className="num ml-1.5 text-fg">+{heal}</span>
         </span>
       </div>
@@ -315,7 +315,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
         <span>Your Mana</span>
         <span className="flex flex-wrap items-center gap-1.5">
           {Array.from({ length: Math.min(casts, 6) }, (_, i) => (
-            <i key={i} className="block h-2.5 w-7 rounded-[3px]" style={{ background: "var(--attr-int)" }} />
+            <i key={i} className="block h-2.5 w-7 rounded-xs" style={{ background: "var(--attr-int)" }} />
           ))}
           <span className="num ml-1 text-muted">{casts === 1 ? "1 Cast" : `${casts} Casts`}</span>
         </span>
@@ -347,7 +347,7 @@ function SplitSketch({ width, spell, summon }: Extract<TacticVisual, { kind: "sp
           You
         </span>
         <span className="flex items-center gap-2">
-          <i className="block size-2.5 rounded-sm bg-dire/60" />
+          <i className="block size-2.5 rounded-xs bg-dire/60" />
           The line, {width} wide
         </span>
       </figcaption>
@@ -385,7 +385,7 @@ function LineSketch({ width, spell, blocked }: Extract<TacticVisual, { kind: "li
           {blocked ? "You, behind your creeps" : "You, out of the line"}
         </span>
         <span className="flex items-center gap-2">
-          <i className="block size-2.5 rounded-sm bg-radiant/55" />
+          <i className="block size-2.5 rounded-xs bg-radiant/55" />
           Your creeps
         </span>
       </figcaption>
@@ -401,9 +401,9 @@ function TimingBars({ rows, heroName, icons }: Art & { rows: TimingRow[] }) {
       {rows.map((r, i) => (
         <div key={i} className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2.5">
           <RowIcon spell={r.spell} hero={r.hero} enemy={false} heroName={heroName} icons={icons} />
-          <div className="relative h-[1.625rem] rounded border border-line bg-bg">
+          <div className="relative h-[1.625rem] rounded-md border border-line bg-bg">
             <i
-              className="absolute inset-y-[3px] left-[3px] block rounded-[3px]"
+              className="absolute inset-y-[3px] left-[3px] block rounded-xs"
               style={{ width: `calc(${(r.seconds / scale) * 100}% - 6px)`, background: `color-mix(in srgb, var(--${r.kind === "open" ? "radiant" : "dire"}) 55%, var(--raised))` }}
             />
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs font-medium text-fg">{r.label}</span>

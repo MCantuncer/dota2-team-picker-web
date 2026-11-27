@@ -255,9 +255,9 @@ export function ThreatPlanPanel({ threats, hero, items }: ThreatPlanPanelProps) 
                             />
                           ),
                         }}
-                        className="rounded-xs"
+                        className="rounded-md"
                       >
-                        <Image src={ITEM_CDN + item.img} alt="" width={28} height={20} className="block h-5 w-7 rounded-xs object-cover" />
+                        <Image src={ITEM_CDN + item.img} alt="" width={28} height={20} className="block h-5 w-7 rounded-md object-cover" />
                       </ItemButton>
                     )}
                     {item?.name ?? "his big item"}

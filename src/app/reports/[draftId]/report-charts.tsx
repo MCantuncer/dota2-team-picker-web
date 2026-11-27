@@ -162,7 +162,7 @@ export function HurtChart({
           <ul aria-hidden="true" className="flex flex-col gap-2 md:max-lg:max-w-md">
             {parts.map((p) => (
               <li key={p.key} className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-center gap-x-2.5 text-sm">
-                <span className="h-3 w-3 rounded-[3px]" style={{ background: p.color }} />
+                <span className="h-3 w-3 rounded-xs" style={{ background: p.color }} />
                 <span className="text-muted">{p.label}</span>
                 <span className="num text-fg">{Math.round(p.share * 100)}%</span>
               </li>
@@ -278,23 +278,23 @@ export function TurningChart({
       </div>
       <ul aria-hidden="true" className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
         <li className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-[3px] bg-radiant/55" />
+          <span className="h-3 w-3 rounded-xs bg-radiant/55" />
           Gold Swung Your Way
         </li>
         {anyAgainst && (
           <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-[3px] bg-dire/55" />
+            <span className="h-3 w-3 rounded-xs bg-dire/55" />
             Gold Swung the Enemy&apos;s Way
           </li>
         )}
         {fights.length > 0 && (
           <>
             <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-[3px] bg-radiant" />
+              <span className="h-3 w-3 rounded-xs bg-radiant" />
               Fight Won (Kills-Deaths)
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-[3px] bg-dire" />
+              <span className="h-3 w-3 rounded-xs bg-dire" />
               Fight Lost
             </li>
           </>
@@ -315,7 +315,7 @@ function SwingBlock({ swing, x, biggest }: { swing: Swing; x: (m: number) => str
       style={{ left, width: `calc(${right} - ${left})`, ...(ours ? { bottom: 0 } : { top: 0 }), height: `calc(${height} + 1.25rem)` }}
     >
       <span
-        className={`absolute inset-x-0 rounded-sm ${ours ? "bottom-0 bg-radiant/55" : "top-0 bg-dire/55"}`}
+        className={`absolute inset-x-0 rounded-xs ${ours ? "bottom-0 bg-radiant/55" : "top-0 bg-dire/55"}`}
         style={{ height }}
       />
       <span className={`num absolute whitespace-nowrap text-xs ${ours ? "top-0 text-radiant" : "bottom-0 text-dire"}`}>

@@ -18,11 +18,11 @@ export function FaceStack({ icons, ring = "ring-bg" }: { icons: string[]; ring?:
           alt=""
           width={40}
           height={22}
-          className={`h-5.5 w-10 rounded-xs object-cover ${i ? `-ml-4 ring-2 ${ring}` : ""}`}
+          className={`h-5.5 w-10 rounded-md object-cover ${i ? `-ml-4 ring-2 ${ring}` : ""}`}
         />
       ))}
       {more > 0 && (
-        <span className="micro absolute -bottom-1 -right-1 rounded-xs bg-hover-strong px-1 text-fg">+{more}</span>
+        <span className="micro absolute -bottom-1 -right-1 rounded-md bg-hover-strong px-1 text-fg">+{more}</span>
       )}
     </span>
   );

@@ -178,7 +178,7 @@ function MinuteLine({
                 title={items![String(b.id)]!.name}
                 width={39}
                 height={28}
-                className="h-7 w-9.75 rounded-sm object-cover"
+                className="h-7 w-9.75 rounded-md object-cover"
               />
               <span className="num text-xs text-muted">{minutes(b.at)}</span>
             </span>
