@@ -12,6 +12,9 @@ import type { ItemArt } from "./meta-hero-extras";
 /** Bars of the role items run to this share, in percent. */
 const ITEM_BAR_TOP = 50;
 
+/** From xl the second to fourth hero of a role are small rows, so their frames take the cut of a 36px frame. */
+const ROW_CUT = "xl:[--cut:7px]! xl:[--cut-radius:6px]!";
+
 /** The items that end most of a role's games, each with its share as a bar, new items marked. */
 export function RoleItems({ items, art }: { items: { id: number; share: number; isNew: boolean }[]; art: ItemArt }) {
   return (
@@ -101,7 +104,7 @@ export function MetaGlance({
                       aria-label={`${hero.name}, ${h.rate.win.toFixed(1)}% win rate. Open ${hero.name}`}
                       className={`grid w-full gap-1.5 rounded-lg text-left hover:brightness-125 ${row ? "xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-center xl:gap-x-2.5" : ""}`}
                     >
-                      <HeroPortrait portrait={hero.image} size={row ? 36 : 116} />
+                      <HeroPortrait portrait={hero.image} size={100} className={row ? ROW_CUT : ""} />
                       <span className="grid gap-0.5">
                         <span className={`text-base leading-tight text-fg ${row ? "" : "xl:font-semibold"}`}>{hero.name}</span>
                         <RateLine h={h} />

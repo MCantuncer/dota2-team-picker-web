@@ -133,7 +133,6 @@ describe("HeroPortrait", () => {
     expect(frame.style.getPropertyValue("--cut")).toBe(`${laneCutOf(54).cut}px`);
     const img = container.querySelector("img");
     expect(img).toHaveAttribute("alt", "");
-    expect(img).toHaveAttribute("width", "96");
   });
 
   it("crops to the face as a square, with the Dire edge for an enemy", () => {
@@ -142,8 +141,8 @@ describe("HeroPortrait", () => {
     expect(container.querySelector("img")?.style.objectPosition).toBe("50% 35%");
   });
 
-  it("never asks for more pixels than the portrait has", () => {
-    const { container } = render(<HeroPortrait portrait={ANTI_MAGE.portrait} size={200} />);
-    expect(container.querySelector("img")).toHaveAttribute("height", "144");
+  it("asks for the whole portrait whatever the cut, since its column sets how big it is drawn", () => {
+    const { container } = render(<HeroPortrait portrait={ANTI_MAGE.portrait} size={36} />);
+    expect(container.querySelector("img")).toHaveAttribute("width", "256");
   });
 });

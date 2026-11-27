@@ -213,7 +213,7 @@ export function NewItems({ extras, art, heroes, onSelect }: { extras: MetaExtras
                       title={h.name}
                       className="rounded-md hover:brightness-125"
                     >
-                      <HeroPortrait portrait={h.image} size={72} isFace />
+                      <HeroPortrait portrait={h.image} size={48} isFace />
                     </button>
                   ) : null;
                 })}

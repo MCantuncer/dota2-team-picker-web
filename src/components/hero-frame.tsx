@@ -16,8 +16,8 @@ export const HERO_FACE_MAX_PX = 64;
 /** Widest render on screen, in CSS px: the Steam render has twice the pixels, so it stays sharp on a 2x screen. */
 export const HERO_ART_MAX_WIDTH_PX = RENDER_SPACE_WIDTH;
 
-/** Height of the Steam portrait in px: a frame never asks for more pixels than the portrait has. */
-const PORTRAIT_HEIGHT_PX = 144;
+/** The Steam portrait's size in px. A frame that fills its column asks for all of it, since the column can grow. */
+const PORTRAIT_PX = { width: 256, height: 144 };
 
 /** Where to put the face when a hero has no measured point yet: the middle, about where most faces sit. */
 const DEFAULT_FACE: RenderPoint = [RENDER_SPACE_WIDTH / 2, 180];
@@ -85,12 +85,15 @@ export function HeroFace({
 interface HeroPortraitProps {
   /** The hero's 256x144 Steam portrait. */
   portrait: string;
-  /** The frame's short side in px where it is largest, which sets the size of the cut corners. */
+  /** The frame's usual short side in px, which sets the size of the cut corners. */
   size: number;
   /** The square face crop, as in HeroFace, for a face that fills a column instead of having a fixed size. */
   isFace?: boolean;
   isEnemy?: boolean;
-  /** Places the frame in its grid, such as `row-span-2`. The frame always fills its column's width. */
+  /**
+   * Places the frame in its grid, such as `row-span-2`. The frame always fills its column's width. Where one
+   * breakpoint makes the frame much smaller, set the cut for it here: `xl:[--cut:7px]! xl:[--cut-radius:6px]!`.
+   */
   className?: string;
 }
 
@@ -99,7 +102,6 @@ interface HeroPortraitProps {
  * For lists and boards where the hero's name is written next to it, so it is decorative.
  */
 export function HeroPortrait({ portrait, size, isFace = false, isEnemy = false, className = "" }: HeroPortraitProps) {
-  const height = Math.min(PORTRAIT_HEIGHT_PX, Math.round(size));
   return (
     <span
       className={`lane-cut w-full ${isFace ? "aspect-square" : "aspect-video"} ${isEnemy ? "lane-cut-enemy" : ""} ${className}`}
@@ -108,8 +110,8 @@ export function HeroPortrait({ portrait, size, isFace = false, isEnemy = false, 
       <Image
         src={portrait}
         alt=""
-        width={Math.round((height * 16) / 9)}
-        height={height}
+        width={PORTRAIT_PX.width}
+        height={PORTRAIT_PX.height}
         className="size-full object-cover"
         style={isFace ? FACE_CROP : undefined}
       />
