@@ -335,7 +335,7 @@ body {
     font-size: 1rem;
   }
   .field::placeholder {
-    color: var(--subtle);
+    color: var(--muted);
   }
   .field:hover {
     box-shadow: inset 0 0 0 1px var(--line-hover);
@@ -517,7 +517,7 @@ body {
     font-family: var(--font-geist-sans), sans-serif;
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--subtle);
+    color: var(--muted);
   }
 
   /* Panel and column headings ("My team", "Members 4"). */

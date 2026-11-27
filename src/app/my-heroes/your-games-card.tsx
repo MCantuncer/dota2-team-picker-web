@@ -44,7 +44,7 @@ export function YourGamesCard({
           ))}
         </span>
       )}
-      <span className="text-subtle">
+      <span className="text-muted">
         <Icon name="chevronRight" />
       </span>
     </Link>

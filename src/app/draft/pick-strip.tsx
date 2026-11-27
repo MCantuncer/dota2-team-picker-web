@@ -169,7 +169,7 @@ export function PickStrip({
         <div className="flex min-h-[2.375rem] min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-2">
           {head}
           {picks.length > 0 && (
-            <span className="micro flex flex-wrap items-center gap-x-4 gap-y-1 text-subtle">
+            <span className="micro flex flex-wrap items-center gap-x-4 gap-y-1 text-muted">
               <span className="flex items-center gap-2">
                 <Strength place={{ rank: 1, of: 5 }} isLegend />
                 Strength Among All {picks[0]!.suggestion.place.of} Heroes for This Role
@@ -261,12 +261,12 @@ function TileReason({ entry, ctx }: { entry: PickEntry; ctx: PickCtx }) {
   const main = lines.find((l) => !l.isWarn);
   const risk = entry.isWeak ? null : entry.risk;
   return (
-    <span className="micro flex min-w-0 flex-col gap-1.5 text-left leading-5 text-muted">
+    <span className="flex min-w-0 flex-col gap-1.5 text-left text-sm leading-5 text-muted">
       {main && (
         <span>
           {main.lead && <span className="font-semibold text-fg tabular-nums">{minus(main.lead)} </span>}
           {/* The note in brackets ("likely your lane") is on the full card. */}
-          <FacedText text={main.text.replace(/\s*\([^)]*\)$/, "")} heroes={main.heroes} hero={ctx.hero} enemies={ctx.enemies} />
+          <FacedText text={main.text.replace(/\s*\([^)]*\)$/, "")} heroes={main.heroes} hero={ctx.hero} enemies={ctx.enemies} isStacked />
         </span>
       )}
       {risk && (
@@ -361,7 +361,7 @@ function Tile({
           </span>
           <span className="flex items-center justify-between gap-2">
             <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-              <span className={`text-lg leading-6 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
+              <span className={`text-xl leading-8 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
                 {signed(s.score)}
               </span>
               {/* Only when a checked model gives a win chance: how much this pick moves it. */}
@@ -453,7 +453,7 @@ function NotThisGame({
           </span>
           Not This Game
         </h3>
-        <p className="micro text-subtle">Your heroes below 0 in this draft</p>
+        <p className="micro text-muted">Your heroes below 0 in this draft</p>
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(9.5rem,100%),1fr))] gap-x-4 gap-y-2">
         {entries.map((entry) => {

@@ -67,12 +67,12 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
               className={`absolute inset-y-0 ${i ? "border-l border-line pl-2.5" : ""}`}
               style={{ left: `${i * width}%`, width: `${width}%` }}
             >
-              <span className="whitespace-nowrap text-sm text-subtle">{when(c)}</span>
+              <span className="whitespace-nowrap text-sm text-muted">{when(c)}</span>
             </div>
           ))}
           <div className="absolute inset-x-0 top-32 h-px bg-line-strong" />
           {chapters.slice(1).map((c, i) => (
-            <span key={c.phase} className="num absolute top-[8.25rem] -translate-x-1/2 text-xs text-subtle" style={{ left: `${(i + 1) * width}%` }}>
+            <span key={c.phase} className="num absolute top-[8.25rem] -translate-x-1/2 text-xs text-muted" style={{ left: `${(i + 1) * width}%` }}>
               {c.from}
             </span>
           ))}

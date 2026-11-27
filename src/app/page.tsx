@@ -104,7 +104,7 @@ export default async function Home() {
           {POINTS.map((p) => (
             <div key={p.title}>
               <h2 className="text-lg leading-6">{p.title}</h2>
-              <p className="mt-2 text-sm leading-[1.35rem] text-subtle">{p.text}</p>
+              <p className="mt-2 text-sm leading-[1.35rem] text-muted">{p.text}</p>
             </div>
           ))}
         </div>
@@ -127,7 +127,7 @@ function ProofTeaser({ proof }: { proof: Proof }) {
         </span>
         <div className="grid max-w-xl gap-1">
           <h2 className="text-lg leading-6">Do Our Picks Win?</h2>
-          <p className="text-sm leading-[1.35rem] text-subtle">
+          <p className="text-sm leading-[1.35rem] text-muted">
             Players who took one of our top 3 picks won {percent(top3.won)} of their games, against {percent(other.won)}{" "}
             for any other hero, in {proof.games.toLocaleString("en-US")} ranked games the engine never saw.
           </p>
@@ -147,7 +147,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
   const names = (ids: number[]) => keepWhole(ids.map((id) => hero(id)?.name ?? `Hero ${id}`).join(" and "));
   return (
     <figure className="rounded-xl bg-surface/90 px-5 py-4 ring-1 ring-line-strong">
-      <figcaption className="text-sm text-subtle">
+      <figcaption className="text-sm text-muted">
         Example: you play mid with {names(EXAMPLE.allies)}, the enemy has {names(EXAMPLE.enemies)}
       </figcaption>
       <ol className="mt-2">
@@ -162,7 +162,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
               )}
               <span className="min-w-0">
                 <span className="block font-medium text-fg">{h?.name ?? `Hero ${s.id}`}</span>
-                <span className="mt-0.5 block text-xs leading-4 text-subtle">{keepWhole(s.reason)}</span>
+                <span className="mt-0.5 block text-xs leading-4 text-muted">{keepWhole(s.reason)}</span>
               </span>
               <span className={`num text-right ${i === 0 ? "text-accent" : "text-fg"}`}>{s.score.toFixed(1)}</span>
             </li>

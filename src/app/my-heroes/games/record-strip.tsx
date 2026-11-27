@@ -14,7 +14,7 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
     <dl data-tour="your-games-numbers" className="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
       <Tile label="Games">
         <dd className="num text-xl font-semibold text-fg">{record.games}</dd>
-        <dd className="text-xs text-subtle">{range}</dd>
+        <dd className="text-xs text-muted">{range}</dd>
       </Tile>
       <Tile label="Won">
         <dd className={`num text-xl font-semibold ${won >= 50 ? "text-radiant" : "text-dire"}`}>{won}%</dd>
@@ -24,9 +24,9 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
       </Tile>
       <Tile label="Fully Read">
         <dd className="num text-xl font-semibold text-fg">
-          {record.parsed} <span className="text-base font-medium text-subtle">of {record.games}</span>
+          {record.parsed} <span className="text-base font-medium text-muted">of {record.games}</span>
         </dd>
-        <dd className="text-xs text-subtle">Parsed by OpenDota</dd>
+        <dd className="text-xs text-muted">Parsed by OpenDota</dd>
       </Tile>
       <Tile label="Most Played">
         {top ? (
@@ -35,12 +35,12 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
               {hero?.image && <Image src={hero.image} alt="" width={48} height={27} className="rounded-md object-cover" />}
               <span className="truncate text-base font-semibold text-fg">{hero?.name ?? `Hero ${top.id}`}</span>
             </dd>
-            <dd className="num text-xs text-subtle">
+            <dd className="num text-xs text-muted">
               {top.games} {top.games === 1 ? "game" : "games"}, won {winPercent(top)}%
             </dd>
           </>
         ) : (
-          <dd className="text-sm text-subtle">No games yet</dd>
+          <dd className="text-sm text-muted">No games yet</dd>
         )}
       </Tile>
     </dl>
@@ -50,7 +50,7 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
 function Tile({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5 bg-surface px-4 py-3.5">
-      <dt className="text-sm text-subtle">{label}</dt>
+      <dt className="text-sm text-muted">{label}</dt>
       {children}
     </div>
   );

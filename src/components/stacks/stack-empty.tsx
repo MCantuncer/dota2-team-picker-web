@@ -48,7 +48,7 @@ export function StackEmpty({ hero, create }: { hero?: string; create: ReactNode 
               <Icon name={s.icon} large />
             </span>
             <span className="flex flex-col leading-tight">
-              <span className="micro text-subtle">Step {i + 1}</span>
+              <span className="micro text-muted">Step {i + 1}</span>
               <span className="font-semibold text-fg">{s.title}</span>
             </span>
           </li>
@@ -60,7 +60,7 @@ export function StackEmpty({ hero, create }: { hero?: string; create: ReactNode 
           <h2 id="open-seats-heading" className="section-title">
             Your Lineup
           </h2>
-          <p className="text-sm text-subtle">Five seats, one per position.</p>
+          <p className="text-sm text-muted">Five seats, one per position.</p>
         </div>
         <ul className="grid grid-cols-5 gap-2 sm:gap-3.5">
           {[1, 2, 3, 4, 5].map((p) => (
@@ -68,11 +68,11 @@ export function StackEmpty({ hero, create }: { hero?: string; create: ReactNode 
               key={p}
               className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-line-strong p-2 sm:aspect-[4/3] sm:gap-2"
             >
-              <PositionIcon position={p} size={32} className="text-subtle" />
+              <PositionIcon position={p} size={32} className="text-muted" />
               <span className="flex flex-col items-center leading-tight">
                 <span className="text-center text-sm font-semibold text-muted sm:text-base">{POSITION_NAMES[p]}</span>
               </span>
-              <span className="micro text-subtle max-sm:hidden">Open Seat</span>
+              <span className="micro text-muted max-sm:hidden">Open Seat</span>
             </li>
           ))}
         </ul>

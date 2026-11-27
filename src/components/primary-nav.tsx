@@ -49,7 +49,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
                 }`}
               >
                 {item.icon && (
-                  <span className={active ? "text-accent" : "text-subtle"}>
+                  <span className={active ? "text-accent" : "text-muted"}>
                     <Icon name={item.icon} />
                   </span>
                 )}

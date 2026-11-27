@@ -227,7 +227,7 @@ export function PositionHeroes({
                 isActive ? "bg-accent-tint text-fg" : "text-muted hover:bg-surface hover:text-fg"
               }`}
             >
-              <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-subtle/60 group-hover:text-subtle"}`}>
+              <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-muted/60 group-hover:text-muted"}`}>
                 <PositionIcon position={p.n} size={32} />
               </span>
               {/* Below 1024px the name sits under the icon, so "Soft Support" and "No heroes yet" fit without cutting. */}
@@ -239,7 +239,7 @@ export function PositionHeroes({
                     <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
                   )}
                 </span>
-                <span className={`num whitespace-nowrap text-xs ${isActive ? "text-muted" : "text-subtle"}`}>
+                <span className="num whitespace-nowrap text-xs text-muted">
                   {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
                 </span>
               </span>
@@ -268,7 +268,7 @@ export function PositionHeroes({
         </div>
 
         <div className="flex min-h-12 flex-wrap gap-2" data-tour={chosen.length > 0 ? "my-heroes-list" : undefined}>
-          {chosen.length === 0 && <p className="self-center text-sm text-subtle">No heroes yet. Add your best ones first; five to ten is plenty.</p>}
+          {chosen.length === 0 && <p className="self-center text-sm text-muted">No heroes yet. Add your best ones first; five to ten is plenty.</p>}
           {shown.map((id, i) => {
             const h = byId.get(id);
             if (!h) return null;
@@ -295,7 +295,7 @@ export function PositionHeroes({
                     className="flex items-center gap-2 py-1 pl-1 pr-2"
                   >
                     <Image src={h.image} alt="" width={48} height={27} unoptimized className="rounded-md" />
-                    <span className="num text-subtle">{i + 1}</span>
+                    <span className="num text-muted">{i + 1}</span>
                     {h.name}
                     {isTop && (
                       <span className="text-accent-bright">
@@ -314,7 +314,7 @@ export function PositionHeroes({
                     type="button"
                     onClick={() => removeFromList(id)}
                     aria-label={`Remove ${h.name} from ${pos.name}`}
-                    className="flex items-center border-l border-line-strong px-2.5 text-subtle hover:text-dire"
+                    className="flex items-center border-l border-line-strong px-2.5 text-muted hover:text-dire"
                   >
                     <Icon name="x" />
                   </button>
@@ -409,7 +409,7 @@ export function PositionHeroes({
             className="field w-full max-w-xs"
           />
           {matches?.[0] && (
-            <span className="text-xs text-subtle">
+            <span className="text-xs text-muted">
               <kbd className="kbd">Enter</kbd> adds {matches[0].name}
             </span>
           )}

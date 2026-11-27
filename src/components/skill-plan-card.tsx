@@ -192,7 +192,7 @@ export function SkillPlanCard({ plan, abilities, portrait }: { plan: SkillPlan; 
           </p>
         )}
         {plan.live !== "ready" && <p className="text-xs text-muted">{STATE_LINES[plan.live]}</p>}
-        {plan.note && <p className="text-xs text-subtle">{plan.note}</p>}
+        {plan.note && <p className="text-xs text-muted">{plan.note}</p>}
       </section>
     </div>
   );
@@ -239,7 +239,7 @@ function BuffArrow({ className = "" }: { className?: string }) {
 /** What the tree's marks mean: the arrow, the lit tile and (when a tier is new) the New tag. */
 function TreeLegend({ newPairs }: { newPairs: boolean }) {
   return (
-    <ul aria-label="Talent tree key" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-subtle">
+    <ul aria-label="Talent tree key" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
       <li className="flex items-center gap-1.5">
         <BuffArrow className="size-3.5" />
         Buffs This Skill
@@ -332,17 +332,17 @@ function Option({
             </span>
             <span className={`num text-sm ${picked ? "text-accent" : "text-muted"}`}>{Math.round(share * 100)}%</span>
             {option.id === tier.usual && tier.usualGames !== undefined && (
-              <span className="hidden text-xs whitespace-nowrap text-subtle sm:inline">{games(tier.usualGames)} Games</span>
+              <span className="hidden text-xs whitespace-nowrap text-muted sm:inline">{games(tier.usualGames)} Games</span>
             )}
           </span>
         ) : (
           tier.result === "no-data" && (
-            <span className={`micro inline-flex h-6 items-center rounded-md border border-dashed border-line-hover px-2 text-subtle ${end ? "self-end" : "self-start"}`}>
+            <span className={`micro inline-flex h-6 items-center rounded-md border border-dashed border-line-hover px-2 text-muted ${end ? "self-end" : "self-start"}`}>
               {tier.newPair ? "New" : "No Picks Yet"}
             </span>
           )
         )}
-        {line && <span className={`num text-xs ${picked ? "text-accent" : "text-subtle"}`}>{line}</span>}
+        {line && <span className={`num text-xs ${picked ? "text-accent" : "text-muted"}`}>{line}</span>}
       </span>
     </span>
   );

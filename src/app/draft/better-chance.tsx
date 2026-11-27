@@ -104,7 +104,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
 
         {range ? (
           <span className="flex flex-col gap-1">
-            <span className="micro text-subtle">Teams With Drafts Like This Won</span>
+            <span className="micro text-muted">Teams With Drafts Like This Won</span>
             <span
               data-testid="edge-now"
               className={`text-2xl font-semibold tracking-tight tabular-nums ${leader ? text[leader] : "text-fg"}`}
@@ -118,7 +118,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
         ) : (
           <div className="flex items-end justify-between gap-6">
             <span className="flex flex-col gap-0.5">
-              <span className="micro text-subtle">
+              <span className="micro text-muted">
                 {hasChance ? "Your Win Chance" : "Draft Edge Now"}, {picked} {picked === 1 ? "Pick" : "Picks"} In
               </span>
               <span className="flex items-baseline gap-2">
@@ -133,7 +133,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
             </span>
             {plan && (
               <span className="flex flex-col items-end gap-0.5 text-right">
-                <span className="micro text-subtle">With the Plan</span>
+                <span className="micro text-muted">With the Plan</span>
                 <span
                   data-testid="edge-plan"
                   className="text-xl leading-10 font-semibold tracking-tight text-muted tabular-nums"
@@ -146,7 +146,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
         )}
 
         <div className="flex flex-col gap-2">
-          <div className="micro flex items-center justify-between font-semibold">
+          <div className="flex items-center justify-between text-sm font-semibold">
             <span data-testid="chance-left" className={`flex items-center gap-1.5 ${text[left]}`}>
               <span className={`size-2 rounded-xs ${dot[left]}`} />
               {label(left)}
@@ -199,7 +199,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
               style={{ left: `${at(leanNow)}%` }}
             />
           </div>
-          <div className="micro flex items-center justify-between text-subtle tabular-nums">
+          <div className="micro flex items-center justify-between text-muted tabular-nums">
             <span>{end}</span>
             <span className="flex items-center gap-4">
               {range && (
@@ -233,7 +233,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
             const color = Math.abs(part) < 0.05 ? null : part >= 0 ? ours : theirs;
             return (
               <li key={key} className="flex min-w-0 flex-col gap-2">
-                <span className="flex items-center gap-1.5 text-subtle">
+                <span className="flex items-center gap-1.5 text-muted">
                   <Icon name={icon} />
                   <span className="micro">{label}</span>
                 </span>
@@ -249,13 +249,13 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
                     style={{ width: `${Math.abs(partLean) * 50}%` }}
                   />
                 </span>
-                {plan && <span className="micro text-subtle tabular-nums">Plan {signed(plan.parts[key])}</span>}
+                {plan && <span className="micro text-muted tabular-nums">Plan {signed(plan.parts[key])}</span>}
               </li>
             );
           })}
         </ul>
         {!inPercent && (
-          <p className="micro mt-auto text-subtle">
+          <p className="micro mt-auto text-muted">
             {rangeLater
               ? "Once all 10 heroes are in and your side is set, this shows what teams with drafts like this won."
               : "A win percentage appears once the win model passes its check on recent games."}

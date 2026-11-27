@@ -16,6 +16,9 @@ export const HERO_FACE_MAX_PX = 64;
 /** Widest render on screen, in CSS px: the Steam render has twice the pixels, so it stays sharp on a 2x screen. */
 export const HERO_ART_MAX_WIDTH_PX = RENDER_SPACE_WIDTH;
 
+/** The Steam portrait's size in px. A frame that fills its column asks for all of it, since the column can grow. */
+const PORTRAIT_PX = { width: 256, height: 144 };
+
 /** Where to put the face when a hero has no measured point yet: the middle, about where most faces sit. */
 const DEFAULT_FACE: RenderPoint = [RENDER_SPACE_WIDTH / 2, 180];
 
@@ -79,6 +82,43 @@ export function HeroFace({
   );
 }
 
+interface HeroPortraitProps {
+  /** The hero's 256x144 Steam portrait. */
+  portrait: string;
+  /** The frame's usual short side in px, which sets the size of the cut corners. */
+  size: number;
+  /** The square face crop, as in HeroFace, for a face that fills a column instead of having a fixed size. */
+  isFace?: boolean;
+  isEnemy?: boolean;
+  /**
+   * Places the frame in its grid, such as `row-span-2`. The frame always fills its column's width. Where one
+   * breakpoint makes the frame much smaller, set the cut for it here: `xl:[--cut:7px]! xl:[--cut-radius:6px]!`.
+   */
+  className?: string;
+}
+
+/**
+ * A hero's portrait as a Lane Cut frame that fills its column: the whole 16:9 portrait, or the square face crop.
+ * For lists and boards where the hero's name is written next to it, so it is decorative.
+ */
+export function HeroPortrait({ portrait, size, isFace = false, isEnemy = false, className = "" }: HeroPortraitProps) {
+  return (
+    <span
+      className={`lane-cut w-full ${isFace ? "aspect-square" : "aspect-video"} ${isEnemy ? "lane-cut-enemy" : ""} ${className}`}
+      style={laneCutStyle(size)}
+    >
+      <Image
+        src={portrait}
+        alt=""
+        width={PORTRAIT_PX.width}
+        height={PORTRAIT_PX.height}
+        className="size-full object-cover"
+        style={isFace ? FACE_CROP : undefined}
+      />
+    </span>
+  );
+}
+
 /**
  * How one kind of frame shows its render, shared by every hero in that frame kind so all faces line up: the render's
  * width in CSS px, and where its face point lands, as fractions of the frame's width and height.
@@ -86,6 +126,11 @@ export function HeroFace({
 export interface HeroArtPlacement {
   width: number;
   at: RenderPoint;
+  /**
+   * For a frame whose width changes with the page: the frame's width in px at which the render is `width` wide. The
+   * render then grows and shrinks with the frame, which must be a size container (`@container`).
+   */
+  frameWidth?: number;
 }
 
 interface HeroArtProps {
@@ -112,6 +157,10 @@ export function HeroArt({ heroId, portrait, placement, mirror = false }: HeroArt
   const [atX, atY] = placement.at;
   // Mirrored, the face sits as far from the right edge as it did from the left.
   const fromLeft = mirror ? width - Math.round(faceX * scale) : Math.round(faceX * scale);
+  const fromTop = Math.round(faceY * scale);
+  // In a frame that changes width, every length is a share of the frame's width (cqw) instead of px.
+  const { frameWidth } = placement;
+  const length = (px: number) => (frameWidth ? `${((px / frameWidth) * 100).toFixed(2)}cqw` : `${px}px`);
   return (
     <Image
       src={src}
@@ -121,10 +170,10 @@ export function HeroArt({ heroId, portrait, placement, mirror = false }: HeroArt
       height={Math.round(renderHeight * (width / renderWidth))}
       className="pointer-events-none absolute max-w-none select-none"
       style={{
-        width,
+        width: length(width),
         height: "auto",
-        left: `calc(${atX * 100}% - ${fromLeft}px)`,
-        top: `calc(${atY * 100}% - ${Math.round(faceY * scale)}px)`,
+        left: `calc(${atX * 100}% - ${length(fromLeft)})`,
+        top: `calc(${atY * 100}% - ${length(fromTop)})`,
         ...(mirror ? { transform: "scaleX(-1)" } : {}),
       }}
     />
@@ -180,7 +229,7 @@ export function CutOutline({ width: w, height: h }: CutOutlineProps) {
 }
 
 /** The section mark: the logo frame and its lane, 16px, in the text colour (set it with a `text-*` class). */
-export function LaneMark({ className = "text-subtle" }: { className?: string }) {
+export function LaneMark({ className = "text-muted" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={`size-4 shrink-0 ${className}`} aria-hidden>
       <path

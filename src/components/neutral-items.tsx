@@ -51,7 +51,7 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
         </span>
         <span className="flex flex-col items-end leading-tight">
           <span className="num text-lg font-semibold tracking-[-0.02em] text-fg">{tier.usual ? tier.usual.minute : tier.unlock}</span>
-          <span className="text-xs text-subtle">{tier.usual ? "Usual Minute" : "Earliest Minute"}</span>
+          <span className="text-xs text-muted">{tier.usual ? "Usual Minute" : "Earliest Minute"}</span>
         </span>
       </div>
 
@@ -82,14 +82,14 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
 
       {tier.enchants.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-line pt-3.5">
-          <span className="text-sm text-subtle">Enchantment</span>
+          <span className="text-sm text-muted">Enchantment</span>
           <ul aria-label={`Tier ${tier.tier} enchantments`} className="flex flex-wrap gap-x-4 gap-y-2.5">
             {tier.enchants.map((e) => (
               <li key={e.itemId} className="flex items-center gap-2">
                 <Art option={e} small />
                 <span className="flex flex-col leading-tight">
                   <span className="text-sm text-fg">{e.name}</span>
-                  {e.share !== undefined && <span className="num text-xs text-subtle">{e.share}%</span>}
+                  {e.share !== undefined && <span className="num text-xs text-muted">{e.share}%</span>}
                 </span>
               </li>
             ))}
@@ -97,7 +97,7 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
         </div>
       )}
 
-      <p className="mt-auto text-xs leading-snug text-subtle">{from ? `From ${from}` : "Too few games yet: every artifact the tier can offer"}</p>
+      <p className="mt-auto text-xs leading-snug text-muted">{from ? `From ${from}` : "Too few games yet: every artifact the tier can offer"}</p>
     </li>
   );
 }

@@ -48,8 +48,11 @@ interface LaneTacticsProps extends Art {
  */
 export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "Lane Tactics", withTarget = true }: LaneTacticsProps) {
   const Heading = level === 3 ? "h3" : "h4";
-  const [enemy, setEnemy] = useState(pairs[0]?.enemy);
-  const pair = pairs.find((p) => p.enemy === enemy) ?? pairs[0];
+  // Only pairs with something to draw: a pair whose one tactic is the last hit target has nothing here when the
+  // target is drawn elsewhere, and a title over nothing reads as a broken page.
+  const shown = pairs.filter((p) => p.tactics.some((t) => withTarget || t.rule !== "lastHits"));
+  const [enemy, setEnemy] = useState(shown[0]?.enemy);
+  const pair = shown.find((p) => p.enemy === enemy) ?? shown[0];
   if (!pair) return null;
   // The last hit target is the lane's scoreboard, drawn as its own row under the rules.
   const rules = pair.tactics.filter((t) => t.rule !== "lastHits");
@@ -65,11 +68,11 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "
           </Heading>
           <span className="text-sm text-muted">Against {heroName(pair.enemy)}, most important first</span>
         </div>
-        {pairs.length > 1 && (
-          <div role="group" aria-label="Enemy laner" className={`grid gap-2 ${SWITCH_COLUMNS[pairs.length] ?? SWITCH_COLUMNS[6]}`}>
-            {pairs.map((p, i) => {
+        {shown.length > 1 && (
+          <div role="group" aria-label="Enemy laner" className={`grid gap-2 ${SWITCH_COLUMNS[shown.length] ?? SWITCH_COLUMNS[6]}`}>
+            {shown.map((p, i) => {
               const on = p.enemy === pair.enemy;
-              const alone = i === pairs.length - 1 && pairs.length % 2 === 1;
+              const alone = i === shown.length - 1 && shown.length % 2 === 1;
               return (
                 <button
                   key={p.enemy}
@@ -83,7 +86,7 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "
                   {icons[p.enemy] && <HeroFace portrait={icons[p.enemy]!} name={heroName(p.enemy)} size={30} isEnemy isDecorative />}
                   <span className="flex min-w-0 flex-col items-start text-left leading-tight">
                     {heroName(p.enemy)}
-                    {note?.(p.enemy) && <span className="num text-xs text-subtle">{note(p.enemy)}</span>}
+                    {note?.(p.enemy) && <span className="num text-xs text-muted">{note(p.enemy)}</span>}
                   </span>
                 </button>
               );
@@ -164,7 +167,7 @@ function TacticCard({ tactic, enemy, first, wide, heroName, icons }: Art & { tac
       <div className={`flex items-center gap-3.5 ${wide ? "md:col-span-2" : "sm:max-xl:col-span-2"}`}>
         <TacticIcons spells={tactic.spells} size={40} face={{ portrait: icons[enemy], name: heroName(enemy) }} />
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className={`text-xs ${first ? "font-medium text-accent-bright" : "text-subtle"}`}>{first ? "Care Most" : tactic.tag}</span>
+          <span className={`text-xs ${first ? "font-medium text-accent-bright" : "text-muted"}`}>{first ? "Care Most" : tactic.tag}</span>
           <h5 className="text-base font-semibold leading-snug text-fg">{tactic.title}</h5>
         </div>
       </div>
@@ -314,7 +317,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
           {Array.from({ length: Math.min(casts, 6) }, (_, i) => (
             <i key={i} className="block h-2.5 w-7 rounded-xs" style={{ background: "var(--attr-int)" }} />
           ))}
-          <span className="num ml-1 text-subtle">{casts === 1 ? "1 Cast" : `${casts} Casts`}</span>
+          <span className="num ml-1 text-muted">{casts === 1 ? "1 Cast" : `${casts} Casts`}</span>
         </span>
       </div>
     </figure>

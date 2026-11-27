@@ -102,7 +102,7 @@ export function SkillsPreview({ levels }: { levels: LevelArt[] }) {
           ) : (
             <Image src={`${ABILITY_CDN}${l.art}.png`} alt="" width={28} height={28} className="size-7 rounded-md" />
           )}
-          <span className="num text-xs text-subtle">{l.level}</span>
+          <span className="num text-xs text-muted">{l.level}</span>
         </span>
       ))}
     </span>

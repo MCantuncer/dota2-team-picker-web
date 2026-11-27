@@ -80,7 +80,7 @@ export function DraftDone({
               {isAhead ? "+" : "−"}
               {Math.abs(edge).toFixed(1)}
             </span>
-            <span className="micro text-subtle">
+            <span className="micro text-muted">
               {isAhead ? "Points to You" : "Points to Enemy"}
             </span>
           </p>
@@ -100,7 +100,7 @@ function LaneStroke() {
       height="56"
       viewBox="0 0 24 56"
       aria-hidden
-      className="hidden text-subtle lg:block"
+      className="hidden text-muted lg:block"
     >
       <path d="M2 54 22 2" stroke="currentColor" strokeWidth="1.5" />
     </svg>

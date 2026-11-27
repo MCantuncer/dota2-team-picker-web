@@ -46,7 +46,7 @@ export function PreviousGames({
     <section aria-labelledby="previous-games" className="flex flex-col gap-4 border-t border-line pt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 id="previous-games" className="section-title">
-          Previous Games <span className="num text-base font-medium text-subtle">{total}</span>
+          Previous Games <span className="num text-base font-medium text-muted">{total}</span>
         </h2>
         <form method="get" className="flex flex-wrap items-center gap-2" aria-label="Filter games" data-tour="your-games-filter">
           <select name="hero" defaultValue={filters.heroId ?? ""} aria-label="Hero" className="field text-sm">
@@ -107,7 +107,7 @@ export function PreviousGames({
           ) : (
             <span />
           )}
-          <span className="num text-subtle">
+          <span className="num text-muted">
             Page {filters.page} of {pages}
           </span>
           {filters.page < pages ? (
@@ -146,7 +146,7 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
         >
           {heroName}
         </Link>
-        <span className="text-xs text-subtle">
+        <span className="text-xs text-muted">
           {game.position ? POSITION_NAMES[game.position - 1] : "Position unknown"}
         </span>
       </div>
@@ -166,12 +166,12 @@ function GameItem({ game, hero, heroName }: { game: GameRow; hero: HeroArt | und
             {game.note.text}
           </span>
         ) : status ? (
-          <span className="text-subtle">{status}</span>
+          <span className="text-muted">{status}</span>
         ) : (
-          <span className="text-subtle">Nothing stood out</span>
+          <span className="text-muted">Nothing stood out</span>
         )}
       </span>
-      <span aria-hidden className="text-subtle max-sm:hidden">
+      <span aria-hidden className="text-muted max-sm:hidden">
         <Icon name="chevronRight" />
       </span>
     </li>

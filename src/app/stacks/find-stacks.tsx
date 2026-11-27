@@ -107,7 +107,7 @@ export function FindStacks({
             <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
               <Avatar account={{ name: s.ownerName, avatarUrl: s.ownerAvatarUrl, detail: null, steamLinked: false }} size={20} />
               <span className="truncate">{s.ownerName}</span>
-              <span className="flex shrink-0 items-center gap-1 text-subtle">
+              <span className="flex shrink-0 items-center gap-1 text-muted">
                 <Icon name="crown" />
                 Owner
               </span>
@@ -130,9 +130,9 @@ export function FindStacks({
             <span className="num">{s.members}</span>
           </Fact>
           <Fact label="Games in 2 Weeks">
-            <span className={s.games ? "num" : "num text-subtle"}>{s.games}</span>
+            <span className={s.games ? "num" : "num text-muted"}>{s.games}</span>
           </Fact>
-          <Fact label="Average Rank">{rank ?? <span className="text-subtle">No Rank</span>}</Fact>
+          <Fact label="Average Rank">{rank ?? <span className="text-muted">No Rank</span>}</Fact>
         </dl>
 
         <div className="relative z-10 mt-auto flex min-h-14 items-center gap-2 px-4 py-2.5">
@@ -231,12 +231,12 @@ export function FindStacks({
           <p className="text-sm text-muted">No open Stack matches &quot;{shownSearch}&quot;.</p>
         ) : (
           <div className="flex items-center gap-3.5 rounded-md border border-dashed border-line-strong p-5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-md bg-raised text-subtle ring-1 ring-inset ring-line-strong">
+            <span className="grid size-10 shrink-0 place-items-center rounded-md bg-raised text-muted ring-1 ring-inset ring-line-strong">
               <Icon name="flame" large />
             </span>
             <span className="flex flex-col leading-tight">
               <span className="font-semibold text-fg">No Open Stacks Yet</span>
-              <span className="text-sm text-subtle">Yours could be the first.</span>
+              <span className="text-sm text-muted">Yours could be the first.</span>
             </span>
           </div>
         )}
@@ -258,7 +258,7 @@ export function FindStacks({
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-0.5 px-1 py-2.5 text-center not-first:border-l not-first:border-line">
-      <dt className="micro order-2 whitespace-nowrap text-subtle">{label}</dt>
+      <dt className="micro order-2 whitespace-nowrap text-muted">{label}</dt>
       <dd className="text-base font-semibold text-fg">{children}</dd>
     </div>
   );

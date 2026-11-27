@@ -22,7 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
         <footer className="border-t border-line">
-          <div className="page flex flex-wrap items-center justify-between gap-2 py-5 text-xs text-subtle">
+          <div className="page flex flex-wrap items-center justify-between gap-2 py-5 text-xs text-muted">
             <span>Match data from OpenDota. Hero art © Valve Corporation.</span>
             <span>Not affiliated with or endorsed by Valve. Dota 2 is a trademark of Valve Corporation.</span>
           </div>

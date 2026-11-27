@@ -188,7 +188,7 @@ function MinuteLine({
           {ticks.map((t) => (
             <span
               key={t}
-              className="absolute top-1 -translate-x-1/2 text-xs text-subtle"
+              className="absolute top-1 -translate-x-1/2 text-xs text-muted"
               style={{ left: `${position(t * 60, g.duration)}%` }}
             >
               {t}
@@ -212,7 +212,7 @@ function MinuteLine({
           ))}
         </div>
       </div>
-      <p className="text-sm text-subtle">Items above the line, deaths below with who killed him.</p>
+      <p className="text-sm text-muted">Items above the line, deaths below with who killed him.</p>
     </section>
   );
 }

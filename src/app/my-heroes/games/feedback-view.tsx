@@ -54,7 +54,7 @@ function FindingList({ id, title, tone, findings }: { id: string; title: string;
         {title}
       </h2>
       {findings.length === 0 ? (
-        <p className="text-sm text-subtle">{tone === "strength" ? "None stood out yet." : "None stood out. Keep it up."}</p>
+        <p className="text-sm text-muted">{tone === "strength" ? "None stood out yet." : "None stood out. Keep it up."}</p>
       ) : (
         <ol className="flex flex-col gap-3">
           {findings.map((f) => (

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import { change, signed, type HeroRate, type Measure } from "@/lib/meta";
 import type { MetaHero } from "./meta-board";
 
@@ -45,10 +45,10 @@ export function MoverRows({
           return (
             <li key={h.id}>
               <button type="button" onClick={() => onSelect(h.id)} aria-label={`${hero.name}: ${before.toFixed(1)}% to ${now.toFixed(1)}%, ${signed(delta)} points. Open ${hero.name}`} className={`${grid} w-full rounded-lg p-1 text-left hover:bg-hover`}>
-                <Image src={hero.image} alt="" width={80} height={45} className="aspect-video w-full rounded-md object-cover" />
+                <HeroPortrait portrait={hero.image} size={40} />
                 <span className="grid leading-tight">
                   <span className="text-base text-fg">{hero.name}</span>
-                  <span className="text-sm tabular-nums text-subtle">
+                  <span className="text-sm tabular-nums text-muted">
                     {before.toFixed(1)}% to {now.toFixed(1)}%
                   </span>
                 </span>
@@ -73,7 +73,7 @@ export function MoverRows({
         <span className="max-sm:hidden" />
         <span className="relative h-4 max-sm:col-span-3">
           {ticks.map((t) => (
-            <span key={t} className="absolute -translate-x-1/2 text-xs tabular-nums text-subtle" style={{ left: `${at(t)}%` }}>
+            <span key={t} className="absolute -translate-x-1/2 text-xs tabular-nums text-muted" style={{ left: `${at(t)}%` }}>
               {t === 0 ? "0" : signed(t).replace(".0", "")}
             </span>
           ))}

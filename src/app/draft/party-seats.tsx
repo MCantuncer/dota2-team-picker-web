@@ -134,7 +134,7 @@ function StatusLine({ status }: { status: Status }) {
     );
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted [&_svg]:size-3">
-      <span className={status === "invited" ? "text-warn" : "text-subtle"}>
+      <span className={status === "invited" ? "text-warn" : "text-muted"}>
         <Icon name={status === "invited" ? "clock" : "monitor"} />
       </span>
       {status === "invited" ? "Invited" : "Not on Site"}
@@ -177,11 +177,11 @@ export function PartySeats({
       {/* The buttons get their own column, so the name wraps beside them and never runs under them. */}
       <div className="grid items-center gap-x-6 gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <p className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-          <span className="micro text-subtle">Team Seats</span>
+          <span className="micro text-muted">Team Seats</span>
           <span className="flex items-center gap-2">
             <span aria-hidden className="live-dot text-radiant" />
             <span className="font-semibold text-fg">{title}</span>
-            <span className="text-subtle">{seatCount(seats)}</span>
+            <span className="text-muted">{seatCount(seats)}</span>
           </span>
         </p>
         {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
@@ -210,7 +210,7 @@ export function PartySeats({
                 </span>
               )}
               <span className="flex min-w-0 flex-col gap-1.5 max-sm:gap-1">
-                <span className="micro flex items-start gap-1.5 text-subtle">
+                <span className="micro flex items-start gap-1.5 text-muted">
                   <PositionIcon position={position} size={12} className="mt-0.5 shrink-0" />
                   {POSITION_NAMES[position]}
                 </span>
@@ -226,7 +226,7 @@ export function PartySeats({
                     onClick={() => controls.add?.(position)}
                   />
                 ) : (
-                  <span className="text-sm text-subtle">Open</span>
+                  <span className="text-sm text-muted">Open</span>
                 )}
                 {status && (
                   <span className="max-sm:hidden">

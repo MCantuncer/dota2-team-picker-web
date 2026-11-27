@@ -215,7 +215,7 @@ function PlayerSection({
             aria-label={`${isMine ? "You" : name}, ${role}`}
             className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2"
           >
-            <span className="flex items-center gap-1.5 text-subtle">
+            <span className="flex items-center gap-1.5 text-muted">
               <PositionIcon position={c.position} size={16} />
               <span className="text-sm font-medium text-muted">{role}</span>
             </span>
@@ -238,13 +238,13 @@ function PlayerSection({
             </span>
           ) : (
             list.length > 0 && (
-              <span className="micro text-subtle tabular-nums">
+              <span className="micro text-muted tabular-nums">
                 {own} of {isMine ? "Your" : `${name}'s`} Heroes{c.played.size > 0 && ` and ${c.played.size} Played`}
               </span>
             )
           )}
           {planned && (
-            <span className="micro flex shrink-0 items-center gap-2 text-subtle sm:ml-auto" title="The Team Plan's hero for this seat">
+            <span className="micro flex shrink-0 items-center gap-2 text-muted sm:ml-auto" title="The Team Plan's hero for this seat">
               Team Plan{" "}
               <span className="flex items-center gap-2">
                 <Face id={planned.heroId} hero={base.hero} size={20} isEnemy={false} />

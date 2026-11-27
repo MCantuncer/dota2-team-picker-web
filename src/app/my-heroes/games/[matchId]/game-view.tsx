@@ -146,9 +146,9 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
     game.kills !== null && game.deaths !== null && game.assists !== null ? (
       <>
         {game.kills}
-        <span className="text-subtle">/</span>
+        <span className="text-muted">/</span>
         <span className="text-dire">{game.deaths}</span>
-        <span className="text-subtle">/</span>
+        <span className="text-muted">/</span>
         {game.assists}
       </>
     ) : null;
@@ -165,7 +165,7 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
       value:
         s.lastHits === null ? null : (
           <>
-            {s.lastHits} <span className="text-subtle">/</span> {s.denies ?? 0}
+            {s.lastHits} <span className="text-muted">/</span> {s.denies ?? 0}
           </>
         ),
     },
@@ -186,7 +186,7 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
             key={t.label}
             className={`flex min-w-0 flex-col gap-1.5 bg-surface p-4 ${i === shown.length - 1 ? lastTileSpan(shown.length) : ""}`}
           >
-            <dt className="flex items-center gap-1.5 text-sm text-subtle">
+            <dt className="flex items-center gap-1.5 text-sm text-muted">
               {t.icon && <Icon name={t.icon} />}
               {t.label}
             </dt>
@@ -200,12 +200,12 @@ function Stats({ game, heroName }: { game: GameDetail; heroName: string }) {
                   />
                   <span aria-hidden className="absolute -top-1 left-1/2 h-3 w-px bg-subtle" />
                 </span>
-                <span className="text-xs text-subtle">
+                <span className="text-xs text-muted">
                   Better than {t.beat}% of {heroName} games
                 </span>
               </dd>
             )}
-            {t.note && <dd className="text-xs text-subtle">{t.note}</dd>}
+            {t.note && <dd className="text-xs text-muted">{t.note}</dd>}
           </div>
         ))}
       </dl>
@@ -245,17 +245,17 @@ function Lane({ lane }: { lane: NonNullable<GameDetail["lane"]> }) {
           <div className="flex gap-6">
             <span className="flex flex-col">
               <span className="num text-xl font-semibold text-fg">{lane.lastHits}</span>
-              <span className="text-xs text-subtle">Last Hits</span>
+              <span className="text-xs text-muted">Last Hits</span>
             </span>
             <span className="flex flex-col">
               <span className="num text-xl font-semibold text-fg">{lane.denies ?? 0}</span>
-              <span className="text-xs text-subtle">Denies</span>
+              <span className="text-xs text-muted">Denies</span>
             </span>
           </div>
         )}
         {diff !== null && (
           <div className="flex flex-col gap-2">
-            <div aria-hidden className="flex justify-between text-xs text-subtle">
+            <div aria-hidden className="flex justify-between text-xs text-muted">
               <span>Behind</span>
               <span>Even</span>
               <span>Ahead</span>
@@ -307,7 +307,7 @@ function Deaths({
     <section aria-labelledby="game-deaths" data-tour="one-game-deaths" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 id="game-deaths" className="section-title">
-          Deaths <span className="num text-base font-medium text-subtle">{deaths.length}</span>
+          Deaths <span className="num text-base font-medium text-muted">{deaths.length}</span>
         </h2>
         {deaths.length > 0 && (
           <p className="text-sm text-muted">
@@ -346,7 +346,7 @@ function Deaths({
                         className={`h-[22px] w-10 rounded-md object-cover ${isEarly ? "outline-2 outline-dire" : ""}`}
                       />
                     ) : (
-                      <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-subtle">
+                      <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-muted">
                         <Icon name="skull" />
                       </span>
                     )}
@@ -355,7 +355,7 @@ function Deaths({
                 );
               })}
             </div>
-            <div aria-hidden className="num relative h-5 text-xs text-subtle">
+            <div aria-hidden className="num relative h-5 text-xs text-muted">
               <span className="absolute left-0">0:00</span>
               {ticks.map((t) => (
                 <span key={t} className="absolute -translate-x-1/2" style={{ left: at(t) }}>
@@ -377,7 +377,7 @@ function Deaths({
                   {art?.image ? (
                     <Image src={art.image} alt="" width={40} height={22} className="h-[22px] w-10 rounded-md object-cover" />
                   ) : (
-                    <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-subtle">
+                    <span className="flex h-[22px] w-10 items-center justify-center rounded-md bg-raised text-muted">
                       <Icon name="skull" />
                     </span>
                   )}

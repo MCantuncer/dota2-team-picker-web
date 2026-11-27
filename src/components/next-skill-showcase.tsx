@@ -97,7 +97,7 @@ export function NextSkillShowcase({ choice }: { choice: SkillChoice }) {
         {picked.orb === "exort" && <span aria-hidden className="ns-leader" />}
 
         <section aria-label="Example skill choice" className="ns-panel">
-          <p className="flex justify-between px-1 text-xs text-subtle">
+          <p className="flex justify-between px-1 text-xs text-muted">
             <span>Next Skill at Level {choice.level}</span>
             <span className="ns-swap">
               <span aria-hidden className="ns-before">
@@ -121,7 +121,7 @@ export function NextSkillShowcase({ choice }: { choice: SkillChoice }) {
               </li>
             ))}
           </ul>
-          <p className="ns-swap mt-2 px-1 text-xs leading-4 text-subtle">
+          <p className="ns-swap mt-2 px-1 text-xs leading-4 text-muted">
             <span aria-hidden className="ns-before">
               What {choice.players} took next against {choice.against}
             </span>

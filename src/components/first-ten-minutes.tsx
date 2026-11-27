@@ -92,7 +92,7 @@ export function FirstTenMinutes({ lanes, player, heroName, icons, abilities }: A
             Lane: {VERDICT_WORDS[lane.verdict]}
           </span>
           {pair ? <PairBar pair={pair} heroName={heroName} /> : <p className="text-sm text-muted">{lane.text}</p>}
-          {pair && <span className="text-sm text-subtle">{pair.allRanks ? "Lane results from all ranks" : "Lane results at your rank"}</span>}
+          {pair && <span className="text-sm text-muted">{pair.allRanks ? "Lane results from all ranks" : "Lane results at your rank"}</span>}
         </div>
         {enemy !== undefined ? (
           <Versus heroId={enemy} position={positionOf(enemy)} side="theirs" heroName={heroName} icons={icons} />
@@ -210,7 +210,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
             </span>
           </div>
         ) : (
-          <span className="flex h-[2.9375rem] items-center text-sm text-subtle">{enemy ? "None by 10 min" : "No core item yet"}</span>
+          <span className="flex h-[2.9375rem] items-center text-sm text-muted">{enemy ? "None by 10 min" : "No core item yet"}</span>
         )}
       </Row>
       {why && (
@@ -289,7 +289,7 @@ const ROW_GLYPHS = {
  * as columns) sizes the list to its items on wide screens, so no empty columns push the next row away.
  */
 function Items({ label, items, enemy, fit, heroName, icons }: Art & { label: string; items: Item[]; enemy: boolean; fit: boolean }) {
-  if (!items.length) return <span className="flex h-[2.9375rem] items-center text-sm text-subtle">None</span>;
+  if (!items.length) return <span className="flex h-[2.9375rem] items-center text-sm text-muted">None</span>;
   return (
     <ul aria-label={label} className={`grid grid-cols-[repeat(6,minmax(0,4rem))] gap-2 ${fit ? "lg:flex lg:flex-wrap" : ""}`}>
       {items.map((item, i) => (
@@ -382,7 +382,7 @@ function OtherLanes({ lanes, mine, heroName, icons }: Art & { lanes: LanePlan[];
           <li key={l.name} className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg bg-bg px-3 py-2.5">
             <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
               <span className="w-18 text-sm whitespace-nowrap text-muted">{LANE_TITLES[l.name] ?? l.name}</span>
-              <span className="flex items-center gap-1 text-xs text-subtle">
+              <span className="flex items-center gap-1 text-xs text-muted">
                 {l.ours.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={26} /> : null))}
                 <span className="px-1">vs</span>
                 {l.theirs.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={26} isEnemy /> : null))}

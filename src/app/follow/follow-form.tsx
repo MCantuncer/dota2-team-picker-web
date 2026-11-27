@@ -59,7 +59,7 @@ export function FollowForm({ signedInAs }: { signedInAs: string | null }) {
           Sign In on This Phone
         </button>
       )}
-      <p className="text-sm text-subtle">The code works once, for one minute.</p>
+      <p className="text-sm text-muted">The code works once, for one minute.</p>
     </form>
   );
 }

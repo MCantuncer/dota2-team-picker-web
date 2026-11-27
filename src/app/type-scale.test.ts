@@ -59,3 +59,13 @@ describe("type scale", () => {
     expect(sizes.filter((size) => !SCALE_REM.has(size))).toEqual([]);
   });
 });
+
+/**
+ * Text has two tones: `fg` and one grey, `muted`. The darker `subtle` is for off states and small marks (a hover
+ * outline, the tick on a bar), set in globals.css or as `bg-subtle` and `border-subtle`. See docs/design-system.md.
+ */
+describe("text grey", () => {
+  it("has no text in the darker grey", () => {
+    expect(offenders((line) => /(?<![\w-])(text|fill)-subtle(?![\w-])/.test(line))).toEqual([]);
+  });
+});

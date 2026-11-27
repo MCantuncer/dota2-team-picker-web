@@ -42,7 +42,7 @@ export function MemberList({
   return (
     <section aria-labelledby="members-heading" className="flex flex-col gap-2">
       <h2 id="members-heading" className="text-lg font-semibold">
-        Members <span className="num text-xs text-subtle">{members.length}</span>
+        Members <span className="num text-xs text-muted">{members.length}</span>
       </h2>
       {members.length ? (
         <ul className="divide-y divide-line border-y border-line">
@@ -94,7 +94,7 @@ function MemberRow({
           aria-controls={panelId}
           className="flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
         >
-          <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 text-subtle transition-transform ${open ? "rotate-90" : ""}`}>
+          <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`}>
             <path d="m6 4 4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <Avatar account={{ name: m.name, avatarUrl: m.avatarUrl, detail: null, steamLinked: !!m.steamName }} size={32} />
@@ -113,7 +113,7 @@ function MemberRow({
                 <span className="truncate">{m.steamName}</span>
               </span>
             ) : (
-              <span className="text-xs text-subtle">No Steam linked</span>
+              <span className="text-xs text-muted">No Steam linked</span>
             )}
           </span>
           <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted sm:w-26">
@@ -123,14 +123,14 @@ function MemberRow({
                 <span className="max-sm:hidden">{rank}</span>
               </>
             ) : (
-              <span className="text-subtle max-sm:hidden">No rank</span>
+              <span className="text-muted max-sm:hidden">No rank</span>
             )}
           </span>
           <span className="hidden min-w-0 flex-1 items-center gap-3 overflow-hidden md:flex">
             {!m.positions.length ? (
-              <span className="text-sm text-subtle">No positions yet</span>
+              <span className="text-sm text-muted">No positions yet</span>
             ) : total === 0 ? (
-              <span className="text-sm text-subtle">
+              <span className="text-sm text-muted">
                 Plays <span className="tabular-nums text-muted">{m.positions.join(" ")}</span>, no heroes yet
               </span>
             ) : (
@@ -138,7 +138,7 @@ function MemberRow({
                 <span key={p} className="flex shrink-0 items-center gap-0.5" title={POSITION_SHORT[p - 1]}>
                   <span className="mr-0.5 text-sm font-semibold tabular-nums text-radiant">{p}</span>
                   {(m.heroes[p] ?? []).length === 0 ? (
-                    <span className="text-xs text-subtle">Any</span>
+                    <span className="text-xs text-muted">Any</span>
                   ) : (
                     (m.heroes[p] ?? []).slice(0, PREVIEW).map((id) => <HeroIcon key={id} face={hero(id)} />)
                   )}
@@ -146,7 +146,7 @@ function MemberRow({
               ))
             )}
           </span>
-          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-subtle md:hidden">
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted md:hidden">
             {m.positions.length
               ? m.positions.map((p) => (
                   <span key={p} title={POSITION_NAMES[p - 1]}>
@@ -184,9 +184,9 @@ function MemberRow({
 
       <div id={panelId} hidden={!open} className="border-t border-line bg-bg/40 px-4 py-3 sm:pl-12">
         {!m.positions.length ? (
-          <p className="text-sm text-subtle">Hasn&apos;t picked positions or heroes yet. They set these on My heroes.</p>
+          <p className="text-sm text-muted">Hasn&apos;t picked positions or heroes yet. They set these on My heroes.</p>
         ) : total === 0 ? (
-          <p className="text-sm text-subtle">No heroes picked yet, so the draft suggests any hero for their positions.</p>
+          <p className="text-sm text-muted">No heroes picked yet, so the draft suggests any hero for their positions.</p>
         ) : (
           <dl className="flex flex-col gap-1.5">
             {m.positions.map((p) => {
@@ -198,7 +198,7 @@ function MemberRow({
                     {POSITION_SHORT[p - 1]}
                   </dt>
                   <dd className="flex min-w-0 flex-wrap gap-1">
-                    {ids.length === 0 && <span className="flex h-7 items-center text-sm text-subtle">Any hero</span>}
+                    {ids.length === 0 && <span className="flex h-7 items-center text-sm text-muted">Any hero</span>}
                     {ids.map((id) => (
                       <HeroChip key={id} face={hero(id)} record={m.personal[id]} />
                     ))}

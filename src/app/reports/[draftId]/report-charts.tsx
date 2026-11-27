@@ -113,7 +113,7 @@ export function LaneChart({ lanes, art, name }: { lanes: LaneResult[]; art: Repo
         })}
         <li aria-hidden="true" className="col-span-2 grid grid-cols-subgrid sm:col-span-3">
           <span className="max-sm:hidden" />
-          <span className="micro relative flex h-4 justify-between whitespace-nowrap text-subtle max-sm:col-span-2">
+          <span className="micro relative flex h-4 justify-between whitespace-nowrap text-muted max-sm:col-span-2">
             <span>Behind {amount(scale)}</span>
             <span className="absolute left-1/2 -translate-x-1/2">Even</span>
             <span>Ahead {amount(scale)}</span>
@@ -269,11 +269,11 @@ export function TurningChart({
         )}
         <div className="relative mt-2 h-4">
           {ticks.map((t) => (
-            <span key={t} className="micro absolute -translate-x-1/2 text-subtle" style={{ left: x(t) }}>
+            <span key={t} className="micro absolute -translate-x-1/2 text-muted" style={{ left: x(t) }}>
               {t}
             </span>
           ))}
-          <span className="micro absolute right-0 translate-x-1/2 text-subtle">{clock(durationS)}</span>
+          <span className="micro absolute right-0 translate-x-1/2 text-muted">{clock(durationS)}</span>
         </div>
       </div>
       <ul aria-hidden="true" className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">

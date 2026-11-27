@@ -364,14 +364,14 @@ function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFac
           Done by <span className="num">{minute}</span>
           {/* Other numbers ride on the same line, quieter ("x2 Copies"), so no column stands alone under the bar. */}
           {facts.map((f) => (
-            <span key={f.label} className="font-normal text-subtle">
+            <span key={f.label} className="font-normal text-muted">
               <span aria-hidden> · </span>
               <span className={`num font-semibold ${f.tone ?? "text-fg"}`}>{f.value}</span> {f.label}
             </span>
           ))}
         </span>
         {timing.late !== undefined && (
-          <span className="text-sm text-subtle">
+          <span className="text-sm text-muted">
             Late after <span className="num font-semibold text-warn">{timing.late} min</span>
           </span>
         )}
@@ -395,7 +395,7 @@ function TimingBar({ timing, facts = [] }: { timing: BandTiming; facts?: BandFac
         {ticks.map((m, i) => (
           <span
             key={m}
-            className={`num absolute top-4 text-xs text-subtle ${i === 0 ? "" : i === ticks.length - 1 ? "-translate-x-full" : "-translate-x-1/2"}`}
+            className={`num absolute top-4 text-xs text-muted ${i === 0 ? "" : i === ticks.length - 1 ? "-translate-x-full" : "-translate-x-1/2"}`}
             style={{ left: at(m) }}
           >
             {m}
@@ -429,7 +429,7 @@ export function ItemBand({
         <dl className="-mx-4 flex flex-wrap gap-y-3">
           {facts.map((f) => (
             <div key={f.label} className="flex min-w-0 flex-col gap-1 border-line px-4 not-first:border-l">
-              <dt className="order-last text-xs text-subtle">{f.label}</dt>
+              <dt className="order-last text-xs text-muted">{f.label}</dt>
               <dd className={`num text-lg leading-[1.375rem] font-semibold tracking-[-0.01em] ${f.tone ?? "text-fg"}`}>{f.value}</dd>
             </div>
           ))}

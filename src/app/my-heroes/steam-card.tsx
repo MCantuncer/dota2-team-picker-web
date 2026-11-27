@@ -58,7 +58,7 @@ export function SteamCard({ account }: { account: SteamAccount }) {
             {account.topHeroes.map((h) => (
               <li key={h.id} className="flex flex-col items-center gap-0.5" title={`${h.name}: ${h.games} games`}>
                 <Image src={h.image} alt={h.name} width={56} height={32} className="rounded-md ring-1 ring-line-strong" />
-                <span className="text-xs text-subtle">{h.games}</span>
+                <span className="text-xs text-muted">{h.games}</span>
               </li>
             ))}
           </ul>
@@ -73,7 +73,7 @@ export function SteamCard({ account }: { account: SteamAccount }) {
       </div>
 
       {!account.rank && (
-        <p className="text-xs text-subtle">
+        <p className="text-xs text-muted">
           OpenDota can&apos;t see your rank. In Dota 2, turn on Settings &gt; Options &gt; Social &gt;{" "}
           <em>Expose Public Match Data</em>, play a match, then update.
         </p>

@@ -32,7 +32,7 @@ export function ClosestGames({ games, hero, enemies, allies, heroName, icons, it
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h3 className="section-title">Closest Games</h3>
-        <p className="text-sm text-subtle">The two closest wins and the closest loss</p>
+        <p className="text-sm text-muted">The two closest wins and the closest loss</p>
       </div>
       <ul className={`grid gap-3 ${games.length === 3 ? "lg:grid-cols-3" : games.length === 2 ? "md:grid-cols-2" : "max-w-md"}`}>
         {games.map((g) => (
@@ -65,9 +65,9 @@ function GameTile({ game: g, hero, enemies, allies, heroName, icons, items }: Om
       </span>
       <p className="text-xl font-semibold tabular-nums tracking-[-0.02em] text-fg">
         {g.kills}
-        <span className="text-subtle"> / </span>
+        <span className="text-muted"> / </span>
         <span className="text-dire">{g.deaths}</span>
-        <span className="text-subtle"> / </span>
+        <span className="text-muted"> / </span>
         {g.assists}
       </p>
       <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2">

@@ -133,7 +133,7 @@ function HeroInsightsBody({
         )}
       </ul>
       {!insights.best && !insights.worst && (
-        <p className="text-sm text-subtle">
+        <p className="text-sm text-muted">
           Best and worst heroes show once a hero has {period.minGames} games in {period.words}.
         </p>
       )}
@@ -148,7 +148,7 @@ function HeroInsightsBody({
             <HeroRow key={l.heroId} line={l} hero={hero(l.heroId)} positions={pool.get(l.heroId) ?? []} maxGames={maxGames} />
           ))}
         </ol>
-        <p className="text-xs text-subtle">
+        <p className="text-xs text-muted">
           The bar shows each hero against your average of {insights.won}%: green above, red below.
         </p>
       </div>
@@ -239,7 +239,7 @@ function HeroRow({
             ))}
           </span>
         ) : (
-          <span className="micro text-subtle">Not in your pool</span>
+          <span className="micro text-muted">Not in your pool</span>
         )}
       </span>
       <span className="col-span-2 col-start-2 flex items-center gap-4 sm:contents">
@@ -261,7 +261,7 @@ function HeroRow({
           </span>
           <span className="num w-10 text-right text-fg">{line.won}%</span>
           <span
-            className={`micro w-8 text-right ${line.delta > 0 ? "text-radiant" : line.delta < 0 ? "text-dire" : "text-subtle"}`}
+            className={`micro w-8 text-right ${line.delta > 0 ? "text-radiant" : line.delta < 0 ? "text-dire" : "text-muted"}`}
           >
             {signedPoints(line.delta)}
           </span>
@@ -270,7 +270,7 @@ function HeroRow({
       <Link
         href={`/my-heroes/games?hero=${line.heroId}`}
         aria-label={`Your games on ${name}`}
-        className="col-start-3 row-start-1 text-subtle hover:text-fg sm:col-start-auto sm:row-start-auto"
+        className="col-start-3 row-start-1 text-muted hover:text-fg sm:col-start-auto sm:row-start-auto"
       >
         <Icon name="chevronRight" />
       </Link>

@@ -142,7 +142,7 @@ function Record({
         <div className="h-2 w-full overflow-hidden rounded-xs bg-raised" aria-hidden>
           <div className={`h-full ${share >= 0.5 ? "bg-radiant" : "bg-dire"}`} style={{ width: `${Math.round(share * 100)}%` }} />
         </div>
-        <p className="text-sm text-subtle">
+        <p className="text-sm text-muted">
           {name} as {role} against {s.level} or more of these enemies. Divine and up, this patch.
           {s.pending ? " More games are still being read." : ""}
         </p>
@@ -184,7 +184,7 @@ function Record({
               );
             })}
           </div>
-          <p className="text-sm text-subtle sm:ml-auto sm:text-right">Most of these games, wins and losses alike</p>
+          <p className="text-sm text-muted sm:ml-auto sm:text-right">Most of these games, wins and losses alike</p>
         </div>
       )}
     </div>
@@ -231,7 +231,7 @@ function WhatWon({ summary: s, items, storageKey }: { summary: SimilarSummary; i
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h3 className="section-title">What Won</h3>
-        <p className="text-sm text-subtle">Only gaps that beat chance. Counts, not causes.</p>
+        <p className="text-sm text-muted">Only gaps that beat chance. Counts, not causes.</p>
       </div>
       {body}
     </div>

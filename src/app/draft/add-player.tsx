@@ -152,7 +152,7 @@ export function AddPlayer({
             }}
             className="seg-item h-7 gap-1.5"
           >
-            {c.label} <span className="num text-subtle">{c.count}</span>
+            {c.label} <span className="num text-muted">{c.count}</span>
           </button>
         ))}
       </div>
@@ -171,7 +171,7 @@ export function AddPlayer({
               // Keep focus in the search box, so the keyboard path goes on.
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => !o.disabled && onPick(o.id)}
-              className={`flex min-w-0 items-center gap-2.5 rounded-md p-2 ${o.disabled ? "text-subtle" : "cursor-pointer"} ${on ? "bg-hover" : ""}`}
+              className={`flex min-w-0 items-center gap-2.5 rounded-md p-2 ${o.disabled ? "text-muted" : "cursor-pointer"} ${on ? "bg-hover" : ""}`}
             >
               <span
                 aria-hidden
@@ -198,7 +198,7 @@ export function AddPlayer({
           {people.length ? "Nobody matches that." : "Nobody to add yet. Add friends, or create a Stack, to plan with them."}
         </p>
       )}
-      <p className="flex flex-wrap items-center gap-3.5 text-xs text-subtle">
+      <p className="flex flex-wrap items-center gap-3.5 text-xs text-muted">
         <span className="inline-flex items-center gap-1">
           <kbd className="kbd">↑</kbd> <kbd className="kbd">↓</kbd> choose
         </span>
