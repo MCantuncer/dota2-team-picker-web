@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sampleProof } from "../../test/fixtures/proof";
-import { isProof, ladderRows, percent, proofVerdict, shortDay, signedPoints } from "./proof";
+import { isProof, ladderRows, percent, proofVerdict, rankRoleTitle, rivalsTitle, runningTitle, shortDay, signedPoints } from "./proof";
 
 describe("isProof", () => {
   it("takes the published shape", () => {
@@ -44,6 +44,52 @@ describe("proofVerdict", () => {
 
   it("gives no answer without games on both sides", () => {
     expect(proofVerdict({ lift: null, margin: null })).toBe("Too Few Games to Say Yet");
+  });
+});
+
+describe("rivalsTitle", () => {
+  const rivals = (engine: number | null, meta: number | null, popular: number | null) => ({ engine: { lift: engine }, meta: { lift: meta }, popular: { lift: popular } });
+
+  it("compares our gain with the better simple rule, from the numbers shown", () => {
+    expect(rivalsTitle(rivals(0.0512, 0.0488, 0.011))).toBe("Our Picks Lead the Best Simple Rule by 0.2 Points");
+    expect(rivalsTitle(rivals(0.04, 0.011, 0.052))).toBe("The Best Simple Rule Leads Our Picks by 1.2 Points");
+    expect(rivalsTitle(rivals(0.0504, 0.0496, 0.01))).toBe("Our Picks Are Level with the Best Simple Rule");
+    expect(rivalsTitle(rivals(0.03, null, 0.01))).toBe("Our Picks Lead the Best Simple Rule by 2.0 Points");
+  });
+
+  it("gives no finding without our gain or any rule to compare", () => {
+    expect(rivalsTitle(rivals(null, 0.04, 0.01))).toBeNull();
+    expect(rivalsTitle(rivals(0.05, null, null))).toBeNull();
+  });
+});
+
+describe("runningTitle", () => {
+  const days = (...lifts: number[]) => lifts.map((lift) => ({ lift }));
+
+  it("counts the days with a gain", () => {
+    expect(runningTitle(days(0.08, 0.05, 0.051))).toBe("A Gain on All 3 Days");
+    expect(runningTitle(days(0.08, 0.05))).toBe("A Gain on Both Days");
+    expect(runningTitle(days(0.02, -0.01, 0.0004, 0.03))).toBe("A Gain on 2 of 4 Days");
+    expect(runningTitle(days(-0.02, -0.01))).toBe("No Gain on Any of 2 Days");
+  });
+
+  it("gives no finding for a single day", () => {
+    expect(runningTitle(days(0.05))).toBeNull();
+  });
+});
+
+describe("rankRoleTitle", () => {
+  const lifts = (...values: (number | null)[]) => Object.fromEntries(values.map((lift, i) => [String(i + 1), { lift }]));
+
+  it("counts the rank groups and roles with a gain", () => {
+    expect(rankRoleTitle(lifts(0.091, 0.031, 0.048, 0.096), lifts(0.06, 0.07, -0.004, 0.05, 0.04))).toBe("A Gain in Every Rank and in Four of Five Roles");
+    expect(rankRoleTitle(lifts(0.09, -0.03, 0.04, 0.09), lifts(0.06, 0.07, 0.01, 0.05, 0.04))).toBe("A Gain in Three of Four Ranks and in Every Role");
+    expect(rankRoleTitle(lifts(-0.01, -0.03), lifts(-0.06, -0.07))).toBe("No Gain in Any Rank or Role");
+  });
+
+  it("leaves out groups with too few picks, and needs two of each", () => {
+    expect(rankRoleTitle(lifts(0.09, null, 0.04, 0.09), lifts(0.06, -0.07, null, 0.05, 0.04))).toBe("A Gain in Every Rank and in Three of Four Roles");
+    expect(rankRoleTitle(lifts(0.09, null, null, null), lifts(0.06, 0.07))).toBeNull();
   });
 });
 
