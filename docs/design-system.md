@@ -354,13 +354,22 @@ The Item Build tab's threat tiles (`components/who-hurts-you.tsx`), one per thre
 
 ## Game Clock
 
-The Game Story tab's minute line (`components/story-timeline.tsx`) with three marks on top of the key items:
+The Game Story tab's minute line (`components/story-timeline.tsx`) is drawn as Race Rows (Can's pick, 2026-11-27):
 
-- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band on
-  the axis from our ready minute to theirs, the ready label reading "Fight Here, 15 to 17". When they are first, a
-  Dire band reads "Hold Until N".
-- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down to a warn chip with the question
-  ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the axis the label sits left of the line.
+- **Rows**: one per core with a key item, Your Team then Enemy, each under a short title with a radiant or dire mark.
+  A 40px `HeroFace` and the name on the left (faces only on phones), a track on the right with a bar of farm leading
+  to the item, the item centred on its minute and the minute beside it in the side's colour.
+- **Ruler**: zoomed to where the marks land, three minutes before the first (never before 10) to two after the last
+  (`rulerSpan` in `lib/story-axis.ts`). Every minute is ticked; numbers every 1, 2 or 5 minutes so they never touch,
+  and a phone keeps only numbers the wide ruler shows. Nothing is pushed sideways: close items are drawn close.
+- **Fight window**: when our team is ready before the enemy item the headline races (`Story.race`), a copper band
+  down every row from our ready minute to theirs, labelled "Fight Here, 15 to 17" above the ruler. When they are
+  first, a Dire band reads "Hold Until N". Without a race, a copper line reads "Ready to Fight".
+- **Roshan**: a quiet dashed line with the Aegis and "Roshan N+" on the ruler's second line.
+- **Checkpoint flag**: the viewer's key item late minute as a dashed warn line down every row to a warn chip with
+  the question ("No Blink Dagger by 20 min?") and the answer under it. Past 70% of the ruler the words sit left of
+  the line; on phones they take the row under the rows.
+- Labels past the middle of the ruler open to the left of their line. Item art sits above every line.
 - **At 20 Min**: the team's fallbacks as two cards, Ahead (radiant left edge) then Behind (dire left edge), question
   bold in the side's colour and the answer under it.
 
