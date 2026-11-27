@@ -3,6 +3,7 @@ import { getHeroes } from "@/lib/heroes";
 import { liveCards, poolCardsEnabled, type PoolCard } from "@/lib/pool-cards";
 import { createClient } from "@/lib/supabase/server";
 import { PoolCardsSwitch } from "./pool-cards-switch";
+import { PoolProvider, PoolStage } from "./pool-stage";
 import { PositionHeroes } from "./position-heroes";
 import { rankName } from "@/lib/rank";
 import { type SteamAccount, SteamCard } from "./steam-card";
@@ -25,15 +26,14 @@ interface GamesWins {
 }
 
 /** The positions a user plays and their heroes for each, which their captain drafts from. */
-export default async function MyHeroesPage({ searchParams }: PageProps<"/my-heroes">) {
-  const { welcome } = await searchParams;
+export default async function MyHeroesPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [heroes, { data: positions }, { data: favorites }, { data: profile }, { data: teams }] = await Promise.all([
+  const [heroes, { data: positions }, { data: favorites }, { data: profile }] = await Promise.all([
     getHeroes(),
     supabase.from("favorite_positions").select("position").eq("user_id", user.id),
     supabase.from("favorite_heroes").select("position, hero_id, top_slot, copied_from").eq("user_id", user.id).gt("position", 0).order("created_at"),
@@ -44,7 +44,6 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
       )
       .eq("id", user.id)
       .single(),
-    supabase.from("team_members").select("teams(name)").eq("user_id", user.id),
   ]);
 
   const heroesByPosition: Record<number, number[]> = {};
@@ -54,7 +53,6 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
     if (f.copied_from) copiedFrom[`${f.position}:${f.hero_id}`] = f.copied_from;
   }
   const topHeroes = topByPosition(favorites ?? []);
-  const teamNames = (teams ?? []).flatMap((t) => (t.teams ? [(t.teams as unknown as { name: string }).name] : []));
 
   const showCards = Boolean(profile?.steam_id) && poolCardsEnabled();
   let suggestions: PoolCard[] = [];
@@ -144,44 +142,36 @@ export default async function MyHeroesPage({ searchParams }: PageProps<"/my-hero
 
   return (
     <main className="page flex flex-1 flex-col gap-8 py-10">
-      {/* The ? gets its own column, so the intro wraps beside it and never runs under it. */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="page-title">{welcome ? "Welcome to the Team" : "My Heroes"}</h1>
-          <p className="text-sm text-muted">
-            Pick the positions you play, then your heroes for each one.{" "}
-            {teamNames.length > 0 && <>Your captain in {teamNames.join(", ")} drafts from this list. </>}
-            Changes save right away.
-          </p>
-        </div>
-        <PageTour tour="my-heroes" />
-      </div>
-      <FillProvider row={fillRow} steamLinked={Boolean(profile?.steam_id)}>
-        <FillCard added={added} />
-        {steamAccount && <SteamCard account={steamAccount} />}
-        {steamAccount && (
-          <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
-        )}
-        <PositionHeroes
-          // A fresh list after the switch changes or a fill finishes, since the lists are copied into state.
-          key={`${suggestions.map((s) => s.id).join(",")}|${fillRow.hero_fill_state === "done" ? fillRow.hero_fill_at : ""}`}
-          suggestions={suggestions}
-          options={
-            showCards && (
-              <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />
-            )
-          }
-          userId={user.id}
-          heroes={heroes}
-          initialPositions={(positions ?? []).map((p) => p.position)}
-          initialHeroes={heroesByPosition}
-          initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
-          headingAction={<FillButton />}
-          initialTop={topHeroes}
-          fillNumbers={filled}
-          initialCopiedFrom={copiedFrom}
-        />
-      </FillProvider>
+      {/* PoolProvider has no element of its own, so the Stage and the cards stay the page's own rows. */}
+      <PoolProvider initial={heroesByPosition}>
+        <PoolStage heroes={heroes} stats={profile?.hero_stats ?? null} aside={<PageTour tour="my-heroes" />} />
+        <FillProvider row={fillRow} steamLinked={Boolean(profile?.steam_id)}>
+          <FillCard added={added} />
+          {steamAccount && <SteamCard account={steamAccount} />}
+          {steamAccount && (
+            <YourGamesCard record={gamesRecord} strengths={feedbackCounts.strengths} problems={feedbackCounts.problems} />
+          )}
+          <PositionHeroes
+            // A fresh list after the switch changes or a fill finishes, since the lists are copied into state.
+            key={`${suggestions.map((s) => s.id).join(",")}|${fillRow.hero_fill_state === "done" ? fillRow.hero_fill_at : ""}`}
+            suggestions={suggestions}
+            options={
+              showCards && (
+                <PoolCardsSwitch initialOn={!profile?.pool_suggestions_off} gamesHidden={profile?.trends_state === "hidden"} />
+              )
+            }
+            userId={user.id}
+            heroes={heroes}
+            initialPositions={(positions ?? []).map((p) => p.position)}
+            initialHeroes={heroesByPosition}
+            initialSupportCopy={readSupportCopy(profile?.support_copy, profile?.support_copy_from)}
+            headingAction={<FillButton />}
+            initialTop={topHeroes}
+            fillNumbers={filled}
+            initialCopiedFrom={copiedFrom}
+          />
+        </FillProvider>
+      </PoolProvider>
     </main>
   );
 }

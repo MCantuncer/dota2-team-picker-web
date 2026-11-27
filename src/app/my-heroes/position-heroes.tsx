@@ -12,6 +12,7 @@ import { NO_SUPPORT_COPY, readSupportLists, supportAddedByAnswer, type SupportCo
 import { type FillNumbers, readTopAnswer, TOP_SIZE, topError, topFirst } from "@/lib/top-heroes";
 import { Icon } from "@/components/icon";
 import { HeroCard, ReplaceTopCard, TopStar } from "./hero-card";
+import { useReportPool } from "./pool-stage";
 
 const POSITIONS = [
   { n: 1, name: "Carry" },
@@ -68,6 +69,7 @@ export function PositionHeroes({
   const byId = useMemo(() => new Map(heroes.map((h) => [h.id, h])), [heroes]);
   const [played, setPlayed] = useState(() => new Set(initialPositions));
   const [picks, setPicks] = useState(initialHeroes);
+  useReportPool(picks);
   const [active, setActive] = useState(initialPositions.length ? Math.min(...initialPositions) : 1);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);

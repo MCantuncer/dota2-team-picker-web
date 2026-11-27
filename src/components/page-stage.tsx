@@ -14,6 +14,8 @@ interface PageStageProps {
   figure?: ReactNode;
   /** The page's one main button, under the line. */
   actions?: ReactNode;
+  /** A small button for the page's corner, such as the page tour. It gets its own column beside the name's line. */
+  aside?: ReactNode;
   /** One or two sentences of numbers behind the title. */
   children?: ReactNode;
 }
@@ -23,18 +25,27 @@ interface PageStageProps {
  * hero the title names on the right. From `lg` the hero stands beside the text; below that there is no room, so it
  * fades behind the text. A page's own `figure` takes the hero's place from `md` and, being data, moves under the text below that.
  */
-export function PageStage({ name, facts, title, portrait, figure, actions, children }: PageStageProps) {
+export function PageStage({ name, facts, title, portrait, figure, actions, aside, children }: PageStageProps) {
+  const nameLine = (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">
+      <span aria-hidden className="font-semibold text-fg">
+        {name}
+      </span>
+      {facts}
+    </p>
+  );
   return (
     <section
       className={
         figure
           ? "grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_20rem]"
-          : "relative isolate lg:min-h-44 lg:pr-80"
+          : // Room for the hero only when there is one: a title that names no hero keeps no empty space.
+            `relative isolate ${portrait ? "lg:min-h-44 lg:pr-80" : ""}`
       }
     >
       {/* Below lg the hero is a backdrop: it reaches the screen's edge and fades out at the section's foot, so it never
           runs behind what follows. */}
-      {!figure && (
+      {!figure && portrait && (
         <div
           aria-hidden
           className="pointer-events-none absolute -top-11 -right-4 bottom-0 left-0 -z-10 overflow-hidden max-lg:mask-b-from-60% sm:-right-6 lg:overflow-visible"
@@ -43,16 +54,20 @@ export function PageStage({ name, facts, title, portrait, figure, actions, child
         </div>
       )}
       <div className="grid content-start gap-3">
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">
-          <span aria-hidden className="font-semibold text-fg">
-            {name}
-          </span>
-          {facts}
-        </p>
+        {aside ? (
+          // The button keeps its own column, so the facts wrap beside it and never run under it. From lg, where the
+          // hero stands on the right, it moves to the page's corner.
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4">
+            {nameLine}
+            <div className={!figure && portrait ? "lg:absolute lg:top-0 lg:right-0" : undefined}>{aside}</div>
+          </div>
+        ) : (
+          nameLine
+        )}
         <h1 className="text-xl font-semibold tracking-[-0.03em] text-balance text-fg sm:text-2xl sm:leading-11">
           <span className="sr-only">{/[?!.]$/.test(name) ? name : `${name}:`}</span> {title}
         </h1>
-        {children && <p className="max-w-2xl text-base text-muted">{children}</p>}
+        {children && <p className="max-w-2xl text-base text-pretty text-muted">{children}</p>}
         {actions && <div className="mt-2 flex flex-wrap gap-2">{actions}</div>}
       </div>
       {figure}

@@ -40,4 +40,20 @@ describe("PageStage", () => {
     expect(screen.getByRole("link", { name: "Try a Draft" })).toBeInTheDocument();
     expect(container.querySelector("img")).toBeNull();
   });
+
+  it("keeps room for the hero only when the title names one", () => {
+    const { container, rerender } = render(<PageStage name="Meta" title="Meepo Leads Mid at 57.0%" portrait={PORTRAIT} />);
+    expect(container.querySelector("section")?.className).toContain("lg:pr-80");
+    rerender(<PageStage name="Meta" title="What Ranked Players Pick and Win With" />);
+    expect(container.querySelector("section")?.className).not.toContain("lg:pr-80");
+  });
+
+  it("gives a corner button its own column beside the name's line", () => {
+    render(<PageStage name="My Heroes" title="No Heroes in Your Pool Yet" facts={<span>0 heroes</span>} aside={<button type="button">Page Tour</button>} />);
+    const button = screen.getByRole("button", { name: "Page Tour" });
+    const row = button.parentElement?.parentElement;
+    expect(row?.className).toContain("grid-cols-[minmax(0,1fr)_auto]");
+    // The name and its facts are the row's other cell, so they wrap beside the button.
+    expect(row?.firstElementChild).toHaveTextContent("My Heroes0 heroes");
+  });
 });
