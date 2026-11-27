@@ -15,6 +15,7 @@ import { heroesOf, NEW_DRAFT_EVENT, POSITION_NAMES, TEAM_SIZE, type DraftAction,
 import { Engine } from "@/lib/engine/score";
 import { loadSnapshot } from "@/lib/engine/snapshot";
 import { patchNotice } from "@/lib/patch-notice";
+import { RankRow, type RankChoice } from "@/components/rank-row";
 import { POSITIONS, type EnemyPositions, type GamesWins, type HeroInfo, type Position, type RankBracket } from "@/lib/engine/types";
 import { finishedDraftPlan } from "@/lib/game-plan";
 import { matchupRequest } from "@/lib/matchup-games";
@@ -115,6 +116,10 @@ export interface PartyInfo {
 }
 
 const RANKS = ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
+/** The Rank row: no rank first (every rank alone, the planner's own in a party), then the eight medals. */
+const ALL_RANKS: RankChoice<RankBracket | null> = { value: null, name: "All Ranks", short: "All" };
+const PLANNER_RANK: RankChoice<RankBracket | null> = { value: null, name: "Planner's Rank", short: "Planner" };
+const RANK_CHOICES: RankChoice<RankBracket | null>[] = RANKS.map((name, i) => ({ value: (i + 1) as RankBracket, name, medal: i + 1 }));
 const POSITION_KEY = "solo-draft-position";
 const NO_STACKS: PlannableStack[] = [];
 
@@ -1006,7 +1011,7 @@ export function DraftBoard({
                       className="inline-flex items-center gap-1.5"
                     >
                       <PositionIcon position={p} size={16} />
-                      {/* Below xl only the chosen role keeps its name, so the row fits beside Rank. */}
+                      {/* Below xl only the chosen role keeps its name, so the row stays left of the page's buttons. */}
                       <span className={myPosition === p ? "" : "max-xl:hidden"}>{POSITION_NAMES[p - 1]}</span>
                     </button>
                   );
@@ -1019,23 +1024,18 @@ export function DraftBoard({
                 {waitingSeats.map((s) => `${POSITION_NAMES[s.position - 1]} is waiting for ${s.name}.`).join(" ")}
               </p>
             )}
-            <label className="flex items-center gap-2">
-              <span className="micro text-muted">Rank</span>
-              <select
-                value={rank ?? ""}
-                onChange={(e) => void setRank(e.target.value ? (Number(e.target.value) as RankBracket) : null)}
-                disabled={!isPlanner}
-                title={isPlanner ? undefined : `${plannerName} sets the party rank`}
-                className="field h-8 w-auto text-sm"
-              >
-                <option value="">{party ? "Planner's Rank" : "All ranks"}</option>
-                {RANKS.map((r, i) => (
-                  <option key={r} value={i + 1}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex items-center gap-2 max-sm:w-full">
+              <span className="micro text-muted" id="draft-rank">
+                Rank
+              </span>
+              <RankRow
+                labelledBy="draft-rank"
+                choices={[party ? PLANNER_RANK : ALL_RANKS, ...RANK_CHOICES]}
+                value={rank}
+                onChange={(next) => void setRank(next)}
+                lockedWhy={isPlanner ? undefined : `${plannerName} sets the party rank`}
+              />
+            </div>
           </div>
           {party ? (
             <div className="max-lg:[&_.micro]:w-14 max-lg:[&_.micro]:shrink-0 lg:col-start-2 lg:row-start-1">

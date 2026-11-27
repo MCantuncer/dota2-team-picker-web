@@ -12,6 +12,9 @@ import type { ItemArt } from "./meta-hero-extras";
 
 const ROLE_PLURAL = ["carries", "mids", "offlaners", "soft supports", "hard supports"];
 
+/** The chosen role tab's frame: the Lane Cut at tile size, its edge in copper. */
+const CHOSEN_TAB = "lane-cut [--cut:12px] [--cut-radius:8px] [--cut-edge:var(--accent-deep)]";
+
 /** All Roles and the five roles as big tabs with the role symbols; arrow keys move between them. */
 export function RoleTabs({ role, onChange }: { role: number; onChange: (role: number) => void }) {
   const move = (e: KeyboardEvent) => {
@@ -32,7 +35,8 @@ export function RoleTabs({ role, onChange }: { role: number; onChange: (role: nu
           aria-selected={role === p}
           tabIndex={role === p ? 0 : -1}
           onClick={() => onChange(p)}
-          className="grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep"
+          // The chosen tab takes the Lane Cut, like a chosen button of the Lane Board's segmented control.
+          className={`grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep ${role === p ? CHOSEN_TAB : ""}`}
         >
           {p ? (
             <PositionIcon position={p} size={30} />
