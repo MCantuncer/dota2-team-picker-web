@@ -5,9 +5,10 @@ import { PageTour } from "@/components/page-tour";
 import { getHeroes } from "@/lib/heroes";
 import { PLAYER_FEEDBACK_SELECT, readPlayerFeedback } from "@/lib/player-feedback";
 import { GAMES_PER_PAGE, PLAYER_GAMES_SELECT, readFilters, readGameRow } from "@/lib/player-games";
-import { type PlayerRecord, playerRecord, RECORD_DAYS, RECORD_SELECT } from "@/lib/player-record";
+import { playerRecord, RECORD_DAYS, RECORD_SELECT } from "@/lib/player-record";
 import { ResultSquares } from "@/components/result-squares";
-import { HeroRender } from "@/components/hero-render";
+import { PageStage } from "@/components/page-stage";
+import { gamesVerdict } from "@/lib/games-verdict";
 import { createClient } from "@/lib/supabase/server";
 import { FeedbackView, MIN_GAMES } from "./feedback-view";
 import { type HeroArt, PreviousGames } from "./previous-games";
@@ -17,19 +18,6 @@ export const metadata: Metadata = { title: "Your Games · Dota 2 Team Picker" };
 
 /** How many results the squares row shows. */
 const LATEST_GAMES = 20;
-const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-
-/** What the feedback is worked out from, with the real count and dates when there are games. */
-function introText(record: PlayerRecord | null) {
-  const start = "What you do well and what costs you games, worked out from your";
-  if (!record?.games || !record.firstAt || !record.lastAt) {
-    return `${start} ranked and normal games of the last ${RECORD_DAYS} days.`;
-  }
-  const first = dateFormat.format(new Date(record.firstAt));
-  const last = dateFormat.format(new Date(record.lastAt));
-  const span = first === last ? `on ${first}` : `between ${first} and ${last}`;
-  return `${start} ${record.games} ranked and normal ${record.games === 1 ? "game" : "games"} ${span}.`;
-}
 
 /** What the player does well and what costs them games, then each previous game. */
 export default async function YourGamesPage({ searchParams }: PageProps<"/my-heroes/games">) {
@@ -57,7 +45,6 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
 
   const art = new Map<number, HeroArt>(heroes.map((h) => [h.id, { name: h.name, icon: h.icon, image: h.image }]));
   const record = records.data ? playerRecord(records.data, new Date(), LATEST_GAMES) : null;
-  const topHero = record?.topHero ? art.get(record.topHero.id) : undefined;
 
   let body: React.ReactNode;
   if (profile.error || feedbackRow.error || gameRows.error || records.error) {
@@ -106,30 +93,25 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
     );
   }
 
-  const showRecord = Boolean(profile.data?.steam_id) && record !== null && record.games > 0;
+  const linked = Boolean(profile.data?.steam_id);
+  const showRecord = linked && record !== null && record.games > 0;
+  // Without Steam, or when the games could not be read, there is no record to speak of.
+  const verdict = gamesVerdict(linked ? record : null, (id) => art.get(id)?.name);
   return (
     <main className="page flex flex-1 flex-col gap-8 overflow-x-clip py-10">
-      <section aria-labelledby="your-games-title" className="relative isolate flex min-h-60 flex-col gap-5">
-        {showRecord && (
-          <HeroRender
-            portrait={topHero?.image}
-            className="absolute -right-16 -top-4 -z-10 w-[min(26rem,70vw)] opacity-70 sm:-right-4 sm:opacity-100"
-          />
-        )}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
-          <div className="flex flex-col gap-1.5">
-            <Link href="/my-heroes" className="btn btn-ghost btn-sm -ml-3 self-start">
-              <Icon name="chevronLeft" />
-              Back to My Heroes
-            </Link>
-            <h1 id="your-games-title" className="page-title">
-              Your Games
-            </h1>
-            <p className="max-w-xl text-sm text-muted">{introText(showRecord ? record : null)}</p>
-          </div>
+      <div className="flex flex-col gap-5">
+        {/* Back on the left, the page's ? on the right, each in its own column. */}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6">
+          <Link href="/my-heroes" className="btn btn-ghost btn-sm -ml-3 justify-self-start text-muted">
+            <Icon name="chevronLeft" />
+            Back to My Heroes
+          </Link>
           <PageTour tour="your-games" />
         </div>
-        {showRecord && record && <RecordStrip record={record} hero={topHero} />}
+        <PageStage name="Your Games" facts={<span>{verdict.facts}</span>} title={verdict.title} portrait={verdict.heroId ? art.get(verdict.heroId)?.image : undefined}>
+          {verdict.line}
+        </PageStage>
+        {showRecord && record && <RecordStrip record={record} />}
         {showRecord && record && record.latest.length > 1 && (
           <div className="flex flex-col gap-2">
             <span className="text-sm text-muted">
@@ -138,7 +120,7 @@ export default async function YourGamesPage({ searchParams }: PageProps<"/my-her
             <ResultSquares results={record.latest} />
           </div>
         )}
-      </section>
+      </div>
       {body}
     </main>
   );

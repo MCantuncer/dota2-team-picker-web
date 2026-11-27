@@ -1,20 +1,13 @@
-import { HeroFace } from "@/components/hero-frame";
 import { type PlayerRecord, RECORD_DAYS, winPercent } from "@/lib/player-record";
-import type { HeroArt } from "./previous-games";
 
-const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-const day = (iso: string) => dateFormat.format(new Date(iso));
-
-/** The player's record over the feedback window: games, won, fully read, most played. */
-export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: HeroArt | undefined }) {
+/** The player's record over the feedback window: games, won, fully read. The most played hero is on the Stage above. */
+export function RecordStrip({ record }: { record: PlayerRecord }) {
   const won = winPercent(record) ?? 0;
-  const top = record.topHero;
-  const range = record.firstAt && record.lastAt ? `${day(record.firstAt)} to ${day(record.lastAt)}` : `Last ${RECORD_DAYS} days`;
   return (
-    <dl data-tour="your-games-numbers" className="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
+    <dl data-tour="your-games-numbers" className="grid max-w-3xl grid-cols-3 gap-px overflow-hidden rounded-md border border-line bg-line">
       <Tile label="Games">
         <dd className="num text-xl font-semibold text-fg">{record.games}</dd>
-        <dd className="text-xs text-muted">{range}</dd>
+        <dd className="text-xs text-balance text-muted">Last {RECORD_DAYS} days</dd>
       </Tile>
       <Tile label="Won">
         <dd className={`num text-xl font-semibold ${won >= 50 ? "text-radiant" : "text-dire"}`}>{won}%</dd>
@@ -23,25 +16,9 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
         </dd>
       </Tile>
       <Tile label="Fully Read">
-        <dd className="num text-xl font-semibold text-fg">
-          {record.parsed} <span className="text-base font-medium text-muted">of {record.games}</span>
-        </dd>
-        <dd className="text-xs text-muted">Parsed by OpenDota</dd>
-      </Tile>
-      <Tile label="Most Played">
-        {top ? (
-          <>
-            <dd className="flex min-w-0 items-center gap-2.5">
-              {hero?.image && <HeroFace portrait={hero.image} name={hero.name} size={28} isDecorative />}
-              <span className="truncate text-base font-semibold text-fg">{hero?.name ?? `Hero ${top.id}`}</span>
-            </dd>
-            <dd className="num text-xs text-muted">
-              {top.games} {top.games === 1 ? "game" : "games"}, won {winPercent(top)}%
-            </dd>
-          </>
-        ) : (
-          <dd className="text-sm text-muted">No games yet</dd>
-        )}
+        <dd className="num text-xl font-semibold text-fg">{record.parsed}</dd>
+        {/* The total sits in the small line: beside the number it wrapped under it in a phone's narrow tile. */}
+        <dd className="text-xs text-balance text-muted">of {record.games}, parsed by OpenDota</dd>
       </Tile>
     </dl>
   );
@@ -49,7 +26,7 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
 
 function Tile({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 bg-surface px-4 py-3.5">
+    <div className="flex min-w-0 flex-col gap-1.5 bg-surface px-4 py-3.5 max-sm:px-3">
       <dt className="text-sm text-muted">{label}</dt>
       {children}
     </div>

@@ -187,7 +187,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     {
       target: "your-games-numbers",
       title: "Your Numbers",
-      tip: () => "Games, wins and your most played hero, from your recent games.",
+      tip: () => "Games, wins and how many are fully read, from your recent games.",
     },
     {
       target: "your-games-findings",
