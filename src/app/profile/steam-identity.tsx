@@ -31,7 +31,7 @@ export function SteamIdentity({ name, avatarUrl, steamId }: { name: string; avat
           </span>
           <span className="sr-only">(Steam profile, opens in a new tab)</span>
         </a>
-        <span className="inline-flex h-6.5 items-center gap-1.5 rounded-full bg-radiant-tint pl-2 pr-2.5 text-sm font-medium text-radiant ring-1 ring-radiant/35 ring-inset">
+        <span className="inline-flex h-6.5 items-center gap-1.5 rounded-md bg-radiant-tint pl-2 pr-2.5 text-sm font-medium text-radiant ring-1 ring-radiant/35 ring-inset">
           <SteamLogo className="size-3.75" />
           Steam Account Linked
           <Icon name="check" />
