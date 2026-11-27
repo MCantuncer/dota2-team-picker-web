@@ -118,10 +118,9 @@ export function ItemSpells({ item, passiveCooldown = false }: { item: Pick<ItemI
 }
 
 /**
- * The parts the item is built from, the recipe scroll last, each with its name and gold, on a thin line that runs into
- * the finished item ringed in copper, so the row reads as buy these, get this (Can 2026-11-27: components give a
- * "start first with this" feel; option B3, Forge Line, of the item pop-up parts canvas). On a phone the finished item
- * at the end is left out, as the card's header shows it, so four parts still fit. Nothing for a basic item. With
+ * The parts the item is built from, the recipe scroll last, each with its art and gold on one thin line across the card
+ * (Can 2026-11-27: components give a "start first with this" feel; option B3, Forge Line, of the item pop-up parts
+ * canvas). The finished item is not repeated at the end, as the header above shows it. Nothing for a basic item. With
  * `onPick`, each part (not the scroll) is a button that opens that part's own card.
  */
 export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Record<string, ItemInfo>; onPick?: (part: RecipePart) => void }) {
@@ -130,13 +129,13 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
   if (!item || !recipe) return null;
   const parts = [...recipe.parts, ...(recipe.scroll > 0 ? [{ itemId: 0, name: "Recipe", img: RECIPE_IMG, cost: recipe.scroll, count: 1 }] : [])];
   return (
-    <section aria-label={`How to build ${item.name}`} className="relative flex items-stretch justify-between">
-      {/* The line joins the middles of the first and the last art: half a part's width in, half the item's on the right. */}
-      <span aria-hidden className="absolute top-[1.375rem] right-[2.375rem] left-[2.375rem] h-px bg-linear-to-r from-line-hover to-accent-deep sm:right-[2.625rem]" />
-      {/* The list adds no box of its own, so the parts and the item share one even spacing. */}
-      <ol className="contents">
+    <section aria-label={`How to build ${item.name}`} className="relative">
+      {/* The finished item is already in the header, so the row is only the parts (Can 2026-11-27): each takes an even
+          share of the width, and the line joins the middles of the first and the last art. */}
+      <span aria-hidden className="absolute top-7 h-px bg-line-hover" style={{ left: `${50 / parts.length}%`, right: `${50 / parts.length}%` }} />
+      <ol className="relative grid gap-x-3" style={{ gridTemplateColumns: `repeat(${parts.length}, minmax(0, 1fr))` }}>
         {parts.map((part) => (
-          <li key={`${part.itemId}-${part.name}`} className="relative flex w-[4.75rem] flex-col items-center gap-2 text-center">
+          <li key={`${part.itemId}-${part.name}`} className="flex flex-col items-center gap-2.5 text-center">
             <PartArt part={part} onPick={onPick && part.itemId ? () => onPick(part) : undefined} />
             {/* Like the in-game shop: the art and its gold, the name read out and shown on hover (Can 2026-11-27). */}
             <span className="sr-only">
@@ -151,16 +150,6 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
           </li>
         ))}
       </ol>
-      <div aria-hidden className="relative hidden w-[5.25rem] shrink-0 flex-col items-center text-center sm:flex">
-        <span className="absolute top-[1.0625rem] -left-2 size-0 border-y-[5px] border-l-[7px] border-y-transparent border-l-accent-deep" />
-        <Image
-          src={ITEM_CDN + item.img}
-          alt=""
-          width={72}
-          height={52}
-          className="relative -mt-1 block h-13 w-[4.5rem] rounded-lg object-cover shadow-[0_0_0_1px_var(--accent),0_0_0_4px_var(--surface),0_6px_16px_rgb(232_160_82/0.18)]"
-        />
-      </div>
     </section>
   );
 }
@@ -173,9 +162,9 @@ function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
       <Image
         src={ITEM_CDN + part.img}
         alt=""
-        width={60}
-        height={44}
-        className="block h-11 w-15 rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_0_0_4px_var(--surface)]"
+        width={78}
+        height={56}
+        className="block aspect-[78/56] w-[4.875rem] max-w-full rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_0_0_4px_var(--surface)]"
       />
       {part.count > 1 && (
         <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
@@ -184,14 +173,14 @@ function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
       )}
     </>
   );
-  if (!onPick) return <span className="relative" title={part.name}>{art}</span>;
+  if (!onPick) return <span className="relative block max-w-full" title={part.name}>{art}</span>;
   return (
     <button
       type="button"
       onClick={onPick}
       aria-label={`Open ${part.name}`}
       title={part.name}
-      className="relative cursor-pointer rounded-lg transition-[filter] hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="relative block max-w-full cursor-pointer rounded-lg transition-[filter] hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       {art}
     </button>
