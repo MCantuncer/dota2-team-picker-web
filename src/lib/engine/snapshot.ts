@@ -1,4 +1,5 @@
 import { SUPABASE_URL } from "@/lib/supabase/env";
+import { applyFactUpdates } from "./fact-updates";
 import type { Snapshot } from "./types";
 
 /**
@@ -24,8 +25,14 @@ export function loadSnapshot(): Promise<Snapshot> {
   return pending;
 }
 
+/**
+ * Downloads the hero data and hands its game fact updates to the engine (see fact-updates.ts), so the facts follow the
+ * patch the data was built on rather than the copy in this repo.
+ */
 async function download(): Promise<Snapshot> {
   const res = await fetch(SNAPSHOT_URL);
   if (!res.ok) throw new Error(`Hero data download failed (${res.status})`);
-  return res.json();
+  const snapshot = (await res.json()) as Snapshot;
+  applyFactUpdates(snapshot.factUpdates);
+  return snapshot;
 }
