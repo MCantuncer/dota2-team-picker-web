@@ -17,7 +17,7 @@ export interface NavItem {
 export function NavBadge({ count }: { count?: number }) {
   if (!count) return null;
   return (
-    <span className="ml-1.5 rounded-full bg-accent px-1.5 py-px text-xs font-semibold tabular-nums text-on-accent">
+    <span className="ml-1.5 rounded-md bg-accent px-1.5 py-px text-xs font-semibold tabular-nums text-on-accent">
       {count}
       <span className="sr-only"> waiting</span>
     </span>

@@ -166,7 +166,7 @@ export function StackBanner({
             {waiting > 0 && (
               <span
                 aria-hidden
-                className="rounded-full bg-accent px-1.5 text-xs font-semibold tabular-nums leading-5 text-on-accent"
+                className="rounded-md bg-accent px-1.5 text-xs font-semibold tabular-nums leading-5 text-on-accent"
               >
                 +{waiting}
               </span>

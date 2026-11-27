@@ -161,17 +161,17 @@ export function HeroCard({
           {/* Stacked, full width: a long position name (Remove from Hard Support) never squeezes either button. */}
           <div className="flex flex-col gap-2">
             {isTop ? (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill w-full">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary btn-lg w-full">
                 <TopStar outline />
                 Remove from Top 5
               </button>
             ) : (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill w-full">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary btn-lg w-full">
                 <TopStar />
                 Add to Top 5
               </button>
             )}
-            <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary pill w-full">
+            <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary btn-lg w-full">
               <Icon name="trash" />
               Remove from {positionName}
             </button>
@@ -262,7 +262,7 @@ export function ReplaceTopCard({
           ))}
         </ul>
         <div className="flex justify-end max-sm:px-4 max-sm:pb-4">
-          <button ref={cancel} type="button" onClick={onCancel} className="btn btn-secondary pill max-sm:w-full">
+          <button ref={cancel} type="button" onClick={onCancel} className="btn btn-secondary btn-lg max-sm:w-full">
             Cancel
           </button>
         </div>
