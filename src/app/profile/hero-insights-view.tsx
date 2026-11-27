@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { HeroPortrait } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
 import {
@@ -72,7 +72,7 @@ export function HeroInsightsView({
             )}
           </p>
         </div>
-        <nav aria-label="Period" className="flex gap-1 self-start rounded-md border border-line p-0.5 text-sm sm:self-auto">
+        <nav aria-label="Period" className="flex shrink-0 gap-1 self-start rounded-md border border-line p-0.5 text-sm whitespace-nowrap sm:self-auto">
           {PERIODS.map((p) => (
             <SegLink key={p.days} href={profileHref(p, sort)} current={p === period} label={p.label} />
           ))}
@@ -181,10 +181,14 @@ function Takeaway({
   const color = tone === "good" ? "text-radiant" : tone === "bad" ? "text-dire" : "text-fg";
   return (
     <li className="card flex items-center gap-3 p-3">
-      {hero && <Image src={hero.image} alt="" width={80} height={45} unoptimized className="shrink-0 rounded-md" />}
+      {hero && (
+        <span className="block w-20 shrink-0">
+          <HeroPortrait portrait={hero.image} size={45} />
+        </span>
+      )}
       <span className="flex min-w-0 flex-col">
         <span className="label-caps">{title}</span>
-        <span className="truncate text-base font-semibold text-fg">{hero?.name ?? `Hero ${line.heroId}`}</span>
+        <span className="text-base font-semibold text-balance text-fg">{hero?.name ?? `Hero ${line.heroId}`}</span>
         <span className={`num ${color}`}>{value}</span>
         <span className="text-xs text-muted">{text}</span>
       </span>
@@ -223,12 +227,14 @@ function HeroRow({
   return (
     <li className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 py-2.5 sm:grid-cols-[auto_12rem_minmax(6rem,1fr)_12rem_auto]">
       {hero ? (
-        <Image src={hero.image} alt="" width={64} height={36} unoptimized className="rounded-md" />
+        <span className="block w-16">
+          <HeroPortrait portrait={hero.image} size={36} />
+        </span>
       ) : (
         <span className="h-9 w-16 rounded-md bg-raised" />
       )}
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium text-fg">{name}</span>
+        <span className="text-sm font-medium text-fg">{name}</span>
         {positions.length > 0 ? (
           <span className="flex flex-wrap gap-1">
             {positions.map((p) => (

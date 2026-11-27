@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { HeroFace } from "@/components/hero-frame";
 import type { DamageSource, EnemyBest, FightFact, LaneName, LaneResult, Swing } from "@/lib/report-facts";
 import { amount, clock, damageLine, enemyBestLine, fightLine, type HeroName, laneLine, signedAmount, swingLine } from "@/lib/report-text";
 import type { ReportArt } from "./report-view";
@@ -59,10 +59,10 @@ export function LaneIcon({ lane, size = 40 }: { lane: LaneName; size?: number })
   );
 }
 
-function Face({ heroId, art, name }: { heroId: number; art: ReportArt; name: HeroName }) {
+function Face({ heroId, art, name, isEnemy = false }: { heroId: number; art: ReportArt; name: HeroName; isEnemy?: boolean }) {
   const image = art.heroes.get(heroId)?.image;
   return image ? (
-    <Image src={image} alt="" title={name(heroId)} width={56} height={32} className="h-8 w-8 rounded-md object-cover object-[20%_center]" />
+    <HeroFace portrait={image} name={name(heroId)} size={32} isEnemy={isEnemy} isDecorative />
   ) : (
     <span title={name(heroId)} className="micro flex h-8 w-8 items-center justify-center rounded-md bg-raised text-muted">
       {name(heroId).slice(0, 2)}
@@ -173,7 +173,7 @@ export function HurtChart({
       {enemyBest && (
         <div className="flex items-center gap-3 rounded-lg border border-line-strong bg-raised p-3">
           <span className="sr-only">{enemyBestLine(enemyBest, name)}</span>
-          <Face heroId={enemyBest.heroId} art={art} name={name} />
+          <Face heroId={enemyBest.heroId} art={art} name={name} isEnemy />
           <span aria-hidden="true" className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
             <span className="text-sm text-muted">Strongest enemy</span>
             <span className="text-sm font-semibold text-fg">{name(enemyBest.heroId)}</span>
