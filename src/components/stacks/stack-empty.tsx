@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { renderOf } from "@/components/hero-render";
 import { Icon, type IconName } from "@/components/icon";
 import { PositionIcon } from "@/components/position-icon";
-import { POSITION_NAMES } from "./stack-lineup";
+import { POSITION_NAMES } from "@/lib/party";
 
 const STEPS: { icon: IconName; title: string }[] = [
   { icon: "layers", title: "Name Your Stack" },

@@ -62,4 +62,11 @@ describe("StackLineup", () => {
     expect(screen.getByLabelText("Played by deniz")).toBeInTheDocument();
     expect(screen.getAllByText("Nobody yet")).toHaveLength(4);
   });
+
+  it("names positions as the rest of the site does", () => {
+    render(<StackLineup seats={[seat("deniz", { position: 3, positions: [1, 3] })]} hero={(id) => ({ name: `Hero ${id}` })} youId="deniz" />);
+    expect(screen.getAllByText("Carry").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Offlane").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Safe Lane|Mid Lane|Off Lane/)).toBeNull();
+  });
 });
