@@ -161,9 +161,10 @@ function Group({
         const portrait = heroIcons[spike.hero];
         const x = share(spike.minute);
         const flip = x > MARK_FLIP_AT;
-        // A minute left of its art sits over the bar, so it gets the track's colour behind it.
+        // The minute sits on a small tag in the page colour, so the bar and the lines through the rows (ready, window,
+        // Roshan, checkpoint) pass behind the number, never through it, and it reads the same inside the fight window.
         const minute = (
-          <span className={`num whitespace-nowrap rounded-md text-xs font-semibold sm:text-sm ${flip ? "bg-raised pl-1 pr-1.5 sm:pr-2" : ""} ${side === "us" ? "text-radiant" : "text-dire"}`}>{minuteText(spike)}</span>
+          <span className={`num whitespace-nowrap rounded-md text-xs font-semibold sm:text-sm bg-bg px-1.5 py-0.5 ${side === "us" ? "text-radiant" : "text-dire"}`}>{minuteText(spike)}</span>
         );
         const art = <SpikeArt spike={spike} side={side} portrait={portrait} img={itemImg(spike.item)} />;
         return (
@@ -177,7 +178,7 @@ function Group({
               {/* The item's centre sits on its minute; the minute reads beside it. */}
               {/* Above the lines that run down through the rows, so the art stays whole. */}
               <span
-                className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center ${flip ? "" : "gap-1 sm:gap-2"} ${flip ? "translate-x-[calc(-100%+1.125rem)] sm:translate-x-[calc(-100%+1.375rem)]" : "-translate-x-[1.125rem] sm:-translate-x-[1.375rem]"}`}
+                className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 sm:gap-1.5 ${flip ? "translate-x-[calc(-100%+1.125rem)] sm:translate-x-[calc(-100%+1.375rem)]" : "-translate-x-[1.125rem] sm:-translate-x-[1.375rem]"}`}
                 style={{ left: at(x) }}
               >
                 {flip ? (
