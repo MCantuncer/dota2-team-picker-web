@@ -41,6 +41,20 @@ describe("corner scale", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("has no pill but the green You pill", () => {
+    // Round ends are for avatars, dots and bars. A round shape with side padding holds text, which makes it a pill.
+    const offenders = sourceFiles(SRC).flatMap((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .flatMap((line, i) =>
+          /(?<![\w-])rounded-full(?![\w-])/.test(line) && /(?<![\w-:])p[xlr]-/.test(line) && !/bg-radiant .*text-bg/.test(line)
+            ? [`${relative(SRC, file)}:${i + 1}`]
+            : [],
+        ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("has only the scale's corners in the stylesheet", () => {
     const css = readFileSync(join(SRC, "app/globals.css"), "utf8");
     const radii = [...css.matchAll(/border-radius:\s*([^;]+);/g)].flatMap((match) => (match[1] ?? "").trim().split(/\s+(?![^(]*\))/));

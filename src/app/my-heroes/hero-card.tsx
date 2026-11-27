@@ -8,6 +8,8 @@ import { daysAgo, type FillNumbers } from "@/lib/top-heroes";
 
 /** The render at the top of the phone sheets: every hero's face at the same point, a little above the middle. */
 const SHEET_ART: HeroArtPlacement = { width: 330, at: [0.5, 0.42] };
+/** A card's action button: a little taller than a plain button, taller again for a thumb on a phone. */
+const ACTION = "h-10 font-semibold max-sm:h-11.5";
 
 interface CardHero {
   id: number;
@@ -161,17 +163,17 @@ export function HeroCard({
           {/* Stacked, full width: a long position name (Remove from Hard Support) never squeezes either button. */}
           <div className="flex flex-col gap-2">
             {isTop ? (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className="btn btn-secondary pill w-full">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(false)} className={`btn btn-secondary w-full ${ACTION}`}>
                 <TopStar outline />
                 Remove from Top 5
               </button>
             ) : (
-              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className="btn btn-primary pill w-full">
+              <button ref={first} type="button" disabled={busy} onClick={() => onTop(true)} className={`btn btn-primary w-full ${ACTION}`}>
                 <TopStar />
                 Add to Top 5
               </button>
             )}
-            <button type="button" disabled={busy} onClick={onRemove} className="btn btn-secondary pill w-full">
+            <button type="button" disabled={busy} onClick={onRemove} className={`btn btn-secondary w-full ${ACTION}`}>
               <Icon name="trash" />
               Remove from {positionName}
             </button>
@@ -262,7 +264,7 @@ export function ReplaceTopCard({
           ))}
         </ul>
         <div className="flex justify-end max-sm:px-4 max-sm:pb-4">
-          <button ref={cancel} type="button" onClick={onCancel} className="btn btn-secondary pill max-sm:w-full">
+          <button ref={cancel} type="button" onClick={onCancel} className={`btn btn-secondary max-sm:w-full ${ACTION}`}>
             Cancel
           </button>
         </div>
