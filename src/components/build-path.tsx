@@ -195,13 +195,20 @@ function tileLabel(item: BuildItem, heroName: (id: number) => string): string {
 
 function Kit({ title, label, stops, cardOf, heroName, icons }: Art & { title: string; label: string; stops: Stop[]; cardOf: (s: Stop) => ItemCardContent }) {
   if (!stops.length) return null;
+  // One row, the tiles giving up a few px when the row is a little too wide (five tiles on a phone). More than five
+  // would get too small there, so a phone shows them as two rows of the same length.
+  const cols = { "--cols": stops.length, "--cols-phone": stops.length <= 5 ? stops.length : Math.ceil(stops.length / 2) } as CSSProperties;
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex min-w-0 flex-col gap-2.5">
       <span className="text-sm font-medium text-fg">{title}</span>
-      <ul aria-label={label} className="flex flex-wrap gap-2.5">
+      <ul
+        aria-label={label}
+        style={cols}
+        className="grid grid-cols-[repeat(var(--cols-phone),minmax(0,4rem))] gap-2 sm:grid-cols-[repeat(var(--cols),minmax(0,4rem))] sm:gap-2.5"
+      >
         {stops.map((stop) => (
-          <li key={stop.key} className="flex w-16 flex-col items-center gap-1 text-center">
-            <ItemTile item={stop.item} card={cardOf(stop)} heroName={heroName} icons={icons} />
+          <li key={stop.key} className="flex min-w-0 flex-col items-center gap-1 text-center">
+            <ItemTile item={stop.item} card={cardOf(stop)} heroName={heroName} icons={icons} isFluid className="w-full" />
             <span className="text-xs leading-tight text-muted">{stop.item.name}</span>
           </li>
         ))}
@@ -211,13 +218,20 @@ function Kit({ title, label, stops, cardOf, heroName, icons }: Art & { title: st
 }
 
 /** An item as a tile that opens its card: its art, a copy count, and the face of the enemy it is bought for. */
-function ItemTile({ item, card, heroName, icons, className = "" }: Art & { item: BuildItem; card: ItemCardContent; className?: string }) {
+function ItemTile({
+  item,
+  card,
+  heroName,
+  icons,
+  isFluid = false,
+  className = "",
+}: Art & { item: BuildItem; card: ItemCardContent; /** The art fills the tile's width instead of its fixed 64px. */ isFluid?: boolean; className?: string }) {
   const foe = item.against?.[0];
   return (
     <ItemButton label={tileLabel(item, heroName)} card={card} className={className}>
       {(open) => (
         <>
-          <ItemArt item={item} className={`h-[2.9375rem] w-16 ${open ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
+          <ItemArt item={item} className={`${isFluid ? "aspect-[64/47] w-full" : "h-[2.9375rem] w-16"} ${open ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
           {item.count && (
             <span className="num absolute -right-1 bottom-0.5 rounded-md bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
           )}
