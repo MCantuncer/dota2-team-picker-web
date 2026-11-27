@@ -3,6 +3,7 @@
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { HeroPortrait } from "@/components/hero-frame";
 import { PositionIcon } from "@/components/position-icon";
+import { roleTile } from "@/components/role-tile";
 import { HeroSearch } from "@/lib/hero-search";
 import type { Hero } from "@/lib/heroes";
 import type { PoolCard } from "@/lib/pool-cards";
@@ -210,7 +211,8 @@ export function PositionHeroes({
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Positions" data-tour="my-heroes-roles" className="grid grid-cols-5 gap-1 border-b border-line">
+      {/* Five tiles in one row at every width. On a phone a tile holds the symbol and the count; the name is read out. */}
+      <nav aria-label="Positions" data-tour="my-heroes-roles" className="grid grid-cols-5 gap-1.5 sm:gap-2">
         {POSITIONS.map((p) => {
           const isActive = p.n === active;
           const count = picks[p.n]?.length ?? 0;
@@ -223,28 +225,21 @@ export function PositionHeroes({
               }}
               aria-current={isActive}
               title={p.name}
-              className={`group relative flex min-w-0 items-center justify-center gap-1.5 rounded-t-md px-1 py-3 transition-colors max-lg:flex-col sm:px-3 lg:gap-3 ${
-                isActive ? "bg-accent-tint text-fg" : "text-muted hover:bg-surface hover:text-fg"
-              }`}
+              className={`${roleTile(isActive)} ${isActive ? "" : "relative"} content-start gap-1 px-1 pb-2.5 pt-3 sm:gap-1.5 sm:pb-3 sm:pt-3.5 md:px-2`}
             >
-              <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-muted/60 group-hover:text-muted"}`}>
-                <PositionIcon position={p.n} size={32} />
+              {/* Top left, clear of the chosen tile's cut corner. */}
+              <span className="absolute top-2 left-2 flex gap-1">
+                {played.has(p.n) && <span aria-label="You play this" className="size-1.5 rounded-full bg-radiant" />}
+                {cards.some((c) => c.position === p.n) && (
+                  <span aria-label="Suggestion from your games" className="size-1.5 rounded-full bg-accent" />
+                )}
               </span>
-              {/* Below 1024px the name sits under the icon, so "Soft Support" and "No heroes yet" fit without cutting. */}
-              <span className="flex min-w-0 flex-col gap-0.5 text-left max-lg:items-center max-lg:text-center max-sm:hidden">
-                <span className="flex items-center gap-1.5">
-                  <span className={`whitespace-nowrap text-sm ${isActive ? "font-semibold" : "font-medium"}`}>{p.name}</span>
-                  {played.has(p.n) && <span aria-label="You play this" className="size-1.5 shrink-0 rounded-full bg-radiant" />}
-                  {cards.some((c) => c.position === p.n) && (
-                    <span aria-label="Suggestion from your games" className="size-1.5 shrink-0 rounded-full bg-accent" />
-                  )}
-                </span>
-                <span className="num whitespace-nowrap text-xs text-muted">
-                  {count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}
-                </span>
+              <PositionIcon position={p.n} size={30} />
+              <span className="text-base whitespace-nowrap max-sm:sr-only">{p.name}</span>
+              <span className={`num text-sm ${isActive ? "text-fg" : "text-muted"}`}>
+                <span aria-hidden className="sm:hidden">{count}</span>
+                <span className="max-sm:sr-only">{count ? `${count} hero${count === 1 ? "" : "es"}` : "No heroes yet"}</span>
               </span>
-              <span className="sr-only sm:hidden">{p.name}</span>
-              {isActive && <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
             </button>
           );
         })}

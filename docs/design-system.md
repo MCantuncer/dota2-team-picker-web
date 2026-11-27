@@ -160,8 +160,10 @@ and Home its landing layout.
 Two controls, the same on every page:
 
 - **Role** is a row of tiles (symbol over the name, the chosen tile takes the Lane Cut) where the role switches what
-  the page shows: Meta's role tabs. Where the role is one setting among others (Draft), it is the compact `.lane-seg`
-  row of position symbols.
+  the page shows: Meta's role tabs and My Heroes' five roles, both from `roleTile` (`src/components/role-tile.ts`). A
+  tile may carry one small line under the name (My Heroes' hero count) and status dots at its top left, clear of the
+  cut corner. The tiles stay in one row; on a phone My Heroes shows the symbol and the count only. Where the role is
+  one setting among others (Draft), it is the compact `.lane-seg` row of position symbols.
 - **Rank** is always `RankRow` (`src/components/rank-row.tsx`) behind a "Rank" label: a `.lane-seg-sm` row with a text
   choice first ("All Ranks", or "Planner's Rank" in a party) and one medal per rank or rank group; the chosen medal
   shows its name. On a phone the names are left out ("All", "Planner") and the medals share the row's width. Never a

@@ -5,6 +5,7 @@ import { HeroPortrait } from "@/components/hero-frame";
 import type { KeyboardEvent } from "react";
 import { ItemButton } from "@/components/item-card";
 import { PositionIcon } from "@/components/position-icon";
+import { roleTile } from "@/components/role-tile";
 import { VerdictHead } from "@/components/verdict-head";
 import { POSITION_NAMES } from "@/lib/draft";
 import { buildPath, change, dayLabel, signed, type HeroRate, type MetaDay, type MetaExtras, type RoleHero } from "@/lib/meta";
@@ -12,9 +13,6 @@ import type { MetaHero } from "./meta-board";
 import type { ItemArt } from "./meta-hero-extras";
 
 const ROLE_PLURAL = ["carries", "mids", "offlaners", "soft supports", "hard supports"];
-
-/** The chosen role tab's frame: the Lane Cut at tile size, its edge in copper. */
-const CHOSEN_TAB = "lane-cut [--cut:12px] [--cut-radius:8px] [--cut-edge:var(--accent-deep)]";
 
 /** All Roles and the five roles as big tabs with the role symbols; arrow keys move between them. */
 export function RoleTabs({ role, onChange }: { role: number; onChange: (role: number) => void }) {
@@ -38,7 +36,7 @@ export function RoleTabs({ role, onChange }: { role: number; onChange: (role: nu
           onClick={() => onChange(p)}
           // The chosen tab takes the Lane Cut, like a chosen button of the Lane Board's segmented control. Six tiles in a
           // row are narrowest on a tablet, where less side padding keeps "Hard Support" on one line like the others.
-          className={`grid justify-items-center gap-2 rounded-lg bg-surface px-2 pb-3 pt-3.5 text-base md:max-lg:px-1 text-muted ring-1 ring-inset ring-line-strong transition-colors duration-(--dur-fast) hover:bg-hover hover:text-fg aria-selected:bg-accent-tint aria-selected:text-accent-bright aria-selected:ring-accent-deep ${role === p ? CHOSEN_TAB : ""}`}
+          className={`${roleTile(role === p)} gap-2 px-2 pb-3 pt-3.5 text-base md:max-lg:px-1`}
         >
           {p ? (
             <PositionIcon position={p} size={30} />
