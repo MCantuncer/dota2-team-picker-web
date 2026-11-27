@@ -156,11 +156,18 @@ An enemy's edge is Dire red. The components are in `components/hero-frame.tsx`:
 
 - **`HeroFace`**: a square crop of the 256x144 portrait, 20 to 64px, for rails, reason lines and chips. `isEnemy`,
   `isDim` (banned or out of play), and `isDecorative` when the name is written next to it.
+- **`HeroPortrait`**: the whole 16:9 portrait in a frame that fills its column, for lists and boards where the name
+  is written next to it (the Meta lists, matchups). `isFace` crops it to the square face when the column, not a
+  fixed size, sets how big the face is. Never draw a bare portrait with `rounded-*`.
 - **`HeroStage` with `HeroArt`**: every large hero card shows the full-body render on our stage, never the 16:9
   portrait. `HeroArt` loads the render from the Steam CDN through `next/image`, at most 720px wide so it is never
-  shown past its own pixels.
+  shown past its own pixels. In a frame whose width changes with the page, give the placement a `frameWidth` and
+  the stage `@container`: the render then scales with the frame.
 - **`CutOutline`**: an empty slot. Solid corners, dashed straight edges, in `line-control`.
 - **`LaneMark`**: the 16px section mark, in the text colour.
+
+One exception: the Meta Map keeps the game's minimap icons, because 127 dots on a chart read better as icons than
+as framed faces.
 
 ## Team Plan
 

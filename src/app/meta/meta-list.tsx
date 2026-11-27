@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { HeroPortrait } from "@/components/hero-frame";
 import { useState } from "react";
 import { PositionIcon } from "@/components/position-icon";
 import { POSITION_NAMES } from "@/lib/draft";
@@ -120,7 +120,7 @@ export function HeroList({
                 aria-pressed={selected === r.id}
                 className={`grid w-full items-center gap-x-3 gap-y-2 lg:gap-x-4 rounded-lg p-3 text-left hover:bg-hover aria-pressed:bg-accent-tint ${cols}`}
               >
-                <Image src={hero.image} alt="" width={96} height={54} className="aspect-video w-full rounded-md object-cover max-sm:row-span-3 max-sm:self-start" />
+                <HeroPortrait portrait={hero.image} size={54} className="max-sm:row-span-3 max-sm:self-start" />
                 <span className="text-base font-semibold leading-tight text-fg">{hero.name}</span>
                 <span className="hidden gap-1.5 text-muted lg:flex">
                   {r.roles.map((p) => (
