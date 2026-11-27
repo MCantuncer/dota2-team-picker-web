@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroups, buildPath, change, dayLabel, dayWeights, extrasItemIds, letterDay, HALF_LIFE_DAYS, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type MetaFile } from "./meta";
+import { banChange, banRates, buildGroups, buildPath, change, isBans, MIN_BAN_GAMES, shownRelease, dayLabel, dayWeights, extrasItemIds, letterDay, HALF_LIFE_DAYS, heroRates, isExtras, isMeta, MIN_GAMES, movers, patchDay, previousPatch, roleItems, roleLeaders, signed, sliceGames, type HeroRate, type MetaDay, type MetaExtras, type BanDay, type MetaFile } from "./meta";
 
 /** A hero's day: `games` in every rank (all in rank group 3) with `wins`. */
 const hero = (games: number, wins: number) => [games, wins, 0, 0, 0, 0, games, wins, 0, 0];
@@ -248,5 +248,63 @@ describe("roleItems", () => {
     const all = Object.fromEntries(list.map(([id]) => [id, { cost: 3000 }])) as unknown as MetaExtras["items"];
     const out = roleItems({ ...extras({ 10: { 2: { games: 100, items: list, neutral: [] } } }), items: all }, [10], 2);
     expect(out.items).toHaveLength(6);
+  });
+});
+
+/** A day of saved games: `games` in every rank (all in rank group 3) and the games each hero was banned in. */
+const banDay = (index: number, games: number, bans: Record<string, number>): BanDay => ({
+  index,
+  complete: true,
+  games: [games, 0, 0, games, 0],
+  heroes: Object.fromEntries(Object.entries(bans).map(([id, n]) => [id, [n, 0, 0, n, 0]])),
+});
+
+describe("banRates", () => {
+  const meta: MetaFile = {
+    ...META,
+    bans: {
+      days: [banDay(0, 400, { 32: 40, 1: 80 }), banDay(1, 400, { 32: 80, 1: 84 })],
+      base: [banDay(-1, 2000, { 32: 190, 1: 400 })],
+    },
+  };
+
+  it("weighs the days as the pick and win rates, with the patch before as base", () => {
+    const riki = banRates(meta, 0).get(32)!;
+    // (0.5 x 40 + 80) / (0.5 x 400 + 400): the older day counts half.
+    expect(riki.ban).toBeCloseTo(16.67, 1);
+    expect(riki.baseBan).toBeCloseTo(9.5);
+    expect(riki.games).toBe(600);
+    expect(riki.sure).toBe(true);
+    expect(banChange(riki)).toBeCloseTo(7.17, 1);
+  });
+
+  it("shows no change inside the samples' noise", () => {
+    const am = banRates(meta, 0).get(1)!;
+    expect(am.ban).toBeCloseTo(20.67, 1);
+    expect(am.sure).toBe(false);
+    expect(banChange(am)).toBeNull();
+  });
+
+  it("is empty without bans or with too few games", () => {
+    expect(banRates(META, 0).size).toBe(0);
+    expect(banRates(meta, 1).size).toBe(0);
+    const thin = { ...meta, bans: { days: [banDay(0, MIN_BAN_GAMES - 1, { 32: 30 })], base: [] } };
+    expect(banRates(thin, 0).size).toBe(0);
+  });
+
+  it("checks the shape", () => {
+    expect(isBans(meta.bans)).toBe(true);
+    expect(isBans({ days: [{ ...banDay(0, 1, {}), games: [1] }], base: [] })).toBe(false);
+    expect(isBans({ days: [] })).toBe(false);
+  });
+});
+
+describe("shownRelease", () => {
+  const release = { name: "7.42a", startedAt: "2026-11-25T08:00:00Z" };
+
+  it("names a fresh letter patch with its own day, else the patch", () => {
+    const now = new Date("2026-11-27T01:00:00Z");
+    expect(shownRelease({ ...META, computedAt: "2026-11-27T00:00:00Z", patch: { ...META.patch, release } }, now)).toEqual({ name: "7.42a", day: 2 });
+    expect(shownRelease(META, now)).toEqual({ name: "7.42", day: 9 });
   });
 });
