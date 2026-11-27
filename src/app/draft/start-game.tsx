@@ -75,7 +75,7 @@ export function DraftDone({
           <LaneStroke />
           <p className="flex flex-col items-center gap-0.5">
             <span
-              className={`num text-2xl font-semibold ${isAhead ? "text-radiant" : "text-dire"}`}
+              className={`num text-xl font-semibold ${isAhead ? "text-radiant" : "text-dire"}`}
             >
               {isAhead ? "+" : "−"}
               {Math.abs(edge).toFixed(1)}

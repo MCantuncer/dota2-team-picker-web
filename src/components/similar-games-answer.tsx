@@ -24,7 +24,7 @@ export function SimilarPreview({ view }: { view: SimilarView | null }) {
   if (!s) return <span className="text-sm text-muted">{previewWord(view)}</span>;
   return (
     <span className="flex items-center gap-3">
-      <span className="num text-[0.9375rem] text-fg">
+      <span className="num text-base text-fg">
         {s.wins} of {s.games}
       </span>
       <span className="text-sm text-muted">Won</span>
@@ -134,7 +134,7 @@ function Record({
     <div className="grid gap-x-10 gap-y-6 rounded-xl border border-line-strong bg-bg p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
       <div className="flex flex-col gap-3">
         <p className="flex items-baseline gap-2">
-          <span className={`text-5xl font-semibold tabular-nums tracking-[-0.03em] ${share >= 0.5 ? "text-radiant" : "text-dire"}`}>
+          <span className={`text-2xl font-semibold tabular-nums tracking-[-0.03em] ${share >= 0.5 ? "text-radiant" : "text-dire"}`}>
             {s.wins}
           </span>
           <span className="text-lg text-muted">of {s.games} Won</span>
@@ -142,7 +142,7 @@ function Record({
         <div className="h-2 w-full overflow-hidden rounded-xs bg-raised" aria-hidden>
           <div className={`h-full ${share >= 0.5 ? "bg-radiant" : "bg-dire"}`} style={{ width: `${Math.round(share * 100)}%` }} />
         </div>
-        <p className="text-[0.8125rem] text-subtle">
+        <p className="text-sm text-subtle">
           {name} as {role} against {s.level} or more of these enemies. Divine and up, this patch.
           {s.pending ? " More games are still being read." : ""}
         </p>
@@ -157,7 +157,7 @@ function Record({
               ) : (
                 <span className="size-11" />
               )}
-              <span className="num text-[0.9375rem] text-fg">{e.wins}</span>
+              <span className="num text-base text-fg">{e.wins}</span>
               <span className="text-xs text-muted">of {e.games}</span>
               {lane && <span className="whitespace-nowrap text-xs text-accent">Lane</span>}
             </li>
@@ -184,7 +184,7 @@ function Record({
               );
             })}
           </div>
-          <p className="text-[0.8125rem] text-subtle sm:ml-auto sm:text-right">Most of these games, wins and losses alike</p>
+          <p className="text-sm text-subtle sm:ml-auto sm:text-right">Most of these games, wins and losses alike</p>
         </div>
       )}
     </div>
@@ -217,7 +217,7 @@ function WhatWon({ summary: s, items, storageKey }: { summary: SimilarSummary; i
                   checked={ticks.includes(id)}
                   onChange={(e) => setTicks(e.target.checked ? [...ticks, id] : ticks.filter((x) => x !== id))}
                 />
-                <span className="text-[0.9375rem] font-semibold text-fg">{title}</span>
+                <span className="text-base font-semibold text-fg">{title}</span>
               </span>
               <TargetBar label={t.kind === "item" ? "With It" : t.most === 0 ? "No Deaths" : `${t.most} or Fewer`} side={t.met} strong />
               <TargetBar label={t.kind === "item" ? "Without" : `${t.most + 1} or More`} side={t.missed} />
@@ -231,7 +231,7 @@ function WhatWon({ summary: s, items, storageKey }: { summary: SimilarSummary; i
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h3 className="section-title">What Won</h3>
-        <p className="text-[0.8125rem] text-subtle">Only gaps that beat chance. Counts, not causes.</p>
+        <p className="text-sm text-subtle">Only gaps that beat chance. Counts, not causes.</p>
       </div>
       {body}
     </div>

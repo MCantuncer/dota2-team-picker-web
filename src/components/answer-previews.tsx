@@ -49,9 +49,9 @@ export function StoryPreview({ ready, race, enemyPortrait }: { ready?: number; r
   if (ready === undefined) return <span className="text-sm text-muted">No item minutes yet</span>;
   return (
     <span className="flex flex-col items-start gap-2">
-      <span className="chip chip-accent h-6 px-2.5 text-[0.8125rem] font-medium">Ready at {ready} Min</span>
+      <span className="chip chip-accent h-6 px-2.5 text-sm font-medium">Ready at {ready} Min</span>
       {race && (
-        <span className="flex items-center gap-2 text-[0.8125rem] text-muted">
+        <span className="flex items-center gap-2 text-sm text-muted">
           {enemyPortrait && <HeroFace portrait={enemyPortrait} name={race.theirs.hero} size={24} isEnemy isDecorative />}
           <span>
             {race.theirs.item} <span className="num">{minuteText(race.theirs)}</span>

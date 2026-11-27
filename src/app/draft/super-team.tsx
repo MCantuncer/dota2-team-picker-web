@@ -163,7 +163,7 @@ function WhyTile({ tile: t, hero }: { tile: Tile; hero: PlanHeroOf }) {
       <span className="flex min-w-0 flex-col gap-1">
         <span className="micro text-subtle">{t.label}</span>
         {t.value && (
-          <span className="text-3xl leading-8 font-semibold tracking-tight text-fg tabular-nums">{t.value}</span>
+          <span className="text-xl leading-8 font-semibold tracking-tight text-fg tabular-nums">{t.value}</span>
         )}
         {t.text && <span className="text-sm leading-5 font-semibold text-fg">{t.text}</span>}
         <span className="micro text-muted">{t.caption}</span>

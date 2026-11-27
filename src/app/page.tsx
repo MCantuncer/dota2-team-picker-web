@@ -68,7 +68,7 @@ export default async function Home() {
       <section className="page grid items-center gap-12 pb-12 pt-16 lg:grid-cols-[minmax(0,1fr)_25rem] lg:pt-20">
         <div className="flex flex-col">
           <span className="text-sm text-accent">Draft assistant for Dota 2</span>
-          <h1 className="mt-3 max-w-2xl text-5xl leading-[1.05] tracking-[-0.035em] sm:text-6xl">
+          <h1 className="mt-3 max-w-2xl text-2xl leading-[1.05] tracking-[-0.035em]">
             Pick the Hero This Draft Needs
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-7 text-fg/80">
@@ -122,7 +122,7 @@ function ProofTeaser({ proof }: { proof: Proof }) {
     <div className="mt-10 flex flex-wrap items-center justify-between gap-6 rounded-xl border border-line bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-center gap-5">
         <span className="grid size-20 shrink-0 place-content-center rounded-full bg-accent text-center text-on-accent">
-          <span className="text-2xl leading-none font-semibold tabular-nums">{signedPoints(lift)}</span>
+          <span className="text-xl leading-none font-semibold tabular-nums">{signedPoints(lift)}</span>
           <span className="text-xs font-semibold">Points</span>
         </span>
         <div className="grid max-w-xl gap-1">

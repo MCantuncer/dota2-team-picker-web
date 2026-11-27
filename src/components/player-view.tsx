@@ -160,11 +160,11 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
             >
               {icon ? <HeroFace portrait={icon} name={heroName(p.heroId)} size={40} isDecorative /> : null}
               <span className="flex flex-col items-start gap-0.5">
-                <span className="flex items-center gap-2 text-[0.9375rem] font-medium">
+                <span className="flex items-center gap-2 text-base font-medium">
                   {heroName(p.heroId)}
                   {mine && <span className="rounded-full bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>}
                 </span>
-                <span className="flex items-center gap-1.5 text-[0.8125rem] text-muted">
+                <span className="flex items-center gap-1.5 text-sm text-muted">
                   <PositionLabel position={p.position} size={14} iconClassName="text-subtle" />
                   {who && who !== "You" ? <span>· {who}</span> : null}
                 </span>
@@ -221,7 +221,7 @@ export function PlayerView({ players, heroName, icons, playerNames, myPosition, 
           )}
           {view === "Game Story" && (
             <div className="flex flex-col gap-10">
-              {headline && <p className="max-w-3xl text-2xl font-semibold leading-8 tracking-[-0.02em] text-fg">{headline}</p>}
+              {headline && <p className="max-w-3xl text-xl font-semibold leading-8 tracking-[-0.02em] text-fg">{headline}</p>}
               <PlayerLine player={player} onClock={player.position === myPosition} />
               {team}
             </div>

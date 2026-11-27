@@ -34,7 +34,7 @@ export function maxOrder(rows: SkillRow[], abilities?: HeroAbilities): MaxStep[]
 /** How many high-rank wins used this order, as a meter and the counts. */
 export function AgreementMeter({ agreement }: { agreement: NonNullable<SkillPlan["agreement"]> }) {
   return (
-    <span className="flex items-center gap-2.5 text-[0.8125rem] text-muted">
+    <span className="flex items-center gap-2.5 text-sm text-muted">
       <span aria-hidden className="block h-2 w-28 overflow-hidden rounded-xs bg-raised">
         <i className="block h-full bg-radiant" style={{ width: `${Math.round(agreement.share * 100)}%` }} />
       </span>

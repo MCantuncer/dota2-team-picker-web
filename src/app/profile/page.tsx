@@ -88,7 +88,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
               {profile?.rank_tier ? <RankMedal rankTier={profile.rank_tier} size={72} /> : null}
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                  <p className="text-3xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
+                  <p className="text-xl font-semibold tracking-[-0.02em] text-fg">{rank ?? "Unknown"}</p>
                   <SyncButton />
                 </div>
                 {profile?.synced_at && (

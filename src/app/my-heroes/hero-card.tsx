@@ -111,7 +111,7 @@ export function HeroCard({
   const won = numbers ? Math.round((numbers.wins / numbers.games) * 100) : 0;
   const subtitle =
     source.kind === "games" ? (
-      <span className="text-xs text-accent sm:text-xs">From Your Games · {positionName}</span>
+      <span className="text-xs text-accent">From Your Games · {positionName}</span>
     ) : source.kind === "copied" ? (
       <span className="text-xs text-muted">
         Copied from {POSITION_NAMES[source.from - 1]} · {positionName}
@@ -146,7 +146,7 @@ export function HeroCard({
           <div className="flex items-center gap-3">
             <Image src={hero.image} alt="" width={96} height={54} unoptimized className="rounded-xs max-sm:hidden" />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-lg font-semibold text-fg sm:text-[0.9375rem]">{hero.name}</span>
+              <span className="text-lg font-semibold text-fg sm:text-base">{hero.name}</span>
               {subtitle}
             </span>
             <button type="button" onClick={onClose} aria-label="Close" className="btn btn-icon -mr-2 -mt-2 self-start sm:hidden">
@@ -250,7 +250,7 @@ export function ReplaceTopCard({
                 <Image src={h.image} alt="" width={256} height={144} unoptimized className="aspect-video w-26 shrink-0 object-cover md:w-full" />
                 <span className="flex flex-1 items-center justify-between gap-2 pr-3 md:flex-col md:items-stretch md:p-2.5">
                   <span className="text-sm font-semibold leading-tight text-fg md:min-h-[2.5em]">{h.name}</span>
-                  <span className="flex h-8 items-center justify-center gap-1.5 rounded-[10px] bg-accent-tint px-3 text-[0.8125rem] font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
+                  <span className="flex h-8 items-center justify-center gap-1.5 rounded-[10px] bg-accent-tint px-3 text-sm font-semibold text-accent-bright ring-1 ring-inset ring-accent-deep">
                     <SwapIcon />
                     Replace
                   </span>

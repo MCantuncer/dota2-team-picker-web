@@ -63,7 +63,7 @@ function SpellBox({ spell, cooldown, manaCost }: { spell: ItemAbility; cooldown?
           {used ? "Active" : "Passive"}
         </span>
         <span className="sr-only">: </span>
-        <span className="mr-auto text-[1.0625rem] leading-[1.375rem] font-semibold tracking-[-0.01em] text-fg">{spell.name}</span>
+        <span className="mr-auto text-base leading-[1.375rem] font-semibold tracking-[-0.01em] text-fg">{spell.name}</span>
         <span className="flex items-center gap-3.5">
           {cooldown !== undefined && (
             <span className="num flex items-center gap-1.5 text-sm font-medium text-muted">
@@ -143,7 +143,7 @@ export function ItemParts({ itemId, items, onPick }: { itemId: number; items: Re
               {part.count > 1 && `${part.count} `}
               {part.name}
             </span>
-            <span className="num flex items-center gap-1.5 text-[0.8125rem] font-semibold text-accent-bright">
+            <span className="num flex items-center gap-1.5 text-sm font-semibold text-accent-bright">
               <Coin size="sm" />
               {part.cost.toLocaleString("en-US")}
               <span className="sr-only"> gold</span>
@@ -178,7 +178,7 @@ function PartArt({ part, onPick }: { part: RecipePart; onPick?: () => void }) {
         className="block h-11 w-15 rounded-lg object-cover shadow-[0_0_0_1px_var(--line-hover),0_0_0_4px_var(--surface)]"
       />
       {part.count > 1 && (
-        <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
+        <span className="num absolute -bottom-1 -right-2 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">
           x{part.count}
         </span>
       )}

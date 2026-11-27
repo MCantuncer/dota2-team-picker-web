@@ -253,7 +253,7 @@ function StackTitle({
           }}
           maxLength={40}
           autoFocus
-          className="field field-lg w-full max-w-md text-2xl font-semibold"
+          className="field field-lg w-full max-w-md text-xl font-semibold"
         />
         <span id="stack-name" className="sr-only">
           {stack.name}
@@ -263,7 +263,7 @@ function StackTitle({
   }
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <Heading id="stack-name" className="page-title break-words sm:text-5xl">
+      <Heading id="stack-name" className="page-title break-words">
         {name}
       </Heading>
       {canRename && (

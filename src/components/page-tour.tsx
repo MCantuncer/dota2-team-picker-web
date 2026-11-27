@@ -175,10 +175,10 @@ function TourOverlay({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
           </button>
         </div>
         <div className="flex flex-col gap-1.5" aria-live="polite">
-          <h2 id={titleId} className="text-[1.0625rem] leading-6 font-semibold text-fg">
+          <h2 id={titleId} className="text-base leading-6 font-semibold text-fg">
             {step.title}
           </h2>
-          <p className="text-[0.9375rem] leading-relaxed text-muted [&_b]:font-semibold [&_b]:text-fg">{step.tip(verb)}</p>
+          <p className="text-base leading-relaxed text-muted [&_b]:font-semibold [&_b]:text-fg">{step.tip(verb)}</p>
         </div>
         <div className="mt-1 flex justify-between gap-2">
           <button type="button" onClick={back} disabled={index === 0} className={`btn btn-secondary ${sheet ? "flex-1" : "btn-sm"}`}>

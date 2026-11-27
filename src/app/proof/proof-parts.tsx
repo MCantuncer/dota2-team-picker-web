@@ -123,7 +123,7 @@ export function LaneFrame({ lift }: { lift: Lift }) {
         />
       </svg>
       <div className="absolute top-5 left-5 grid gap-1">
-        <span className="text-3xl font-semibold tabular-nums text-accent">{percent(lift.top3.won)}</span>
+        <span className="text-xl font-semibold tabular-nums text-accent">{percent(lift.top3.won)}</span>
         <span className="text-sm text-muted">
           Took One of
           <br />
@@ -131,7 +131,7 @@ export function LaneFrame({ lift }: { lift: Lift }) {
         </span>
       </div>
       <div className="absolute right-5 bottom-5 grid gap-1 text-right">
-        <span className="text-3xl font-semibold tabular-nums text-fg">{percent(lift.other.won)}</span>
+        <span className="text-xl font-semibold tabular-nums text-fg">{percent(lift.other.won)}</span>
         <span className="text-sm text-muted">
           Took Any
           <br />
@@ -139,7 +139,7 @@ export function LaneFrame({ lift }: { lift: Lift }) {
         </span>
       </div>
       <figcaption className="absolute top-1/2 left-1/2 grid size-24 -translate-1/2 place-content-center rounded-full bg-accent text-center text-on-accent shadow-[0_0_0_6px_var(--bg)]">
-        <span className="text-[1.75rem] leading-none font-semibold tabular-nums">
+        <span className="text-xl leading-none font-semibold tabular-nums">
           {lift.lift === null ? "n/a" : signedPoints(lift.lift)}
         </span>
         <span className="text-xs font-semibold">Points</span>
@@ -338,7 +338,7 @@ function LiftTile({
       ) : (
         <>
           <span
-            className={`text-[1.625rem] leading-none font-semibold tabular-nums ${isAccent ? "text-accent" : "text-fg"} ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}
+            className={`text-xl leading-none font-semibold tabular-nums ${isAccent ? "text-accent" : "text-fg"} ${row ? "justify-self-end min-[52rem]:justify-self-start" : ""}`}
           >
             {signedPoints(lift.lift)}
           </span>
@@ -529,7 +529,7 @@ export function GameRows({ examples, heroes }: { examples: ProofExample[]; heroe
             ) : (
               <span className="aspect-video w-full rounded-md border border-dashed border-line-hover [grid-area:art]" />
             )}
-            <span className="self-end text-xl font-semibold [grid-area:name]">{hero?.name ?? "Unknown Hero"}</span>
+            <span className="self-end text-lg font-semibold [grid-area:name]">{hero?.name ?? "Unknown Hero"}</span>
             <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 self-start text-sm text-muted [grid-area:meta]">
               <PositionLabel position={g.position} size={20} className="gap-2" />
               {g.rankTier ? <RankMedal rankTier={g.rankTier} size={40} /> : null}

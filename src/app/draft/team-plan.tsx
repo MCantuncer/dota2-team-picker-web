@@ -493,7 +493,7 @@ export function AnotherSuperTeam({
               Another Super Team
             </h3>
             <span className="flex items-baseline gap-1.5">
-              <span className="text-xl leading-7 font-semibold tracking-tight text-fg tabular-nums">
+              <span className="text-lg leading-7 font-semibold tracking-tight text-fg tabular-nums">
                 {signed(-team.behind)}
               </span>
               <span className="micro text-subtle">Points Behind</span>

@@ -275,7 +275,7 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
   return (
     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
       <span
-        className={`font-semibold tracking-tight text-fg tabular-nums ${isLarge ? "text-[2rem] leading-9" : "text-[1.625rem] leading-8"}`}
+        className={`font-semibold tracking-tight text-fg tabular-nums ${isLarge ? "text-2xl leading-10" : "text-xl leading-8"}`}
         title="How much the hero helps in this draft, in points of win rate from the match data"
       >
         {signed(s.score)}
@@ -300,7 +300,7 @@ function VerdictBlock({ verdict, leader, ctx, isQuiet }: { verdict: Verdict; lea
   const line = verdictLine(verdict, leader, ctx.heroes);
   return (
     <div className="flex flex-col gap-3">
-      <p className={isQuiet ? "text-sm leading-6 text-muted" : "text-[0.9375rem] leading-6 text-fg"}>
+      <p className={isQuiet ? "text-sm leading-6 text-muted" : "text-base leading-6 text-fg"}>
         {line.lead && <span className="font-semibold text-fg tabular-nums">{line.lead}</span>}{" "}
         <FacedText text={line.text} heroes={line.heroes} hero={ctx.hero} enemies={ctx.enemies} />
       </p>
@@ -684,7 +684,7 @@ export function PickCard({
                 {rank}
               </span>
             )}
-            <h3 id={nameId} data-hero-name className="min-w-0 flex-1 text-xl leading-7 font-semibold tracking-tight break-words text-fg">
+            <h3 id={nameId} data-hero-name className="min-w-0 flex-1 text-lg leading-7 font-semibold tracking-tight break-words text-fg">
               {s.name}
             </h3>
             <button
@@ -849,7 +849,7 @@ export function BestCard({
             )}
             <PickChips move={entry.move} isWeak={entry.isWeak} risk={entry.risk} hero={ctx.hero} outside={played} />
           </span>
-          <h3 id={nameId} data-hero-name className="text-[1.75rem] leading-8 font-semibold tracking-tight break-words text-fg">
+          <h3 id={nameId} data-hero-name className="text-xl leading-8 font-semibold tracking-tight break-words text-fg">
             {s.name}
           </h3>
           <span className="flex items-center gap-2.5">

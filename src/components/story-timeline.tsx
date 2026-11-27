@@ -96,7 +96,7 @@ export function StoryTimeline({ story, heroIcons, items, checkpoint }: StoryTime
           {checkpoint && flag !== undefined && (
             <div className="absolute bottom-0 top-[7.25rem] w-0 border-l border-dashed border-warn" style={{ left: `${flag}%` }}>
               <span className={`absolute bottom-0 flex w-60 flex-col gap-1 ${flag > 70 ? "right-2 items-end text-right" : "left-2 items-start"}`}>
-                <span className="chip h-6 whitespace-nowrap bg-warn-tint px-2 text-[0.8125rem] font-medium text-warn shadow-none">{checkpoint.question}</span>
+                <span className="chip h-6 whitespace-nowrap bg-warn-tint px-2 text-sm font-medium text-warn shadow-none">{checkpoint.question}</span>
                 <span className="whitespace-normal text-xs leading-snug text-muted">{checkpoint.answer}</span>
               </span>
             </div>

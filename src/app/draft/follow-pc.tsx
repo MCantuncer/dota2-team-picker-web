@@ -75,7 +75,7 @@ export function FollowPcPanel({
           <Icon name="monitor" large />
         </span>
         <span className="flex flex-col gap-1">
-          <h2 id="follow-pc-title" className="text-xl font-semibold">
+          <h2 id="follow-pc-title" className="text-lg font-semibold">
             Fill Picks from Your PC
           </h2>
           <span className="leading-relaxed text-muted">Picks and bans land here by themselves while you draft.</span>

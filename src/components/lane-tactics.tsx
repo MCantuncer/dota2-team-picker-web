@@ -102,7 +102,7 @@ export function LaneTactics({ pairs, heroName, icons, note, level = 4, title = "
             <article key={`${pair.enemy}-${t.rule}`} className="flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4">
               <TacticIcons spells={t.spells.slice(0, 1)} size={32} face={{ portrait: icons[pair.enemy], name: heroName(pair.enemy) }} />
               <div className="flex min-w-0 flex-col gap-1">
-                <h5 className="text-[0.9375rem] font-semibold text-fg">{t.title}</h5>
+                <h5 className="text-base font-semibold text-fg">{t.title}</h5>
                 <TacticText tactic={t} />
               </div>
             </article>
@@ -131,7 +131,7 @@ export function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
       <div className="flex min-w-0 items-start gap-3.5">
         <span className="num flex size-10 shrink-0 items-center justify-center rounded-lg bg-radiant-tint text-base font-semibold text-radiant">{visual.target}</span>
         <div className="flex min-w-0 flex-col gap-1">
-          <h5 className="text-[0.9375rem] font-semibold text-fg">{tactic.title}</h5>
+          <h5 className="text-base font-semibold text-fg">{tactic.title}</h5>
           <TacticText tactic={tactic} />
         </div>
       </div>
@@ -141,7 +141,7 @@ export function LastHitTarget({ tactic }: { tactic: LaneTactic }) {
             <i key={m.key} className="absolute -top-[5px] block h-5 w-[3px] -translate-x-1/2 rounded-sm" style={{ left: at(m.value), background: m.color }} />
           ))}
         </div>
-        <figcaption className="flex flex-col gap-1 text-[0.8125rem] text-muted sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-4">
+        <figcaption className="flex flex-col gap-1 text-sm text-muted sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-4">
           {marks.map((m) => (
             <span key={m.key} className="flex items-center gap-2">
               <i className="block size-2.5 rounded-full" style={{ background: m.color }} />
@@ -232,8 +232,8 @@ function KillLine({ health, total, parts }: Extract<TacticVisual, { kind: "killL
   const lethal = total >= health;
   return (
     <figure className="flex flex-col gap-2.5">
-      <figcaption className="text-[0.8125rem] text-muted">
-        <span className="num mr-1.5 text-[1.75rem] font-semibold leading-none tracking-[-0.01em] text-dire">{total}</span>
+      <figcaption className="text-sm text-muted">
+        <span className="num mr-1.5 text-xl font-semibold leading-none tracking-[-0.01em] text-dire">{total}</span>
         {lethal ? `kills your ${health} HP` : `of your ${health} HP`}
       </figcaption>
       <div role="img" aria-label={`The combo deals ${total} of your ${health} HP`} className="relative h-[1.375rem] overflow-hidden rounded-md" style={{ background: "color-mix(in srgb, var(--radiant) 70%, var(--raised))" }}>
@@ -291,7 +291,7 @@ function TradeBudget({ hit, hits, heal, casts }: Extract<TacticVisual, { kind: "
   const scale = Math.max(hit * hits, heal);
   const w = (n: number) => `${(n / scale) * 70}%`;
   return (
-    <figure role="img" aria-label={`${hits} enemy hits cost ${hit * hits}, one cast heals ${heal}, mana for ${casts} casts`} className="flex flex-col gap-2.5 text-[0.8125rem] text-muted">
+    <figure role="img" aria-label={`${hits} enemy hits cost ${hit * hits}, one cast heals ${heal}, mana for ${casts} casts`} className="flex flex-col gap-2.5 text-sm text-muted">
       <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-2.5">
         <span>Enemy Hits</span>
         <span className="flex items-center gap-1">
@@ -338,7 +338,7 @@ function SplitSketch({ width, spell, summon }: Extract<TacticVisual, { kind: "sp
           {width}
         </text>
       </svg>
-      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-[0.8125rem] text-muted">
+      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
         <span className="flex items-center gap-2">
           <i className="block size-2.5 rounded-full bg-radiant" />
           You
@@ -376,7 +376,7 @@ function LineSketch({ width, spell, blocked }: Extract<TacticVisual, { kind: "li
         ))}
         <circle cx={blocked ? 246 : 232} cy={blocked ? 48 : 96} r="11" fill="var(--radiant)" />
       </svg>
-      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-[0.8125rem] text-muted">
+      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
         <span className="flex items-center gap-2">
           <i className="block size-2.5 rounded-full bg-radiant" />
           {blocked ? "You, behind your creeps" : "You, out of the line"}

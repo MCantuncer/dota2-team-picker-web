@@ -52,7 +52,7 @@ export function FirstTenMinutes({ lanes, player, heroName, icons, abilities }: A
     <section aria-labelledby="first-ten-title" className="flex flex-col gap-8 rounded-xl border border-line bg-surface p-4 sm:p-7">
       <div className="grid items-center gap-x-5 gap-y-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5">
-          <h3 id="first-ten-title" className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">
+          <h3 id="first-ten-title" className="text-lg font-semibold tracking-[-0.02em] text-fg">
             First 10 Minutes
           </h3>
           <span className="flex items-center gap-2 text-sm text-muted">
@@ -88,11 +88,11 @@ export function FirstTenMinutes({ lanes, player, heroName, icons, abilities }: A
       <div className="grid grid-cols-2 items-center gap-x-7 gap-y-5 md:grid-cols-[10.5rem_minmax(0,1fr)_10.5rem]">
         <Versus heroId={player.heroId} position={player.position} side="ours" heroName={heroName} icons={icons} />
         <div className="col-span-full row-start-2 flex min-w-0 flex-col gap-3 md:col-span-1 md:col-start-2 md:row-start-1">
-          <span className={`chip h-6 justify-self-start self-start px-2.5 text-[0.8125rem] font-medium shadow-none md:self-center ${VERDICT_CHIPS[lane.verdict]}`}>
+          <span className={`chip h-6 justify-self-start self-start px-2.5 text-sm font-medium shadow-none md:self-center ${VERDICT_CHIPS[lane.verdict]}`}>
             Lane: {VERDICT_WORDS[lane.verdict]}
           </span>
           {pair ? <PairBar pair={pair} heroName={heroName} /> : <p className="text-sm text-muted">{lane.text}</p>}
-          {pair && <span className="text-[0.8125rem] text-subtle">{pair.allRanks ? "Lane results from all ranks" : "Lane results at your rank"}</span>}
+          {pair && <span className="text-sm text-subtle">{pair.allRanks ? "Lane results from all ranks" : "Lane results at your rank"}</span>}
         </div>
         {enemy !== undefined ? (
           <Versus heroId={enemy} position={positionOf(enemy)} side="theirs" heroName={heroName} icons={icons} />
@@ -190,7 +190,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
         {icons[hero] && <HeroFace portrait={icons[hero]} name={name} size={32} isEnemy={enemy} isDecorative />}
         <b className="text-base font-semibold text-fg">{name}</b>
         {enemy ? (
-          <span className="text-[0.8125rem] text-muted">Enemy</span>
+          <span className="text-sm text-muted">Enemy</span>
         ) : (
           <span className="rounded-full bg-radiant px-1.5 text-xs font-semibold leading-4 text-bg">You</span>
         )}
@@ -206,7 +206,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
           <div className="flex items-center gap-3.5">
             <ItemIcon item={core} enemy={enemy} heroName={heroName} icons={icons} />
             <span className={`text-sm ${enemy ? "text-dire" : "text-muted"}`}>
-              <b className={`num text-[1.375rem] font-semibold tracking-[-0.02em] ${enemy ? "" : "text-fg"}`}>{core.minute}</b> min
+              <b className={`num text-lg font-semibold tracking-[-0.02em] ${enemy ? "" : "text-fg"}`}>{core.minute}</b> min
             </span>
           </div>
         ) : (
@@ -214,7 +214,7 @@ function LoadoutCard({ loadout, changed, span, heroName, icons }: Art & { loadou
         )}
       </Row>
       {why && (
-        <p className="col-span-full flex items-center gap-2.5 border-t border-line pt-4 text-[0.8125rem] text-muted">
+        <p className="col-span-full flex items-center gap-2.5 border-t border-line pt-4 text-sm text-muted">
           {foe !== undefined && icons[foe] ? (
             <HeroFace portrait={icons[foe]} name={heroName(foe)} size={20} isEnemy isDecorative />
           ) : (
@@ -320,7 +320,7 @@ function ItemIcon({ item, enemy, heroName, icons }: Art & { item: Item; enemy: b
             <Image src={ITEM_CDN + item.img} alt="" width={64} height={47} className="block size-full object-cover" />
           </span>
           {item.count && (
-            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
           )}
           {foe !== undefined && icons[foe] && (
             <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--raised)]">
@@ -361,7 +361,7 @@ function FirstSkills({ levels, agreement }: { levels: ReturnType<typeof firstLev
         ))}
       </ol>
       {agreement && (
-        <p className="text-[0.8125rem] text-muted lg:justify-self-end lg:text-right">
+        <p className="text-sm text-muted lg:justify-self-end lg:text-right">
           <b className="num text-lg font-semibold text-fg">{agreement.wins.toLocaleString("en-US")}</b> of <span className="num">{agreement.of.toLocaleString("en-US")}</span>{" "}
           high-rank wins this patch used this order
         </p>
@@ -381,7 +381,7 @@ function OtherLanes({ lanes, mine, heroName, icons }: Art & { lanes: LanePlan[];
         {others.map((l) => (
           <li key={l.name} className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg bg-bg px-3 py-2.5">
             <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="w-16 text-[0.8125rem] text-muted">{LANE_TITLES[l.name] ?? l.name}</span>
+              <span className="w-18 text-sm whitespace-nowrap text-muted">{LANE_TITLES[l.name] ?? l.name}</span>
               <span className="flex items-center gap-1 text-xs text-subtle">
                 {l.ours.map((id) => (icons[id] ? <HeroFace key={id} portrait={icons[id]} name={heroName(id)} size={26} /> : null))}
                 <span className="px-1">vs</span>

@@ -33,7 +33,7 @@ export function SiteHeader() {
         <Link href="/" className="flex items-center gap-3 rounded-md pr-6 sm:border-r sm:border-line" aria-label="Dota2 Team Picker home">
           <LogoMark className="h-8 w-8" />
           <span className="flex flex-col leading-none">
-            <span className="text-[1.0625rem] font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
+            <span className="text-base font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
             <span className="mt-1 text-xs text-subtle">for Dota 2</span>
           </span>
         </Link>

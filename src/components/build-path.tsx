@@ -93,7 +93,7 @@ export function BuildPath({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <h3 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">Build Path</h3>
+        <h3 className="text-lg font-semibold tracking-[-0.02em] text-fg">Build Path</h3>
         <span className="text-sm text-muted">{rough ? "Rough minutes from all games" : note}</span>
       </div>
 
@@ -132,12 +132,12 @@ export function BuildPath({
                   style={at}
                   className="relative grid grid-cols-[4rem_2.5rem_minmax(0,1fr)] items-center gap-x-3.5 md:row-start-1 md:flex md:flex-col md:items-center md:gap-1.5 md:px-1 md:text-center md:after:absolute md:after:inset-x-0 md:after:bottom-[0.3125rem] md:after:h-0.5 md:after:bg-line-hover"
                 >
-                  <span className="num col-start-2 row-span-2 row-start-1 text-xl font-semibold leading-none tracking-[-0.02em] text-fg md:order-1 md:text-[1.375rem]">
+                  <span className="num col-start-2 row-span-2 row-start-1 text-lg font-semibold leading-none tracking-[-0.02em] text-fg md:order-1">
                     {rough ? "~" : ""}
                     {item.minute}
                   </span>
                   <ItemTile item={item} card={cardOf(stop)} heroName={heroName} icons={icons} className="col-start-1 row-span-2 row-start-1 md:order-2" />
-                  <span className="col-start-3 row-start-1 self-end text-[0.8125rem] font-medium leading-tight text-fg md:order-3 md:min-h-[2.125rem] md:self-auto">{item.name}</span>
+                  <span className="col-start-3 row-start-1 self-end text-sm font-medium leading-tight text-fg md:order-3 md:min-h-9 md:self-auto">{item.name}</span>
                   <span className="col-start-3 row-start-2 flex flex-col self-start text-xs leading-tight md:order-4 md:mb-2 md:min-h-[1.125rem] md:items-center md:self-auto">
                     {!rough && late !== undefined && <span className="text-warn">Late After {late}</span>}
                     {fork && (
@@ -219,7 +219,7 @@ function ItemTile({ item, card, heroName, icons, className = "" }: Art & { item:
         <>
           <ItemArt item={item} className={`h-[2.9375rem] w-16 ${open ? "shadow-[0_0_0_2px_var(--accent)]" : "shadow-[inset_0_0_0_1px_var(--line-strong)]"}`} />
           {item.count && (
-            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-[0.6875rem] font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
+            <span className="num absolute -right-1 bottom-0.5 rounded-xs bg-bg px-1 text-xs font-semibold leading-4 text-fg shadow-[0_0_0_1px_var(--line-hover)]">x{item.count}</span>
           )}
           {foe !== undefined && icons[foe] && (
             <span className="absolute -left-1.5 -top-1.5 rounded-[0.3125rem] shadow-[0_0_0_2px_var(--bg)]">

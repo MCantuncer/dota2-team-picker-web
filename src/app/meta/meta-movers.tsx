@@ -47,8 +47,8 @@ export function MoverRows({
               <button type="button" onClick={() => onSelect(h.id)} aria-label={`${hero.name}: ${before.toFixed(1)}% to ${now.toFixed(1)}%, ${signed(delta)} points. Open ${hero.name}`} className={`${grid} w-full rounded-lg p-1 text-left hover:bg-hover`}>
                 <Image src={hero.image} alt="" width={80} height={45} className="aspect-video w-full rounded-md object-cover" />
                 <span className="grid leading-tight">
-                  <span className="text-[0.9375rem] text-fg">{hero.name}</span>
-                  <span className="text-[0.8125rem] tabular-nums text-subtle">
+                  <span className="text-base text-fg">{hero.name}</span>
+                  <span className="text-sm tabular-nums text-subtle">
                     {before.toFixed(1)}% to {now.toFixed(1)}%
                   </span>
                 </span>

@@ -13,17 +13,17 @@ export function RecordStrip({ record, hero }: { record: PlayerRecord; hero: Hero
   return (
     <dl data-tour="your-games-numbers" className="grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
       <Tile label="Games">
-        <dd className="num text-2xl font-semibold text-fg">{record.games}</dd>
+        <dd className="num text-xl font-semibold text-fg">{record.games}</dd>
         <dd className="text-xs text-subtle">{range}</dd>
       </Tile>
       <Tile label="Won">
-        <dd className={`num text-2xl font-semibold ${won >= 50 ? "text-radiant" : "text-dire"}`}>{won}%</dd>
+        <dd className={`num text-xl font-semibold ${won >= 50 ? "text-radiant" : "text-dire"}`}>{won}%</dd>
         <dd className="h-1 overflow-hidden rounded-full bg-line-strong">
           <div className={`h-1 ${won >= 50 ? "bg-radiant" : "bg-dire"}`} style={{ width: `${won}%` }} />
         </dd>
       </Tile>
       <Tile label="Fully Read">
-        <dd className="num text-2xl font-semibold text-fg">
+        <dd className="num text-xl font-semibold text-fg">
           {record.parsed} <span className="text-base font-medium text-subtle">of {record.games}</span>
         </dd>
         <dd className="text-xs text-subtle">Parsed by OpenDota</dd>

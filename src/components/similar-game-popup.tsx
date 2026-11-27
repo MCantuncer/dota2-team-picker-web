@@ -59,11 +59,11 @@ export function GamePopup({ game: g, hero, enemies, allies, heroName, icons, ite
             <span className="text-lg font-semibold">{heroName(hero)}</span>
             <span className="flex items-center gap-3">
               <span
-                className={`chip h-6 px-2 text-[0.8125rem] font-medium shadow-none ${g.won ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"}`}
+                className={`chip h-6 px-2 text-sm font-medium shadow-none ${g.won ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"}`}
               >
                 {g.won ? "Won" : "Lost"}
               </span>
-              <span className="num text-[0.9375rem]">{minutes(g.duration)} Min</span>
+              <span className="num text-base">{minutes(g.duration)} Min</span>
             </span>
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-2">
@@ -86,15 +86,15 @@ export function GamePopup({ game: g, hero, enemies, allies, heroName, icons, ite
           </span>
         </header>
         <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-2">
-          <span className="text-[0.8125rem] text-muted">Enemy</span>
+          <span className="text-sm text-muted">Enemy</span>
           <Faces seats={g.enemies} lit={enemies} isEnemy heroName={heroName} icons={icons} size={36} />
-          <span className="text-[0.8125rem] text-muted">With</span>
+          <span className="text-sm text-muted">With</span>
           <Faces seats={g.allies.filter((s) => s.hero !== hero)} lit={allies} heroName={heroName} icons={icons} size={36} />
         </div>
         <dl className={`grid grid-cols-2 gap-3 ${facts.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
           {facts.map(([value, label]) => (
             <div key={label} className="flex flex-col-reverse gap-1 rounded-lg bg-raised px-3 py-2.5">
-              <dt className="text-[0.8125rem] text-muted">{label}</dt>
+              <dt className="text-sm text-muted">{label}</dt>
               <dd className="text-lg font-semibold tabular-nums">{value}</dd>
             </div>
           ))}
@@ -163,7 +163,7 @@ function MinuteLine({
   const ROW = 3.5; // rem a row of items takes
   return (
     <section aria-label="The game, minute by minute" className="flex flex-col gap-3">
-      <h3 className="text-[0.9375rem] font-semibold">The Game, Minute by Minute</h3>
+      <h3 className="text-base font-semibold">The Game, Minute by Minute</h3>
       <div ref={line} className="px-6">
         <div className="relative" style={{ height: `${rows(buys) * ROW}rem` }}>
           {buys.map((b) => (
@@ -180,7 +180,7 @@ function MinuteLine({
                 height={28}
                 className="h-7 w-9.75 rounded-sm object-cover"
               />
-              <span className="num text-[0.6875rem] text-muted">{minutes(b.at)}</span>
+              <span className="num text-xs text-muted">{minutes(b.at)}</span>
             </span>
           ))}
         </div>
@@ -188,7 +188,7 @@ function MinuteLine({
           {ticks.map((t) => (
             <span
               key={t}
-              className="absolute top-1 -translate-x-1/2 text-[0.6875rem] text-subtle"
+              className="absolute top-1 -translate-x-1/2 text-xs text-subtle"
               style={{ left: `${position(t * 60, g.duration)}%` }}
             >
               {t}
@@ -212,7 +212,7 @@ function MinuteLine({
           ))}
         </div>
       </div>
-      <p className="text-[0.8125rem] text-subtle">Items above the line, deaths below with who killed him.</p>
+      <p className="text-sm text-subtle">Items above the line, deaths below with who killed him.</p>
     </section>
   );
 }

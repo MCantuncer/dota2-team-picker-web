@@ -26,7 +26,7 @@ export function NeutralItems({ tiers, hero, position }: { tiers: NeutralPlanTier
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <h3 className="text-[1.375rem] font-semibold tracking-[-0.02em] text-fg">Neutral Items</h3>
+        <h3 className="text-lg font-semibold tracking-[-0.02em] text-fg">Neutral Items</h3>
         <span className="text-sm text-muted">Most chosen first, when the craft offers it</span>
       </div>
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -50,7 +50,7 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
           </span>
         </span>
         <span className="flex flex-col items-end leading-tight">
-          <span className="num text-xl font-semibold tracking-[-0.02em] text-fg">{tier.usual ? tier.usual.minute : tier.unlock}</span>
+          <span className="num text-lg font-semibold tracking-[-0.02em] text-fg">{tier.usual ? tier.usual.minute : tier.unlock}</span>
           <span className="text-xs text-subtle">{tier.usual ? "Usual Minute" : "Earliest Minute"}</span>
         </span>
       </div>
@@ -61,7 +61,7 @@ function TierCard({ tier, hero, position }: { tier: NeutralPlanTier; hero: strin
             <li key={a.itemId} className="grid grid-cols-[3.25rem_minmax(0,1fr)_2.75rem] items-center gap-x-3">
               <Art option={a} band={<ItemBand facts={[{ value: `${a.share}%`, label: `of ${from}` }]} />} />
               <span className="grid gap-1.5">
-                <span className="text-[0.9375rem] font-semibold leading-tight text-fg">{a.name}</span>
+                <span className="text-base font-semibold leading-tight text-fg">{a.name}</span>
                 <span className="relative h-1.5 rounded-full bg-line-strong">
                   <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${a.share}%` }} />
                 </span>

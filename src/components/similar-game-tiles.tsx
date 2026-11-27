@@ -32,7 +32,7 @@ export function ClosestGames({ games, hero, enemies, allies, heroName, icons, it
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h3 className="section-title">Closest Games</h3>
-        <p className="text-[0.8125rem] text-subtle">The two closest wins and the closest loss</p>
+        <p className="text-sm text-subtle">The two closest wins and the closest loss</p>
       </div>
       <ul className={`grid gap-3 ${games.length === 3 ? "lg:grid-cols-3" : games.length === 2 ? "md:grid-cols-2" : "max-w-md"}`}>
         {games.map((g) => (
@@ -56,14 +56,14 @@ function GameTile({ game: g, hero, enemies, allies, heroName, icons, items }: Om
     >
       <span className="flex items-center gap-3">
         <span
-          className={`chip h-6 px-2 text-[0.8125rem] font-medium shadow-none ${g.won ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"}`}
+          className={`chip h-6 px-2 text-sm font-medium shadow-none ${g.won ? "bg-radiant-tint text-radiant" : "bg-dire-tint text-dire"}`}
         >
           {g.won ? "Won" : "Lost"}
         </span>
-        <span className="num text-[0.9375rem] text-fg">{minutes(g.duration)} Min</span>
-        <span className="ml-auto text-[0.8125rem] text-muted">{g.sharedEnemies} of 5 Enemies</span>
+        <span className="num text-base text-fg">{minutes(g.duration)} Min</span>
+        <span className="ml-auto text-sm text-muted">{g.sharedEnemies} of 5 Enemies</span>
       </span>
-      <p className="text-2xl font-semibold tabular-nums tracking-[-0.02em] text-fg">
+      <p className="text-xl font-semibold tabular-nums tracking-[-0.02em] text-fg">
         {g.kills}
         <span className="text-subtle"> / </span>
         <span className="text-dire">{g.deaths}</span>
@@ -71,9 +71,9 @@ function GameTile({ game: g, hero, enemies, allies, heroName, icons, items }: Om
         {g.assists}
       </p>
       <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2">
-        <span className="text-[0.8125rem] text-muted">Enemy</span>
+        <span className="text-sm text-muted">Enemy</span>
         <Faces seats={g.enemies} lit={enemies} isEnemy heroName={heroName} icons={icons} />
-        <span className="text-[0.8125rem] text-muted">With</span>
+        <span className="text-sm text-muted">With</span>
         <Faces seats={g.allies.filter((s) => s.hero !== hero)} lit={allies} heroName={heroName} icons={icons} />
       </div>
       {bought.length > 0 && (

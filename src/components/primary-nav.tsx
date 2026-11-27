@@ -44,7 +44,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-[0.9375rem] transition-colors ${
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-base transition-colors ${
                   active ? "bg-raised text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >

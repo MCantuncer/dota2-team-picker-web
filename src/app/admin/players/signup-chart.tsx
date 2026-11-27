@@ -52,7 +52,7 @@ export function SignupStrip({ stats }: { stats: SignupStats }) {
           className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 border-line px-5 py-4 not-first:border-t sm:flex-col sm:items-start sm:justify-start sm:gap-1 sm:px-6 sm:py-5 sm:not-first:border-l sm:not-first:border-t-0"
         >
           <dt className="text-sm font-medium text-muted">{c.label}</dt>
-          <dd className={`num order-none text-3xl leading-tight tracking-tight sm:text-4xl ${c.lead ? "text-accent" : "text-fg"}`}>{c.value}</dd>
+          <dd className={`num order-none text-xl leading-tight tracking-tight sm:text-2xl ${c.lead ? "text-accent" : "text-fg"}`}>{c.value}</dd>
           <dd className="w-full text-xs text-subtle">{c.detail}</dd>
         </div>
       ))}
