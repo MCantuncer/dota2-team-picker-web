@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { HeroPortrait } from "@/components/hero-frame";
 import { Icon } from "@/components/icon";
 import { NextSkillShowcase, type SkillChoice } from "@/components/next-skill-showcase";
 import { SteamButton } from "@/components/steam-button";
@@ -156,7 +156,7 @@ function DraftPreview({ byId }: { byId: Map<number, Hero> }) {
           return (
             <li key={s.id} className="grid grid-cols-[4rem_minmax(0,1fr)_2.75rem] items-center gap-3 border-t border-line py-2.5">
               {h ? (
-                <Image src={h.image} alt="" width={64} height={36} className="h-9 w-16 rounded-md object-cover" />
+                <HeroPortrait portrait={h.image} size={64} />
               ) : (
                 <span className="h-9 w-16 rounded-md bg-raised" />
               )}
