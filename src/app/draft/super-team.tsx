@@ -166,7 +166,7 @@ function WhyTile({ tile: t, hero }: { tile: Tile; hero: PlanHeroOf }) {
           <span className="text-xl leading-8 font-semibold tracking-tight text-fg tabular-nums">{t.value}</span>
         )}
         {t.text && <span className="text-sm leading-5 font-semibold text-fg">{t.text}</span>}
-        <span className="micro text-muted">{t.caption}</span>
+        <span className="text-sm text-muted">{t.caption}</span>
       </span>
     </li>
   );

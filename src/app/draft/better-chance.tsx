@@ -146,7 +146,7 @@ export function BetterChance({ now, plan: planIn, picked, side, range = null, ra
         )}
 
         <div className="flex flex-col gap-2">
-          <div className="micro flex items-center justify-between font-semibold">
+          <div className="flex items-center justify-between text-sm font-semibold">
             <span data-testid="chance-left" className={`flex items-center gap-1.5 ${text[left]}`}>
               <span className={`size-2 rounded-xs ${dot[left]}`} />
               {label(left)}

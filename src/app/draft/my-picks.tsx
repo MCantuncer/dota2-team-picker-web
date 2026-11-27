@@ -280,7 +280,7 @@ function Score({ s, gain, position, isLarge }: { s: Suggestion; gain: number | n
       >
         {signed(s.score)}
       </span>
-      <span className="micro text-muted">Points</span>
+      <span className="text-sm text-muted">Points</span>
       {s.place.rank > 0 && (
         <span className="micro text-subtle">
           {ordinal(s.place.rank)} of {s.place.of} {ROLES[position]}
@@ -525,7 +525,7 @@ export function ScoreParts({
       {parts.map((p) => {
         const row = (
           <>
-            <span className="micro text-muted">{p.name}</span>
+            <span className="text-sm text-muted">{p.name}</span>
             <span className="relative h-1.5 rounded-xs bg-raised" aria-hidden>
               <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-line-control" />
               <span
@@ -888,7 +888,7 @@ export function BestCard({
             ).map(([v, l]) => (
               <span key={l} className="flex flex-col gap-0.5 rounded-lg bg-raised px-3 py-2">
                 <span className="text-lg leading-6 font-semibold tracking-tight text-fg tabular-nums">{signed(v)}</span>
-                <span className="micro text-muted">{l}</span>
+                <span className="text-sm text-muted">{l}</span>
               </span>
             ))}
           </div>

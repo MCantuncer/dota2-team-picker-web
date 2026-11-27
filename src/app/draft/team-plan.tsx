@@ -83,11 +83,14 @@ export function FacedText({
   heroes,
   hero,
   enemies,
+  isStacked = false,
 }: {
   text: string;
   heroes: readonly number[];
   hero: PlanHeroOf;
   enemies: ReadonlySet<number>;
+  /** In a narrow column (a pick tile from 640px) each hero takes a line of its own, flush with the text. */
+  isStacked?: boolean;
 }) {
   const parts: ReactNode[] = [];
   let rest = text;
@@ -98,7 +101,10 @@ export function FacedText({
     parts.push(minus(rest.slice(0, at)));
     const tail = /^[:,.)]/.exec(rest.slice(at + name.length))?.[0] ?? "";
     parts.push(
-      <span key={`${id}-${i}`} className="mx-1 inline-flex max-w-full items-center gap-2 align-[-5px] whitespace-nowrap">
+      <span
+        key={`${id}-${i}`}
+        className={`inline-flex max-w-full items-center gap-2 align-[-5px] whitespace-nowrap ${isStacked ? "max-sm:mx-1 sm:flex" : "mx-1"}`}
+      >
         <Face id={id} hero={hero} isEnemy={enemies.has(id)} />
         {/* In a narrow tile a long name wraps beside its face instead of running past the edge. */}
         <span className="min-w-0 whitespace-normal">
@@ -498,7 +504,7 @@ export function AnotherSuperTeam({
               </span>
               <span className="micro text-subtle">Points Behind</span>
             </span>
-            <span className="micro text-muted">{why ? minus(capitalize(why)) : minus(team.verdict)}</span>
+            <span className="text-sm text-muted">{why ? minus(capitalize(why)) : minus(team.verdict)}</span>
           </div>
           {differ.length > 0 && (
             <ul aria-label="Heroes That Differ" className="flex min-w-0 flex-wrap items-start gap-2 max-md:w-full">
