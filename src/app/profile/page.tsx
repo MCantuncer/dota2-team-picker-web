@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHeroes } from "@/lib/heroes";
 import { Icon } from "@/components/icon";
+import { PageStage } from "@/components/page-stage";
 import { PageTour } from "@/components/page-tour";
 import { RankMedal } from "@/components/rank-medal";
 import { heroInsights, type HeroSort, readPeriod, recordFor } from "@/lib/hero-insights";
+import { profileVerdict } from "@/lib/profile-verdict";
 import { rankName } from "@/lib/rank";
 import { FORM_GAMES, positionsLately, recentForm } from "@/lib/recent-form";
 import { createClient } from "@/lib/supabase/server";
@@ -61,22 +63,27 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   // Unknown when the pool failed to load: then the card makes no claim about it.
   const poolPositions = pool.error ? null : new Set((pool.data ?? []).map((f) => f.position));
 
+  // The finding is for the chosen period, like Your Heroes below. Without Steam there are no games to read.
+  const verdict = isSteam ? profileVerdict(insights, period, record !== undefined, (id) => heroById.get(id)?.name) : null;
+  const facts = [rank, period.words.replace(/^the /, "")].filter(Boolean).join(", ");
+
   return (
     <main className="page flex flex-col gap-10 py-10">
-      <section className="flex flex-col gap-5">
-        {/* The ? gets its own column at the end of the title row. */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6">
-          <h1 className="page-title">Your Profile</h1>
-          <PageTour tour="profile" />
-        </div>
-        {profile?.steam_id && (
-          <SteamIdentity
-            name={profile.steam_name || profile.display_name || "Steam Player"}
-            avatarUrl={profile.avatar_url}
-            steamId={profile.steam_id}
-          />
-        )}
-      </section>
+      <PageStage
+        name="Your Profile"
+        facts={isSteam ? <span>{facts.charAt(0).toUpperCase() + facts.slice(1)}</span> : undefined}
+        title={verdict?.title ?? "Your Rank, Heroes and Privacy"}
+        portrait={verdict?.heroId ? heroById.get(verdict.heroId)?.image : undefined}
+        aside={<PageTour tour="profile" />}
+        // Who the numbers belong to sits under them, beside the hero, in place of a main button.
+        actions={
+          profile?.steam_id ? (
+            <SteamIdentity name={profile.steam_name || profile.display_name || "Steam Player"} avatarUrl={profile.avatar_url} steamId={profile.steam_id} />
+          ) : undefined
+        }
+      >
+        {verdict?.line}
+      </PageStage>
 
       <section aria-labelledby="rank-heading" className="flex flex-col gap-4 border-t border-line pt-6">
         <h2 id="rank-heading" className="section-title">

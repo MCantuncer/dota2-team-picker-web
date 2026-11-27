@@ -13,6 +13,8 @@ test("the profile explains a Steam player's heroes and recent form", async ({ pa
   await expect(takeaways).toContainText("Most Played");
   await expect(takeaways).toContainText("Best Hero");
   await expect(takeaways).toContainText("Costing You Games");
+  // The page opens with the same best hero as its title.
+  await expect(page.getByRole("heading", { level: 1, name: /Is Your Best Hero, \d+% in \d+ Games/ })).toBeVisible();
   await expect(page.getByRole("list", { name: "Heroes" }).getByRole("listitem")).toHaveCount(4);
   await expectAccessible(page);
 
