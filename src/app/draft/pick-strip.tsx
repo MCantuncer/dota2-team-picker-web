@@ -261,12 +261,12 @@ function TileReason({ entry, ctx }: { entry: PickEntry; ctx: PickCtx }) {
   const main = lines.find((l) => !l.isWarn);
   const risk = entry.isWeak ? null : entry.risk;
   return (
-    <span className="micro flex min-w-0 flex-col gap-1.5 text-left leading-5 text-muted">
+    <span className="flex min-w-0 flex-col gap-1.5 text-left text-sm leading-5 text-muted">
       {main && (
         <span>
           {main.lead && <span className="font-semibold text-fg tabular-nums">{minus(main.lead)} </span>}
           {/* The note in brackets ("likely your lane") is on the full card. */}
-          <FacedText text={main.text.replace(/\s*\([^)]*\)$/, "")} heroes={main.heroes} hero={ctx.hero} enemies={ctx.enemies} />
+          <FacedText text={main.text.replace(/\s*\([^)]*\)$/, "")} heroes={main.heroes} hero={ctx.hero} enemies={ctx.enemies} isStacked />
         </span>
       )}
       {risk && (
@@ -361,7 +361,7 @@ function Tile({
           </span>
           <span className="flex items-center justify-between gap-2">
             <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-              <span className={`text-lg leading-6 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
+              <span className={`text-xl leading-8 font-semibold tracking-tight tabular-nums ${s.score < 0 ? "text-dire" : "text-fg"}`}>
                 {signed(s.score)}
               </span>
               {/* Only when a checked model gives a win chance: how much this pick moves it. */}

@@ -122,7 +122,7 @@ export function RailSlot({ name, portrait, side, by, onRemove, children }: RailS
         )}
       </span>
       <span aria-hidden className={`h-0.5 rounded-xs max-sm:hidden ${SIDE_BAR[side]}`} />
-      <span className="micro flex items-center gap-2 font-semibold text-fg">
+      <span className="micro flex items-center gap-2 font-semibold text-fg sm:grow sm:items-start">
         <span aria-hidden className={`h-3.5 w-0.5 rounded-xs sm:hidden ${SIDE_BAR[side]}`} />
         {name}
       </span>
