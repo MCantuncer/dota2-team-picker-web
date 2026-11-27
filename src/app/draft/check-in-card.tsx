@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { OpenDotaButton } from "@/components/external-button";
+import { HeroPortrait } from "@/components/hero-frame";
 import { Icon, type IconName } from "@/components/icon";
 import {
   CHECK_IN_TAGS,
@@ -131,7 +132,7 @@ export function CheckInCard({
         </div>
         <div className="flex flex-col justify-center gap-2 px-6 pb-5 md:py-6 md:pr-7 md:pl-0">
           <Team ids={game.allies} portraits={portraits} heroOf={heroOf} edge="border-radiant-strong" label="My Team" />
-          <Team ids={game.enemies} portraits={portraits} heroOf={heroOf} edge="border-dire-strong" label="Enemy" />
+          <Team ids={game.enemies} portraits={portraits} heroOf={heroOf} edge="border-dire-strong" label="Enemy" isEnemy />
         </div>
       </div>
 
@@ -238,25 +239,22 @@ function Team({
   heroOf,
   edge,
   label,
+  isEnemy = false,
 }: {
   ids: number[];
   portraits: Record<number, string>;
   heroOf: (id: number) => { name: string };
   edge: string;
   label: string;
+  isEnemy?: boolean;
 }) {
   return (
     <ul aria-label={label} className={`flex gap-1 border-l-3 pl-2 ${edge}`}>
       {ids.map((id) =>
         portraits[id] ? (
-          <li key={id}>
-            <Image
-              src={portraits[id]}
-              alt={heroOf(id).name}
-              width={64}
-              height={36}
-              className="h-9 w-16 rounded-md object-cover"
-            />
+          <li key={id} className="w-16">
+            <HeroPortrait portrait={portraits[id]} size={36} isEnemy={isEnemy} />
+            <span className="sr-only">{heroOf(id).name}</span>
           </li>
         ) : (
           <li key={id} className="micro flex h-9 w-16 items-center justify-center rounded-md bg-raised text-center text-muted">
