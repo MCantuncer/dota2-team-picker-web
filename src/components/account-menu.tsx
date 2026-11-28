@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { NavPending } from "./nav-pending";
-import { isActive, NavBadge, type NavItem } from "./primary-nav";
+import { isActive } from "./sections";
 import { RankMedal } from "./rank-medal";
 
 export interface Account {
@@ -64,9 +64,9 @@ const itemClass =
 
 /**
  * The avatar button in the header corner and its dropdown (the WAI-ARIA menu button pattern):
- * profile, Steam, sign out, and on phones the main sections too. Admins also get the admin pages.
+ * profile and sign out. Admins also get the admin pages.
  */
-export function AccountMenu({ account, nav, admin = false }: { account: Account; nav: NavItem[]; admin?: boolean }) {
+export function AccountMenu({ account, admin = false }: { account: Account; admin?: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const menuId = useId();
@@ -177,25 +177,6 @@ export function AccountMenu({ account, nav, admin = false }: { account: Account;
             {account.detail && <div className="truncate text-xs text-muted">{account.detail}</div>}
           </div>
         </div>
-
-        {nav.length > 0 && (
-          <div className="border-t border-line py-1 sm:hidden">
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                role="menuitem"
-                tabIndex={-1}
-                aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                className={`${itemClass} text-fg aria-[current=page]:text-accent`}
-              >
-                {item.label}
-                <NavBadge count={item.badge} />
-                <NavPending />
-              </Link>
-            ))}
-          </div>
-        )}
 
         <div className="border-t border-line py-1">
           <Link href="/profile" role="menuitem" tabIndex={-1} className={`${itemClass} text-fg`}>

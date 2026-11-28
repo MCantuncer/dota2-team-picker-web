@@ -51,7 +51,7 @@ export function PendingSweep({ className = "" }: { className?: string }) {
   );
 }
 
-/** Along the bottom of the header on phones, where the sections live in the account menu that closes on a tap. */
+/** Along the bottom of the header on phones, where the sections sit in the bottom bar, far from the eye. */
 export function HeaderOpening() {
   const opening = useNavOpening();
   return opening ? <PendingSweep className="inset-x-0 sm:hidden" /> : null;

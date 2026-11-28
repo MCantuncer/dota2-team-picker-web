@@ -90,7 +90,7 @@ export function PartyInvitePopup({ userId }: { userId: string }) {
       data-urgent-prompt
       aria-labelledby="party-invite-title"
       aria-describedby="party-invite-detail"
-      className="card fixed bottom-4 right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3 p-4"
+      className="card fixed bottom-dock right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3 p-4"
     >
       <div className="flex items-center gap-2.5">
         <Avatar account={{ name: invite.inviterName, avatarUrl: invite.inviterAvatarUrl, detail: null, steamLinked: false }} size={36} />
