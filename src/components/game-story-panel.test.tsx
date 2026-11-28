@@ -228,6 +228,13 @@ describe("GameStoryPanel", () => {
     expect(screen.getByText("Instead of Black King Bar.")).toBeInTheDocument();
   });
 
+  it("shows the other route under a core item players take instead, with its own minute", () => {
+    const [first, ...rest] = plan.players;
+    const build = { ...first!.build!, core: first!.build!.core.map((c) => (c.itemId === 116 ? { ...c, or: item(166, "Maelstrom", 15) } : c)) };
+    render(<GameStoryPanel plan={{ ...plan, players: [{ ...first!, build }, ...rest] }} heroName={(id) => `Hero ${id}`} icons={{}} playerNames={["Can", null]} myPosition={1} />);
+    expect(screen.getByText(/Or Maelstrom at/)).toHaveTextContent("Or Maelstrom at 15");
+  });
+
   it("shows start items as tiles with their names and copies", () => {
     renderPanel(1);
     const start = screen.getByRole("list", { name: "Start items" });
