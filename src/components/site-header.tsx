@@ -67,13 +67,14 @@ const session = cache(async () => {
 const loadWaiting = cache(async (): Promise<Waiting> => {
   const { supabase, user } = await session();
   if (!user) return { friends: 0, stacks: 0 };
-  const [{ count: requests }, { data: stackInvites }, { count: joinRequests }] = await Promise.all([
+  const [friends, invites, joins] = await Promise.all([
     supabase.from("friendships").select("requester_id", { count: "exact", head: true }).eq("addressee_id", user.id).eq("status", "pending"),
     supabase.rpc("my_team_invites"),
     // Row level security shows only the requests for Stacks this user runs.
     supabase.from("team_join_requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("user_id", user.id),
   ]);
-  return { friends: requests ?? 0, stacks: (stackInvites?.length ?? 0) + (joinRequests ?? 0) };
+  for (const { error } of [friends, invites, joins]) if (error) console.error("Header counts:", error.message);
+  return { friends: friends.count ?? 0, stacks: (invites.data?.length ?? 0) + (joins.count ?? 0) };
 });
 
 /** The Section Row for a signed-in player. It waits only for the session; each count arrives on its own. */
