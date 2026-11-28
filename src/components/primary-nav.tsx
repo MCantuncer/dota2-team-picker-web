@@ -2,16 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon, type IconName } from "./icon";
+import { Icon } from "./icon";
 import { NavPending } from "./nav-pending";
-
-export interface NavItem {
-  href: string;
-  label: string;
-  icon?: IconName;
-  /** Things waiting there, such as friend requests; shown as a count. */
-  badge?: number;
-}
+import { placeOf, SECTIONS, waitingIn, type Waiting } from "./sections";
 
 /** The count after a nav label. */
 export function NavBadge({ count }: { count?: number }) {
@@ -24,38 +17,32 @@ export function NavBadge({ count }: { count?: number }) {
   );
 }
 
-/** True when `pathname` is `href` or a page under it. */
-export function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-/** The main sections, shown inline from tablet width up. On phones they live in the account menu. */
-export function PrimaryNav({ items }: { items: NavItem[] }) {
-  const pathname = usePathname();
-  if (!items.length) return null;
+/**
+ * The four sections in the top bar, from tablet width up. A section opens its first page and stays lit on all of
+ * its pages; the Section Row under the bar says which one is open. On phones the sections sit in the bottom bar.
+ */
+export function PrimaryNav({ waiting }: { waiting: Waiting }) {
+  const here = placeOf(usePathname());
 
   return (
     <nav aria-label="Main" className="hidden h-full sm:block">
       <ul className="flex h-full items-stretch gap-0.5">
-        {items.map((item) => {
-          const active = isActive(pathname, item.href);
+        {SECTIONS.map((section) => {
+          const active = here?.section === section;
           return (
-            <li key={item.href} className="relative flex items-center">
+            <li key={section.key} className="relative flex items-center">
               <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
+                href={section.href}
+                aria-current={active ? (here?.page?.href === section.href ? "page" : "true") : undefined}
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-base transition-colors ${
                   active ? "bg-raised text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >
-                {item.icon && (
-                  <span className={active ? "text-accent" : "text-muted"}>
-                    <Icon name={item.icon} />
-                  </span>
-                )}
-                <span className="hidden lg:inline">{item.label}</span>
-                <span className="sr-only lg:hidden">{item.label}</span>
-                <NavBadge count={item.badge} />
+                <span className={active ? "text-accent" : "text-muted"}>
+                  <Icon name={section.icon} />
+                </span>
+                <span className="max-lg:sr-only">{section.label}</span>
+                <NavBadge count={waitingIn(section, waiting)} />
                 {!active && <NavPending bar />}
               </Link>
               {active && <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 bg-accent" />}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import { rankName } from "@/lib/rank";
 import { toParty } from "@/lib/party";
 import { signedInUser } from "@/lib/supabase/claims";
@@ -17,39 +17,86 @@ import { CheckInPrompt } from "./check-in-prompt";
 import { HeroPoolCard } from "./hero-pool-card";
 import { PartyChip } from "./party-chip";
 import { PartyInvitePopup } from "./party-invite-popup";
-import { PrimaryNav, type NavItem } from "./primary-nav";
+import { NavBadge, PrimaryNav } from "./primary-nav";
+import { SectionDock } from "./section-dock";
+import { SectionRow } from "./section-row";
+import type { Waiting } from "./sections";
 
-/** The bar at the top of every page: brand, main sections, and the account menu. */
+/** The bar at the top of every page (brand, the four sections, the account menu) and the Section Row under it. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface">
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-1.5 focus:text-sm focus:font-semibold focus:text-on-accent"
-      >
-        Skip to Content
-      </a>
-      <div className="page flex h-16 items-stretch gap-6">
-        <Link href="/" className="flex items-center gap-3 rounded-md pr-6 sm:border-r sm:border-line" aria-label="Dota2 Team Picker home">
-          <LogoMark className="h-8 w-8" />
-          <span className="flex flex-col leading-none">
-            <span className="text-base font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
-            <span className="mt-1 text-xs text-muted">for Dota 2</span>
-          </span>
-        </Link>
-        <Suspense fallback={<div className="ml-auto" />}>
-          <HeaderSession />
-        </Suspense>
-      </div>
-      <HeaderOpening />
-    </header>
+    <>
+      <header className="sticky top-0 z-40 border-b border-line bg-surface">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-3 focus:py-1.5 focus:text-sm focus:font-semibold focus:text-on-accent"
+        >
+          Skip to Content
+        </a>
+        <div className="page flex h-16 items-stretch gap-6">
+          <Link href="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-md pr-6 sm:border-r sm:border-line" aria-label="Dota2 Team Picker home">
+            <LogoMark className="h-8 w-8" />
+            <span className="flex flex-col leading-none">
+              <span className="text-base font-semibold tracking-[-0.02em] text-fg">Team Picker</span>
+              <span className="mt-1 text-xs text-muted">for Dota 2</span>
+            </span>
+          </Link>
+          <Suspense fallback={<div className="ml-auto" />}>
+            <HeaderSession />
+          </Suspense>
+        </div>
+        <HeaderOpening />
+      </header>
+      <Suspense fallback={null}>
+        <SectionRowSession />
+      </Suspense>
+    </>
   );
+}
+
+/** Who is signed in, read once for the top bar and the Section Row. */
+const session = cache(async () => {
+  const supabase = await createClient();
+  return { supabase, user: await signedInUser(supabase) };
+});
+
+/**
+ * What waits for the player in Team: friend requests, and Stack invites plus players asking to join their Stacks.
+ * Read once for the top bar, the phone's bottom bar and the Section Row. A failure only hides the badge.
+ */
+const loadWaiting = cache(async (): Promise<Waiting> => {
+  const { supabase, user } = await session();
+  if (!user) return { friends: 0, stacks: 0 };
+  const [friends, invites, joins] = await Promise.all([
+    supabase.from("friendships").select("requester_id", { count: "exact", head: true }).eq("addressee_id", user.id).eq("status", "pending"),
+    supabase.rpc("my_team_invites"),
+    // Row level security shows only the requests for Stacks this user runs.
+    supabase.from("team_join_requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("user_id", user.id),
+  ]);
+  for (const { error } of [friends, invites, joins]) if (error) console.error("Header counts:", error.message);
+  return { friends: friends.count ?? 0, stacks: (invites.data?.length ?? 0) + (joins.count ?? 0) };
+});
+
+/** The Section Row for a signed-in player. It waits only for the session; each count arrives on its own. */
+async function SectionRowSession() {
+  const { user } = await session();
+  if (!user) return null;
+  const badge = (of: keyof Waiting) => (
+    <Suspense fallback={null}>
+      <WaitingBadge of={of} />
+    </Suspense>
+  );
+  return <SectionRow badges={{ friends: badge("friends"), stacks: badge("stacks") }} />;
+}
+
+async function WaitingBadge({ of }: { of: keyof Waiting }) {
+  const waiting = await loadWaiting();
+  return <NavBadge count={waiting[of]} />;
 }
 
 /** Everything in the header that depends on who is signed in. */
 async function HeaderSession() {
-  const supabase = await createClient();
-  const user = await signedInUser(supabase);
+  const { supabase, user } = await session();
 
   if (!user) {
     return (
@@ -61,41 +108,14 @@ async function HeaderSession() {
     );
   }
 
-  const [
-    { data: profile },
-    { count: requests },
-    { data: partyRows, error: partyError },
-    { data: stackInvites },
-    { count: joinRequests },
-  ] = await Promise.all([
+  const [{ data: profile }, { data: partyRows, error: partyError }, waiting] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, steam_id, rank_tier, user_type").eq("id", user.id).single(),
-    // Friend requests waiting for this user.
-    supabase
-      .from("friendships")
-      .select("requester_id", { count: "exact", head: true })
-      .eq("addressee_id", user.id)
-      .eq("status", "pending"),
     supabase.rpc("party_view"),
-    // Stack invites waiting for this user; a failure only hides the badge.
-    supabase.rpc("my_team_invites"),
-    // Players asking to join Stacks this user runs (row level security shows only those); a failure only hides the badge.
-    supabase
-      .from("team_join_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending")
-      .neq("user_id", user.id),
+    loadWaiting(),
   ]);
   // The party chip is a shortcut only: without it Draft still shows the party, so a failure just hides it.
   if (partyError) console.error("Header party:", partyError.message);
   const party = partyError ? null : toParty(partyRows);
-
-  const nav: NavItem[] = [
-    { href: "/draft", label: "Draft", icon: "swords" },
-    { href: "/my-heroes", label: "My Heroes", icon: "helmet" },
-    { href: "/meta", label: "Meta", icon: "chart" },
-    { href: "/stacks", label: "Stacks", icon: "layers", badge: (stackInvites?.length ?? 0) + (joinRequests ?? 0) },
-    { href: "/friends", label: "Friends", icon: "userPlus", badge: requests ?? 0 },
-  ];
 
   const steamLinked = Boolean(profile?.steam_id);
   const poolCard = steamLinked && poolCardsEnabled() ? await loadPoolCard(supabase, user.id) : null;
@@ -112,14 +132,15 @@ async function HeaderSession() {
 
   return (
     <>
-      <PrimaryNav items={nav} />
+      <PrimaryNav waiting={waiting} />
       <div className="ml-auto flex items-center gap-3">
         <PartyChip size={party ? party.members.length : null} />
         {/* Draft opens the board as it was; New Draft clears it first. */}
         <NewDraftButton />
         <span aria-hidden className="hidden h-6 w-px bg-line md:block" />
-        <AccountMenu account={account} nav={nav} admin={profile?.user_type === "admin"} />
+        <AccountMenu account={account} admin={profile?.user_type === "admin"} />
       </div>
+      <SectionDock waiting={waiting} />
       <PartyInvitePopup userId={user.id} />
       <CaptainPrompt userId={user.id} />
       {steamLinked && <ActivityMark />}

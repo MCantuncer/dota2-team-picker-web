@@ -179,6 +179,26 @@ body {
 }
 
 
+/*
+ * Phones show the four sections in a bar at the bottom of the screen (components/section-dock.tsx). `--dock` is the
+ * room it takes: the page ends above it, and the cards fixed to the bottom of the screen rest on it (`bottom-dock`).
+ */
+:root {
+  --dock: 0px;
+}
+@media (width < 40rem) {
+  body:has(.section-dock) {
+    --dock: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--dock);
+  }
+  .section-dock {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+@utility bottom-dock {
+  bottom: calc(1rem + var(--dock));
+}
+
 /* The page column. Header, footer and every page share it, so their edges line up. */
 @utility page {
   margin-inline: auto;

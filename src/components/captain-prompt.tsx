@@ -132,7 +132,7 @@ export function CaptainPromptCard({
       role="region"
       aria-label="Draft captain request"
       data-urgent-prompt
-      className="fixed bottom-4 left-4 right-4 z-50 flex flex-col gap-3 overflow-hidden rounded-lg border border-line-strong bg-surface p-4 shadow-lg sm:left-auto sm:w-88"
+      className="fixed bottom-dock left-4 right-4 z-50 flex flex-col gap-3 overflow-hidden rounded-lg border border-line-strong bg-surface p-4 shadow-lg sm:left-auto sm:w-88"
     >
       <div className="flex flex-col">
         <span className="label-caps">Draft Captain</span>

@@ -168,6 +168,25 @@ Friends speaks about the friend who is open: the win rate together and the hero 
 (`friendsVerdict` in `src/lib/friends-verdict.ts`). The friend link is its control, and below the desktop layout the
 Stage steps aside while a friend's detail is open.
 
+## Sections
+
+The site has four sections, and every signed-in page shows them: **Draft**, **You** (Heroes, Games, Profile),
+**Meta** (This Patch, Do Our Picks Win?) and **Team** (Friends, Stacks). They are listed once, in
+`src/components/sections.ts`; a new page joins a section there and nowhere else.
+
+- **Top bar** (`PrimaryNav`): the four sections with their icons, names from desktop width. A section opens its
+  first page and stays lit on all of its pages. Team counts what waits in Friends and Stacks together.
+- **Section Row** (`SectionRow`): one slim row (44px) under the top bar with the pages of the open section, the
+  current one in `fg` with the accent line under it. It is one click to any page of the section and always says
+  where you are. It scrolls away with the page; only the top bar stays. A page's own count sits after its name.
+  Draft has one page, so it has no row; Home, Sign In and the admin pages are outside the sections and have none.
+- **Phones** (`SectionDock`): the four sections sit in a bar at the bottom of the screen, under the thumb; the row
+  stays under the top bar. The page keeps room for the bar (`--dock`), and a card fixed to the bottom of the screen
+  uses `bottom-dock`, so it rests on the bar and never covers it.
+
+A page under another page belongs to the closest one above it (one game is under Games). A page with no place in
+a row can still belong to a section (`also`): a draft's report keeps Draft lit.
+
 ## Role and Rank
 
 Two controls, the same on every page:

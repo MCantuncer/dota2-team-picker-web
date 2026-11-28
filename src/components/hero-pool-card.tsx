@@ -56,7 +56,7 @@ export function HeroPoolCard({ card, heroName, heroImage }: { card: PoolCard; he
       onKeyDown={(e) => {
         if (e.key === "Escape" && state === "open" && !busy) void answer("later");
       }}
-      className="fixed bottom-4 left-4 right-4 z-40 flex flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-lg sm:left-auto sm:w-88 [body:has([data-urgent-prompt])_&]:hidden"
+      className="fixed bottom-dock left-4 right-4 z-40 flex flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-lg sm:left-auto sm:w-88 [body:has([data-urgent-prompt])_&]:hidden"
     >
       {heroImage && <Image src={heroImage} alt="" width={352} height={198} className="h-24 w-full object-cover object-[50%_20%]" />}
       <div className="flex flex-col gap-3 p-4">

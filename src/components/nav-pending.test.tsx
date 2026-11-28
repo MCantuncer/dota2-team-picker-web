@@ -37,7 +37,7 @@ describe("NavPending", () => {
     expect(container.querySelector("header > .pending-sweep")?.className).toContain("sm:hidden");
   });
 
-  it("from the phone menu, only the header sweep shows", () => {
+  it("from the phone's bottom bar, only the header sweep shows", () => {
     status.pending = true;
     const { container } = render(<Header />);
     expect(container.querySelector("a .pending-sweep")).toBeNull();
