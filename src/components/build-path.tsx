@@ -153,6 +153,11 @@ export function BuildPath({
                         Or {build.bootsOr.name} at <span className="num">{build.bootsOr.minute}</span>
                       </span>
                     )}
+                    {item.or && (
+                      <span className="text-muted">
+                        Or {item.or.name} at <span className="num">{item.or.minute}</span>
+                      </span>
+                    )}
                   </span>
                   <span aria-hidden className="relative z-10 order-5 mt-2 hidden size-3 shrink-0 rounded-full md:mt-auto bg-fg shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--line-control)] md:block" />
                 </li>,
