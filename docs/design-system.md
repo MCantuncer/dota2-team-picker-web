@@ -162,6 +162,12 @@ so the title, the facts and the hero change with every add or remove. Your Profi
 chosen period (`profileVerdict` in `src/lib/profile-verdict.ts`), with the rank and the period as its facts; the
 player's Steam name sits under the line in place of a main button.
 
+Your Games counts the wins of the last 14 days and names the hero played most (`gamesVerdict` in
+`src/lib/games-verdict.ts`); a Back button and the tour button sit in a row above its Stage, as on a Stack page.
+Friends speaks about the friend who is open: the win rate together and the hero the player wins on most beside them
+(`friendsVerdict` in `src/lib/friends-verdict.ts`). The friend link is its control, and below the desktop layout the
+Stage steps aside while a friend's detail is open.
+
 ## Role and Rank
 
 Two controls, the same on every page:
